@@ -28,8 +28,8 @@ const rateLimitMap = new Map();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
-const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 700);
-const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 6);
+const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 480);
+const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 30);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -107,6 +107,31 @@ function sanitizeAiReplyText(text) {
   out = out.replace(/^질의하신[^\n]{0,120}\n?/i, "");
   out = out.replace(/^문의하신[^\n]{0,120}\n?/i, "");
   return out.trim();
+}
+
+function compressAiReply(text) {
+  const src = String(text || "").trim();
+  if (!src) return src;
+  const lines = src.split(/\r?\n/).map((v) => v.trim()).filter(Boolean);
+  const out = [];
+  let section = 0;
+  let secCount = 0;
+  for (const line of lines) {
+    const sectionMatch = line.match(/^([1-4])\)/);
+    if (sectionMatch) {
+      section = Number(sectionMatch[1]);
+      secCount = 0;
+      out.push(line);
+      continue;
+    }
+    // 섹션별 문장 수 제한으로 장문을 강제로 압축
+    const limit = section === 1 ? 2 : section === 2 ? 3 : section === 3 ? 2 : section === 4 ? 2 : 2;
+    if (secCount < limit) {
+      out.push(line);
+      secCount += 1;
+    }
+  }
+  return out.join("\n").trim() || src;
 }
 
 function shouldUseGrounding(boardType, title, content) {
@@ -249,11 +274,11 @@ async function handleAiChat(req, res) {
     `[제목] ${title}`,
     `[내용] ${content}`,
     "",
-    "출력 형식(간결하게):",
-    "1) 추정 원인: 최대 2문장",
-    "2) 즉시 확인 항목: 3개 (각 항목 1문장)",
+    "출력 형식(엄수, 총 10줄 이내):",
+    "1) 추정 원인: 2문장 이내",
+    "2) 즉시 확인 항목: 정확히 3개",
     "3) 사용자 안내 문구: 1~2문장",
-    "4) 근거/기준: 1~2개 불릿",
+    "4) 근거/기준: 최대 2개",
   ].join("\n");
 
   try {
@@ -343,7 +368,7 @@ async function handleAiChat(req, res) {
       reply = merged;
       finishReason = continueFinishReason;
     }
-    reply = sanitizeAiReplyText(reply);
+    reply = compressAiReply(sanitizeAiReplyText(reply));
     sendJson(res, 200, { reply });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });

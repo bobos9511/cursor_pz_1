@@ -288,7 +288,7 @@
                 <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleSidebarPC()" title="메뉴 접기/펼치기">
                     <svg id="sidebarToggleIcon" class="icon sidebar-toggle-icon"><use href="#icon-chevron-left"></use></svg>
                 </button>
-                <div class="logo font-bold" onclick="switchView('dashboard')">IBK KNOCK</div>
+                <div class="logo font-bold" onclick="switchView('dashboard')">IBK KN<span class="logo-point">O</span>CK</div>
                 <div class="header-title">IBK 스마트 업무지식센터</div>
                 <span class="header-role-chip" id="headerRoleChip">영업점</span>
             </div>
@@ -599,9 +599,11 @@
                                 <details class="panel hidden" id="dtlAiWrap" open style="border: 1px solid var(--ibk-light); margin-bottom: 0;">
                                     <summary class="panel-header" style="background: var(--ibk-light); color: #fff;">
                                         <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
-                                        <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
-                                            <button id="btnRefreshAiReply" class="btn btn-outline" onclick="refreshCurrentPostAiReply(); event.stopPropagation();"><svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침</button>
-                                            <button id="btnConvertAiSolved" class="btn btn-outline" onclick="convertPostToAiSolved(); event.stopPropagation();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                        <div class="ai-header-right">
+                                            <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
+                                                <button id="btnRefreshAiReply" class="btn btn-outline" onclick="event.stopPropagation(); refreshCurrentPostAiReply();"><svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침</button>
+                                                <button id="btnConvertAiSolved" class="btn btn-outline" onclick="event.stopPropagation(); convertPostToAiSolved();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                            </div>
                                             <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
                                         </div>
                                     </summary>
