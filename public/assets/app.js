@@ -2879,6 +2879,17 @@
                 .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
                 .replace(/\n/g, '<br>');
         }
+        function sanitizePostAiRawReply(rawReply) {
+            let out = String(rawReply || '').replace(/\r/g, '').trim();
+            if (!out) return out;
+            out = out
+                .replace(/\(응답이 길어 핵심만 우선 제공되었습니다\.[^)]+\)/g, '')
+                .replace(/\(End of[^)\n]*\)?/gi, '')
+                .replace(/Point\s*\d+\s*\([^)\n]*\):\*/gi, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+            return out;
+        }
 
         async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null, continueFrom = '' }) {
             const controller = new AbortController();
@@ -3000,7 +3011,7 @@
                     post.type,
                     String(post.title || '').trim(),
                     stripHtmlToPlainText(post.content || ''),
-                    { allowContinuation: false, strictContext: true }
+                    { strictContext: true }
                 );
             } finally {
                 aiRefreshingPostIds.delete(post.id);
@@ -3061,6 +3072,10 @@
                     rawReply: mergedRawReply,
                     replyHtml: formatAiReplyHtml(mergedRawReply)
                 };
+            }
+            if (result && result.ok) {
+                const cleanedRaw = sanitizePostAiRawReply(result.rawReply || '');
+                result = { ...result, rawReply: cleanedRaw, replyHtml: formatAiReplyHtml(cleanedRaw) };
             }
             const idx = appData.posts.findIndex(p => p.id === postId);
             if (idx < 0) return;
