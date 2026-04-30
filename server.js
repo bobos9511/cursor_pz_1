@@ -28,7 +28,7 @@ const rateLimitMap = new Map();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
-const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 900);
+const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 700);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 6);
 const DEFAULT_DB = {
   appDataByScope: {},
@@ -98,6 +98,15 @@ function extractReplyFromGeminiData(data) {
     .trim();
   const finishReason = candidate && typeof candidate.finishReason === "string" ? candidate.finishReason : "";
   return { reply, finishReason };
+}
+
+function sanitizeAiReplyText(text) {
+  let out = String(text || "").trim();
+  // 불필요한 서두 문구 제거
+  out = out.replace(/^은행 헬프데스크 시니어 분석가로서[,\s:]*/i, "");
+  out = out.replace(/^질의하신[^\n]{0,120}\n?/i, "");
+  out = out.replace(/^문의하신[^\n]{0,120}\n?/i, "");
+  return out.trim();
 }
 
 function shouldUseGrounding(boardType, title, content) {
@@ -226,21 +235,21 @@ async function handleAiChat(req, res) {
         : "일반 문의: 상황 요약, 확인 항목, 후속 조치 순서 중심으로 분석.";
 
   const prompt = [
-    "당신은 은행 헬프데스크 시니어 분석가입니다.",
-    "절대 두루뭉술하게 쓰지 말고, 입력 내용의 핵심 단어를 그대로 인용해 구체적으로 답변하세요.",
-    "불확실한 내용은 추정이라고 명시하고 확인 경로를 제시하세요.",
-    "가능하면 최신 공개 정보를 검색 근거로 보강하세요.",
+    "역할 소개 문장은 쓰지 말고, 바로 답변 본문만 작성하라.",
+    "두루뭉술한 표현 금지. 입력 키워드 2개 이상 직접 인용.",
+    "불필요한 인사/서론/반복 문장 금지.",
+    "불확실하면 추정이라고 표시하고 확인 방법을 제시.",
     "",
     `[게시판] ${boardType}`,
     `[기준점] ${boardRubric}`,
     `[제목] ${title}`,
     `[내용] ${content}`,
     "",
-    "출력 형식(반드시 지켜라):",
-    "1) 추정 원인 (2~4줄, 입력 본문 키워드 최소 2개 직접 인용)",
-    "2) 즉시 확인 항목 (번호 목록 4개, 각 항목은 '확인 이유 + 확인 방법')",
-    "3) 사용자 안내 문구 (현업에서 바로 전달 가능한 문장 2~3개)",
-    "4) 근거/기준 (최소 2개 불릿: 내부기준/검색근거를 구분하여 작성)",
+    "출력 형식(간결하게):",
+    "1) 추정 원인: 최대 2문장",
+    "2) 즉시 확인 항목: 3개 (각 항목 1문장)",
+    "3) 사용자 안내 문구: 1~2문장",
+    "4) 근거/기준: 1~2개 불릿",
   ].join("\n");
 
   try {
@@ -330,6 +339,7 @@ async function handleAiChat(req, res) {
       reply = merged;
       finishReason = continueFinishReason;
     }
+    reply = sanitizeAiReplyText(reply);
     sendJson(res, 200, { reply });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
