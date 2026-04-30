@@ -84,6 +84,21 @@ function isQuotaOrRateLimitError(message) {
   );
 }
 
+function extractReplyFromGeminiData(data) {
+  const candidate =
+    data && Array.isArray(data.candidates) && data.candidates[0] ? data.candidates[0] : null;
+  const parts =
+    candidate && candidate.content && Array.isArray(candidate.content.parts)
+      ? candidate.content.parts
+      : [];
+  const reply = parts
+    .map((part) => (part && typeof part.text === "string" ? part.text : ""))
+    .join("")
+    .trim();
+  const finishReason = candidate && typeof candidate.finishReason === "string" ? candidate.finishReason : "";
+  return { reply, finishReason };
+}
+
 function shouldUseGrounding(boardType, title, content) {
   if (!GEMINI_ENABLE_GROUNDING) return false;
   if (String(boardType || "").toUpperCase() !== "BIZ") return false;
@@ -238,26 +253,26 @@ async function handleAiChat(req, res) {
       requestBody.tools = [{ google_search: {} }];
     }
 
-    let geminiRes = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-    });
-    let data = await geminiRes.json();
+    async function callGemini(body) {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      return { res, json };
+    }
+
+    let { res: geminiRes, json: data } = await callGemini(requestBody);
 
     // 모델/권한 이슈로 grounding 도구가 거부되는 경우 도구 없이 한 번 재시도
     if (!geminiRes.ok && useGrounding) {
       const msg = data && data.error && data.error.message ? String(data.error.message) : "";
       if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
-        geminiRes = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
-          }),
-        });
-        data = await geminiRes.json();
+        ({ res: geminiRes, json: data } = await callGemini({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+        }));
       }
     }
     if (!geminiRes.ok) {
@@ -284,22 +299,30 @@ async function handleAiChat(req, res) {
       sendJson(res, 502, { error: apiError });
       return;
     }
-    const parts =
-      data &&
-      data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      Array.isArray(data.candidates[0].content.parts)
-        ? data.candidates[0].content.parts
-        : [];
-    const reply = parts
-      .map((part) => (part && typeof part.text === "string" ? part.text : ""))
-      .join("")
-      .trim();
+    let { reply, finishReason } = extractReplyFromGeminiData(data);
 
     if (!reply) {
       sendJson(res, 502, { error: "AI 응답을 해석할 수 없습니다." });
       return;
+    }
+
+    // 토큰 한도로 중간 절단되면 이어쓰기 요청을 한 번 더 수행해 연결한다.
+    if (finishReason === "MAX_TOKENS") {
+      const continuePrompt = [
+        "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
+        "이미 쓴 문장을 반복하지 말고, 남은 내용만 이어서 작성하세요.",
+        "",
+        "[앞부분]",
+        reply,
+      ].join("\n");
+      const { res: continueRes, json: continueData } = await callGemini({
+        contents: [{ parts: [{ text: continuePrompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+      });
+      if (continueRes.ok) {
+        const { reply: continuedReply } = extractReplyFromGeminiData(continueData);
+        if (continuedReply) reply = `${reply}\n${continuedReply}`.trim();
+      }
     }
     sendJson(res, 200, { reply });
   } catch (error) {
