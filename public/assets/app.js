@@ -164,6 +164,26 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
+        function normalizeDisplayText(value, fallback = '-') {
+            const cleaned = String(value || '')
+                .replace(/�+/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return cleaned || fallback;
+        }
+        function sanitizeSignupUserRecord(user) {
+            if (!user || typeof user !== 'object') return null;
+            return {
+                ...user,
+                name: normalizeDisplayText(user.name, '사용자'),
+                deptName: normalizeDisplayText(user.deptName, '-'),
+                deptCode: normalizeDisplayText(user.deptCode, '-'),
+                position: normalizeDisplayText(user.position, ''),
+                grade: normalizeDisplayText(user.grade, ''),
+                employeeNo: normalizeDisplayText(user.employeeNo, ''),
+                role: normalizeDisplayText(user.role, 'branch')
+            };
+        }
         function getDummyIp() { return '10.124.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255); }
         function setCookie(name, value, days = 365) {
             const d = new Date();
@@ -414,7 +434,9 @@
         async function loadSignupUsers() {
             try {
                 const data = await fetchJson('/api/db/signup-users');
-                signupUsers = Array.isArray(data && data.signupUsers) ? data.signupUsers : [];
+                signupUsers = Array.isArray(data && data.signupUsers)
+                    ? data.signupUsers.map(sanitizeSignupUserRecord).filter(Boolean)
+                    : [];
             } catch (error) {
                 console.error('loadSignupUsers failed:', error);
                 signupUsers = [];
@@ -1163,11 +1185,15 @@
             const roleNameParts = roleNameRaw.split(' ');
             const defaultNameOnly = roleNameParts[0] || roleNameRaw;
             const defaultPosition = roleNameParts.slice(1).join(' ') || '';
-            const activeName = currentLoginUser ? (activeUser.name || defaultNameOnly) : defaultNameOnly;
-            const activePosition = currentLoginUser ? (activeUser.position || '') : defaultPosition;
-            const activeDept = activeUser.deptName || activeUser.dept || roleMatrix[currentRole].dept || '-';
+            const activeName = currentLoginUser
+                ? normalizeDisplayText(activeUser.name || defaultNameOnly, defaultNameOnly || '사용자')
+                : normalizeDisplayText(defaultNameOnly, '사용자');
+            const activePosition = currentLoginUser
+                ? normalizeDisplayText(activeUser.position || '', '')
+                : normalizeDisplayText(defaultPosition, '');
+            const activeDept = normalizeDisplayText(activeUser.deptName || activeUser.dept || roleMatrix[currentRole].dept || '-', '-');
             const userDisplay = `${activeName}${activePosition ? ' ' + activePosition : ''}`;
-            const deptDisplay = `${activeDept}(${activeUser.deptCode || '-'})`;
+            const deptDisplay = `${activeDept}(${normalizeDisplayText(activeUser.deptCode || '-', '-')})`;
             const mbUser = document.getElementById('mobileUserName');
             if(mbUser) mbUser.innerText = userDisplay;
             
@@ -1191,12 +1217,7 @@
             if (overlaySessionInfo) overlaySessionInfo.innerText = `IP ${currentSessionIp || '-'}`;
             const overlayGreetingText = document.getElementById('overlayGreetingText');
             if (overlayGreetingText) {
-                const hour = new Date().getHours();
-                let greet = '오늘도 함께해 주셔서 고마워요';
-                if (hour >= 5 && hour < 12) greet = '좋은 아침이에요, 오늘도 힘내봐요';
-                else if (hour >= 12 && hour < 18) greet = '따뜻한 오후 보내고 계시죠?';
-                else if (hour >= 18 && hour < 22) greet = '오늘도 정말 수고 많으셨어요';
-                else greet = '늦은 시간까지 애써주셔서 감사해요';
+                const greet = '안녕하세요. IBK KNOCK입니다.';
                 overlayGreetingText.innerText = greet;
             }
 
