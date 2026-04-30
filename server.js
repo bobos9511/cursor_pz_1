@@ -28,7 +28,7 @@ const rateLimitMap = new Map();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
-const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 480);
+const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
 const DEFAULT_DB = {
@@ -257,37 +257,60 @@ async function handleAiChat(req, res) {
     return;
   }
 
-  const boardRubric =
+  const prompt =
     boardType === "IT"
-      ? "IT/오류 문의: 오류코드, 재현경로, 영향범위, 즉시 우회조치 중심으로 분석."
+      ? [
+          "너는 10년 차 수석 백엔드/프론트엔드 엔지니어 및 DBA야. 사용자의 기술 질문이나 에러 로그를 보고 다음 규칙에 따라 답변해:",
+          "",
+          "인사말이나 불필요한 서론은 절대 쓰지 마. 바로 본론으로 들어가.",
+          "",
+          "문제의 '예상 원인'을 1~2줄로 짧게 요약해.",
+          "",
+          "해결책은 구체적인 조치 방법이나 수정된 핵심 코드 스니펫(Snippet)만 마크다운(Markdown) 블록으로 제공해. 전체 코드를 다시 작성하지 마.",
+          "",
+          `답변 길이는 전체 ${GEMINI_MAX_OUTPUT_TOKENS}자(토큰값에 따라 변경) 이내로 간결하게 유지해.`,
+          "",
+          `[게시판] ${boardType}`,
+          `[제목] ${title}`,
+          `[내용] ${content}`,
+        ].join("\n")
       : boardType === "BIZ"
-        ? "규정/상품 문의: 적용 규정, 예외 조건, 필요 증빙, 고객 안내 기준 중심으로 분석."
-        : "일반 문의: 상황 요약, 확인 항목, 후속 조치 순서 중심으로 분석.";
+        ? [
+            "너는 대한민국 금융 정책 및 은행업 전문 금융 어시스턴트야.",
+            "",
+            "답변은 반드시 3~4개의 개조식(Bullet point)으로 핵심만 작성해.",
+            "",
+            `전체 답변 길이는 ${GEMINI_MAX_OUTPUT_TOKENS}자(토큰값에 따라 변경) 이내로 유지해.`,
+            "",
+            "네가 모르는 최신 정책(2026년 이후)을 물어보면, 지어내지 말고 '해당 정책의 최신 세부 사항은 금융위원회 공식 발표를 확인해 주세요.'라고 답변해.",
+            "",
+            `[게시판] ${boardType}`,
+            `[제목] ${title}`,
+            `[내용] ${content}`,
+          ].join("\n")
+        : [
+            "역할 소개 문장은 쓰지 말고, 바로 답변 본문만 작성하라.",
+            "불필요한 인사/서론/반복 문장 금지.",
+            "상황 요약, 확인 항목, 후속 조치 순서 중심으로 작성.",
+            "",
+            `[게시판] ${boardType}`,
+            `[제목] ${title}`,
+            `[내용] ${content}`,
+          ].join("\n");
 
-  const prompt = [
-    "역할 소개 문장은 쓰지 말고, 바로 답변 본문만 작성하라.",
-    "두루뭉술한 표현 금지. 입력 키워드 2개 이상 직접 인용.",
-    "불필요한 인사/서론/반복 문장 금지.",
-    "불확실하면 추정이라고 표시하고 확인 방법을 제시.",
-    "",
-    `[게시판] ${boardType}`,
-    `[기준점] ${boardRubric}`,
-    `[제목] ${title}`,
-    `[내용] ${content}`,
-    "",
-    "출력 형식(엄수, 총 10줄 이내):",
-    "1) 추정 원인: 2문장 이내",
-    "2) 즉시 확인 항목: 정확히 3개",
-    "3) 사용자 안내 문구: 1~2문장",
-    "4) 근거/기준: 최대 2개",
-  ].join("\n");
+  const generationConfig =
+    boardType === "IT"
+      ? { temperature: 0.1, topP: 0.9, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS }
+      : boardType === "BIZ"
+        ? { temperature: 0.2, topP: 0.8, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS }
+        : { temperature: 0.2, topP: 0.9, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS };
 
   try {
     const useGrounding = shouldUseGrounding(boardType, title, content);
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+      generationConfig,
     };
     if (useGrounding) {
       requestBody.tools = [{ google_search: {} }];
@@ -311,7 +334,7 @@ async function handleAiChat(req, res) {
       if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
         ({ res: geminiRes, json: data } = await callGemini({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+          generationConfig,
         }));
       }
     }
@@ -361,7 +384,7 @@ async function handleAiChat(req, res) {
       ].join("\n");
       const { res: continueRes, json: continueData } = await callGemini({
         contents: [{ parts: [{ text: continuePrompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+        generationConfig,
       });
       if (!continueRes.ok) break;
       const { reply: continuedReply, finishReason: continueFinishReason } = extractReplyFromGeminiData(continueData);
