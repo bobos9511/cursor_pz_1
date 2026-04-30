@@ -29,6 +29,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 900);
+const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 6);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -306,8 +307,10 @@ async function handleAiChat(req, res) {
       return;
     }
 
-    // 토큰 한도로 중간 절단되면 이어쓰기 요청을 한 번 더 수행해 연결한다.
-    if (finishReason === "MAX_TOKENS") {
+    // 토큰 한도로 잘리면 완료될 때까지 이어쓰기(안전 상한 포함)
+    let continuationCount = 0;
+    while (finishReason === "MAX_TOKENS" && continuationCount < GEMINI_MAX_CONTINUATIONS) {
+      continuationCount += 1;
       const continuePrompt = [
         "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
         "이미 쓴 문장을 반복하지 말고, 남은 내용만 이어서 작성하세요.",
@@ -319,10 +322,13 @@ async function handleAiChat(req, res) {
         contents: [{ parts: [{ text: continuePrompt }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
       });
-      if (continueRes.ok) {
-        const { reply: continuedReply } = extractReplyFromGeminiData(continueData);
-        if (continuedReply) reply = `${reply}\n${continuedReply}`.trim();
-      }
+      if (!continueRes.ok) break;
+      const { reply: continuedReply, finishReason: continueFinishReason } = extractReplyFromGeminiData(continueData);
+      if (!continuedReply) break;
+      const merged = `${reply}\n${continuedReply}`.trim();
+      if (merged === reply) break;
+      reply = merged;
+      finishReason = continueFinishReason;
     }
     sendJson(res, 200, { reply });
   } catch (error) {
