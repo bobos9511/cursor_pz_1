@@ -419,16 +419,18 @@
             setAiSearchStateBadge();
             sendBtn.disabled = true;
             sendBtn.innerText = '생성중...';
+            let delayNotified = false;
+            const delayTimer = setTimeout(() => {
+                delayNotified = true;
+                showAlert('AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.', 'error');
+            }, AI_CHAT_REQUEST_TIMEOUT_MS);
             try {
                 const result = await requestAiPreview({
                     title: `AI 검색: ${question.slice(0, 45)}`,
                     content: question,
                     boardType: inferredBoardType,
-                    timeoutMs: AI_CHAT_REQUEST_TIMEOUT_MS,
-                    abortOnTimeout: false,
-                    onTimeout: () => {
-                        showAlert('AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.', 'error');
-                    }
+                    timeoutMs: 0,
+                    abortOnTimeout: false
                 });
                 const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -437,8 +439,7 @@
                 saveAiSearchActiveState();
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
-                if (result && result.isTimeout) showAlert('AI 응답 시간이 초과되었습니다. 다시 요청해주세요.', 'error');
-                else if (result && result.wasDelayed && result.ok) showAlert('지연된 AI 응답이 도착했습니다.', 'success');
+                if (delayNotified && result && result.ok) showAlert('지연된 AI 응답이 도착했습니다.', 'success');
             } catch (error) {
                 const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -448,6 +449,7 @@
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
             } finally {
+                clearTimeout(delayTimer);
                 sendBtn.disabled = false;
                 sendBtn.innerText = '질문하기';
                 aiSearchIsLoading = false;
@@ -2804,11 +2806,13 @@
         async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null }) {
             const controller = new AbortController();
             let timeoutNotified = false;
-            const timeoutId = setTimeout(() => {
-                timeoutNotified = true;
-                if (typeof onTimeout === 'function') onTimeout();
-                if (abortOnTimeout) controller.abort();
-            }, timeoutMs);
+            const timeoutId = timeoutMs > 0
+                ? setTimeout(() => {
+                    timeoutNotified = true;
+                    if (typeof onTimeout === 'function') onTimeout();
+                    if (abortOnTimeout) controller.abort();
+                }, timeoutMs)
+                : null;
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
@@ -2835,7 +2839,7 @@
                 const reason = (error && error.message) ? error.message : 'AI 서버 통신 중 오류';
                 return { ok: false, replyHtml: '', errorMessage: reason, isTimeout: false, wasDelayed: timeoutNotified };
             } finally {
-                clearTimeout(timeoutId);
+                if (timeoutId) clearTimeout(timeoutId);
             }
         }
 
