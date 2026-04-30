@@ -599,14 +599,14 @@
                                 <details class="panel hidden" id="dtlAiWrap" open style="border: 1px solid var(--ibk-light); margin-bottom: 0;">
                                     <summary class="panel-header" style="background: var(--ibk-light); color: #fff;">
                                         <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
-                                        <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
+                                        <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
+                                            <button id="btnRefreshAiReply" class="btn btn-outline" onclick="refreshCurrentPostAiReply(); event.stopPropagation();"><svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침</button>
+                                            <button id="btnConvertAiSolved" class="btn btn-outline" onclick="convertPostToAiSolved(); event.stopPropagation();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                            <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
+                                        </div>
                                     </summary>
                                     <div id="aiPanelContent" style="padding: 24px; background: #f0f9ff; font-size: 14px; line-height: 1.6;"></div>
                                 </details>
-                                <div id="aiActionRow" class="hidden ai-action-row">
-                                    <button id="btnRefreshAiReply" class="btn btn-outline" onclick="refreshCurrentPostAiReply()"><svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침</button>
-                                    <button id="btnConvertAiSolved" class="btn btn-outline" onclick="convertPostToAiSolved()"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
-                                </div>
 
                                 <!-- 3. 담당자 답변 폼 -->
                                 <div class="panel hidden" id="answerFormBox" style="border-top: 2px solid var(--ibk-blue); margin-bottom: 0;">

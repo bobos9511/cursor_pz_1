@@ -695,6 +695,21 @@
             padding: 7px 12px;
             font-size: 12px;
         }
+        .ai-action-row-header { gap: 8px; }
+        .ai-action-row-header .btn {
+            padding: 5px 10px;
+            border-color: rgba(255,255,255,0.75);
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+        }
+        .ai-action-row-header .btn:hover { background: rgba(255,255,255,0.18); }
+        .ai-action-row-header #btnConvertAiSolved,
+        .ai-action-row-header #btnRefreshAiReply {
+            border-color: rgba(255,255,255,0.75);
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+        }
+        .ai-action-row-header .rotate-icon { margin-left: 2px; }
         #btnConvertAiSolved {
             border-color: #7E22CE;
             color: #7E22CE;
@@ -975,7 +990,7 @@
         .toast-item.error { background-color: var(--danger); }
         .toast-item.clickable { cursor: pointer; }
         .toast-action-btn {
-            margin-left: auto;
+            margin-left: 14px;
             margin-right: 8px;
             border-color: rgba(255,255,255,0.6);
             color: #fff;

@@ -2545,13 +2545,19 @@
             openDetail(postId);
         }
 
+        function formatPostAlertRef(post) {
+            if (!post) return '게시물';
+            const boardLabel = getBoardDisplayLabel(post);
+            return `[${boardLabel} #${post.id}]`;
+        }
+
         async function refreshCurrentPostAiReply() {
             const post = appData.posts.find(p => p.id === currentPostId);
             if (!post) return;
             if (post.aiSolved || post.status !== 'wait' || !(post.type === 'IT' || post.type === 'BIZ')) return;
             aiRefreshingPostId = post.id;
             openDetail(post.id);
-            showAlert('AI 답변을 다시 생성중입니다...', 'success');
+            showAlert(`${formatPostAlertRef(post)} AI 답변을 다시 생성중입니다...`, 'success');
             try {
                 await queueAsyncAiAnswerForPost(
                     post.id,
@@ -2570,6 +2576,8 @@
             const result = await requestAiPreview({ title, content: plainContent, boardType });
             const idx = appData.posts.findIndex(p => p.id === postId);
             if (idx < 0) return;
+            const post = appData.posts[idx];
+            const postRef = formatPostAlertRef(post);
 
             if (result.ok) {
                 const aiContentHtml = `<b>AI 분석 결과:</b><br>${result.replyHtml}`;
@@ -2584,12 +2592,12 @@
                 document.getElementById('aiPanelContent').innerHTML = renderAiContentWithToggle(appData.posts[idx].aiContent, `detail-${postId}`);
             }
             if (result.ok) {
-                showAlert('AI 답변이 등록되었습니다.', 'success', {
+                showAlert(`${postRef} AI 답변이 등록되었습니다.`, 'success', {
                     actionText: '해당 게시물 보기',
                     onClick: () => moveToPostDetail(postId)
                 });
             } else {
-                showAlert('AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.', 'error', {
+                showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, 'error', {
                     actionText: '해당 게시물 보기',
                     onClick: () => moveToPostDetail(postId)
                 });
