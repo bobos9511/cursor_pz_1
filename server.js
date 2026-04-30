@@ -27,11 +27,13 @@ const rateLimitMap = new Map();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
+const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
 const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 320);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
+const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 1);
+const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 8000);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -138,8 +140,28 @@ function compressAiReply(text) {
 
 function shouldUseGrounding(boardType, title, content) {
   if (!GEMINI_ENABLE_GROUNDING) return false;
-  if (String(boardType || "").toUpperCase() !== "BIZ") return false;
   const text = `${title || ""} ${content || ""}`.toLowerCase();
+  const latestInfoKeywords = [
+    "최신",
+    "최근",
+    "오늘",
+    "금일",
+    "이번달",
+    "올해",
+    "2025",
+    "2026",
+    "2027",
+    "업데이트",
+    "개정",
+    "발표",
+    "공지",
+    "뉴스",
+    "금리",
+    "환율",
+    "정책",
+    "규정 변경",
+    "보도자료",
+  ];
   const bizKeywords = [
     "규정",
     "약관",
@@ -156,7 +178,13 @@ function shouldUseGrounding(boardType, title, content) {
     "연장",
     "중도상환",
   ];
-  return bizKeywords.some((kw) => text.includes(kw));
+  const needsLatestGrounding = latestInfoKeywords.some((kw) => text.includes(kw));
+  const isBizContext = bizKeywords.some((kw) => text.includes(kw));
+  const type = String(boardType || "").toUpperCase();
+  if (type === "CHAT") return needsLatestGrounding || isBizContext;
+  if (type === "BIZ") return true;
+  if (type === "IT" || type === "SYS") return needsLatestGrounding;
+  return needsLatestGrounding;
 }
 
 function ensureDbFile() {
@@ -385,10 +413,13 @@ async function handleAiChat(req, res) {
     }
 
     // 토큰 한도로 잘리면 완료될 때까지 이어쓰기(안전 상한 포함)
+    const maxContinuations = boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATIONS : GEMINI_MAX_CONTINUATIONS;
+    const maxContinuationRuntimeMs =
+      boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS : GEMINI_MAX_CONTINUATION_RUNTIME_MS;
     let continuationCount = 0;
     const continuationStartAt = Date.now();
-    while (finishReason === "MAX_TOKENS" && continuationCount < GEMINI_MAX_CONTINUATIONS) {
-      if (Date.now() - continuationStartAt > GEMINI_MAX_CONTINUATION_RUNTIME_MS) break;
+    while (finishReason === "MAX_TOKENS" && continuationCount < maxContinuations) {
+      if (Date.now() - continuationStartAt > maxContinuationRuntimeMs) break;
       continuationCount += 1;
       const continuePrompt = [
         "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
@@ -412,7 +443,7 @@ async function handleAiChat(req, res) {
     if (finishReason === "MAX_TOKENS") {
       reply = `${reply}\n\n(응답이 길어 핵심만 우선 제공되었습니다. 필요 시 '계속'이라고 입력해주세요.)`.trim();
     }
-    reply = compressAiReply(sanitizeAiReplyText(reply));
+    reply = boardType === "CHAT" ? sanitizeAiReplyText(reply) : compressAiReply(sanitizeAiReplyText(reply));
     sendJson(res, 200, { reply });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
