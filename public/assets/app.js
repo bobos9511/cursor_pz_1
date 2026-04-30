@@ -3000,7 +3000,7 @@
                     post.type,
                     String(post.title || '').trim(),
                     stripHtmlToPlainText(post.content || ''),
-                    { allowContinuation: false }
+                    { allowContinuation: false, strictContext: true }
                 );
             } finally {
                 aiRefreshingPostIds.delete(post.id);
@@ -3022,10 +3022,21 @@
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent, options = {}) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
             const allowContinuation = options.allowContinuation !== false;
+            const strictContext = options.strictContext === true;
+            const requestContent = strictContext
+                ? [
+                    `질문 주제 고정 지시: 아래 게시물의 제목/내용 범위를 벗어나지 말고 답변하세요.`,
+                    `새로운 주제를 만들거나 일반론으로 벗어나지 마세요.`,
+                    "",
+                    `[게시판] ${boardType}`,
+                    `[제목] ${title}`,
+                    `[내용] ${plainContent}`
+                ].join('\n')
+                : plainContent;
             const MAX_AUTO_CONTINUE_STEPS = 2;
             let result = await requestAiPreview({
                 title,
-                content: plainContent,
+                content: requestContent,
                 boardType,
                 timeoutMs: 0,
                 abortOnTimeout: false
@@ -3036,7 +3047,7 @@
                 continueStep += 1;
                 const next = await requestAiPreview({
                     title: `${title} (이어쓰기 ${continueStep})`,
-                    content: plainContent,
+                    content: requestContent,
                     boardType,
                     timeoutMs: 0,
                     abortOnTimeout: false,
