@@ -3015,7 +3015,8 @@
                 post.id,
                 post.type,
                 String(post.title || '').trim(),
-                stripHtmlToPlainText(post.content || '')
+                stripHtmlToPlainText(post.content || ''),
+                { strictContext: true }
             );
         }
 
@@ -3215,7 +3216,8 @@
                             newId,
                             currentBoardType,
                             String(title || '').trim(),
-                            stripHtmlToPlainText(content)
+                            stripHtmlToPlainText(content),
+                            { strictContext: true }
                         );
                     }
                 }
