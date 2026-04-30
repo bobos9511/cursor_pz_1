@@ -72,6 +72,17 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function isQuotaOrRateLimitError(message) {
+  const text = String(message || "").toLowerCase();
+  return (
+    text.includes("quota") ||
+    text.includes("rate limit") ||
+    text.includes("resource_exhausted") ||
+    text.includes("too many requests") ||
+    text.includes("billing")
+  );
+}
+
 function ensureDbFile() {
   if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
   if (!fs.existsSync(DB_FILE)) {
@@ -226,6 +237,25 @@ async function handleAiChat(req, res) {
     }
     if (!geminiRes.ok) {
       const apiError = data && data.error && data.error.message ? data.error.message : "Gemini API 오류";
+      if (isQuotaOrRateLimitError(apiError)) {
+        sendJson(res, 200, {
+          reply: [
+            "1) 추정 원인",
+            "- 현재 Gemini API 사용량 한도(쿼터/요금제)가 초과되었습니다.",
+            "",
+            "2) 즉시 확인 항목 3개",
+            "- API 키가 연결된 프로젝트의 과금/한도 상태를 확인하세요.",
+            "- 분당 요청량(RPM)과 일일 사용량을 확인하세요.",
+            "- 필요 시 Grounding 사용을 잠시 비활성화해 호출 비용을 낮추세요.",
+            "",
+            "3) 사용자 안내 문구",
+            "- 현재 AI 분석 서비스 사용량이 일시적으로 초과되어 기본 진단 안내로 접수되었습니다.",
+          ].join("\n"),
+          degraded: true,
+          reason: "quota_exceeded",
+        });
+        return;
+      }
       sendJson(res, 502, { error: apiError });
       return;
     }
