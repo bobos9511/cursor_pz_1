@@ -29,11 +29,12 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
-const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 800);
+const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 640);
+const GEMINI_CHAT_FAST_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_FAST_MAX_OUTPUT_TOKENS || 320);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
-const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 0);
-const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 3000);
+const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 8);
+const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 18000);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -149,26 +150,30 @@ function sanitizeChatReplyText(text) {
 function compressAiReply(text) {
   const src = String(text || "").trim();
   if (!src) return src;
-  const lines = src.split(/\r?\n/).map((v) => v.trim()).filter(Boolean);
-  const out = [];
-  let section = 0;
-  let secCount = 0;
-  for (const line of lines) {
-    const sectionMatch = line.match(/^([1-4])\)/);
-    if (sectionMatch) {
-      section = Number(sectionMatch[1]);
-      secCount = 0;
-      out.push(line);
-      continue;
-    }
-    // 섹션별 문장 수 제한으로 장문을 강제로 압축
-    const limit = section === 1 ? 2 : section === 2 ? 3 : section === 3 ? 2 : section === 4 ? 2 : 2;
-    if (secCount < limit) {
-      out.push(line);
-      secCount += 1;
+  // 줄바꿈/공백만 정리하고 본문은 최대한 보존(이어쓰기 손실 방지)
+  return src
+    .replace(/\r/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function mergeContinuationText(base, next) {
+  const a = String(base || "").trim();
+  const b = String(next || "").trim();
+  if (!a) return b;
+  if (!b) return a;
+  if (a.includes(b)) return a;
+  if (b.includes(a)) return b;
+  const maxOverlap = Math.min(300, a.length, b.length);
+  let overlap = 0;
+  for (let i = maxOverlap; i >= 20; i -= 1) {
+    if (a.slice(-i) === b.slice(0, i)) {
+      overlap = i;
+      break;
     }
   }
-  return out.join("\n").trim() || src;
+  return overlap > 0 ? `${a}${b.slice(overlap)}`.trim() : `${a}\n${b}`.trim();
 }
 
 function shouldUseGrounding(boardType, title, content) {
@@ -389,7 +394,13 @@ async function handleAiChat(req, res) {
 
   const generationConfig =
     boardType === "CHAT"
-      ? { temperature: 0.2, topP: 0.8, maxOutputTokens: Math.min(GEMINI_CHAT_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS) }
+      ? {
+          temperature: 0.2,
+          topP: 0.8,
+          maxOutputTokens: continueFrom
+            ? Math.min(GEMINI_CHAT_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS)
+            : Math.min(GEMINI_CHAT_FAST_MAX_OUTPUT_TOKENS, GEMINI_CHAT_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS),
+        }
       : boardType === "IT"
       ? { temperature: 0.1, topP: 0.9, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS }
       : boardType === "BIZ"
@@ -483,7 +494,7 @@ async function handleAiChat(req, res) {
       if (!continueRes.ok) break;
       const { reply: continuedReply, finishReason: continueFinishReason } = extractReplyFromGeminiData(continueData);
       if (!continuedReply) break;
-      const merged = `${reply}\n${continuedReply}`.trim();
+      const merged = mergeContinuationText(reply, continuedReply);
       if (merged === reply) break;
       reply = merged;
       finishReason = continueFinishReason;

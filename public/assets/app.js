@@ -403,12 +403,14 @@
         function buildContinueButtonHtml() {
             return `<br><button class="btn btn-outline" style="margin-top:8px; padding:6px 10px; font-size:12px;" onclick="continueAiSearchAnswer()">이어서 답변</button>`;
         }
-        async function continueAiSearchAnswer() {
+        async function continueAiSearchAnswer(options = {}) {
             if (!aiSearchPendingContinuation || !aiSearchActive || !Array.isArray(aiSearchActive.messages)) return;
+            const isAuto = !!options.auto;
+            const maxSteps = Number(options.maxSteps || 8);
             const pending = { ...aiSearchPendingContinuation };
             aiSearchPendingContinuation = null;
             const sendBtn = document.getElementById('aiSearchSendBtn');
-            if (sendBtn) {
+            if (sendBtn && !isAuto) {
                 sendBtn.disabled = true;
                 sendBtn.innerText = '이어서 생성중...';
             }
@@ -417,7 +419,7 @@
             let continuedRaw = String(pending.answerRaw || '');
             let needsMore = true;
             let step = 0;
-            while (needsMore && step < 8) {
+            while (needsMore && step < maxSteps) {
                 step += 1;
                 const result = await requestAiPreview({
                     title: `AI 검색 이어쓰기 ${step}`,
@@ -463,7 +465,7 @@
                 saveAiSearchActiveState();
                 renderAiSearchMessages();
             }
-            if (sendBtn) {
+            if (sendBtn && !isAuto) {
                 sendBtn.disabled = false;
                 sendBtn.innerText = '질문하기';
             }
@@ -513,7 +515,15 @@
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
                 if (result && result.ok && result.truncated) {
-                    showAlert('답변이 길어 핵심만 표시했습니다. 질문을 더 구체화하면 빠르게 이어서 받을 수 있습니다.', 'success');
+                    aiSearchPendingContinuation = { question, answerRaw: String(result.rawReply || '') };
+                    if (isAiSearchForeground()) {
+                        await continueAiSearchAnswer({ auto: true, maxSteps: 4 });
+                    } else {
+                        const lastIdx = aiSearchActive.messages.length - 1;
+                        aiSearchActive.messages[lastIdx].text = `${formatAiReplyHtml(String(result.rawReply || ''))}${buildContinueButtonHtml()}`;
+                        saveAiSearchActiveState();
+                        renderAiSearchMessages();
+                    }
                 } else if (delayNotified && result && result.ok) {
                     showAlert('지연된 AI 응답이 도착했습니다.', 'success');
                 }
