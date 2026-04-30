@@ -523,7 +523,7 @@
             saveSignupUsers();
             updateSignupSavedCount();
             closeSignupModal();
-            showAlert('회원가입 정보가 로컬에 저장되었습니다.', 'success');
+            showAlert('회원가입 정보가 서버에 저장되었습니다.', 'success');
         }
 
         function openMemberListModal() {
@@ -2443,6 +2443,12 @@
             return (temp.textContent || temp.innerText || '').trim();
         }
 
+        function formatAiReplyHtml(rawReply) {
+            return String(rawReply || '')
+                .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                .replace(/\n/g, '<br>');
+        }
+
         async function requestAiPreview({ title, content, boardType }) {
             try {
                 const response = await fetch('/api/ai/chat', {
@@ -2454,7 +2460,7 @@
                 if (!response.ok || !data || !data.reply) {
                     throw new Error((data && data.error) || 'AI 응답을 가져오지 못했습니다.');
                 }
-                return { ok: true, replyHtml: data.reply.replace(/\n/g, '<br>'), errorMessage: '' };
+                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '' };
             } catch (error) {
                 console.error('AI preview request failed:', error);
                 const reason = (error && error.message) ? error.message : 'AI 서버 통신 중 오류';
@@ -2518,28 +2524,7 @@
                 savePost(false); return;
             }
 
-            const modalAiContentEl = document.getElementById('modalAiContent');
-            modalAiContentEl.innerHTML = '<span style="color:#64748b;">AI 분석 중입니다...</span>';
-            const similarPosts = appData.posts.filter(p => p.type === currentBoardType && p.status === 'done').slice(0, 2);
-            const sList = document.getElementById('modalSimilarList');
-            if(similarPosts.length > 0) {
-                sList.innerHTML = similarPosts.map(p => {
-                    let badge = p.aiSolved ? '<span class="badge bg-ai text-[10px] px-1.5 py-0.5">AI채택</span>' : '<span class="badge bg-done text-[10px] px-1.5 py-0.5">조치완료</span>';
-                    return `<li style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f4f8fb'" onmouseout="this.style.background='#fff'" onclick="openSimilarPostModal(${p.id})"><div class="flex justify-between items-center mb-10">${badge}<span style="font-size:11px; color:#999;">${p.datetime.substring(0, 10)}</span></div><div style="font-weight: bold; color: var(--ibk-blue); font-size: 13px;" class="truncate">${p.title}</div></li>`;
-                }).join('');
-            } else sList.innerHTML = `<li class="p-20 text-center" style="color:#999;">유사 조치 이력이 없습니다.</li>`;
-            
-            document.getElementById('aiSubmitModal').classList.add('active');
-            const aiResult = await requestAiPreview({
-                title,
-                content: stripHtmlToPlainText(content),
-                boardType: currentBoardType
-            });
-            if (aiResult.ok) {
-                modalAiContentEl.innerHTML = `<b>AI 분석 결과:</b><br>${aiResult.replyHtml}`;
-            } else {
-                modalAiContentEl.innerHTML = makeAiErrorHtml(aiResult.errorMessage);
-            }
+            await savePost(false);
         }
 
         function closeAiModal() { document.getElementById('aiSubmitModal').classList.remove('active'); }

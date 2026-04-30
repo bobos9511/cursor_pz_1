@@ -579,7 +579,7 @@
             border-top: 0;
             padding: 0 2px;
         }
-        #view-list.list-card-mode .table { min-width: 0; width: 100%; border-collapse: separate; border-spacing: 0 12px; display: block; }
+        #view-list.list-card-mode .table { min-width: 0; width: 100%; border-collapse: separate; border-spacing: 0 16px; display: block; }
         #view-list.list-card-mode .table thead { display: none; }
         #view-list.list-card-mode .table tbody { display: block; width: 100%; }
         #view-list.list-card-mode .table tbody tr {
@@ -1078,7 +1078,7 @@
                 min-width: 0;
                 width: 100%;
                 border-collapse: separate;
-                border-spacing: 0 12px;
+                border-spacing: 0 16px;
                 display: block;
             }
             #view-list .table thead { display: none; }
