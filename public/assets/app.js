@@ -2999,7 +2999,8 @@
                     post.id,
                     post.type,
                     String(post.title || '').trim(),
-                    stripHtmlToPlainText(post.content || '')
+                    stripHtmlToPlainText(post.content || ''),
+                    { allowContinuation: false }
                 );
             } finally {
                 aiRefreshingPostIds.delete(post.id);
@@ -3018,8 +3019,9 @@
             );
         }
 
-        async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
+        async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent, options = {}) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
+            const allowContinuation = options.allowContinuation !== false;
             const MAX_AUTO_CONTINUE_STEPS = 2;
             let result = await requestAiPreview({
                 title,
@@ -3030,7 +3032,7 @@
             });
             let mergedRawReply = result && result.ok ? String(result.rawReply || '') : '';
             let continueStep = 0;
-            while (result && result.ok && result.truncated && continueStep < MAX_AUTO_CONTINUE_STEPS) {
+            while (allowContinuation && result && result.ok && result.truncated && continueStep < MAX_AUTO_CONTINUE_STEPS) {
                 continueStep += 1;
                 const next = await requestAiPreview({
                     title: `${title} (이어쓰기 ${continueStep})`,
