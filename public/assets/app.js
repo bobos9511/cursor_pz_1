@@ -109,6 +109,7 @@
         let boardHelpJustSeenUpdated = false;
         let writeAttachmentItems = [];
         const aiExpandState = {};
+        let aiRefreshingPostId = null;
         const USER_SCOPE_COOKIE = 'knockUserScope';
         let signupUsers = [];
         let currentLoginUser = null;
@@ -2131,9 +2132,19 @@
                 crudBtns.classList.add('hidden');
             }
             const aiConvertBtn = document.getElementById('btnConvertAiSolved');
-            if (aiConvertBtn) {
-                const canConvertToAi = isWriter && post.status === 'wait' && !post.aiSolved && (post.type === 'IT' || post.type === 'BIZ');
-                aiConvertBtn.classList.toggle('hidden', !canConvertToAi);
+            const aiRefreshBtn = document.getElementById('btnRefreshAiReply');
+            const aiActionRow = document.getElementById('aiActionRow');
+            if (aiConvertBtn && aiRefreshBtn && aiActionRow) {
+                const canUseAiAction = isWriter && post.status === 'wait' && !post.aiSolved && (post.type === 'IT' || post.type === 'BIZ');
+                aiActionRow.classList.toggle('hidden', !canUseAiAction);
+                const aiReady = hasAdoptableAiReply(post);
+                aiConvertBtn.disabled = !aiReady;
+                aiConvertBtn.title = aiReady ? '' : 'AI 답변이 정상 생성된 후 채택할 수 있습니다.';
+                const isRefreshing = aiRefreshingPostId === post.id;
+                aiRefreshBtn.disabled = isRefreshing;
+                aiRefreshBtn.innerHTML = isRefreshing
+                    ? '<svg class="icon"><use href="#icon-info"></use></svg> AI 재생성 중...'
+                    : '<svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침';
             }
 
             const formBox = document.getElementById('answerFormBox');
@@ -2491,6 +2502,15 @@
             return `<b>AI 분석 실패:</b><br><span style="color:#b91c1c;">${safe}</span><br><span style="color:#64748b;">(환경변수, 모델명, 쿼터를 확인해주세요)</span>`;
         }
 
+        function hasAdoptableAiReply(post) {
+            if (!post || post.aiSolved) return false;
+            const aiText = stripHtmlToPlainText(post.aiContent || '');
+            if (!aiText) return false;
+            if (aiText.includes('AI 답변 생성 중입니다')) return false;
+            if (aiText.includes('AI 분석 실패')) return false;
+            return aiText.length >= 40;
+        }
+
         function isAiContentLong(aiHtml) {
             return stripHtmlToPlainText(aiHtml).length > 220;
         }
@@ -2523,6 +2543,26 @@
             currentBoardType = post.type;
             switchView('list', post.type);
             openDetail(postId);
+        }
+
+        async function refreshCurrentPostAiReply() {
+            const post = appData.posts.find(p => p.id === currentPostId);
+            if (!post) return;
+            if (post.aiSolved || post.status !== 'wait' || !(post.type === 'IT' || post.type === 'BIZ')) return;
+            aiRefreshingPostId = post.id;
+            openDetail(post.id);
+            showAlert('AI 답변을 다시 생성중입니다...', 'success');
+            try {
+                await queueAsyncAiAnswerForPost(
+                    post.id,
+                    post.type,
+                    String(post.title || '').trim(),
+                    stripHtmlToPlainText(post.content || '')
+                );
+            } finally {
+                aiRefreshingPostId = null;
+                openDetail(post.id);
+            }
         }
 
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {

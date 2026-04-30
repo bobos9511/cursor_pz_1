@@ -683,6 +683,27 @@
         .dash-feed-title { font-weight: bold; color: #0f172a; line-height: 1.45; margin-bottom: 6px; }
         .dash-feed-sub { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #64748b; }
         .dash-sub-left { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ai-action-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: -10px;
+            margin-bottom: 2px;
+        }
+        .ai-action-row .btn {
+            padding: 7px 12px;
+            font-size: 12px;
+        }
+        #btnConvertAiSolved {
+            border-color: #7E22CE;
+            color: #7E22CE;
+            background: #fff;
+        }
+        #btnConvertAiSolved:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .board-help-card { margin-top: -14px; margin-bottom: 18px; border: 1px solid #dbeafe; border-radius: 10px; background: linear-gradient(180deg, #f8fbff, #f1f6ff); overflow: hidden; }
         .board-help-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #dbeafe; }
         .board-help-title { font-size: 13px; font-weight: 800; color: #1e3a8a; display: inline-flex; align-items: center; gap: 7px; }
