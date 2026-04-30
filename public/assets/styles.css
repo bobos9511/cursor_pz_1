@@ -592,7 +592,7 @@
             border: 1px solid #b8c9df;
             border-radius: 14px;
             box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14), 0 3px 8px rgba(15, 23, 42, 0.10);
-            margin-bottom: 0;
+            margin-bottom: 8px;
             padding: 10px 12px;
         }
         #view-list.list-card-mode .table tbody td {
@@ -952,6 +952,17 @@
         .toast-item { pointer-events: auto; position: relative; min-width: 300px; max-width: 400px; padding: 16px 20px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #fff; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; overflow: hidden; animation: slideInRight 0.3s ease-out forwards; }
         .toast-item.success { background-color: var(--success); }
         .toast-item.error { background-color: var(--danger); }
+        .toast-item.clickable { cursor: pointer; }
+        .toast-action-btn {
+            margin-left: auto;
+            margin-right: 8px;
+            border-color: rgba(255,255,255,0.6);
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 9px;
+            font-size: 12px;
+        }
+        .toast-action-btn:hover { background: rgba(255,255,255,0.2); }
         .toast-item .toast-close { background: transparent; border: none; color: #fff; cursor: pointer; opacity: 0.8; font-size: 16px; padding: 0; margin-left: 15px;}
         .toast-item .toast-close:hover { opacity: 1; }
         .toast-progress { position: absolute; bottom: 0; left: 0; height: 4px; background-color: rgba(255,255,255,0.4); width: 100%; transform-origin: left; animation: toastProgress linear forwards; }
@@ -1123,7 +1134,7 @@
                 border: 1px solid #b8c9df;
                 border-radius: 14px;
                 box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14), 0 3px 8px rgba(15, 23, 42, 0.10);
-                margin-bottom: 0;
+                margin-bottom: 8px;
                 padding: 10px 12px;
                 transition: transform 0.16s ease, box-shadow 0.16s ease;
             }

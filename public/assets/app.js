@@ -44,24 +44,36 @@
             if (typeof handler === 'function') handler();
         }
 
-        function showAlert(message, type = 'success') {
+        function showAlert(message, type = 'success', options = {}) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
 
             const toast = document.createElement('div');
             toast.className = `toast-item ${type}`;
+            const hasAction = typeof options.onClick === 'function';
+            if (hasAction) toast.classList.add('clickable');
             const icon = type === 'success'
                 ? '<svg class="icon icon-lg"><use href="#icon-check"></use></svg>'
                 : '<svg class="icon icon-lg"><use href="#icon-info"></use></svg>';
+            const actionText = hasAction ? (options.actionText || '바로가기') : '';
 
             toast.innerHTML = `
                 <div class="flex items-center" style="gap: 10px;">
                     ${icon}
                     <span style="line-height: 1.4;">${String(message || '').replace(/\n/g, '<br>')}</span>
                 </div>
+                ${hasAction ? `<button class="btn btn-outline toast-action-btn">${actionText}</button>` : ''}
                 <button class="toast-close" onclick="closeToast(this.parentElement)"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 <div class="toast-progress"></div>
             `;
+            if (hasAction) {
+                toast.addEventListener('click', (event) => {
+                    const closeBtn = event.target && event.target.closest('.toast-close');
+                    if (closeBtn) return;
+                    options.onClick();
+                    closeToast(toast);
+                });
+            }
             container.appendChild(toast);
             const timer = setTimeout(() => { closeToast(toast); }, 3000);
             toast.dataset.timer = String(timer);
@@ -2505,6 +2517,14 @@
             }
         }
 
+        function moveToPostDetail(postId) {
+            const post = appData.posts.find(p => p.id === postId);
+            if (!post) return;
+            currentBoardType = post.type;
+            switchView('list', post.type);
+            openDetail(postId);
+        }
+
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
             const result = await requestAiPreview({ title, content: plainContent, boardType });
@@ -2523,8 +2543,17 @@
             if (detailView && detailView.classList.contains('active') && currentPostId === postId) {
                 document.getElementById('aiPanelContent').innerHTML = renderAiContentWithToggle(appData.posts[idx].aiContent, `detail-${postId}`);
             }
-            if (result.ok) showAlert('AI 답변이 등록되었습니다.', 'success');
-            else showAlert('AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.', 'error');
+            if (result.ok) {
+                showAlert('AI 답변이 등록되었습니다.', 'success', {
+                    actionText: '해당 게시물 보기',
+                    onClick: () => moveToPostDetail(postId)
+                });
+            } else {
+                showAlert('AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.', 'error', {
+                    actionText: '해당 게시물 보기',
+                    onClick: () => moveToPostDetail(postId)
+                });
+            }
         }
 
         async function triggerSubmit() {
