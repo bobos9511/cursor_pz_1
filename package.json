@@ -1,0 +1,10 @@
+{
+  "name": "knock-helpdesk-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Demo helpdesk app with AI proxy and server-side JSON DB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

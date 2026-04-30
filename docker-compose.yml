@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: knock-helpdesk-demo
+    restart: unless-stopped
+    ports:
+      - "5500:5500"
+    environment:
+      PORT: 5500
+      DATA_DIR: /app/data
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
+    volumes:
+      - app_data:/app/data
+
+volumes:
+  app_data:
