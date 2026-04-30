@@ -2,53 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>대시보드 페이지 - IBK KNOCK</title>
-  <link rel="stylesheet" href="/assets/site.css">
+  <meta http-equiv="refresh" content="0; url=/index.html?page=dashboard">
+  <title>Redirecting...</title>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">IBK KN<span class="brand-point">O</span>CK</div>
-    <nav class="nav-links">
-      <a href="/login.html">로그인</a>
-      <a class="active" href="/dashboard.html">대시보드</a>
-      <a href="/board.html">게시판</a>
-      <a href="/ai-search.html">AI 검색</a>
-    </nav>
-  </header>
-
-  <main class="container">
-    <section class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <h1 class="title">대시보드</h1>
-          <p class="desc">게시판 접수 현황을 집계합니다.</p>
-          <p id="whoami" class="muted mt"></p>
-        </div>
-        <button id="refreshBtn" class="btn">새로고침</button>
-      </div>
-    </section>
-
-    <section class="grid-2 mt">
-      <div class="kpi"><div class="kpi-label">전체 게시물</div><div id="kpiTotal" class="kpi-val">0</div></div>
-      <div class="kpi"><div class="kpi-label">IT/오류</div><div id="kpiIt" class="kpi-val">0</div></div>
-      <div class="kpi"><div class="kpi-label">규정/상품</div><div id="kpiBiz" class="kpi-val">0</div></div>
-      <div class="kpi"><div class="kpi-label">개선제안</div><div id="kpiSys" class="kpi-val">0</div></div>
-      <div class="kpi"><div class="kpi-label">AI 답변 완료</div><div id="kpiAiDone" class="kpi-val">0</div></div>
-    </section>
-
-    <section class="card mt">
-      <h2 style="margin:0 0 8px; font-size:18px;">최근 게시물</h2>
-      <table class="table">
-        <thead>
-          <tr><th>#</th><th>유형</th><th>제목</th><th>작성자</th><th>시각</th><th>AI</th></tr>
-        </thead>
-        <tbody id="recentTbody"></tbody>
-      </table>
-    </section>
-  </main>
-
-  <script src="/assets/common.js"></script>
-  <script src="/assets/dashboard.js"></script>
+  <script>window.location.replace("/index.html?page=dashboard");</script>
 </body>
 </html>
