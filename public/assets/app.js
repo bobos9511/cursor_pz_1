@@ -114,7 +114,7 @@
         const APP_DATA_SHARED_SCOPE = 'shared';
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
-        const AI_REQUEST_TIMEOUT_MS = 20000;
+        const AI_REQUEST_TIMEOUT_MS = 60000;
         let signupUsers = [];
         let currentLoginUser = null;
         let aiSearchActive = null;
@@ -417,7 +417,14 @@
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
                 if (result && result.isTimeout) {
-                    showAlert('AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.', 'error');
+                    showAlert('AI 응답 시간이 초과되었습니다. 다시 요청해주세요.', 'error', {
+                        actionText: '다시요청',
+                        onClick: () => {
+                            const inputEl2 = document.getElementById('aiSearchInput');
+                            if (inputEl2) inputEl2.value = question;
+                            submitAiSearchQuestion();
+                        }
+                    });
                 }
             } catch (error) {
                 const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
@@ -2893,6 +2900,17 @@
             }
         }
 
+        function retryAiAnswerForPost(postId) {
+            const post = appData.posts.find(p => p.id === postId);
+            if (!post) return;
+            queueAsyncAiAnswerForPost(
+                post.id,
+                post.type,
+                String(post.title || '').trim(),
+                stripHtmlToPlainText(post.content || '')
+            );
+        }
+
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
             const result = await requestAiPreview({ title, content: plainContent, boardType });
@@ -2920,12 +2938,16 @@
                 });
             } else {
                 if (result && result.isTimeout) {
-                    showAlert(`${postRef} AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.`, 'error');
+                    showAlert(`${postRef} AI 응답 시간이 초과되었습니다.`, 'error', {
+                        actionText: '다시요청',
+                        onClick: () => retryAiAnswerForPost(postId)
+                    });
+                } else {
+                    showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, 'error', {
+                        actionText: '해당 게시물 보기',
+                        onClick: () => moveToPostDetail(postId)
+                    });
                 }
-                showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, 'error', {
-                    actionText: '해당 게시물 보기',
-                    onClick: () => moveToPostDetail(postId)
-                });
             }
         }
 
