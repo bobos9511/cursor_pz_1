@@ -210,6 +210,9 @@
             };
         }
         function getDummyIp() { return '10.124.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255); }
+        function goToAiSearchPage() {
+            window.location.href = '/ai-search.html';
+        }
         function setCookie(name, value, days = 365) {
             const d = new Date();
             d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -785,7 +788,8 @@
             appContainer.classList.remove('page-intro');
             void appContainer.offsetWidth;
             appContainer.classList.add('page-intro');
-            await initApp(); 
+            await initApp();
+            goToAiSearchPage();
         }
         function doLogout() {
             document.getElementById('loginPage').style.display = 'flex';

@@ -288,7 +288,7 @@
                 <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleSidebarPC()" title="메뉴 접기/펼치기">
                     <svg id="sidebarToggleIcon" class="icon sidebar-toggle-icon"><use href="#icon-chevron-left"></use></svg>
                 </button>
-                <div class="logo font-bold" onclick="switchView('dashboard')">IBK KN<span class="logo-point">O</span>CK</div>
+                <div class="logo font-bold" onclick="goToAiSearchPage()">IBK KN<span class="logo-point">O</span>CK</div>
                 <div class="header-title">IBK 스마트 업무지식센터</div>
                 <span class="header-role-chip" id="headerRoleChip">영업점</span>
             </div>
@@ -315,6 +315,7 @@
             </div>
         </header>
         <div id="topNavMobile" class="top-nav-mobile">
+            <button class="top-nav-item" id="topnav-ai-search" onclick="goToAiSearchPage()"><svg class="icon"><use href="#icon-magic"></use></svg>AI에게 물어보기</button>
             <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
@@ -353,6 +354,7 @@
             <!-- 사이드바 -->
             <aside class="sidebar" id="sidebar">
                 <div class="nav-title mt-10">메인메뉴</div>
+                <div class="nav-item" id="nav-ai-search" onclick="goToAiSearchPage()"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI에게 물어보기</span></div>
                 <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
                 
                 <div class="nav-title mt-10">통합 문의 게시판</div>
