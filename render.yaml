@@ -3,7 +3,7 @@ services:
     name: knock-helpdesk-demo
     runtime: node
     region: singapore
-    plan: free
+    plan: starter
     buildCommand: ""
     startCommand: "node server.js"
     envVars:
@@ -12,6 +12,10 @@ services:
       - key: PORT
         value: 10000
       - key: DATA_DIR
-        value: /tmp/app-data
+        value: /var/data
       - key: GEMINI_MODEL
         value: gemini-1.5-flash
+    disk:
+      name: app-data
+      mountPath: /var/data
+      sizeGB: 1
