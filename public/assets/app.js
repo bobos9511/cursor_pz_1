@@ -111,6 +111,7 @@
         const aiExpandState = {};
         let aiRefreshingPostId = null;
         const USER_SCOPE_COOKIE = 'knockUserScope';
+        const APP_DATA_SHARED_SCOPE = 'shared';
         let signupUsers = [];
         let currentLoginUser = null;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
@@ -179,6 +180,9 @@
             return '';
         }
         function getAppDataUserScope() {
+            return APP_DATA_SHARED_SCOPE;
+        }
+        function getLegacyUserScope() {
             if (currentLoginUser && currentLoginUser.employeeNo) return String(currentLoginUser.employeeNo);
             const cookieScope = getCookie(USER_SCOPE_COOKIE);
             return cookieScope || 'guest';
@@ -194,7 +198,27 @@
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
             const data = await fetchJson(`/api/db/app-data?scope=${scope}`);
-            return data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false } };
+            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false } };
+            const hasSharedPosts = Array.isArray(sharedAppData.posts) && sharedAppData.posts.length > 0;
+            if (hasSharedPosts) return sharedAppData;
+
+            // 과거 사용자별 scope에 저장된 데이터를 공용 scope로 1회 자동 마이그레이션
+            const legacyScope = getLegacyUserScope();
+            if (!legacyScope || legacyScope === APP_DATA_SHARED_SCOPE) return sharedAppData;
+            try {
+                const legacy = await fetchJson(`/api/db/app-data?scope=${encodeURIComponent(legacyScope)}`);
+                const legacyAppData = legacy && legacy.appData ? legacy.appData : null;
+                const hasLegacyPosts = !!(legacyAppData && Array.isArray(legacyAppData.posts) && legacyAppData.posts.length > 0);
+                if (hasLegacyPosts) {
+                    appData = legacyAppData;
+                    saveData();
+                    showAlert('기존 사용자별 게시 데이터를 공용 데이터로 자동 전환했습니다.', 'success');
+                    return legacyAppData;
+                }
+            } catch (error) {
+                console.error('legacy scope migration skipped:', error);
+            }
+            return sharedAppData;
         }
         function saveData() {
             const scope = encodeURIComponent(getAppDataUserScope());
