@@ -117,16 +117,32 @@ function sanitizeChatReplyText(text) {
   let out = String(text || "").replace(/\r/g, "").trim();
   // 숫자/단어가 줄바꿈으로 깨지는 현상 보정
   out = out.replace(/([0-9])\n([0-9])/g, "$1$2");
+  out = out.replace(/([0-9])\n(%|건|명|원|만원|억원|일|개월|년)/g, "$1$2");
   out = out.replace(/([가-힣A-Za-z0-9])\n([가-힣A-Za-z0-9])/g, "$1$2");
   // 내부 추론/시스템 파편 라인 제거
-  const blocked = /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning)/i;
-  const lines = out
+  const blocked =
+    /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt)/i;
+  const normalized = out
     .split("\n")
     .map((v) => v.trim())
     .filter(Boolean)
-    .filter((line) => !blocked.test(line));
-  // 문단형 줄바꿈만 유지, 최대 10줄 제한
-  out = lines.slice(0, 10).join("\n");
+    .filter((line) => !blocked.test(line))
+    // bullet 표기 통일
+    .map((line) => line.replace(/^[•*]\s*/, "- ").replace(/^\d+\)\s*/, "- "));
+
+  // bullet 아닌 라인은 이전 bullet에 이어 붙여 자연스럽게 정리
+  const merged = [];
+  for (const line of normalized) {
+    if (/^- /.test(line)) {
+      merged.push(line);
+      continue;
+    }
+    if (!merged.length) merged.push(`- ${line}`);
+    else merged[merged.length - 1] = `${merged[merged.length - 1]} ${line}`.replace(/\s{2,}/g, " ").trim();
+  }
+
+  // bullet만 유지하고 최대 10줄 제한
+  out = merged.map((line) => line.replace(/\s{2,}/g, " ").trim()).slice(0, 10).join("\n");
   return out.trim();
 }
 
@@ -322,7 +338,8 @@ async function handleAiChat(req, res) {
           "데모 버전이므로 핵심만 짧고 명확하게 답변하라.",
           "인사말/서론 없이 바로 결론부터 작성하라.",
           "반드시 한국어로만 답변하라.",
-          "답변은 최대 4개 불릿으로 작성하라.",
+          "답변은 반드시 '-'로 시작하는 bullet만 사용하라.",
+          "불릿은 최대 4개로 작성하라.",
           "각 불릿은 1문장 중심으로 짧게 작성하라.",
           "전체 출력은 최대 10줄을 넘기지 마라.",
           "모르면 추측하지 말고 확인이 필요하다고 명시하라.",
