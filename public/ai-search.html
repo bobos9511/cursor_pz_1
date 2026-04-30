@@ -22,16 +22,43 @@
       <section class="hero">
         <h1>AI 검색 채팅</h1>
         <p>업무 질문을 입력하면 핵심 요약 중심으로 답변합니다.</p>
+        <div class="hero-badges">
+          <span class="hero-badge">실시간 AI 분석</span>
+          <span class="hero-badge">핵심 요약</span>
+          <span class="hero-badge">업무 유형별 질의</span>
+        </div>
+      </section>
+
+      <section class="feature-grid">
+        <article class="feature-card">
+          <h3>추천 질문</h3>
+          <div class="suggestion-wrap">
+            <button class="suggestion-btn" data-suggest="담보대출 만기연장 심사 시 필수 확인 항목 3가지를 알려줘">담보대출 만기연장 체크포인트</button>
+            <button class="suggestion-btn" data-suggest="대량이체 오류 발생 시 점검 순서를 단계별로 알려줘">대량이체 오류 점검 순서</button>
+            <button class="suggestion-btn" data-suggest="신규 계정 권한 신청 반려 사유를 줄이기 위한 제출 기준을 알려줘">권한 신청 반려 줄이는 방법</button>
+          </div>
+        </article>
+        <article class="feature-card">
+          <h3>사용 팁</h3>
+          <ul class="tip-list">
+            <li>현상 + 오류문구 + 발생시점을 함께 입력하면 정확도가 높아집니다.</li>
+            <li>규정 질의는 상품명/기간/고객유형을 포함해 질문하세요.</li>
+            <li>핵심만 보려면 질문 끝에 "3줄 요약"을 추가하세요.</li>
+          </ul>
+        </article>
       </section>
 
       <section class="chat-shell">
         <div class="control-row">
-          <label for="chatBoardType">질문 유형</label>
-          <select id="chatBoardType">
-            <option value="IT">IT/오류</option>
-            <option value="BIZ">규정/상품</option>
-            <option value="SYS">개선제안</option>
-          </select>
+          <div class="control-main">
+            <label for="chatBoardType">질문 유형</label>
+            <select id="chatBoardType">
+              <option value="IT">IT/오류</option>
+              <option value="BIZ">규정/상품</option>
+              <option value="SYS">개선제안</option>
+            </select>
+          </div>
+          <span id="chatStateBadge" class="chat-state idle">대기중</span>
         </div>
 
         <div id="chatLog" class="chat-log" aria-live="polite"></div>

@@ -4,6 +4,8 @@
   const chatInput = document.getElementById("chatInput");
   const chatSendBtn = document.getElementById("chatSendBtn");
   const chatBoardType = document.getElementById("chatBoardType");
+  const chatStateBadge = document.getElementById("chatStateBadge");
+  const suggestionButtons = document.querySelectorAll(".suggestion-btn");
 
   function appendMessage(role, text) {
     const item = document.createElement("div");
@@ -32,6 +34,12 @@
   }
 
   appendMessage("ai", "안녕하세요. 핵심 위주로 답변하는 AI 검색 채팅입니다.");
+  suggestionButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      chatInput.value = btn.getAttribute("data-suggest") || "";
+      chatInput.focus();
+    });
+  });
 
   chatForm.addEventListener("submit", async function (event) {
     event.preventDefault();
@@ -44,6 +52,10 @@
 
     chatSendBtn.disabled = true;
     chatSendBtn.textContent = "답변 생성 중...";
+    if (chatStateBadge) {
+      chatStateBadge.className = "chat-state loading";
+      chatStateBadge.textContent = "답변 생성중";
+    }
     appendMessage("ai", "질문을 분석하고 있습니다...");
 
     try {
@@ -58,6 +70,10 @@
     } finally {
       chatSendBtn.disabled = false;
       chatSendBtn.textContent = "질문하기";
+      if (chatStateBadge) {
+        chatStateBadge.className = "chat-state idle";
+        chatStateBadge.textContent = "대기중";
+      }
     }
   });
 })();

@@ -55,6 +55,65 @@ body {
   margin: 0;
   color: #475569;
 }
+.hero-badges {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hero-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+.feature-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 10px;
+}
+.feature-card {
+  background: #fff;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.05);
+  padding: 12px;
+}
+.feature-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.suggestion-wrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.suggestion-btn {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1e293b;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.suggestion-btn:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.tip-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.tip-list li + li { margin-top: 5px; }
 .chat-shell {
   margin-top: 16px;
   background: #fff;
@@ -66,8 +125,14 @@ body {
 .control-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
+}
+.control-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .control-row label {
   font-size: 13px;
@@ -79,6 +144,23 @@ body {
   border-radius: 8px;
   padding: 7px 10px;
   font-size: 13px;
+}
+.chat-state {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.chat-state.idle {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.chat-state.loading {
+  color: #1e40af;
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 .chat-log {
   height: 54vh;
@@ -139,6 +221,8 @@ body {
 }
 @media (max-width: 760px) {
   .topbar { height: auto; padding: 12px; align-items: flex-start; flex-direction: column; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .control-row { align-items: flex-start; flex-direction: column; }
   .chat-log { height: 50vh; min-height: 300px; }
   .chat-form { grid-template-columns: 1fr; }
 }
