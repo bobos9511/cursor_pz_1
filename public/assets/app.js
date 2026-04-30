@@ -2457,8 +2457,15 @@
                 return data.reply.replace(/\n/g, '<br>');
             } catch (error) {
                 console.error('AI preview request failed:', error);
-                return `${AI_FALLBACK_HTML}<br><span style="color:#64748b;">(데모 모드: AI 서버 응답 실패)</span>`;
+                return `접수 내용 기반 분석 완료.<br><span style="color:#64748b;">(데모 모드: AI 서버 응답 실패)</span>`;
             }
+        }
+
+        function extractAiAnswerHtml(aiPanelHtml) {
+            const raw = String(aiPanelHtml || '');
+            return raw
+                .replace(/^\s*<b>AI 분석 결과:<\/b><br>/i, '')
+                .trim();
         }
 
         async function triggerSubmit() {
@@ -2504,7 +2511,7 @@
 
         function closeAiModal() { document.getElementById('aiSubmitModal').classList.remove('active'); }
 
-        function savePost(isAiSolved) {
+        async function savePost(isAiSolved) {
             closeAiModal();
             const editId = document.getElementById('editPostId').value;
             let title = document.getElementById('writeTitle').value;
@@ -2580,10 +2587,20 @@
                     });
                     showAlert('AI 답변 채택 완료! 자동 처리되었습니다.', 'success');
                 } else {
+                    let aiContentHtml = document.getElementById('modalAiContent').innerHTML || AI_FALLBACK_HTML;
+                    if (!isAiSolved && (currentBoardType === 'IT' || currentBoardType === 'BIZ')) {
+                        const aiReply = await requestAiPreview({
+                            title: String(title || '').trim(),
+                            content: stripHtmlToPlainText(content),
+                            boardType: currentBoardType
+                        });
+                        aiContentHtml = `<b>AI 분석 결과:</b><br>${aiReply}`;
+                    }
+                    const aiAnswerHtml = extractAiAnswerHtml(aiContentHtml);
                     appData.posts.unshift({
                         id: newId, type: currentBoardType, title: title, writer: getCurrentActorName(), 
                         datetime: dt, ip: ipStr, status: 'wait', aiSolved: false, content: content, 
-                        aiContent: document.getElementById('modalAiContent').innerHTML || AI_FALLBACK_HTML, answer: '', meta: meta, addInfoList: [], thread: [], attachments
+                        aiContent: aiContentHtml, answer: aiAnswerHtml, meta: meta, addInfoList: [], thread: [], attachments
                     });
                     showAlert('문의가 정상 접수되었습니다.', 'success');
                 }
