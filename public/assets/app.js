@@ -2519,7 +2519,12 @@
                 appData.posts[idx].aiContent = failHtml;
             }
             saveData();
-            if (currentPostId === postId) openDetail(postId);
+            const detailView = document.getElementById('view-detail');
+            if (detailView && detailView.classList.contains('active') && currentPostId === postId) {
+                document.getElementById('aiPanelContent').innerHTML = renderAiContentWithToggle(appData.posts[idx].aiContent, `detail-${postId}`);
+            }
+            if (result.ok) showAlert('AI 답변이 등록되었습니다.', 'success');
+            else showAlert('AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.', 'error');
         }
 
         async function triggerSubmit() {
