@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대시보드 페이지 - IBK KNOCK</title>
+  <style>
+    body { margin: 0; font-family: "Segoe UI","Noto Sans KR",sans-serif; background: #f4f7fb; color: #0f172a; }
+    .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .card { width: min(560px, 100%); background: #fff; border: 1px solid #dbe3ee; border-radius: 12px; padding: 24px; }
+    .logo { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+    .logo span { color: #2f8fe8; }
+    .desc { color: #475569; margin-bottom: 16px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    a { text-decoration: none; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 12px; color: #0f172a; }
+    a.primary { background: #1f5d97; color: #fff; border-color: #1f5d97; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <div class="logo">IBK KN<span>O</span>CK</div>
+      <div class="desc">대시보드 전용 진입 페이지입니다. 로그인 이후 대시보드로 바로 이동합니다.</div>
+      <div class="actions">
+        <a class="primary" href="/index.html?page=dashboard">대시보드 열기</a>
+        <a href="/board.html">게시판 진입</a>
+        <a href="/ai-search.html">AI 검색 메인</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

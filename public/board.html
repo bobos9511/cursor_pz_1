@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게시판 페이지 - IBK KNOCK</title>
+  <style>
+    body { margin: 0; font-family: "Segoe UI","Noto Sans KR",sans-serif; background: #f4f7fb; color: #0f172a; }
+    .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .card { width: min(620px, 100%); background: #fff; border: 1px solid #dbe3ee; border-radius: 12px; padding: 24px; }
+    .logo { font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+    .logo span { color: #2f8fe8; }
+    .desc { color: #475569; margin-bottom: 12px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .chip { display: inline-flex; align-items: center; border: 1px solid #dbe3ee; border-radius: 999px; padding: 5px 10px; color: #334155; font-size: 13px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    a { text-decoration: none; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 12px; color: #0f172a; }
+    a.primary { background: #1f5d97; color: #fff; border-color: #1f5d97; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <div class="logo">IBK KN<span>O</span>CK</div>
+      <div class="desc">게시판 진입 페이지입니다. 원하는 게시판 유형으로 바로 이동할 수 있습니다.</div>
+      <div class="chips">
+        <span class="chip">IT/오류</span>
+        <span class="chip">규정/상품</span>
+        <span class="chip">개선제안</span>
+      </div>
+      <div class="actions">
+        <a class="primary" href="/index.html?page=board&board=IT">IT/오류 게시판</a>
+        <a href="/index.html?page=board&board=BIZ">규정/상품 게시판</a>
+        <a href="/index.html?page=board&board=SYS">개선제안 게시판</a>
+        <a href="/ai-search.html">AI 검색 메인</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

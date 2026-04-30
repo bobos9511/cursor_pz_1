@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IBK KNOCK AI 검색 채팅</title>
+  <link rel="stylesheet" href="/assets/ai-search.css">
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">IBK KN<span class="brand-point">O</span>CK</div>
+      <div class="top-actions">
+        <a class="link-btn" href="/login.html">로그인</a>
+        <a class="link-btn" href="/dashboard.html">대시보드</a>
+        <a class="link-btn" href="/board.html">게시판</a>
+        <a class="link-btn primary" href="/index.html">업무 전체화면</a>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <h1>AI 검색 채팅</h1>
+        <p>업무 질문을 입력하면 핵심 요약 중심으로 답변합니다.</p>
+      </section>
+
+      <section class="chat-shell">
+        <div class="control-row">
+          <label for="chatBoardType">질문 유형</label>
+          <select id="chatBoardType">
+            <option value="IT">IT/오류</option>
+            <option value="BIZ">규정/상품</option>
+            <option value="SYS">개선제안</option>
+          </select>
+        </div>
+
+        <div id="chatLog" class="chat-log" aria-live="polite"></div>
+
+        <form id="chatForm" class="chat-form">
+          <textarea id="chatInput" placeholder="예) 신혼부부 담보대출 기간연장 가능 조건을 핵심만 알려줘" required></textarea>
+          <button id="chatSendBtn" type="submit">질문하기</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/ai-search.js"></script>
+</body>
+</html>

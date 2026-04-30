@@ -115,6 +115,17 @@
         let signupUsers = [];
         let currentLoginUser = null;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
+        const initialRoute = (() => {
+            try {
+                const url = new URL(window.location.href);
+                const page = String(url.searchParams.get('page') || '').toLowerCase();
+                const board = String(url.searchParams.get('board') || '').toUpperCase();
+                return { page, board };
+            } catch (error) {
+                return { page: '', board: '' };
+            }
+        })();
+        let initialRouteApplied = false;
 
         const boardTitles = {
             'IT': { icon: '#icon-info', title: 'IT/오류 문의 게시판', label: 'IT/오류' },
@@ -129,6 +140,20 @@
             'hq': { write: ['IT', 'SYS', 'KNOW'], answer: ['BIZ', 'KNOW'], name: '이본부 차장', dept: '여신기획부', showKnow: true },
             'it': { write: ['BIZ', 'SYS', 'KNOW'], answer: ['IT', 'SYS', 'KNOW'], name: '김전산 책임', dept: 'IT금융개발부', showKnow: true }
         };
+
+        function resolveInitialViewForRole() {
+            if (initialRouteApplied) return null;
+            const page = initialRoute.page;
+            if (!page || page === 'login') return null;
+            if (page === 'board') {
+                const requested = initialRoute.board || currentBoardType || 'IT';
+                const allowedBoards = roleMatrix[currentRole].write || [];
+                const board = allowedBoards.includes(requested) ? requested : (allowedBoards[0] || 'IT');
+                return { viewId: 'list', boardType: board };
+            }
+            if (page === 'dashboard') return { viewId: 'dashboard', boardType: null };
+            return null;
+        }
 
         function getCurrentDateTime() {
             const now = new Date();
@@ -1229,6 +1254,12 @@
             });
 
             if (currentRole === 'branch' && currentBoardType === 'KNOW') { switchView('dashboard'); return; }
+            const preferred = resolveInitialViewForRole();
+            if (preferred) {
+                initialRouteApplied = true;
+                switchView(preferred.viewId, preferred.boardType);
+                return;
+            }
             switchView('dashboard');
         }
 
