@@ -437,35 +437,44 @@
                          [뷰 1.5] AI 검색
                          ========================================== -->
                     <div id="view-ai-search" class="view-section">
-                        <h2 class="page-title" style="margin-bottom: 18px;">AI에게 물어보기</h2>
-                        <div class="panel" style="margin-bottom: 14px;">
-                            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                                <div><svg class="icon"><use href="#icon-magic"></use></svg> AI 검색 채팅</div>
-                                <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
-                            </div>
-                            <div class="panel-body">
-                                <div class="flex items-center gap-10" style="margin-bottom: 10px;">
-                                    <label for="aiSearchBoardType" class="font-bold" style="font-size:13px;">질문 유형</label>
-                                    <select id="aiSearchBoardType" class="input" style="width: 160px;">
-                                        <option value="IT">IT/오류</option>
-                                        <option value="BIZ">규정/상품</option>
-                                        <option value="SYS">개선제안</option>
-                                    </select>
-                                    <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="startNewAiSearchChat()">새 대화</button>
+                        <h2 class="page-title" style="margin-bottom: 14px;">AI에게 물어보기</h2>
+                        <div class="ai-search-shell">
+                            <aside class="ai-search-sidebar">
+                                <div class="ai-search-side-head">
+                                    <button type="button" class="btn btn-primary" style="width:100%; justify-content:center;" onclick="startNewAiSearchChat()">
+                                        <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
+                                    </button>
                                 </div>
-                                <div id="aiSearchLog" class="ai-search-log"></div>
-                                <div class="flex gap-10" style="margin-top: 10px;">
-                                    <textarea id="aiSearchInput" class="input" style="height: 90px; resize: vertical;" placeholder="예) 대량이체 오류 발생 시 점검 순서를 알려줘"></textarea>
-                                    <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel">
-                            <div class="panel-header"><svg class="icon"><use href="#icon-history"></use></svg> 지난 대화 목록</div>
-                            <div class="panel-body">
+                                <div class="ai-search-side-title">지난 대화</div>
                                 <div id="aiSearchHistoryList" class="ai-search-history-list"></div>
+                            </aside>
+
+                            <section class="ai-search-main panel">
+                                <div class="panel-header ai-search-main-head">
+                                    <div class="flex items-center gap-10">
+                                        <svg class="icon"><use href="#icon-magic"></use></svg> AI 검색 채팅
+                                        <select id="aiSearchBoardType" class="input" style="width: 140px;">
+                                            <option value="IT">IT/오류</option>
+                                            <option value="BIZ">규정/상품</option>
+                                            <option value="SYS">개선제안</option>
+                                        </select>
+                                    </div>
+                                    <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
+                                </div>
+                                <div class="panel-body ai-search-main-body">
+                                    <div class="ai-search-suggest-row">
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('대량이체 오류 발생 시 점검 순서를 단계별로 알려줘')">대량이체 오류 점검</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('담보대출 만기연장 심사 시 필수 확인 항목 3가지를 알려줘')">담보대출 만기연장</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('권한 신청 반려 사유를 줄이는 제출 기준을 알려줘')">권한 신청 반려 줄이기</button>
+                                    </div>
+                                    <div id="aiSearchLog" class="ai-search-log"></div>
+                                    <div class="ai-search-input-row">
+                                        <textarea id="aiSearchInput" class="input ai-search-input" placeholder="질문을 입력하세요. (Shift+Enter로 줄바꿈)"></textarea>
+                                        <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
 
                     <!-- ==========================================

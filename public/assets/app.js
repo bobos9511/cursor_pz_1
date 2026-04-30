@@ -382,6 +382,13 @@
             saveAiSearchActiveState();
             setAiSearchStateBadge(false);
         }
+        function setAiSearchPrompt(promptText) {
+            const inputEl = document.getElementById('aiSearchInput');
+            if (!inputEl) return;
+            inputEl.value = String(promptText || '');
+            saveAiSearchActiveState();
+            inputEl.focus();
+        }
         async function submitAiSearchQuestion() {
             const inputEl = document.getElementById('aiSearchInput');
             const boardTypeEl = document.getElementById('aiSearchBoardType');
