@@ -2776,4 +2776,17 @@
                 syncBoardListCardMode();
             }
         });
-        loadSignupUsers();
+
+        async function bootstrapSession() {
+            await loadSignupUsers();
+            const scopedEmpNo = getCookie(USER_SCOPE_COOKIE);
+            if (!scopedEmpNo) return;
+            const matched = signupUsers.find(u => String(u.employeeNo) === String(scopedEmpNo));
+            if (!matched) return;
+            currentLoginUser = matched;
+            const loginEmpNo = document.getElementById('loginEmpNo');
+            if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
+            await doLogin({ skipAuthValidation: true });
+        }
+
+        bootstrapSession();
