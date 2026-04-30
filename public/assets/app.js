@@ -115,7 +115,7 @@
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         const AI_REQUEST_TIMEOUT_MS = 60000;
-        const AI_CHAT_REQUEST_TIMEOUT_MS = 120000;
+        const AI_CHAT_REQUEST_TIMEOUT_MS = 60000;
         let signupUsers = [];
         let currentLoginUser = null;
         let aiSearchActive = null;
@@ -424,7 +424,11 @@
                     title: `AI 검색: ${question.slice(0, 45)}`,
                     content: question,
                     boardType: inferredBoardType,
-                    timeoutMs: AI_CHAT_REQUEST_TIMEOUT_MS
+                    timeoutMs: AI_CHAT_REQUEST_TIMEOUT_MS,
+                    abortOnTimeout: false,
+                    onTimeout: () => {
+                        showAlert('AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.', 'error');
+                    }
                 });
                 const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -433,16 +437,8 @@
                 saveAiSearchActiveState();
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
-                if (result && result.isTimeout) {
-                    showAlert('AI 응답 시간이 초과되었습니다. 다시 요청해주세요.', 'error', {
-                        actionText: '다시요청',
-                        onClick: () => {
-                            const inputEl2 = document.getElementById('aiSearchInput');
-                            if (inputEl2) inputEl2.value = question;
-                            submitAiSearchQuestion();
-                        }
-                    });
-                }
+                if (result && result.isTimeout) showAlert('AI 응답 시간이 초과되었습니다. 다시 요청해주세요.', 'error');
+                else if (result && result.wasDelayed && result.ok) showAlert('지연된 AI 응답이 도착했습니다.', 'success');
             } catch (error) {
                 const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -2805,9 +2801,14 @@
                 .replace(/\n/g, '<br>');
         }
 
-        async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS }) {
+        async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null }) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            let timeoutNotified = false;
+            const timeoutId = setTimeout(() => {
+                timeoutNotified = true;
+                if (typeof onTimeout === 'function') onTimeout();
+                if (abortOnTimeout) controller.abort();
+            }, timeoutMs);
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
@@ -2819,7 +2820,7 @@
                 if (!response.ok || !data || !data.reply) {
                     throw new Error((data && data.error) || 'AI 응답을 가져오지 못했습니다.');
                 }
-                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '', isTimeout: false };
+                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '', isTimeout: false, wasDelayed: timeoutNotified };
             } catch (error) {
                 console.error('AI preview request failed:', error);
                 if (error && error.name === 'AbortError') {
@@ -2827,11 +2828,12 @@
                         ok: false,
                         replyHtml: '',
                         errorMessage: `AI 응답 시간이 ${Math.round(timeoutMs / 1000)}초를 초과했습니다.`,
-                        isTimeout: true
+                        isTimeout: true,
+                        wasDelayed: true
                     };
                 }
                 const reason = (error && error.message) ? error.message : 'AI 서버 통신 중 오류';
-                return { ok: false, replyHtml: '', errorMessage: reason, isTimeout: false };
+                return { ok: false, replyHtml: '', errorMessage: reason, isTimeout: false, wasDelayed: timeoutNotified };
             } finally {
                 clearTimeout(timeoutId);
             }
