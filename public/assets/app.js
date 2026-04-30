@@ -109,7 +109,7 @@
         let boardHelpJustSeenUpdated = false;
         let writeAttachmentItems = [];
         const aiExpandState = {};
-        let aiRefreshingPostId = null;
+        const aiRefreshingPostIds = new Set();
         const USER_SCOPE_COOKIE = 'knockUserScope';
         const APP_DATA_SHARED_SCOPE = 'shared';
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
@@ -2537,11 +2537,11 @@
                 const aiReady = hasAdoptableAiReply(post);
                 aiConvertBtn.disabled = !aiReady;
                 aiConvertBtn.title = aiReady ? '' : 'AI 답변이 정상 생성된 후 채택할 수 있습니다.';
-                const isRefreshing = aiRefreshingPostId === post.id;
+                const isRefreshing = aiRefreshingPostIds.has(post.id);
                 aiRefreshBtn.disabled = isRefreshing;
                 aiRefreshBtn.innerHTML = isRefreshing
-                    ? '<svg class="icon"><use href="#icon-info"></use></svg> AI 재생성 중...'
-                    : '<svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침';
+                    ? '<svg class="icon"><use href="#icon-info"></use></svg> 새로고침 중...'
+                    : '<svg class="icon"><use href="#icon-search"></use></svg> 새로고침';
             }
 
             const formBox = document.getElementById('answerFormBox');
@@ -2990,9 +2990,10 @@
             const post = appData.posts.find(p => p.id === currentPostId);
             if (!post) return;
             if (post.aiSolved || post.status !== 'wait' || !(post.type === 'IT' || post.type === 'BIZ')) return;
-            aiRefreshingPostId = post.id;
+            if (aiRefreshingPostIds.has(post.id)) return;
+            aiRefreshingPostIds.add(post.id);
             openDetail(post.id);
-            showAlert(`${formatPostAlertRef(post)} AI 답변을 다시 생성중입니다...`, 'success');
+            showAlert(`${formatPostAlertRef(post)} AI 답변 새로고침을 시작합니다...`, 'success');
             try {
                 await queueAsyncAiAnswerForPost(
                     post.id,
@@ -3001,7 +3002,7 @@
                     stripHtmlToPlainText(post.content || '')
                 );
             } finally {
-                aiRefreshingPostId = null;
+                aiRefreshingPostIds.delete(post.id);
                 openDetail(post.id);
             }
         }
@@ -3019,7 +3020,7 @@
 
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
-            const MAX_AUTO_CONTINUE_STEPS = 6;
+            const MAX_AUTO_CONTINUE_STEPS = 2;
             let result = await requestAiPreview({
                 title,
                 content: plainContent,

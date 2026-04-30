@@ -30,7 +30,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview"
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
 const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 800);
-const GEMINI_POST_FAST_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_POST_FAST_MAX_OUTPUT_TOKENS || 320);
+const GEMINI_POST_FAST_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_POST_FAST_MAX_OUTPUT_TOKENS || 220);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
 const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 0);
@@ -156,6 +156,29 @@ function compressAiReply(text) {
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function sanitizePostReplyText(text) {
+  let out = String(text || "").replace(/\r/g, "").trim();
+  if (!out) return out;
+
+  const blockedLine =
+    /^(\*+\s*)?(refining the flow|point\s*\d+|policy\/regulations|analysis|reasoning|thought process|system prompt)\b/i;
+  out = out
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !blockedLine.test(line))
+    .map((line) => line.replace(/^\*+\s*/, ""))
+    .join("\n");
+
+  out = out
+    .replace(/\*{2,}/g, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return out;
 }
 
 function mergeContinuationText(base, next) {
@@ -513,7 +536,7 @@ async function handleAiChat(req, res) {
     reply =
       boardType === "CHAT"
         ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
-        : compressAiReply(sanitizeAiReplyText(reply));
+        : compressAiReply(sanitizePostReplyText(sanitizeAiReplyText(reply)));
     sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
