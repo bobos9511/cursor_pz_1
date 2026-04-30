@@ -96,6 +96,7 @@
         let boardHelpSavedRange = null;
         let boardHelpJustSeenUpdated = false;
         let writeAttachmentItems = [];
+        const aiExpandState = {};
         const USER_SCOPE_COOKIE = 'knockUserScope';
         let signupUsers = [];
         let currentLoginUser = null;
@@ -2099,7 +2100,7 @@
             if(post.type === 'SYS' || post.type === 'KNOW') { aiWrap.classList.add('hidden'); } 
             else { 
                 aiWrap.classList.remove('hidden'); 
-                document.getElementById('aiPanelContent').innerHTML = post.aiContent;
+                document.getElementById('aiPanelContent').innerHTML = renderAiContentWithToggle(post.aiContent, `detail-${post.id}`);
             }
             
             const thread = ensurePostThread(post);
@@ -2478,6 +2479,32 @@
             return `<b>AI 분석 실패:</b><br><span style="color:#b91c1c;">${safe}</span><br><span style="color:#64748b;">(환경변수, 모델명, 쿼터를 확인해주세요)</span>`;
         }
 
+        function isAiContentLong(aiHtml) {
+            return stripHtmlToPlainText(aiHtml).length > 220;
+        }
+
+        function renderAiContentWithToggle(aiHtml, stateKey) {
+            const html = String(aiHtml || '');
+            const canToggle = isAiContentLong(html);
+            const expanded = !!aiExpandState[stateKey];
+            const textClass = canToggle && !expanded ? 'ai-content-text collapsed' : 'ai-content-text';
+            const toggleBtn = canToggle
+                ? `<button class="ai-content-toggle-btn" onclick="toggleAiContentExpand('${stateKey}')">${expanded ? '짧게보기' : '전체보기'}</button>`
+                : '';
+            return `<div class="${textClass}">${html}</div>${toggleBtn}`;
+        }
+
+        function toggleAiContentExpand(stateKey) {
+            aiExpandState[stateKey] = !aiExpandState[stateKey];
+            if (stateKey.startsWith('detail-') && currentPostId != null) {
+                openDetail(currentPostId);
+                return;
+            }
+            if (stateKey.startsWith('similar-') && currentPostId != null) {
+                openSimilarPostModal(currentPostId);
+            }
+        }
+
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
             const result = await requestAiPreview({ title, content: plainContent, boardType });
@@ -2749,7 +2776,7 @@
             
             const aiWrap = document.getElementById('simAiWrap');
             if(post.type === 'SYS') aiWrap.style.display = 'none';
-            else { aiWrap.style.display = 'block'; document.getElementById('simAiContent').innerHTML = post.aiContent; }
+            else { aiWrap.style.display = 'block'; document.getElementById('simAiContent').innerHTML = renderAiContentWithToggle(post.aiContent, `similar-${post.id}`); }
 
             const adminWrap = document.getElementById('simAdminWrap');
             const thread = ensurePostThread(post);

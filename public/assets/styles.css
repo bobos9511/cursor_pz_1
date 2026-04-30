@@ -903,6 +903,36 @@
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; font-size: 14px; color: #444; line-height: 1.5; overflow-y: auto; max-height: 60vh; }
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .ai-content-text {
+            line-height: 1.7;
+            word-break: break-word;
+        }
+        .ai-content-text.collapsed {
+            max-height: 148px;
+            overflow: hidden;
+            position: relative;
+        }
+        .ai-content-text.collapsed::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 42px;
+            background: linear-gradient(180deg, rgba(240,249,255,0), rgba(240,249,255,1));
+            pointer-events: none;
+        }
+        .ai-content-toggle-btn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: 1px solid #93c5fd;
+            border-radius: 999px;
+            background: #fff;
+            color: #1d4ed8;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .ai-content-toggle-btn:hover { background: #eff6ff; }
 
         #integratedSearchModal { z-index: 110; }
         #aiSubmitModal { z-index: 120; }
