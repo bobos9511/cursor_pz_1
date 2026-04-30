@@ -288,7 +288,7 @@
                 <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleSidebarPC()" title="메뉴 접기/펼치기">
                     <svg id="sidebarToggleIcon" class="icon sidebar-toggle-icon"><use href="#icon-chevron-left"></use></svg>
                 </button>
-                <div class="logo font-bold" onclick="goToAiSearchPage()">IBK KN<span class="logo-point">O</span>CK</div>
+                <div class="logo font-bold" onclick="switchView('ai-search')">IBK KN<span class="logo-point">O</span>CK</div>
                 <div class="header-title">IBK 스마트 업무지식센터</div>
                 <span class="header-role-chip" id="headerRoleChip">영업점</span>
             </div>
@@ -315,7 +315,7 @@
             </div>
         </header>
         <div id="topNavMobile" class="top-nav-mobile">
-            <button class="top-nav-item" id="topnav-ai-search" onclick="goToAiSearchPage()"><svg class="icon"><use href="#icon-magic"></use></svg>AI에게 물어보기</button>
+            <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI에게 물어보기</button>
             <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
@@ -354,7 +354,7 @@
             <!-- 사이드바 -->
             <aside class="sidebar" id="sidebar">
                 <div class="nav-title mt-10">메인메뉴</div>
-                <div class="nav-item" id="nav-ai-search" onclick="goToAiSearchPage()"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI에게 물어보기</span></div>
+                <div class="nav-item" id="nav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI에게 물어보기</span></div>
                 <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
                 
                 <div class="nav-title mt-10">통합 문의 게시판</div>
@@ -429,6 +429,41 @@
                                     <div class="panel-header"><div>시스템 점유 비중</div></div>
                                     <div class="p-20 flex-1 relative w-full h-full"><div id="mainPieChart"></div></div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 1.5] AI 검색
+                         ========================================== -->
+                    <div id="view-ai-search" class="view-section">
+                        <h2 class="page-title" style="margin-bottom: 18px;">AI에게 물어보기</h2>
+                        <div class="panel" style="margin-bottom: 14px;">
+                            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                                <div><svg class="icon"><use href="#icon-magic"></use></svg> AI 검색 채팅</div>
+                                <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
+                            </div>
+                            <div class="panel-body">
+                                <div class="flex items-center gap-10" style="margin-bottom: 10px;">
+                                    <label for="aiSearchBoardType" class="font-bold" style="font-size:13px;">질문 유형</label>
+                                    <select id="aiSearchBoardType" class="input" style="width: 160px;">
+                                        <option value="IT">IT/오류</option>
+                                        <option value="BIZ">규정/상품</option>
+                                        <option value="SYS">개선제안</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="startNewAiSearchChat()">새 대화</button>
+                                </div>
+                                <div id="aiSearchLog" class="ai-search-log"></div>
+                                <div class="flex gap-10" style="margin-top: 10px;">
+                                    <textarea id="aiSearchInput" class="input" style="height: 90px; resize: vertical;" placeholder="예) 대량이체 오류 발생 시 점검 순서를 알려줘"></textarea>
+                                    <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header"><svg class="icon"><use href="#icon-history"></use></svg> 지난 대화 목록</div>
+                            <div class="panel-body">
+                                <div id="aiSearchHistoryList" class="ai-search-history-list"></div>
                             </div>
                         </div>
                     </div>

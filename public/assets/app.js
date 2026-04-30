@@ -112,8 +112,13 @@
         let aiRefreshingPostId = null;
         const USER_SCOPE_COOKIE = 'knockUserScope';
         const APP_DATA_SHARED_SCOPE = 'shared';
+        const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
+        const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         let signupUsers = [];
         let currentLoginUser = null;
+        let aiSearchActive = null;
+        let aiSearchHistory = [];
+        let aiSearchInitialized = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -211,7 +216,9 @@
         }
         function getDummyIp() { return '10.124.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255); }
         function goToAiSearchPage() {
-            window.location.href = '/ai-search.html';
+            const aiView = document.getElementById('view-ai-search');
+            if (aiView) switchView('ai-search');
+            else window.location.href = '/ai-search.html';
         }
         function setCookie(name, value, days = 365) {
             const d = new Date();
@@ -226,6 +233,183 @@
                 if (c.startsWith(key)) return decodeURIComponent(c.substring(key.length));
             }
             return '';
+        }
+        function getLoginNonce() {
+            return localStorage.getItem('knockLoginNonce') || 'no-login';
+        }
+        function getAiSearchStorageKeyBase() {
+            const scope = getCookie(USER_SCOPE_COOKIE) || 'guest';
+            return { activeKey: `${AI_SEARCH_ACTIVE_KEY_PREFIX}${scope}:${getLoginNonce()}`, historyKey: `${AI_SEARCH_HISTORY_KEY_PREFIX}${scope}` };
+        }
+        function loadJsonFromStorage(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (error) {
+                return fallback;
+            }
+        }
+        function saveJsonToStorage(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+        function nowDateTimeLabel() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${y}.${m}.${day} ${hh}:${mm}`;
+        }
+        function makeDefaultAiSearchState() {
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            return {
+                id: `chat_${Date.now()}`,
+                title: '새 대화',
+                boardType: boardTypeEl ? (boardTypeEl.value || 'IT') : 'IT',
+                draft: '',
+                updatedAt: nowDateTimeLabel(),
+                messages: [{ role: 'ai', text: '안녕하세요. 핵심 위주로 답변하는 AI 검색 채팅입니다.' }]
+            };
+        }
+        function saveAiSearchActiveState() {
+            if (!aiSearchActive) return;
+            const inputEl = document.getElementById('aiSearchInput');
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            aiSearchActive.draft = inputEl ? (inputEl.value || '') : '';
+            aiSearchActive.boardType = boardTypeEl ? (boardTypeEl.value || 'IT') : 'IT';
+            aiSearchActive.updatedAt = nowDateTimeLabel();
+            const keys = getAiSearchStorageKeyBase();
+            saveJsonToStorage(keys.activeKey, aiSearchActive);
+        }
+        function renderAiSearchMessages() {
+            const logEl = document.getElementById('aiSearchLog');
+            if (!logEl) return;
+            logEl.innerHTML = '';
+            const messages = aiSearchActive && Array.isArray(aiSearchActive.messages) ? aiSearchActive.messages : [];
+            messages.forEach((msg) => {
+                const role = msg && msg.role === 'user' ? 'user' : 'ai';
+                const text = String(msg && msg.text ? msg.text : '');
+                const item = document.createElement('div');
+                item.className = `ai-search-msg ${role}`;
+                item.innerHTML = role === 'user' ? escapeHtml(text).replace(/\n/g, '<br>') : text;
+                logEl.appendChild(item);
+            });
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        function renderAiSearchHistory() {
+            const listEl = document.getElementById('aiSearchHistoryList');
+            if (!listEl) return;
+            if (!aiSearchHistory.length) {
+                listEl.innerHTML = '<div class="ai-search-history-empty">저장된 지난 대화가 없습니다.</div>';
+                return;
+            }
+            listEl.innerHTML = aiSearchHistory.map((h) => {
+                const title = escapeHtml(String(h.title || '지난 대화'));
+                const meta = `${escapeHtml(String(h.updatedAt || '-'))} · ${escapeHtml(String(h.boardType || 'IT'))}`;
+                return `<button type="button" class="ai-search-history-item" onclick="loadAiSearchConversation('${escapeHtml(String(h.id || ''))}')"><div class="ai-search-history-title">${title}</div><div class="ai-search-history-meta">${meta}</div></button>`;
+            }).join('');
+        }
+        function upsertAiSearchHistoryFromActive() {
+            if (!aiSearchActive || !Array.isArray(aiSearchActive.messages) || aiSearchActive.messages.length < 2) return;
+            const copy = {
+                id: aiSearchActive.id,
+                title: aiSearchActive.title || '지난 대화',
+                boardType: aiSearchActive.boardType || 'IT',
+                updatedAt: aiSearchActive.updatedAt || nowDateTimeLabel(),
+                messages: aiSearchActive.messages.slice(0, 120)
+            };
+            const idx = aiSearchHistory.findIndex((h) => h.id === copy.id);
+            if (idx >= 0) aiSearchHistory[idx] = copy;
+            else aiSearchHistory.unshift(copy);
+            aiSearchHistory = aiSearchHistory.slice(0, 30);
+            const keys = getAiSearchStorageKeyBase();
+            saveJsonToStorage(keys.historyKey, aiSearchHistory);
+            renderAiSearchHistory();
+        }
+        function setAiSearchStateBadge(isLoading) {
+            const badgeEl = document.getElementById('aiSearchStateBadge');
+            if (!badgeEl) return;
+            badgeEl.className = isLoading ? 'badge bg-ai' : 'badge bg-ready';
+            badgeEl.innerText = isLoading ? '답변 생성중' : '대기중';
+        }
+        function initializeAiSearchView() {
+            if (aiSearchInitialized) return;
+            const logEl = document.getElementById('aiSearchLog');
+            const inputEl = document.getElementById('aiSearchInput');
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            const keys = getAiSearchStorageKeyBase();
+            aiSearchHistory = loadJsonFromStorage(keys.historyKey, []);
+            aiSearchActive = loadJsonFromStorage(keys.activeKey, null) || makeDefaultAiSearchState();
+            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType || 'IT';
+            if (inputEl) inputEl.value = aiSearchActive.draft || '';
+            renderAiSearchMessages();
+            renderAiSearchHistory();
+            if (inputEl) inputEl.addEventListener('input', saveAiSearchActiveState);
+            if (boardTypeEl) boardTypeEl.addEventListener('change', saveAiSearchActiveState);
+            if (logEl) logEl.addEventListener('click', () => setAiSearchStateBadge(false));
+            aiSearchInitialized = true;
+        }
+        function startNewAiSearchChat() {
+            upsertAiSearchHistoryFromActive();
+            aiSearchActive = makeDefaultAiSearchState();
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            const inputEl = document.getElementById('aiSearchInput');
+            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType || 'IT';
+            if (inputEl) inputEl.value = '';
+            renderAiSearchMessages();
+            saveAiSearchActiveState();
+            setAiSearchStateBadge(false);
+            if (inputEl) inputEl.focus();
+        }
+        function loadAiSearchConversation(conversationId) {
+            const found = aiSearchHistory.find((h) => String(h.id) === String(conversationId));
+            if (!found) return;
+            aiSearchActive = {
+                id: `chat_${Date.now()}`,
+                title: found.title || '불러온 대화',
+                boardType: found.boardType || 'IT',
+                draft: '',
+                updatedAt: nowDateTimeLabel(),
+                messages: Array.isArray(found.messages) ? found.messages : []
+            };
+            if (!aiSearchActive.messages.length) aiSearchActive.messages = [{ role: 'ai', text: '대화를 불러왔습니다.' }];
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            const inputEl = document.getElementById('aiSearchInput');
+            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType;
+            if (inputEl) inputEl.value = '';
+            renderAiSearchMessages();
+            saveAiSearchActiveState();
+            setAiSearchStateBadge(false);
+        }
+        async function submitAiSearchQuestion() {
+            const inputEl = document.getElementById('aiSearchInput');
+            const boardTypeEl = document.getElementById('aiSearchBoardType');
+            const sendBtn = document.getElementById('aiSearchSendBtn');
+            if (!inputEl || !boardTypeEl || !sendBtn) return;
+            const question = String(inputEl.value || '').trim();
+            if (!question) return;
+            if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
+            aiSearchActive.messages.push({ role: 'user', text: question });
+            if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
+            inputEl.value = '';
+            saveAiSearchActiveState();
+            renderAiSearchMessages();
+            setAiSearchStateBadge(true);
+            sendBtn.disabled = true;
+            sendBtn.innerText = '생성중...';
+            try {
+                const result = await requestAiPreview({ title: `AI 검색: ${question.slice(0, 45)}`, content: question, boardType: boardTypeEl.value || 'IT' });
+                const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || 'AI 요청 실패')}</span>`;
+                aiSearchActive.messages.push({ role: 'ai', text: replyHtml });
+                saveAiSearchActiveState();
+                upsertAiSearchHistoryFromActive();
+                renderAiSearchMessages();
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = '질문하기';
+                setAiSearchStateBadge(false);
+            }
         }
         function getAppDataUserScope() {
             return APP_DATA_SHARED_SCOPE;
@@ -408,6 +592,7 @@
             applySidebarTooltipState();
             updateSidebarToggleButton();
             setupEditorPasteAsPlainText();
+            initializeAiSearchView();
             
             changeRole(); 
         }
@@ -782,6 +967,9 @@
             currentRole = currentLoginUser.role || 'branch';
             if (currentLoginUser.employeeNo) setCookie(USER_SCOPE_COOKIE, currentLoginUser.employeeNo);
             localStorage.setItem('knockLoginNonce', String(Date.now()));
+            aiSearchInitialized = false;
+            aiSearchActive = null;
+            aiSearchHistory = [];
             if (!currentSessionIp) currentSessionIp = getDummyIp();
             document.getElementById('loginPage').style.display = 'none'; 
             const appContainer = document.getElementById('appContainer');
@@ -795,6 +983,9 @@
         function doLogout() {
             clearCookie(USER_SCOPE_COOKIE);
             localStorage.setItem('knockLoginNonce', String(Date.now()));
+            aiSearchInitialized = false;
+            aiSearchActive = null;
+            aiSearchHistory = [];
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
             closeHeaderProfileOverlay();
@@ -1652,6 +1843,10 @@
                 if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
                 const topNavId = `topnav-${viewId}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
+                if (viewId === 'ai-search') {
+                    initializeAiSearchView();
+                    setAiSearchStateBadge(false);
+                }
             }
 
             if (viewId === 'dashboard') {

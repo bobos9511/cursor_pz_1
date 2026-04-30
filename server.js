@@ -461,7 +461,7 @@ async function handleDbApi(req, res, url) {
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   let pathname = decodeURIComponent(url.pathname);
-  if (pathname === "/") pathname = "/ai-search.html";
+  if (pathname === "/") pathname = "/index.html";
   const filePath = path.join(PUBLIC_DIR, pathname.replace(/^\/+/, ""));
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.writeHead(403);
