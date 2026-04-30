@@ -781,6 +781,7 @@
 
             currentRole = currentLoginUser.role || 'branch';
             if (currentLoginUser.employeeNo) setCookie(USER_SCOPE_COOKIE, currentLoginUser.employeeNo);
+            localStorage.setItem('knockLoginNonce', String(Date.now()));
             if (!currentSessionIp) currentSessionIp = getDummyIp();
             document.getElementById('loginPage').style.display = 'none'; 
             const appContainer = document.getElementById('appContainer');
@@ -792,6 +793,8 @@
             goToAiSearchPage();
         }
         function doLogout() {
+            clearCookie(USER_SCOPE_COOKIE);
+            localStorage.setItem('knockLoginNonce', String(Date.now()));
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
             closeHeaderProfileOverlay();
