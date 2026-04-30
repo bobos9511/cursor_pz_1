@@ -399,6 +399,7 @@
             if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
             aiSearchActive.messages.push({ role: 'user', text: question });
             if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
+            aiSearchActive.messages.push({ role: 'ai', text: '<span style="color:#64748b;">AI 답변 생성 중입니다...</span>' });
             inputEl.value = '';
             saveAiSearchActiveState();
             renderAiSearchMessages();
@@ -408,7 +409,17 @@
             try {
                 const result = await requestAiPreview({ title: `AI 검색: ${question.slice(0, 45)}`, content: question, boardType: boardTypeEl.value || 'IT' });
                 const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || 'AI 요청 실패')}</span>`;
-                aiSearchActive.messages.push({ role: 'ai', text: replyHtml });
+                const lastIdx = aiSearchActive.messages.length - 1;
+                if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === 'ai') aiSearchActive.messages[lastIdx].text = replyHtml;
+                else aiSearchActive.messages.push({ role: 'ai', text: replyHtml });
+                saveAiSearchActiveState();
+                upsertAiSearchHistoryFromActive();
+                renderAiSearchMessages();
+            } catch (error) {
+                const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
+                const lastIdx = aiSearchActive.messages.length - 1;
+                if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === 'ai') aiSearchActive.messages[lastIdx].text = failHtml;
+                else aiSearchActive.messages.push({ role: 'ai', text: failHtml });
                 saveAiSearchActiveState();
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();

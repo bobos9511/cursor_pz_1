@@ -30,6 +30,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 480);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 30);
+const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 15000);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -347,7 +348,9 @@ async function handleAiChat(req, res) {
 
     // 토큰 한도로 잘리면 완료될 때까지 이어쓰기(안전 상한 포함)
     let continuationCount = 0;
+    const continuationStartAt = Date.now();
     while (finishReason === "MAX_TOKENS" && continuationCount < GEMINI_MAX_CONTINUATIONS) {
+      if (Date.now() - continuationStartAt > GEMINI_MAX_CONTINUATION_RUNTIME_MS) break;
       continuationCount += 1;
       const continuePrompt = [
         "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
@@ -367,6 +370,9 @@ async function handleAiChat(req, res) {
       if (merged === reply) break;
       reply = merged;
       finishReason = continueFinishReason;
+    }
+    if (finishReason === "MAX_TOKENS") {
+      reply = `${reply}\n\n(응답이 길어 핵심만 우선 제공되었습니다. 필요 시 '계속'이라고 입력해주세요.)`.trim();
     }
     reply = compressAiReply(sanitizeAiReplyText(reply));
     sendJson(res, 200, { reply });
