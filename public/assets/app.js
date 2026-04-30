@@ -2444,7 +2444,8 @@
         }
 
         function formatAiReplyHtml(rawReply) {
-            return String(rawReply || '')
+            const escaped = escapeHtml(String(rawReply || ''));
+            return escaped
                 .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
                 .replace(/\n/g, '<br>');
         }
@@ -2468,13 +2469,6 @@
             }
         }
 
-        function extractAiAnswerHtml(aiPanelHtml) {
-            const raw = String(aiPanelHtml || '');
-            return raw
-                .replace(/^\s*<b>AI 분석 결과:<\/b><br>/i, '')
-                .trim();
-        }
-
         function makeAiPendingHtml() {
             return '<b>AI 분석 결과:</b><br><span style="color:#64748b;">AI 답변 생성 중입니다. 잠시 후 자동 반영됩니다...</span>';
         }
@@ -2493,11 +2487,9 @@
             if (result.ok) {
                 const aiContentHtml = `<b>AI 분석 결과:</b><br>${result.replyHtml}`;
                 appData.posts[idx].aiContent = aiContentHtml;
-                appData.posts[idx].answer = extractAiAnswerHtml(aiContentHtml);
             } else {
                 const failHtml = makeAiErrorHtml(result.errorMessage);
                 appData.posts[idx].aiContent = failHtml;
-                appData.posts[idx].answer = extractAiAnswerHtml(failHtml);
             }
             saveData();
             if (currentPostId === postId) openDetail(postId);
@@ -2609,11 +2601,10 @@
                     if (!isAiSolved && (currentBoardType === 'IT' || currentBoardType === 'BIZ')) {
                         aiContentHtml = makeAiPendingHtml();
                     }
-                    const aiAnswerHtml = extractAiAnswerHtml(aiContentHtml);
                     appData.posts.unshift({
                         id: newId, type: currentBoardType, title: title, writer: getCurrentActorName(), 
                         datetime: dt, ip: ipStr, status: 'wait', aiSolved: false, content: content, 
-                        aiContent: aiContentHtml, answer: aiAnswerHtml, meta: meta, addInfoList: [], thread: [], attachments
+                        aiContent: aiContentHtml, answer: '', meta: meta, addInfoList: [], thread: [], attachments
                     });
                     showAlert('문의가 정상 접수되었습니다.', 'success');
                     if (currentBoardType === 'IT' || currentBoardType === 'BIZ') {
@@ -2761,8 +2752,13 @@
             else { aiWrap.style.display = 'block'; document.getElementById('simAiContent').innerHTML = post.aiContent; }
 
             const adminWrap = document.getElementById('simAdminWrap');
-            if (post.aiSolved) adminWrap.style.display = 'none'; 
-            else { adminWrap.style.display = 'block'; document.getElementById('simAdminAnswer').innerHTML = post.answer; }
+            const thread = ensurePostThread(post);
+            const lastManagerEntry = [...thread].reverse().find(item => item.role === 'manager');
+            if (post.aiSolved || !lastManagerEntry) adminWrap.style.display = 'none'; 
+            else {
+                adminWrap.style.display = 'block';
+                document.getElementById('simAdminAnswer').innerHTML = lastManagerEntry.content || '';
+            }
             document.getElementById('similarPostModal').classList.add('active');
         }
         function closeSimilarPostModal() { document.getElementById('similarPostModal').classList.remove('active'); }
