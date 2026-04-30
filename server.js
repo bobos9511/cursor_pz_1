@@ -27,7 +27,8 @@ const rateLimitMap = new Map();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() !== "false";
+const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
+const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 900);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -81,6 +82,29 @@ function isQuotaOrRateLimitError(message) {
     text.includes("too many requests") ||
     text.includes("billing")
   );
+}
+
+function shouldUseGrounding(boardType, title, content) {
+  if (!GEMINI_ENABLE_GROUNDING) return false;
+  if (String(boardType || "").toUpperCase() !== "BIZ") return false;
+  const text = `${title || ""} ${content || ""}`.toLowerCase();
+  const bizKeywords = [
+    "규정",
+    "약관",
+    "지침",
+    "내규",
+    "법령",
+    "세법",
+    "감독규정",
+    "금감원",
+    "대출",
+    "담보",
+    "이자",
+    "한도",
+    "연장",
+    "중도상환",
+  ];
+  return bizKeywords.some((kw) => text.includes(kw));
 }
 
 function ensureDbFile() {
@@ -204,12 +228,13 @@ async function handleAiChat(req, res) {
   ].join("\n");
 
   try {
+    const useGrounding = shouldUseGrounding(boardType, title, content);
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 1600 },
+      generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
     };
-    if (GEMINI_ENABLE_GROUNDING) {
+    if (useGrounding) {
       requestBody.tools = [{ google_search: {} }];
     }
 
@@ -221,7 +246,7 @@ async function handleAiChat(req, res) {
     let data = await geminiRes.json();
 
     // 모델/권한 이슈로 grounding 도구가 거부되는 경우 도구 없이 한 번 재시도
-    if (!geminiRes.ok && GEMINI_ENABLE_GROUNDING) {
+    if (!geminiRes.ok && useGrounding) {
       const msg = data && data.error && data.error.message ? String(data.error.message) : "";
       if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
         geminiRes = await fetch(endpoint, {
@@ -229,7 +254,7 @@ async function handleAiChat(req, res) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 1600 },
+            generationConfig: { temperature: 0.2, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
           }),
         });
         data = await geminiRes.json();
