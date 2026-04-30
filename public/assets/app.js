@@ -334,12 +334,6 @@
             badgeEl.className = isLoading ? 'badge bg-ai' : 'badge bg-ready';
             badgeEl.innerText = isLoading ? '답변 생성중' : '대기중';
         }
-        function inferAiSearchBoardType(question) {
-            const text = String(question || '').toLowerCase();
-            if (/(규정|약관|내규|금감원|여신|담보|대출|이자|한도|연장|상품|금융위원회|정책)/.test(text)) return 'BIZ';
-            if (/(개선|제안|프로세스|절차개선|UI개선)/.test(text)) return 'SYS';
-            return 'IT';
-        }
         function initializeAiSearchView() {
             if (aiSearchInitialized) return;
             const logEl = document.getElementById('aiSearchLog');
@@ -407,8 +401,7 @@
             const question = String(inputEl.value || '').trim();
             if (!question) return;
             if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
-            const inferredBoardType = inferAiSearchBoardType(question);
-            aiSearchActive.boardType = inferredBoardType;
+            aiSearchActive.boardType = 'CHAT';
             aiSearchActive.messages.push({ role: 'user', text: question });
             if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
             aiSearchActive.messages.push({ role: 'ai', text: '<span style="color:#64748b;">AI 답변 생성 중입니다...</span>' });
@@ -428,7 +421,7 @@
                 const result = await requestAiPreview({
                     title: `AI 검색: ${question.slice(0, 45)}`,
                     content: question,
-                    boardType: inferredBoardType,
+                    boardType: 'CHAT',
                     timeoutMs: 0,
                     abortOnTimeout: false
                 });

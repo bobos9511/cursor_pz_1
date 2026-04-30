@@ -29,6 +29,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "false").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
+const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 320);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
 const DEFAULT_DB = {
@@ -258,7 +259,19 @@ async function handleAiChat(req, res) {
   }
 
   const prompt =
-    boardType === "IT"
+    boardType === "CHAT"
+      ? [
+          "너는 은행 업무를 보조하는 범용 AI 어시스턴트다.",
+          "데모 버전이므로 핵심만 짧고 명확하게 답변하라.",
+          "인사말/서론 없이 바로 결론부터 작성하라.",
+          "답변은 최대 4개 불릿으로 작성하라.",
+          "각 불릿은 1문장 중심으로 짧게 작성하라.",
+          "모르면 추측하지 말고 확인이 필요하다고 명시하라.",
+          "",
+          `[질문] ${title}`,
+          `[상세] ${content}`,
+        ].join("\n")
+      : boardType === "IT"
       ? [
           "너는 10년 차 수석 백엔드/프론트엔드 엔지니어 및 DBA야. 사용자의 기술 질문이나 에러 로그를 보고 다음 규칙에 따라 답변해:",
           "",
@@ -299,7 +312,9 @@ async function handleAiChat(req, res) {
           ].join("\n");
 
   const generationConfig =
-    boardType === "IT"
+    boardType === "CHAT"
+      ? { temperature: 0.2, topP: 0.8, maxOutputTokens: Math.min(GEMINI_CHAT_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS) }
+      : boardType === "IT"
       ? { temperature: 0.1, topP: 0.9, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS }
       : boardType === "BIZ"
         ? { temperature: 0.2, topP: 0.8, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS }
