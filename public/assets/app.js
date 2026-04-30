@@ -294,6 +294,7 @@
                 const text = String(msg && msg.text ? msg.text : '');
                 const item = document.createElement('div');
                 item.className = `ai-search-msg ${role}`;
+                if (role === 'ai' && text.includes('ai-search-loading')) item.classList.add('loading');
                 item.innerHTML = role === 'user' ? escapeHtml(text).replace(/\n/g, '<br>') : text;
                 logEl.appendChild(item);
             });
@@ -480,7 +481,10 @@
             aiSearchActive.boardType = 'CHAT';
             aiSearchActive.messages.push({ role: 'user', text: question });
             if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
-            aiSearchActive.messages.push({ role: 'ai', text: '<span style="color:#64748b;">AI 답변 생성 중입니다...</span>' });
+            aiSearchActive.messages.push({
+                role: 'ai',
+                text: '<span class="ai-search-loading">AI 답변 생성 중입니다<span class="ai-search-loading-dots"><i>.</i><i>.</i><i>.</i></span></span>'
+            });
             inputEl.value = '';
             saveAiSearchActiveState();
             renderAiSearchMessages();
@@ -509,17 +513,7 @@
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
                 if (result && result.ok && result.truncated) {
-                    if (isAiSearchForeground()) {
-                        aiSearchPendingContinuation = { question, answerRaw: String(result.rawReply || '') };
-                        await continueAiSearchAnswer();
-                    } else {
-                        aiSearchPendingContinuation = { question, answerRaw: String(result.rawReply || '') };
-                        const idx = aiSearchActive.messages.length - 1;
-                        aiSearchActive.messages[idx].text = `${replyHtml}${buildContinueButtonHtml()}`;
-                        saveAiSearchActiveState();
-                        renderAiSearchMessages();
-                        showAlert('AI 답변 이어서 생성이 필요합니다. AI채팅에서 버튼을 눌러 재개하세요.', 'success');
-                    }
+                    showAlert('답변이 길어 핵심만 표시했습니다. 질문을 더 구체화하면 빠르게 이어서 받을 수 있습니다.', 'success');
                 } else if (delayNotified && result && result.ok) {
                     showAlert('지연된 AI 응답이 도착했습니다.', 'success');
                 }

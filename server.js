@@ -29,11 +29,11 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
-const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 320);
+const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 800);
 const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 60);
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
-const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 1);
-const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 8000);
+const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 0);
+const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 3000);
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -110,6 +110,23 @@ function sanitizeAiReplyText(text) {
   out = out.replace(/^은행 헬프데스크 시니어 분석가로서[,\s:]*/i, "");
   out = out.replace(/^질의하신[^\n]{0,120}\n?/i, "");
   out = out.replace(/^문의하신[^\n]{0,120}\n?/i, "");
+  return out.trim();
+}
+
+function sanitizeChatReplyText(text) {
+  let out = String(text || "").replace(/\r/g, "").trim();
+  // 숫자/단어가 줄바꿈으로 깨지는 현상 보정
+  out = out.replace(/([0-9])\n([0-9])/g, "$1$2");
+  out = out.replace(/([가-힣A-Za-z0-9])\n([가-힣A-Za-z0-9])/g, "$1$2");
+  // 내부 추론/시스템 파편 라인 제거
+  const blocked = /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning)/i;
+  const lines = out
+    .split("\n")
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .filter((line) => !blocked.test(line));
+  // 문단형 줄바꿈만 유지, 최대 10줄 제한
+  out = lines.slice(0, 10).join("\n");
   return out.trim();
 }
 
@@ -304,8 +321,10 @@ async function handleAiChat(req, res) {
           "너는 은행 업무를 보조하는 범용 AI 어시스턴트다.",
           "데모 버전이므로 핵심만 짧고 명확하게 답변하라.",
           "인사말/서론 없이 바로 결론부터 작성하라.",
+          "반드시 한국어로만 답변하라.",
           "답변은 최대 4개 불릿으로 작성하라.",
           "각 불릿은 1문장 중심으로 짧게 작성하라.",
+          "전체 출력은 최대 10줄을 넘기지 마라.",
           "모르면 추측하지 말고 확인이 필요하다고 명시하라.",
           "",
           `[질문] ${title}`,
@@ -455,7 +474,10 @@ async function handleAiChat(req, res) {
     if (finishReason === "MAX_TOKENS" && boardType !== "CHAT") {
       reply = `${reply}\n\n(응답이 길어 핵심만 우선 제공되었습니다. 필요 시 '계속'이라고 입력해주세요.)`.trim();
     }
-    reply = boardType === "CHAT" ? sanitizeAiReplyText(reply) : compressAiReply(sanitizeAiReplyText(reply));
+    reply =
+      boardType === "CHAT"
+        ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
+        : compressAiReply(sanitizeAiReplyText(reply));
     if (boardType === "CHAT") {
       sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
       return;
