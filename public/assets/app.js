@@ -122,6 +122,7 @@
         let aiSearchHistory = [];
         let aiSearchInitialized = false;
         let aiSearchIsLoading = false;
+        let aiSearchPendingContinuation = null;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -394,6 +395,81 @@
             saveAiSearchActiveState();
             inputEl.focus();
         }
+        function isAiSearchForeground() {
+            const view = document.getElementById('view-ai-search');
+            return !!(view && view.classList.contains('active') && document.visibilityState === 'visible');
+        }
+        function buildContinueButtonHtml() {
+            return `<br><button class="btn btn-outline" style="margin-top:8px; padding:6px 10px; font-size:12px;" onclick="continueAiSearchAnswer()">이어서 답변</button>`;
+        }
+        async function continueAiSearchAnswer() {
+            if (!aiSearchPendingContinuation || !aiSearchActive || !Array.isArray(aiSearchActive.messages)) return;
+            const pending = { ...aiSearchPendingContinuation };
+            aiSearchPendingContinuation = null;
+            const sendBtn = document.getElementById('aiSearchSendBtn');
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.innerText = '이어서 생성중...';
+            }
+            aiSearchIsLoading = true;
+            setAiSearchStateBadge();
+            let continuedRaw = String(pending.answerRaw || '');
+            let needsMore = true;
+            let step = 0;
+            while (needsMore && step < 8) {
+                step += 1;
+                const result = await requestAiPreview({
+                    title: `AI 검색 이어쓰기 ${step}`,
+                    content: pending.question,
+                    boardType: 'CHAT',
+                    timeoutMs: 0,
+                    abortOnTimeout: false,
+                    continueFrom: continuedRaw
+                });
+                if (!result.ok) {
+                    const errorHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || '이어쓰기 요청 실패')}</span>`;
+                    const lastIdx = aiSearchActive.messages.length - 1;
+                    aiSearchActive.messages[lastIdx].text = `${formatAiReplyHtml(continuedRaw)}<br>${errorHtml}`;
+                    saveAiSearchActiveState();
+                    renderAiSearchMessages();
+                    needsMore = false;
+                    break;
+                }
+                const nextRaw = String(result.rawReply || '').trim();
+                if (!nextRaw) {
+                    needsMore = false;
+                    break;
+                }
+                continuedRaw = `${continuedRaw}\n${nextRaw}`.trim();
+                const lastIdx = aiSearchActive.messages.length - 1;
+                aiSearchActive.messages[lastIdx].text = formatAiReplyHtml(continuedRaw);
+                saveAiSearchActiveState();
+                renderAiSearchMessages();
+                needsMore = !!result.truncated;
+                if (needsMore && !isAiSearchForeground()) {
+                    aiSearchPendingContinuation = { question: pending.question, answerRaw: continuedRaw };
+                    aiSearchActive.messages[lastIdx].text = `${formatAiReplyHtml(continuedRaw)}${buildContinueButtonHtml()}`;
+                    saveAiSearchActiveState();
+                    renderAiSearchMessages();
+                    showAlert('다른 페이지로 이동해 이어서 답변을 멈췄습니다. AI채팅에서 버튼으로 재개하세요.', 'success');
+                    break;
+                }
+            }
+            if (needsMore && isAiSearchForeground() && !aiSearchPendingContinuation) {
+                aiSearchPendingContinuation = { question: pending.question, answerRaw: continuedRaw };
+                const lastIdx = aiSearchActive.messages.length - 1;
+                aiSearchActive.messages[lastIdx].text = `${formatAiReplyHtml(continuedRaw)}${buildContinueButtonHtml()}`;
+                saveAiSearchActiveState();
+                renderAiSearchMessages();
+            }
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.innerText = '질문하기';
+            }
+            aiSearchIsLoading = false;
+            setAiSearchStateBadge();
+            upsertAiSearchHistoryFromActive();
+        }
         async function submitAiSearchQuestion() {
             const inputEl = document.getElementById('aiSearchInput');
             const sendBtn = document.getElementById('aiSearchSendBtn');
@@ -432,7 +508,21 @@
                 saveAiSearchActiveState();
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
-                if (delayNotified && result && result.ok) showAlert('지연된 AI 응답이 도착했습니다.', 'success');
+                if (result && result.ok && result.truncated) {
+                    if (isAiSearchForeground()) {
+                        aiSearchPendingContinuation = { question, answerRaw: String(result.rawReply || '') };
+                        await continueAiSearchAnswer();
+                    } else {
+                        aiSearchPendingContinuation = { question, answerRaw: String(result.rawReply || '') };
+                        const idx = aiSearchActive.messages.length - 1;
+                        aiSearchActive.messages[idx].text = `${replyHtml}${buildContinueButtonHtml()}`;
+                        saveAiSearchActiveState();
+                        renderAiSearchMessages();
+                        showAlert('AI 답변 이어서 생성이 필요합니다. AI채팅에서 버튼을 눌러 재개하세요.', 'success');
+                    }
+                } else if (delayNotified && result && result.ok) {
+                    showAlert('지연된 AI 응답이 도착했습니다.', 'success');
+                }
             } catch (error) {
                 const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -2796,7 +2886,7 @@
                 .replace(/\n/g, '<br>');
         }
 
-        async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null }) {
+        async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null, continueFrom = '' }) {
             const controller = new AbortController();
             let timeoutNotified = false;
             const timeoutId = timeoutMs > 0
@@ -2810,14 +2900,22 @@
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, content, boardType }),
+                    body: JSON.stringify({ title, content, boardType, continueFrom }),
                     signal: controller.signal
                 });
                 const data = await response.json();
                 if (!response.ok || !data || !data.reply) {
                     throw new Error((data && data.error) || 'AI 응답을 가져오지 못했습니다.');
                 }
-                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '', isTimeout: false, wasDelayed: timeoutNotified };
+                return {
+                    ok: true,
+                    replyHtml: formatAiReplyHtml(data.reply),
+                    rawReply: String(data.reply || ''),
+                    truncated: !!data.truncated,
+                    errorMessage: '',
+                    isTimeout: false,
+                    wasDelayed: timeoutNotified
+                };
             } catch (error) {
                 console.error('AI preview request failed:', error);
                 if (error && error.name === 'AbortError') {

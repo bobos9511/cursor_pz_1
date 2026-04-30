@@ -26,7 +26,7 @@ const RATE_LIMIT_MAX = 20;
 const rateLimitMap = new Map();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
 const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() === "true";
 const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 800);
 const GEMINI_CHAT_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_CHAT_MAX_OUTPUT_TOKENS || 320);
@@ -273,6 +273,7 @@ async function handleAiChat(req, res) {
   const title = String(body.title || "").slice(0, 200);
   const content = String(body.content || "").slice(0, 2000);
   const boardType = String(body.boardType || "").slice(0, 20);
+  const continueFrom = String(body.continueFrom || "").slice(0, 6000);
 
   if (!title || !content) {
     sendJson(res, 400, { error: "title/content는 필수입니다." });
@@ -287,7 +288,18 @@ async function handleAiChat(req, res) {
   }
 
   const prompt =
-    boardType === "CHAT"
+    boardType === "CHAT" && continueFrom
+      ? [
+          "직전 답변의 마지막 문장 다음부터 자연스럽게 이어서 작성하라.",
+          "이미 작성한 문장을 반복하지 말고, 누락된 핵심만 이어서 작성하라.",
+          "내부 추론 흔적, 영어 단편 문장, 코드 주석 파편을 절대 출력하지 마라.",
+          "불릿 형식을 유지하고 최대 3개 불릿으로 간결하게 작성하라.",
+          "",
+          `[원질문] ${content}`,
+          "[이미 출력된 답변]",
+          continueFrom,
+        ].join("\n")
+      : boardType === "CHAT"
       ? [
           "너는 은행 업무를 보조하는 범용 AI 어시스턴트다.",
           "데모 버전이므로 핵심만 짧고 명확하게 답변하라.",
@@ -440,10 +452,14 @@ async function handleAiChat(req, res) {
       reply = merged;
       finishReason = continueFinishReason;
     }
-    if (finishReason === "MAX_TOKENS") {
+    if (finishReason === "MAX_TOKENS" && boardType !== "CHAT") {
       reply = `${reply}\n\n(응답이 길어 핵심만 우선 제공되었습니다. 필요 시 '계속'이라고 입력해주세요.)`.trim();
     }
     reply = boardType === "CHAT" ? sanitizeAiReplyText(reply) : compressAiReply(sanitizeAiReplyText(reply));
+    if (boardType === "CHAT") {
+      sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
+      return;
+    }
     sendJson(res, 200, { reply });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
