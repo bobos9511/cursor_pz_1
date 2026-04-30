@@ -453,11 +453,6 @@
                                 <div class="panel-header ai-search-main-head">
                                     <div class="flex items-center gap-10">
                                         <svg class="icon"><use href="#icon-magic"></use></svg> AI 검색 채팅
-                                        <select id="aiSearchBoardType" class="input" style="width: 140px;">
-                                            <option value="IT">IT/오류</option>
-                                            <option value="BIZ">규정/상품</option>
-                                            <option value="SYS">개선제안</option>
-                                        </select>
                                     </div>
                                     <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
                                 </div>
@@ -472,6 +467,7 @@
                                         <textarea id="aiSearchInput" class="input ai-search-input" placeholder="질문을 입력하세요. (Shift+Enter로 줄바꿈)"></textarea>
                                         <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
                                     </div>
+                                    <div class="ai-search-input-help"><b>Enter</b> 전송 / <b>Shift+Enter</b> 줄바꿈</div>
                                 </div>
                             </div>
                         </section>

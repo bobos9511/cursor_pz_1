@@ -115,11 +115,13 @@
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         const AI_REQUEST_TIMEOUT_MS = 60000;
+        const AI_CHAT_REQUEST_TIMEOUT_MS = 120000;
         let signupUsers = [];
         let currentLoginUser = null;
         let aiSearchActive = null;
         let aiSearchHistory = [];
         let aiSearchInitialized = false;
+        let aiSearchIsLoading = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -263,11 +265,10 @@
             return `${y}.${m}.${day} ${hh}:${mm}`;
         }
         function makeDefaultAiSearchState() {
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             return {
                 id: `chat_${Date.now()}`,
                 title: '새 대화',
-                boardType: boardTypeEl ? (boardTypeEl.value || 'IT') : 'IT',
+                boardType: 'IT',
                 draft: '',
                 updatedAt: nowDateTimeLabel(),
                 messages: [{ role: 'ai', text: '안녕하세요. 핵심 위주로 답변하는 AI 검색 채팅입니다.' }]
@@ -276,9 +277,8 @@
         function saveAiSearchActiveState() {
             if (!aiSearchActive) return;
             const inputEl = document.getElementById('aiSearchInput');
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             aiSearchActive.draft = inputEl ? (inputEl.value || '') : '';
-            aiSearchActive.boardType = boardTypeEl ? (boardTypeEl.value || 'IT') : 'IT';
+            aiSearchActive.boardType = aiSearchActive.boardType || 'IT';
             aiSearchActive.updatedAt = nowDateTimeLabel();
             const keys = getAiSearchStorageKeyBase();
             saveJsonToStorage(keys.activeKey, aiSearchActive);
@@ -328,39 +328,50 @@
             saveJsonToStorage(keys.historyKey, aiSearchHistory);
             renderAiSearchHistory();
         }
-        function setAiSearchStateBadge(isLoading) {
+        function setAiSearchStateBadge(isLoading = aiSearchIsLoading) {
             const badgeEl = document.getElementById('aiSearchStateBadge');
             if (!badgeEl) return;
             badgeEl.className = isLoading ? 'badge bg-ai' : 'badge bg-ready';
             badgeEl.innerText = isLoading ? '답변 생성중' : '대기중';
         }
+        function inferAiSearchBoardType(question) {
+            const text = String(question || '').toLowerCase();
+            if (/(규정|약관|내규|금감원|여신|담보|대출|이자|한도|연장|상품|금융위원회|정책)/.test(text)) return 'BIZ';
+            if (/(개선|제안|프로세스|절차개선|UI개선)/.test(text)) return 'SYS';
+            return 'IT';
+        }
         function initializeAiSearchView() {
             if (aiSearchInitialized) return;
             const logEl = document.getElementById('aiSearchLog');
             const inputEl = document.getElementById('aiSearchInput');
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             const keys = getAiSearchStorageKeyBase();
             aiSearchHistory = loadJsonFromStorage(keys.historyKey, []);
             aiSearchActive = loadJsonFromStorage(keys.activeKey, null) || makeDefaultAiSearchState();
-            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType || 'IT';
             if (inputEl) inputEl.value = aiSearchActive.draft || '';
             renderAiSearchMessages();
             renderAiSearchHistory();
             if (inputEl) inputEl.addEventListener('input', saveAiSearchActiveState);
-            if (boardTypeEl) boardTypeEl.addEventListener('change', saveAiSearchActiveState);
-            if (logEl) logEl.addEventListener('click', () => setAiSearchStateBadge(false));
+            if (inputEl) {
+                inputEl.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        submitAiSearchQuestion();
+                    }
+                });
+            }
+            if (logEl) logEl.addEventListener('click', () => setAiSearchStateBadge());
+            setAiSearchStateBadge();
             aiSearchInitialized = true;
         }
         function startNewAiSearchChat() {
             upsertAiSearchHistoryFromActive();
             aiSearchActive = makeDefaultAiSearchState();
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             const inputEl = document.getElementById('aiSearchInput');
-            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType || 'IT';
             if (inputEl) inputEl.value = '';
             renderAiSearchMessages();
             saveAiSearchActiveState();
-            setAiSearchStateBadge(false);
+            aiSearchIsLoading = false;
+            setAiSearchStateBadge();
             if (inputEl) inputEl.focus();
         }
         function loadAiSearchConversation(conversationId) {
@@ -375,13 +386,12 @@
                 messages: Array.isArray(found.messages) ? found.messages : []
             };
             if (!aiSearchActive.messages.length) aiSearchActive.messages = [{ role: 'ai', text: '대화를 불러왔습니다.' }];
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             const inputEl = document.getElementById('aiSearchInput');
-            if (boardTypeEl) boardTypeEl.value = aiSearchActive.boardType;
             if (inputEl) inputEl.value = '';
             renderAiSearchMessages();
             saveAiSearchActiveState();
-            setAiSearchStateBadge(false);
+            aiSearchIsLoading = false;
+            setAiSearchStateBadge();
         }
         function setAiSearchPrompt(promptText) {
             const inputEl = document.getElementById('aiSearchInput');
@@ -392,23 +402,30 @@
         }
         async function submitAiSearchQuestion() {
             const inputEl = document.getElementById('aiSearchInput');
-            const boardTypeEl = document.getElementById('aiSearchBoardType');
             const sendBtn = document.getElementById('aiSearchSendBtn');
-            if (!inputEl || !boardTypeEl || !sendBtn) return;
+            if (!inputEl || !sendBtn) return;
             const question = String(inputEl.value || '').trim();
             if (!question) return;
             if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
+            const inferredBoardType = inferAiSearchBoardType(question);
+            aiSearchActive.boardType = inferredBoardType;
             aiSearchActive.messages.push({ role: 'user', text: question });
             if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
             aiSearchActive.messages.push({ role: 'ai', text: '<span style="color:#64748b;">AI 답변 생성 중입니다...</span>' });
             inputEl.value = '';
             saveAiSearchActiveState();
             renderAiSearchMessages();
-            setAiSearchStateBadge(true);
+            aiSearchIsLoading = true;
+            setAiSearchStateBadge();
             sendBtn.disabled = true;
             sendBtn.innerText = '생성중...';
             try {
-                const result = await requestAiPreview({ title: `AI 검색: ${question.slice(0, 45)}`, content: question, boardType: boardTypeEl.value || 'IT' });
+                const result = await requestAiPreview({
+                    title: `AI 검색: ${question.slice(0, 45)}`,
+                    content: question,
+                    boardType: inferredBoardType,
+                    timeoutMs: AI_CHAT_REQUEST_TIMEOUT_MS
+                });
                 const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
                 if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === 'ai') aiSearchActive.messages[lastIdx].text = replyHtml;
@@ -437,7 +454,8 @@
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerText = '질문하기';
-                setAiSearchStateBadge(false);
+                aiSearchIsLoading = false;
+                setAiSearchStateBadge();
             }
         }
         function getAppDataUserScope() {
@@ -1872,10 +1890,7 @@
                 if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
                 const topNavId = `topnav-${viewId}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
-                if (viewId === 'ai-search') {
-                    initializeAiSearchView();
-                    setAiSearchStateBadge(false);
-                }
+                if (viewId === 'ai-search') initializeAiSearchView();
             }
 
             if (viewId === 'dashboard') {
@@ -2790,9 +2805,9 @@
                 .replace(/\n/g, '<br>');
         }
 
-        async function requestAiPreview({ title, content, boardType }) {
+        async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS }) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
@@ -2811,7 +2826,7 @@
                     return {
                         ok: false,
                         replyHtml: '',
-                        errorMessage: `AI 응답 시간이 ${Math.round(AI_REQUEST_TIMEOUT_MS / 1000)}초를 초과했습니다.`,
+                        errorMessage: `AI 응답 시간이 ${Math.round(timeoutMs / 1000)}초를 초과했습니다.`,
                         isTimeout: true
                     };
                 }
