@@ -27,6 +27,7 @@ const rateLimitMap = new Map();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const GEMINI_ENABLE_GROUNDING = String(process.env.GEMINI_ENABLE_GROUNDING || "true").toLowerCase() !== "false";
 const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
@@ -166,31 +167,63 @@ async function handleAiChat(req, res) {
     return;
   }
 
+  const boardRubric =
+    boardType === "IT"
+      ? "IT/오류 문의: 오류코드, 재현경로, 영향범위, 즉시 우회조치 중심으로 분석."
+      : boardType === "BIZ"
+        ? "규정/상품 문의: 적용 규정, 예외 조건, 필요 증빙, 고객 안내 기준 중심으로 분석."
+        : "일반 문의: 상황 요약, 확인 항목, 후속 조치 순서 중심으로 분석.";
+
   const prompt = [
-    "당신은 헬프데스크 접수 내용을 요약/진단하는 도우미입니다.",
-    "출력 형식:",
-    "1) 추정 원인",
-    "2) 즉시 확인 항목 3개",
-    "3) 사용자 안내 문구(짧게)",
+    "당신은 은행 헬프데스크 시니어 분석가입니다.",
+    "절대 두루뭉술하게 쓰지 말고, 입력 내용의 핵심 단어를 그대로 인용해 구체적으로 답변하세요.",
+    "불확실한 내용은 추정이라고 명시하고 확인 경로를 제시하세요.",
+    "가능하면 최신 공개 정보를 검색 근거로 보강하세요.",
     "",
     `[게시판] ${boardType}`,
+    `[기준점] ${boardRubric}`,
     `[제목] ${title}`,
     `[내용] ${content}`,
+    "",
+    "출력 형식(반드시 지켜라):",
+    "1) 추정 원인 (2~4줄, 입력 본문 키워드 최소 2개 직접 인용)",
+    "2) 즉시 확인 항목 (번호 목록 4개, 각 항목은 '확인 이유 + 확인 방법')",
+    "3) 사용자 안내 문구 (현업에서 바로 전달 가능한 문장 2~3개)",
+    "4) 근거/기준 (최소 2개 불릿: 내부기준/검색근거를 구분하여 작성)",
   ].join("\n");
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 1200 },
-        }),
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 1600 },
+    };
+    if (GEMINI_ENABLE_GROUNDING) {
+      requestBody.tools = [{ google_search: {} }];
+    }
+
+    let geminiRes = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    let data = await geminiRes.json();
+
+    // 모델/권한 이슈로 grounding 도구가 거부되는 경우 도구 없이 한 번 재시도
+    if (!geminiRes.ok && GEMINI_ENABLE_GROUNDING) {
+      const msg = data && data.error && data.error.message ? String(data.error.message) : "";
+      if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
+        geminiRes = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 1600 },
+          }),
+        });
+        data = await geminiRes.json();
       }
-    );
-    const data = await geminiRes.json();
+    }
     if (!geminiRes.ok) {
       const apiError = data && data.error && data.error.message ? data.error.message : "Gemini API 오류";
       sendJson(res, 502, { error: apiError });
