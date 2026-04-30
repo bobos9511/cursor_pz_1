@@ -188,14 +188,18 @@ async function handleAiChat(req, res) {
       sendJson(res, 502, { error: apiError });
       return;
     }
-    const reply =
+    const parts =
       data &&
       data.candidates &&
       data.candidates[0] &&
       data.candidates[0].content &&
-      data.candidates[0].content.parts &&
-      data.candidates[0].content.parts[0] &&
-      data.candidates[0].content.parts[0].text;
+      Array.isArray(data.candidates[0].content.parts)
+        ? data.candidates[0].content.parts
+        : [];
+    const reply = parts
+      .map((part) => (part && typeof part.text === "string" ? part.text : ""))
+      .join("")
+      .trim();
 
     if (!reply) {
       sendJson(res, 502, { error: "AI 응답을 해석할 수 없습니다." });
