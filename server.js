@@ -7,9 +7,17 @@ loadEnv(path.join(__dirname, ".env"));
 
 const PORT = Number(process.env.PORT || 5500);
 const PUBLIC_DIR = path.join(__dirname, "public");
-const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
-  : path.join(__dirname, "data");
+function resolveDataDir() {
+  const raw = String(process.env.DATA_DIR || "").trim();
+  const isRender = String(process.env.RENDER || "").toLowerCase() === "true";
+  if (isRender) {
+    // Render에서 /tmp 경로는 재배포 시 초기화될 수 있으므로 영속 디스크 경로를 우선 사용한다.
+    if (!raw || raw.startsWith("/tmp")) return "/var/data";
+  }
+  return raw ? path.resolve(raw) : path.join(__dirname, "data");
+}
+
+const DATA_DIR = resolveDataDir();
 const DB_DIR = DATA_DIR;
 const DB_FILE = path.join(DB_DIR, "app-db.json");
 const MAX_BODY_SIZE = 1_000_000;
@@ -331,4 +339,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`DB path: ${DB_FILE}`);
 });
