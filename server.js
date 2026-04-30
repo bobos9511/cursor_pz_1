@@ -161,16 +161,20 @@ function writeDb(db) {
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
-    let raw = "";
+    const chunks = [];
+    let totalLength = 0;
     req.on("data", (chunk) => {
-      raw += chunk;
-      if (raw.length > MAX_BODY_SIZE) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      chunks.push(buf);
+      totalLength += buf.length;
+      if (totalLength > MAX_BODY_SIZE) {
         reject(new Error("Payload too large"));
         req.destroy();
       }
     });
     req.on("end", () => {
-      if (!raw) return resolve({});
+      if (chunks.length === 0) return resolve({});
+      const raw = Buffer.concat(chunks).toString("utf8");
       try {
         resolve(JSON.parse(raw));
       } catch (err) {
