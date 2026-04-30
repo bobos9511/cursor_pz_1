@@ -114,6 +114,7 @@
         const APP_DATA_SHARED_SCOPE = 'shared';
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
+        const AI_REQUEST_TIMEOUT_MS = 20000;
         let signupUsers = [];
         let currentLoginUser = null;
         let aiSearchActive = null;
@@ -415,6 +416,9 @@
                 saveAiSearchActiveState();
                 upsertAiSearchHistoryFromActive();
                 renderAiSearchMessages();
+                if (result && result.isTimeout) {
+                    showAlert('AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.', 'error');
+                }
             } catch (error) {
                 const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml((error && error.message) ? error.message : 'AI 요청 실패')}</span>`;
                 const lastIdx = aiSearchActive.messages.length - 1;
@@ -2763,29 +2767,51 @@
             return (temp.textContent || temp.innerText || '').trim();
         }
 
+        function normalizeAiReplyText(rawReply) {
+            let text = String(rawReply || '').replace(/\r/g, '').trim();
+            text = text.replace(/([가-힣A-Za-z0-9])\n([가-힣A-Za-z0-9])/g, '$1$2');
+            text = text.replace(/([^\n])\n(?!\s*(?:[0-9]+\)|[-*•]))/g, '$1 ');
+            text = text.replace(/[ \t]{2,}/g, ' ');
+            text = text.replace(/\n{3,}/g, '\n\n');
+            return text.trim();
+        }
+
         function formatAiReplyHtml(rawReply) {
-            const escaped = escapeHtml(String(rawReply || ''));
+            const escaped = escapeHtml(normalizeAiReplyText(rawReply));
             return escaped
                 .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
                 .replace(/\n/g, '<br>');
         }
 
         async function requestAiPreview({ title, content, boardType }) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
             try {
                 const response = await fetch('/api/ai/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, content, boardType })
+                    body: JSON.stringify({ title, content, boardType }),
+                    signal: controller.signal
                 });
                 const data = await response.json();
                 if (!response.ok || !data || !data.reply) {
                     throw new Error((data && data.error) || 'AI 응답을 가져오지 못했습니다.');
                 }
-                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '' };
+                return { ok: true, replyHtml: formatAiReplyHtml(data.reply), errorMessage: '', isTimeout: false };
             } catch (error) {
                 console.error('AI preview request failed:', error);
+                if (error && error.name === 'AbortError') {
+                    return {
+                        ok: false,
+                        replyHtml: '',
+                        errorMessage: `AI 응답 시간이 ${Math.round(AI_REQUEST_TIMEOUT_MS / 1000)}초를 초과했습니다.`,
+                        isTimeout: true
+                    };
+                }
                 const reason = (error && error.message) ? error.message : 'AI 서버 통신 중 오류';
-                return { ok: false, replyHtml: '', errorMessage: reason };
+                return { ok: false, replyHtml: '', errorMessage: reason, isTimeout: false };
+            } finally {
+                clearTimeout(timeoutId);
             }
         }
 
@@ -2893,6 +2919,9 @@
                     onClick: () => moveToPostDetail(postId)
                 });
             } else {
+                if (result && result.isTimeout) {
+                    showAlert(`${postRef} AI 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.`, 'error');
+                }
                 showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, 'error', {
                     actionText: '해당 게시물 보기',
                     onClick: () => moveToPostDetail(postId)
