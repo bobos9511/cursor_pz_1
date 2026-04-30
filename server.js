@@ -141,8 +141,8 @@ function sanitizeChatReplyText(text) {
     else merged[merged.length - 1] = `${merged[merged.length - 1]} ${line}`.replace(/\s{2,}/g, " ").trim();
   }
 
-  // bullet만 유지하고 최대 10줄 제한
-  out = merged.map((line) => line.replace(/\s{2,}/g, " ").trim()).slice(0, 10).join("\n");
+  // bullet만 유지하고 최대 50줄 제한
+  out = merged.map((line) => line.replace(/\s{2,}/g, " ").trim()).slice(0, 50).join("\n");
   return out.trim();
 }
 
@@ -341,7 +341,7 @@ async function handleAiChat(req, res) {
           "답변은 반드시 '-'로 시작하는 bullet만 사용하라.",
           "불릿은 최대 4개로 작성하라.",
           "각 불릿은 1문장 중심으로 짧게 작성하라.",
-          "전체 출력은 최대 10줄을 넘기지 마라.",
+          "전체 출력은 최대 50줄을 넘기지 마라.",
           "모르면 추측하지 말고 확인이 필요하다고 명시하라.",
           "",
           `[질문] ${title}`,
