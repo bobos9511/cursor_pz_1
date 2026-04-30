@@ -326,12 +326,14 @@ async function handleAiChat(req, res) {
   }
 
   const prompt =
-    boardType === "CHAT" && continueFrom
+    continueFrom
       ? [
           "직전 답변의 마지막 문장 다음부터 자연스럽게 이어서 작성하라.",
           "이미 작성한 문장을 반복하지 말고, 누락된 핵심만 이어서 작성하라.",
           "내부 추론 흔적, 영어 단편 문장, 코드 주석 파편을 절대 출력하지 마라.",
-          "불릿 형식을 유지하고 최대 3개 불릿으로 간결하게 작성하라.",
+          boardType === "CHAT"
+            ? "불릿 형식을 유지하고 최대 3개 불릿으로 간결하게 작성하라."
+            : "기존 답변의 형식과 톤을 유지해 이어서 작성하라.",
           "",
           `[원질문] ${content}`,
           "[이미 출력된 답변]",
@@ -506,11 +508,7 @@ async function handleAiChat(req, res) {
       boardType === "CHAT"
         ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
         : compressAiReply(sanitizeAiReplyText(reply));
-    if (boardType === "CHAT") {
-      sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
-      return;
-    }
-    sendJson(res, 200, { reply });
+    sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
   } catch (error) {
     sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
   }

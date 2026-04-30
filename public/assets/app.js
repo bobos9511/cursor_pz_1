@@ -3029,7 +3029,26 @@
 
         async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent) {
             if (!(boardType === 'IT' || boardType === 'BIZ')) return;
-            const result = await requestAiPreview({ title, content: plainContent, boardType });
+            const MAX_AUTO_CONTINUE_STEPS = 6;
+            let result = await requestAiPreview({ title, content: plainContent, boardType });
+            let mergedRawReply = result && result.ok ? String(result.rawReply || '') : '';
+            let continueStep = 0;
+            while (result && result.ok && result.truncated && continueStep < MAX_AUTO_CONTINUE_STEPS) {
+                continueStep += 1;
+                const next = await requestAiPreview({
+                    title: `${title} (이어쓰기 ${continueStep})`,
+                    content: plainContent,
+                    boardType,
+                    continueFrom: mergedRawReply
+                });
+                if (!next.ok || !next.rawReply) break;
+                mergedRawReply = `${mergedRawReply}\n${String(next.rawReply || '')}`.trim();
+                result = {
+                    ...next,
+                    rawReply: mergedRawReply,
+                    replyHtml: formatAiReplyHtml(mergedRawReply)
+                };
+            }
             const idx = appData.posts.findIndex(p => p.id === postId);
             if (idx < 0) return;
             const post = appData.posts[idx];
