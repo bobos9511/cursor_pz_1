@@ -814,13 +814,16 @@
             display: none !important;
         }
         #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            display: grid;
+            grid-template-columns: 112px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 6px !important;
             flex-wrap: nowrap;
             row-gap: 0;
-            gap: 6px !important;
         }
         #view-list.board-tools-compact #boardStatusFilter {
-            flex: 0 0 118px;
-            width: 118px !important;
+            flex: 0 0 auto;
+            width: 112px !important;
         }
         #view-list.board-tools-compact #boardKnowCategoryFilter {
             flex: 0 0 122px;
@@ -828,7 +831,8 @@
         }
         #view-list.board-tools-compact #boardKeywordInput {
             flex: 1 1 auto;
-            min-width: 120px;
+            min-width: 0;
+            width: auto !important;
         }
         #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
         #view-list.board-tools-compact #listWriteBtn,
