@@ -1381,7 +1381,7 @@
             <div class="integrated-search-head">
                 <div class="integrated-search-input-wrap">
                     <svg class="icon icon-lg integrated-search-icon"><use href="#icon-search"></use></svg>
-                    <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch()">
+                    <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch('enter')">
                     <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
             </div>
@@ -1393,7 +1393,7 @@
                 </div>
                 <div class="integrated-search-sort-wrap">
                     <label for="integratedSearchSort" style="font-size:12px; color:#64748b; font-weight:700;">정렬</label>
-                    <select id="integratedSearchSort" class="input integrated-search-sort" onchange="performModalSearch()">
+                    <select id="integratedSearchSort" class="input integrated-search-sort" onchange="performModalSearch('sort')">
                         <option value="latest">최신순</option>
                         <option value="views">조회수순</option>
                         <option value="relevance">관련도순</option>

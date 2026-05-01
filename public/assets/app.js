@@ -3906,7 +3906,7 @@
             document.getElementById('modalSearchInput').value = kw;
             document.getElementById('headerSearchInput').value = '';
             showIntegratedSearchModal(); 
-            performModalSearch(); 
+            performModalSearch('header'); 
         }
         function getIntegratedSearchSortValue() {
             const sortEl = document.getElementById('integratedSearchSort');
@@ -3915,22 +3915,102 @@
         function clearIntegratedSearchInput() {
             const input = document.getElementById('modalSearchInput');
             if (input) input.value = '';
-            performModalSearch();
+            performModalSearch('clear');
             if (input) input.focus();
         }
         function applyIntegratedRelatedKeyword(keyword) {
             const input = document.getElementById('modalSearchInput');
             if (!input) return;
             input.value = String(keyword || '').trim();
-            performModalSearch();
+            performModalSearch('related');
             input.focus();
+        }
+        const INTEGRATED_SEARCH_STATS_KEY = 'knock-integrated-search-stats-v1';
+        let integratedSearchKeywordStats = null;
+        let integratedSearchLastTrack = { keyword: '', at: 0 };
+        function loadIntegratedSearchKeywordStats() {
+            if (Array.isArray(integratedSearchKeywordStats)) return integratedSearchKeywordStats;
+            try {
+                const raw = localStorage.getItem(INTEGRATED_SEARCH_STATS_KEY);
+                const parsed = JSON.parse(raw || '[]');
+                integratedSearchKeywordStats = Array.isArray(parsed)
+                    ? parsed
+                          .map((it) => ({
+                              keyword: String((it && it.keyword) || '').trim(),
+                              count: Math.max(0, Number((it && it.count) || 0)),
+                              updatedAt: Number((it && it.updatedAt) || 0),
+                          }))
+                          .filter((it) => it.keyword && it.count > 0)
+                          .slice(0, 500)
+                    : [];
+            } catch (_) {
+                integratedSearchKeywordStats = [];
+            }
+            return integratedSearchKeywordStats;
+        }
+        function saveIntegratedSearchKeywordStats() {
+            try {
+                localStorage.setItem(INTEGRATED_SEARCH_STATS_KEY, JSON.stringify(loadIntegratedSearchKeywordStats().slice(0, 500)));
+            } catch (_) {}
+        }
+        function extractIntegratedQueryTokens(text) {
+            const parts = String(text || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9가-힣\s]/g, ' ')
+                .split(/\s+/)
+                .filter(Boolean);
+            const seen = new Set();
+            const tokens = [];
+            parts.forEach((part) => {
+                const normalized = normalizeKnowKeywordToken(part);
+                if (!normalized || normalized.length < 2 || ragKeywordBlocklist.has(normalized)) return;
+                if (seen.has(normalized)) return;
+                seen.add(normalized);
+                tokens.push(normalized);
+            });
+            return tokens;
+        }
+        function trackIntegratedSearchKeyword(rawKeyword) {
+            const now = Date.now();
+            const tokens = extractIntegratedQueryTokens(rawKeyword);
+            if (!tokens.length) return;
+            const mergedKey = tokens.join(' ');
+            if (integratedSearchLastTrack.keyword === mergedKey && now - integratedSearchLastTrack.at < 1200) {
+                return;
+            }
+            integratedSearchLastTrack = { keyword: mergedKey, at: now };
+            const list = loadIntegratedSearchKeywordStats();
+            tokens.forEach((keyword) => {
+                const idx = list.findIndex((it) => it.keyword === keyword);
+                if (idx >= 0) {
+                    list[idx].count += 1;
+                    list[idx].updatedAt = now;
+                    return;
+                }
+                list.push({ keyword, count: 1, updatedAt: now });
+            });
+            integratedSearchKeywordStats = list
+                .sort((a, b) => b.updatedAt - a.updatedAt)
+                .slice(0, 500);
+            saveIntegratedSearchKeywordStats();
+        }
+        function getIntegratedSearchKeywordRanking(limit = 5) {
+            return loadIntegratedSearchKeywordStats()
+                .filter((it) => {
+                    const normalized = normalizeKnowKeywordToken(it.keyword);
+                    return normalized && normalized.length >= 2 && !ragKeywordBlocklist.has(normalized);
+                })
+                .sort((a, b) => b.count - a.count || b.updatedAt - a.updatedAt)
+                .slice(0, Math.max(1, Number(limit) || 5))
+                .map((it) => [it.keyword, it.count]);
         }
         function extractIntegratedTokensFromText(text) {
             return String(text || '')
                 .toLowerCase()
                 .replace(/[^a-z0-9가-힣\s]/g, ' ')
                 .split(/\s+/)
-                .filter((t) => t && t.length >= 2);
+                .map((t) => normalizeKnowKeywordToken(t))
+                .filter((t) => t && t.length >= 2 && !ragKeywordBlocklist.has(t));
         }
         function buildIntegratedKeywordCounts(posts) {
             const counts = new Map();
@@ -3947,7 +4027,7 @@
             const relatedEl = document.getElementById('integratedRelatedKeywords');
             if (!rankingEl || !relatedEl) return;
             const counts = buildIntegratedKeywordCounts(appData.posts || []);
-            const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const top = getIntegratedSearchKeywordRanking(5);
             rankingEl.innerHTML = `<div style="font-weight:800; color:var(--text-dark); margin-bottom:6px;">검색어 순위</div>${
                 top.length
                     ? `<div class="integrated-ranking-board">${
@@ -3989,11 +4069,14 @@
             setTimeout(() => document.getElementById('modalSearchInput').focus(), 100);
         }
         function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
-        function performModalSearch() {
+        function performModalSearch(trigger = 'manual') {
             const raw = document.getElementById('modalSearchInput').value || '';
             const kw = raw.toLowerCase().trim();
             const resContainer = document.getElementById('integratedSearchResults');
             const sort = getIntegratedSearchSortValue();
+            if (kw && trigger !== 'sort' && trigger !== 'clear' && trigger !== 'init') {
+                trackIntegratedSearchKeyword(raw);
+            }
             renderIntegratedSearchInsights(raw, []);
             if (!kw) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">검색어를 입력하세요.</div>'; return; }
             
