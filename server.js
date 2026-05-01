@@ -44,13 +44,18 @@ const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
 const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 0);
 const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 3000);
-const DEFAULT_DB = {
-  appDataByScope: {},
-  signupUsers: [],
-  sharedBoardHelp: {},
-  aiSettings: deepCloneAiSettings(),
-  aiApiLogs: [],
-};
+const AI_SETTINGS_HISTORY_MAX = 120;
+function createDefaultDb() {
+  return {
+    appDataByScope: {},
+    signupUsers: [],
+    sharedBoardHelp: {},
+    aiSettings: deepCloneAiSettings(),
+    aiApiLogs: [],
+    aiSettingsHistory: [],
+  };
+}
+const DEFAULT_DB = createDefaultDb();
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -241,15 +246,49 @@ function readDb() {
       sharedBoardHelp: parsed && typeof parsed.sharedBoardHelp === "object" ? parsed.sharedBoardHelp : {},
       aiSettings: mergeAiSettingsFromDb(parsed),
       aiApiLogs: Array.isArray(parsed && parsed.aiApiLogs) ? parsed.aiApiLogs : [],
+      aiSettingsHistory: Array.isArray(parsed && parsed.aiSettingsHistory) ? parsed.aiSettingsHistory : [],
     };
   } catch (error) {
-    return { ...DEFAULT_DB };
+    return createDefaultDb();
   }
 }
 
 function writeDb(db) {
   ensureDbFile();
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf8");
+}
+
+function getNextAiSettingsVersionNo(history) {
+  if (!Array.isArray(history) || !history.length) return 1;
+  return (
+    history.reduce((max, item) => {
+      const n = Number(item && item.versionNo);
+      return Number.isFinite(n) && n > max ? n : max;
+    }, 0) + 1
+  );
+}
+
+function makeAiSettingsHistoryEntry(db, aiSettings, meta = {}, action = "save") {
+  const versionNo = getNextAiSettingsVersionNo(db.aiSettingsHistory);
+  return {
+    id: `ai_cfg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    versionNo,
+    action: String(action || "save"),
+    changedBy: String(meta.changedBy || "").trim() || "unknown",
+    note: String(meta.note || "").trim(),
+    restoredFromVersionNo: meta.restoredFromVersionNo == null ? null : Number(meta.restoredFromVersionNo),
+    createdAt: new Date().toISOString(),
+    aiSettings,
+  };
+}
+
+function pushAiSettingsHistory(db, entry) {
+  if (!db || !entry) return;
+  if (!Array.isArray(db.aiSettingsHistory)) db.aiSettingsHistory = [];
+  db.aiSettingsHistory.unshift(entry);
+  if (db.aiSettingsHistory.length > AI_SETTINGS_HISTORY_MAX) {
+    db.aiSettingsHistory = db.aiSettingsHistory.slice(0, AI_SETTINGS_HISTORY_MAX);
+  }
 }
 
 function readJsonBody(req) {
@@ -727,6 +766,11 @@ async function handleDbApi(req, res, url) {
     });
     return true;
   }
+  if (req.method === "GET" && url.pathname === "/api/db/ai-settings/history") {
+    const db = readDb();
+    sendJson(res, 200, { history: Array.isArray(db.aiSettingsHistory) ? db.aiSettingsHistory : [] });
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/api/db/ai-api-logs") {
     const db = readDb();
     sendJson(res, 200, { logs: Array.isArray(db.aiApiLogs) ? db.aiApiLogs : [] });
@@ -752,14 +796,67 @@ async function handleDbApi(req, res, url) {
       sendJson(res, 400, { error: ko.errors.aiSettingsRequired });
       return true;
     }
+    const meta = body && body.meta && typeof body.meta === "object" ? body.meta : {};
     const db = readDb();
     db.aiSettings = mergeAiSettingsPatch(db.aiSettings, patch);
+    pushAiSettingsHistory(db, makeAiSettingsHistoryEntry(db, db.aiSettings, meta, "save"));
+    writeDb(db);
+    sendJson(res, 200, { ok: true, aiSettings: db.aiSettings });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/ai-settings/reset") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const meta = body && body.meta && typeof body.meta === "object" ? body.meta : {};
+    const db = readDb();
+    db.aiSettings = deepCloneAiSettings();
+    pushAiSettingsHistory(db, makeAiSettingsHistoryEntry(db, db.aiSettings, meta, "reset"));
+    writeDb(db);
+    sendJson(res, 200, { ok: true, aiSettings: db.aiSettings });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/ai-settings/restore") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const versionNo = Number(body && body.versionNo);
+    if (!Number.isFinite(versionNo) || versionNo <= 0) {
+      sendJson(res, 400, { error: "versionNo is required." });
+      return true;
+    }
+    const meta = body && body.meta && typeof body.meta === "object" ? body.meta : {};
+    const db = readDb();
+    const history = Array.isArray(db.aiSettingsHistory) ? db.aiSettingsHistory : [];
+    const target = history.find((item) => Number(item && item.versionNo) === versionNo);
+    if (!target || !target.aiSettings || typeof target.aiSettings !== "object") {
+      sendJson(res, 404, { error: "Target version not found." });
+      return true;
+    }
+    db.aiSettings = mergeAiSettingsFromDb({ aiSettings: target.aiSettings });
+    pushAiSettingsHistory(
+      db,
+      makeAiSettingsHistoryEntry(
+        db,
+        db.aiSettings,
+        { ...meta, restoredFromVersionNo: versionNo },
+        "restore",
+      ),
+    );
     writeDb(db);
     sendJson(res, 200, { ok: true, aiSettings: db.aiSettings });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/reset") {
-    writeDb({ ...DEFAULT_DB });
+    writeDb(createDefaultDb());
     sendJson(res, 200, { ok: true });
     return true;
   }

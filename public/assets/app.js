@@ -54,12 +54,15 @@
                     renotify: false,
                     requireInteraction: options.requireInteraction === true,
                 });
-                if (typeof options.onClick === 'function') {
-                    n.onclick = () => {
-                        try { window.focus(); } catch (_) {}
+                n.onclick = () => {
+                    try { window.focus(); } catch (_) {}
+                    if (typeof options.onClick === 'function') {
                         options.onClick();
-                    };
-                }
+                    } else if (typeof window.openNotificationCenter === 'function') {
+                        window.openNotificationCenter();
+                    }
+                    try { n.close(); } catch (_) {}
+                };
                 return true;
             } catch (_) {
                 return false;

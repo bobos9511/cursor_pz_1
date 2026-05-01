@@ -370,10 +370,10 @@
             top: 76px;
             right: 24px;
             width: min(92vw, 360px);
-            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 65%, #eef6ff 100%);
             border: 1px solid rgba(191, 219, 254, 0.95);
             border-radius: 16px;
-            box-shadow: 0 24px 46px rgba(15, 23, 42, 0.26);
+            box-shadow: 0 26px 52px rgba(15, 23, 42, 0.28), 0 3px 12px rgba(15, 23, 42, 0.12);
             overflow: hidden;
             animation: profileOverlayIn 0.24s cubic-bezier(.2,.8,.2,1);
         }
@@ -467,11 +467,12 @@
             color: #64748b;
         }
         .profile-dept-box {
-            background: linear-gradient(180deg, #ffffff, #f8fafc);
-            border: 1px solid #dbeafe;
+            background: linear-gradient(180deg, #ffffff, #f1f7ff);
+            border: 1px solid #cfe3fb;
             border-radius: 12px;
-            padding: 12px;
+            padding: 12px 10px;
             text-align: center;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 8px rgba(59,130,246,0.08);
         }
         .vein-title { color: var(--ibk-blue); }
         .vein-guide-text { color: #64748b; }
@@ -486,7 +487,7 @@
             border-radius: 4px;
         }
         .profile-dept-label { font-size: 11px; color: #64748b; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.15px; }
-        .profile-dept-value { font-size: 14px; color: #0f172a; font-weight: 800; }
+        .profile-dept-value { font-size: 14px; color: #0f172a; font-weight: 900; letter-spacing: 0.1px; }
         .profile-overlay-foot {
             padding: 10px 16px 14px;
             display: flex;
@@ -1782,6 +1783,11 @@
             color: #e6edf8;
         }
         body[data-theme="dark"] .ai-search-msg.user { background: #1d4ed8; color: #eff6ff; }
+        body[data-theme="dark"] .ai-search-side-head {
+            background: linear-gradient(180deg, #182a43, #14243b);
+            border-color: #3f5475;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
         body[data-theme="dark"] .ai-search-msg.loading {
             background: linear-gradient(90deg, #152238, #21324d, #152238);
             color: #cfdbec;
@@ -1790,6 +1796,28 @@
         body[data-theme="dark"] .ai-search-history-meta,
         body[data-theme="dark"] .ai-search-history-empty {
             color: #a7b6cc;
+        }
+        body[data-theme="dark"] .ai-search-history-title {
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .ai-search-history-row .ai-search-history-item {
+            background: linear-gradient(180deg, #15243b, #132239);
+            border-color: #3f5475;
+            box-shadow: 0 5px 12px rgba(2, 8, 24, 0.35);
+        }
+        body[data-theme="dark"] .ai-search-history-row .ai-search-history-item:hover {
+            border-color: #6488b8;
+            background: linear-gradient(180deg, #1a2d48, #172841);
+        }
+        body[data-theme="dark"] .ai-search-history-del {
+            border-color: #3f5475 !important;
+            color: #a7b6cc !important;
+            background: #15243b !important;
+        }
+        body[data-theme="dark"] .ai-search-history-del:hover:not(:disabled) {
+            border-color: #9f4357 !important;
+            color: #fecdd3 !important;
+            background: #3f1f2b !important;
         }
         body[data-theme="dark"] .badge:not(.bg-primary):not(.bg-wait):not(.bg-done):not(.bg-ai) {
             background: #22324c;
@@ -2063,6 +2091,9 @@
         body[data-theme="dark"] .profile-dept-label {
             color: #a7b6cc;
         }
+        body[data-theme="dark"] .profile-overlay-title {
+            color: #f2f7ff;
+        }
         body[data-theme="dark"] .profile-overlay-body,
         body[data-theme="dark"] .profile-overlay-foot {
             background: transparent;
@@ -2071,6 +2102,10 @@
         body[data-theme="dark"] .profile-dept-box {
             background: linear-gradient(180deg, #172841 0%, #13233a 100%);
             border-color: #3f5475;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        body[data-theme="dark"] .profile-dept-value {
+            color: #e6edf8;
         }
         body[data-theme="dark"] .profile-contact-item {
             background: #172841;
@@ -2268,6 +2303,33 @@
         body[data-theme="dark"] .admin-ai-log-detail-card [style*="color:#334155"],
         body[data-theme="dark"] .admin-ai-log-detail-card [style*="color: #334155"] {
             color: #b8c7dc !important;
+        }
+        body[data-theme="dark"] .admin-ai-settings-history-wrap {
+            background: #13233a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-ai-settings-history-item {
+            background: #16243a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-ai-settings-history-version {
+            color: #bfdbfe;
+            border-color: #496281;
+            background: #1e3350;
+        }
+        body[data-theme="dark"] .admin-ai-settings-history-meta {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .admin-ai-settings-history-note {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .admin-ai-settings-version-card {
+            background: #13233a;
+            border-color: #3f5475;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .admin-ai-settings-version-card b {
+            color: #93c5fd;
         }
         body[data-theme="dark"] .integrated-search-insight-block {
             background: #16243a;
@@ -2813,12 +2875,22 @@
             min-height: 620px;
             max-height: calc(100vh - 220px);
         }
-        .ai-search-side-head { margin-bottom: 10px; display: grid; gap: 8px; }
+        .ai-search-side-head {
+            margin-bottom: 10px;
+            display: grid;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #dbe7f5;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #f8fbff, #f2f7ff);
+        }
         .ai-search-side-action-btn {
             width: 100%;
             justify-content: center;
             min-height: 40px;
             padding: 8px 10px;
+            border-radius: 10px !important;
+            font-weight: 800;
         }
         .ai-search-side-title {
             font-size: 12px;
@@ -2981,10 +3053,13 @@
             padding: 8px 10px;
             background: #f8fafc;
             cursor: pointer;
+            transition: border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
         }
         .ai-search-history-item:hover {
             border-color: #93c5fd;
             background: #eff6ff;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
         }
         .ai-search-history-title {
             font-size: 13px;
@@ -2995,6 +3070,30 @@
             margin-top: 4px;
             font-size: 11px;
             color: #64748b;
+        }
+        .ai-search-history-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 42px;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .ai-search-history-row + .ai-search-history-row { margin-top: 8px; }
+        .ai-search-history-del {
+            width: 42px;
+            min-width: 42px;
+            border-radius: 10px !important;
+            padding: 0 !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-color: #d7e3f2 !important;
+            color: #64748b !important;
+            background: #f8fbff !important;
+        }
+        .ai-search-history-del:hover:not(:disabled) {
+            border-color: #fca5a5 !important;
+            color: #b91c1c !important;
+            background: #fff1f2 !important;
         }
         .ai-search-input-row {
             display: flex;
@@ -3494,6 +3593,67 @@
             background: #fff;
             overflow: hidden;
         }
+        .admin-ai-settings-history-wrap {
+            border: 1px solid #dbe7f5;
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 56vh;
+            overflow: auto;
+        }
+        .admin-ai-settings-history-item {
+            border: 1px solid #dbe7f5;
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px 12px;
+        }
+        .admin-ai-settings-history-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .admin-ai-settings-history-version {
+            font-size: 12px;
+            font-weight: 900;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            border-radius: 999px;
+            padding: 2px 8px;
+        }
+        .admin-ai-settings-history-meta {
+            font-size: 12px;
+            color: #475569;
+            flex: 1;
+            min-width: 240px;
+        }
+        .admin-ai-settings-history-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .admin-ai-settings-version-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .admin-ai-settings-version-card {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: #334155;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .admin-ai-settings-version-card b { font-weight: 800; color: #1e3a8a; }
         .admin-ai-logs-table {
             width: 100%;
             border-collapse: collapse;
@@ -3567,6 +3727,9 @@
         }
         @media (max-width: 768px) {
             .admin-ai-log-detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .admin-ai-settings-version-grid {
                 grid-template-columns: 1fr;
             }
         }

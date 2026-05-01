@@ -1173,7 +1173,8 @@
                         </div>
 
                         <div class="admin-settings-actions">
-                            <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
+                            <button type="button" class="btn btn-outline" onclick="resetAdminAiSettingsToDefault()">초기설정으로 되돌리기</button>
+                            <button type="button" class="btn btn-outline" onclick="openAdminAiSettingsHistoryModal()">설정 변경 이력</button>
                             <button type="button" class="btn btn-primary" onclick="saveAdminAiSettingsToServer()">설정 저장</button>
                         </div>
                         </div>
@@ -1390,6 +1391,21 @@
             <div id="adminAiHelpModalBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeAdminAiHelpModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiSettingsHistoryModal" class="modal-overlay" style="z-index: 1017;">
+        <div class="modal-content" style="max-width: 960px; width:min(96vw,960px);">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">AI 설정 변경 이력</h3>
+                <button class="btn-icon" onclick="closeAdminAiSettingsHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body">
+                <div id="adminAiSettingsHistorySummary" class="admin-settings-hint" style="margin-bottom:10px;">기록: 0건</div>
+                <div id="adminAiSettingsHistoryList" class="admin-ai-settings-history-wrap"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiSettingsHistoryModal()">닫기</button>
             </div>
         </div>
     </div>

@@ -5,6 +5,7 @@ let adminAiPostTabsInited = false;
 let adminAiGenWired = false;
 let adminSettingsMainTabsInited = false;
 let adminAiApiLogs = [];
+let adminAiSettingsHistory = [];
 
 function clampAdminAiGen01(v) {
     const n = Math.round(Number(v) * 10) / 10;
@@ -32,6 +33,78 @@ function setAdminRuntimeDefaultText(id, defaultValue) {
     if (!el) return;
     const hasDefault = defaultValue != null && Number.isFinite(Number(defaultValue));
     el.innerText = hasDefault ? `기본값: ${defaultValue}` : "기본값: -";
+}
+
+function getAdminActorName() {
+    try {
+        if (typeof getCurrentActorName === "function") return String(getCurrentActorName() || "").trim() || "unknown";
+    } catch (_) {
+        // no-op
+    }
+    return "unknown";
+}
+
+function collectAdminAiSettingsFromForm() {
+    const readPair = (prefix) => ({
+        temperature: clampAdminAiGen01(
+            document.getElementById(`${prefix}-temp-num`)?.value ?? document.getElementById(`${prefix}-temp`)?.value,
+        ),
+        topP: clampAdminAiGen01(
+            document.getElementById(`${prefix}-topP-num`)?.value ?? document.getElementById(`${prefix}-topP`)?.value,
+        ),
+    });
+    const aiSettings = {
+        chat: {
+            systemPrompt: String(document.getElementById("adminAi-chat-prompt")?.value || ""),
+            ...readPair("adminAi-chat"),
+        },
+        posts: {},
+        runtime: {
+            chatMaxOutputTokens: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxOutputTokens")?.value,
+                50,
+                8192,
+                null,
+            ),
+            postMaxOutputTokens: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxOutputTokens")?.value,
+                50,
+                8192,
+                null,
+            ),
+            chatMaxContinuations: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxContinuations")?.value,
+                0,
+                200,
+                null,
+            ),
+            postMaxContinuations: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxContinuations")?.value,
+                0,
+                200,
+                null,
+            ),
+            chatMaxContinuationRuntimeMs: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxContinuationRuntimeMs")?.value,
+                500,
+                300000,
+                null,
+            ),
+            postMaxContinuationRuntimeMs: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxContinuationRuntimeMs")?.value,
+                500,
+                300000,
+                null,
+            ),
+        },
+    };
+    ADMIN_AI_POST_KEYS.forEach((k) => {
+        aiSettings.posts[k] = {
+            systemPrompt: String(document.getElementById(`adminAi-post-${k}-prompt`)?.value || ""),
+            ...readPair(`adminAi-post-${k}`),
+        };
+    });
+    return aiSettings;
 }
 
 function wireAdminAiGenControlsOnce() {
@@ -153,76 +226,144 @@ async function saveAdminAiSettingsToServer() {
         showAlert("플랫폼 관리자 권한이 필요합니다.", "error");
         return;
     }
-    const readPair = (prefix) => ({
-        temperature: clampAdminAiGen01(
-            document.getElementById(`${prefix}-temp-num`)?.value ?? document.getElementById(`${prefix}-temp`)?.value,
-        ),
-        topP: clampAdminAiGen01(
-            document.getElementById(`${prefix}-topP-num`)?.value ?? document.getElementById(`${prefix}-topP`)?.value,
-        ),
-    });
-    const aiSettings = {
-        chat: {
-            systemPrompt: String(document.getElementById("adminAi-chat-prompt")?.value || ""),
-            ...readPair("adminAi-chat"),
-        },
-        posts: {},
-        runtime: {
-            chatMaxOutputTokens: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-chatMaxOutputTokens")?.value,
-                50,
-                8192,
-                null,
-            ),
-            postMaxOutputTokens: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-postMaxOutputTokens")?.value,
-                50,
-                8192,
-                null,
-            ),
-            chatMaxContinuations: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-chatMaxContinuations")?.value,
-                0,
-                200,
-                null,
-            ),
-            postMaxContinuations: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-postMaxContinuations")?.value,
-                0,
-                200,
-                null,
-            ),
-            chatMaxContinuationRuntimeMs: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-chatMaxContinuationRuntimeMs")?.value,
-                500,
-                300000,
-                null,
-            ),
-            postMaxContinuationRuntimeMs: clampAdminAiInt(
-                document.getElementById("adminAi-runtime-postMaxContinuationRuntimeMs")?.value,
-                500,
-                300000,
-                null,
-            ),
-        },
-    };
-    ADMIN_AI_POST_KEYS.forEach((k) => {
-        aiSettings.posts[k] = {
-            systemPrompt: String(document.getElementById(`adminAi-post-${k}-prompt`)?.value || ""),
-            ...readPair(`adminAi-post-${k}`),
-        };
-    });
+    const aiSettings = collectAdminAiSettingsFromForm();
     try {
         await fetchJson("/api/db/ai-settings", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ aiSettings }),
+            body: JSON.stringify({
+                aiSettings,
+                meta: { changedBy: getAdminActorName(), note: "관리자 화면에서 수동 저장" },
+            }),
         });
         showAlert("관리자 설정을 저장했습니다.", "success");
     } catch (e) {
         console.error(e);
         showAlert("저장에 실패했습니다.", "error");
     }
+}
+
+async function resetAdminAiSettingsToDefault() {
+    if (!currentUserHasAdminAccess()) {
+        showAlert("플랫폼 관리자 권한이 필요합니다.", "error");
+        return;
+    }
+    showConfirm("AI 설정을 초기 기본값으로 되돌릴까요?", async () => {
+        try {
+            await fetchJson("/api/db/ai-settings/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    meta: { changedBy: getAdminActorName(), note: "초기설정으로 되돌리기 실행" },
+                }),
+            });
+            await loadAdminAiSettingsView();
+            showAlert("AI 설정을 초기 기본값으로 되돌렸습니다.", "success");
+        } catch (e) {
+            console.error(e);
+            showAlert("초기설정 복원에 실패했습니다.", "error");
+        }
+    });
+}
+
+function closeAdminAiSettingsHistoryModal() {
+    const modal = document.getElementById("adminAiSettingsHistoryModal");
+    if (modal) modal.classList.remove("active");
+}
+
+function summarizeAiSettingsHtml(settings) {
+    const cfg = settings && typeof settings === "object" ? settings : {};
+    const c = cfg.chat && typeof cfg.chat === "object" ? cfg.chat : {};
+    const p = cfg.posts && typeof cfg.posts === "object" ? cfg.posts : {};
+    const r = cfg.runtime && typeof cfg.runtime === "object" ? cfg.runtime : {};
+    const postIT = p.IT && typeof p.IT === "object" ? p.IT : {};
+    const postBIZ = p.BIZ && typeof p.BIZ === "object" ? p.BIZ : {};
+    return `
+        <div class="admin-ai-settings-version-grid">
+            <div class="admin-ai-settings-version-card"><b>채팅</b><span>T ${c.temperature ?? "-"} / P ${c.topP ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>IT 답변</b><span>T ${postIT.temperature ?? "-"} / P ${postIT.topP ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>BIZ 답변</b><span>T ${postBIZ.temperature ?? "-"} / P ${postBIZ.topP ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>토큰/이어쓰기</b><span>chat ${r.chatMaxOutputTokens ?? "-"} / post ${r.postMaxOutputTokens ?? "-"}</span></div>
+        </div>
+    `;
+}
+
+function renderAdminAiSettingsHistoryList() {
+    const mount = document.getElementById("adminAiSettingsHistoryList");
+    const summary = document.getElementById("adminAiSettingsHistorySummary");
+    if (!mount || !summary) return;
+    const list = Array.isArray(adminAiSettingsHistory) ? adminAiSettingsHistory : [];
+    summary.innerText = `기록: ${list.length}건`;
+    if (!list.length) {
+        mount.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">저장된 설정 이력이 없습니다.</div>';
+        return;
+    }
+    mount.innerHTML = list
+        .map((item) => {
+            const versionNo = Number(item && item.versionNo) || 0;
+            const action = String(item && item.action ? item.action : "save");
+            const actionText = action === "restore" ? "복원" : action === "reset" ? "초기화" : "저장";
+            const actor = escapeHtml(String(item && item.changedBy ? item.changedBy : "unknown"));
+            const note = escapeHtml(String(item && item.note ? item.note : "-"));
+            const createdAt = formatAdminAiApiLogTime(item && item.createdAt);
+            return `
+                <div class="admin-ai-settings-history-item">
+                    <div class="admin-ai-settings-history-head">
+                        <div class="admin-ai-settings-history-version">v${versionNo}</div>
+                        <div class="admin-ai-settings-history-meta">${createdAt} · ${actor} · ${actionText}</div>
+                        <button type="button" class="btn btn-primary" style="padding:5px 10px; font-size:12px;" onclick="restoreAdminAiSettingsVersion(${versionNo})">이 버전으로 복원</button>
+                    </div>
+                    <div class="admin-ai-settings-history-note">${note}</div>
+                    ${summarizeAiSettingsHtml(item && item.aiSettings)}
+                </div>
+            `;
+        })
+        .join("");
+}
+
+async function loadAdminAiSettingsHistory() {
+    const data = await fetchJson("/api/db/ai-settings/history");
+    adminAiSettingsHistory = Array.isArray(data && data.history) ? data.history : [];
+}
+
+async function openAdminAiSettingsHistoryModal() {
+    try {
+        await loadAdminAiSettingsHistory();
+        renderAdminAiSettingsHistoryList();
+        const modal = document.getElementById("adminAiSettingsHistoryModal");
+        if (modal) modal.classList.add("active");
+    } catch (e) {
+        console.error(e);
+        showAlert("설정 변경 이력을 불러오지 못했습니다.", "error");
+    }
+}
+
+async function restoreAdminAiSettingsVersion(versionNo) {
+    if (!currentUserHasAdminAccess()) {
+        showAlert("플랫폼 관리자 권한이 필요합니다.", "error");
+        return;
+    }
+    const target = Number(versionNo);
+    if (!Number.isFinite(target) || target <= 0) return;
+    showConfirm(`v${target} 설정으로 복원하시겠습니까?`, async () => {
+        try {
+            await fetchJson("/api/db/ai-settings/restore", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    versionNo: target,
+                    meta: { changedBy: getAdminActorName(), note: `v${target} 복원` },
+                }),
+            });
+            await loadAdminAiSettingsView();
+            await loadAdminAiSettingsHistory();
+            renderAdminAiSettingsHistoryList();
+            showAlert(`v${target} 설정으로 복원했습니다.`, "success");
+        } catch (e) {
+            console.error(e);
+            showAlert("설정 복원에 실패했습니다.", "error");
+        }
+    });
 }
 
 function initAdminSettingsMainTabsOnce() {
@@ -649,3 +790,7 @@ function openAdminAiHelpModal(topic) {
 window.openAdminAiHelpModal = openAdminAiHelpModal;
 window.closeAdminAiHelpModal = closeAdminAiHelpModal;
 window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;
+window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
+window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;
+window.closeAdminAiSettingsHistoryModal = closeAdminAiSettingsHistoryModal;
+window.restoreAdminAiSettingsVersion = restoreAdminAiSettingsVersion;
