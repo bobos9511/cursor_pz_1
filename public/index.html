@@ -321,6 +321,7 @@
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
             <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>개선제안</button>
             <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI지식</button>
+            <button class="top-nav-item it-admin-only hidden" id="topnav-it-ai-settings" onclick="switchView('it-ai-settings')"><svg class="icon"><use href="#icon-brain"></use></svg>IT AI</button>
             <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
         </div>
 
@@ -365,7 +366,8 @@
                 <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
                 <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
                 <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식베이스 관리</span></div>
-
+                <div class="nav-title mt-10 it-admin-only hidden" style="color:#93c5fd;">IT 관리</div>
+                <div class="nav-item it-admin-only hidden" id="nav-it-ai-settings" onclick="switchView('it-ai-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-brain"></use></svg> <span class="nav-text">IT AI 설정</span></div>
             </aside>
 
             <!-- 메인 콘텐츠 영역 (푸터 포함) -->
@@ -905,6 +907,112 @@
                                     테스트 DB 초기화
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="view-it-ai-settings" class="view-section max-w-1000">
+                        <h2 class="page-title">IT 관리자 · AI 설정</h2>
+                        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">AI 채팅과 게시판별 AI 답변의 시스템 프롬프트, Temperature, Top-P를 조정합니다. 값은 0.1 단위입니다.</p>
+
+                        <div class="panel p-20" style="margin-bottom:16px;">
+                            <div class="panel-header" style="border:none;padding:0 0 12px 0;">AI 채팅 (CHAT)</div>
+                            <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">추가 시스템 프롬프트</label>
+                            <textarea id="itAi-chat-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;" placeholder="기본 안내 위에 덧붙일 지침 (선택)"></textarea>
+                            <div class="flex-col gap-12" style="margin-top:14px;">
+                                <div class="flex items-center gap-12 flex-wrap">
+                                    <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
+                                    <input type="range" id="itAi-chat-temp" class="it-ai-gen-range" data-prefix="itAi-chat" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                    <input type="number" id="itAi-chat-temp-num" class="input it-ai-gen-num" data-prefix="itAi-chat" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                </div>
+                                <div class="flex items-center gap-12 flex-wrap">
+                                    <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
+                                    <input type="range" id="itAi-chat-topP" class="it-ai-gen-range" data-prefix="itAi-chat" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                    <input type="number" id="itAi-chat-topP-num" class="input it-ai-gen-num" data-prefix="itAi-chat" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel p-20">
+                            <div class="panel-header" style="border:none;padding:0 0 12px 0;">AI 게시물 답변 (게시판별)</div>
+                            <div class="flex gap-8 flex-wrap" style="margin-bottom:14px;" id="itAi-post-tabs">
+                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="IT" style="padding:6px 12px;font-size:13px;">IT</button>
+                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="BIZ" style="padding:6px 12px;font-size:13px;">BIZ</button>
+                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="SYS" style="padding:6px 12px;font-size:13px;">SYS</button>
+                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="KNOW" style="padding:6px 12px;font-size:13px;">KNOW</button>
+                            </div>
+                            <div id="itAi-post-panels">
+                                <!-- IT -->
+                                <div class="it-ai-post-panel" data-board="IT">
+                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">IT 게시판 추가 프롬프트</label>
+                                    <textarea id="itAi-post-IT-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
+                                    <div class="flex-col gap-12" style="margin-top:14px;">
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
+                                            <input type="range" id="itAi-post-IT-temp" class="it-ai-gen-range" data-prefix="itAi-post-IT" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-IT-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-IT" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
+                                            <input type="range" id="itAi-post-IT-topP" class="it-ai-gen-range" data-prefix="itAi-post-IT" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-IT-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-IT" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- BIZ -->
+                                <div class="it-ai-post-panel hidden" data-board="BIZ">
+                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">BIZ 게시판 추가 프롬프트</label>
+                                    <textarea id="itAi-post-BIZ-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
+                                    <div class="flex-col gap-12" style="margin-top:14px;">
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
+                                            <input type="range" id="itAi-post-BIZ-temp" class="it-ai-gen-range" data-prefix="itAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-BIZ-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
+                                            <input type="range" id="itAi-post-BIZ-topP" class="it-ai-gen-range" data-prefix="itAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-BIZ-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="it-ai-post-panel hidden" data-board="SYS">
+                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">SYS 게시판 추가 프롬프트</label>
+                                    <textarea id="itAi-post-SYS-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
+                                    <div class="flex-col gap-12" style="margin-top:14px;">
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
+                                            <input type="range" id="itAi-post-SYS-temp" class="it-ai-gen-range" data-prefix="itAi-post-SYS" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-SYS-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-SYS" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
+                                            <input type="range" id="itAi-post-SYS-topP" class="it-ai-gen-range" data-prefix="itAi-post-SYS" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-SYS-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-SYS" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="it-ai-post-panel hidden" data-board="KNOW">
+                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">KNOW 게시판 추가 프롬프트</label>
+                                    <textarea id="itAi-post-KNOW-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
+                                    <div class="flex-col gap-12" style="margin-top:14px;">
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
+                                            <input type="range" id="itAi-post-KNOW-temp" class="it-ai-gen-range" data-prefix="itAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-KNOW-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                        <div class="flex items-center gap-12 flex-wrap">
+                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
+                                            <input type="range" id="itAi-post-KNOW-topP" class="it-ai-gen-range" data-prefix="itAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
+                                            <input type="number" id="itAi-post-KNOW-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right mt-20" style="border-top:1px solid #eee;padding-top:16px;">
+                            <button type="button" class="btn btn-outline" style="margin-right:10px;" onclick="switchView('dashboard')">닫기</button>
+                            <button type="button" class="btn btn-primary" onclick="saveItAiSettingsToServer()">저장</button>
                         </div>
                     </div>
 

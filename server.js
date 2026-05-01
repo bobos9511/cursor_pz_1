@@ -2,6 +2,13 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
+const {
+  deepCloneAiSettings,
+  mergeAiSettingsFromDb,
+  mergeAiSettingsPatch,
+  buildAiPrompt,
+  buildGenerationConfig,
+} = require("./server-ai-settings");
 
 loadEnv(path.join(__dirname, ".env"));
 
@@ -39,6 +46,7 @@ const DEFAULT_DB = {
   appDataByScope: {},
   signupUsers: [],
   sharedBoardHelp: {},
+  aiSettings: deepCloneAiSettings(),
 };
 
 const MIME_TYPES = {
@@ -264,6 +272,7 @@ function readDb() {
       appDataByScope: parsed && typeof parsed.appDataByScope === "object" ? parsed.appDataByScope : {},
       signupUsers: Array.isArray(parsed && parsed.signupUsers) ? parsed.signupUsers : [],
       sharedBoardHelp: parsed && typeof parsed.sharedBoardHelp === "object" ? parsed.sharedBoardHelp : {},
+      aiSettings: mergeAiSettingsFromDb(parsed),
     };
   } catch (error) {
     return { ...DEFAULT_DB };
@@ -348,95 +357,13 @@ async function handleAiChat(req, res) {
     return;
   }
 
-  const prompt =
-    continueFrom
-      ? [
-          "직전 답변의 마지막 문장 다음부터 자연스럽게 이어서 작성하라.",
-          "이미 작성한 문장을 반복하지 말고, 누락된 핵심만 이어서 작성하라.",
-          "내부 추론 흔적, 영어 단편 문장, 코드 주석 파편을 절대 출력하지 마라.",
-          boardType === "CHAT"
-            ? "불릿 형식을 유지하고 최대 3개 불릿으로 간결하게 작성하라."
-            : "기존 답변의 형식과 톤을 유지해 이어서 작성하라.",
-          "",
-          `[원질문] ${content}`,
-          "[이미 출력된 답변]",
-          continueFrom,
-        ].join("\n")
-      : boardType === "CHAT"
-      ? [
-          "너는 은행 업무를 보조하는 범용 AI 어시스턴트다.",
-          "데모 버전이므로 핵심만 짧고 명확하게 답변하라.",
-          "인사말/서론 없이 바로 결론부터 작성하라.",
-          "반드시 한국어로만 답변하라.",
-          "답변은 반드시 '-'로 시작하는 bullet만 사용하라.",
-          "불릿은 최대 4개로 작성하라.",
-          "각 불릿은 1문장 중심으로 짧게 작성하라.",
-          "전체 출력은 최대 50줄을 넘기지 마라.",
-          "모르면 추측하지 말고 확인이 필요하다고 명시하라.",
-          "",
-          `[질문] ${title}`,
-          `[상세] ${content}`,
-        ].join("\n")
-      : boardType === "IT"
-      ? [
-          "너는 10년 차 수석 백엔드/프론트엔드 엔지니어 및 DBA야. 사용자의 기술 질문이나 에러 로그를 보고 다음 규칙에 따라 답변해:",
-          "",
-          "인사말이나 불필요한 서론은 절대 쓰지 마. 바로 본론으로 들어가.",
-          "",
-          "문제의 '예상 원인'을 1~2줄로 짧게 요약해.",
-          "",
-          "해결책은 구체적인 조치 방법이나 수정된 핵심 코드 스니펫(Snippet)만 마크다운(Markdown) 블록으로 제공해. 전체 코드를 다시 작성하지 마.",
-          "",
-          `답변 길이는 전체 ${GEMINI_MAX_OUTPUT_TOKENS}자(토큰값에 따라 변경) 이내로 간결하게 유지해.`,
-          "",
-          `[게시판] ${boardType}`,
-          `[제목] ${title}`,
-          `[내용] ${content}`,
-        ].join("\n")
-      : boardType === "BIZ"
-        ? [
-            "너는 대한민국 금융 정책 및 은행업 전문 금융 어시스턴트야.",
-            "",
-            "답변은 반드시 3~4개의 개조식(Bullet point)으로 핵심만 작성해.",
-            "",
-            `전체 답변 길이는 ${GEMINI_MAX_OUTPUT_TOKENS}자(토큰값에 따라 변경) 이내로 유지해.`,
-            "",
-            "네가 모르는 최신 정책(2026년 이후)을 물어보면, 지어내지 말고 '해당 정책의 최신 세부 사항은 금융위원회 공식 발표를 확인해 주세요.'라고 답변해.",
-            "",
-            `[게시판] ${boardType}`,
-            `[제목] ${title}`,
-            `[내용] ${content}`,
-          ].join("\n")
-        : [
-            "역할 소개 문장은 쓰지 말고, 바로 답변 본문만 작성하라.",
-            "불필요한 인사/서론/반복 문장 금지.",
-            "상황 요약, 확인 항목, 후속 조치 순서 중심으로 작성.",
-            "",
-            `[게시판] ${boardType}`,
-            `[제목] ${title}`,
-            `[내용] ${content}`,
-          ].join("\n");
-
-  const generationConfig =
-    boardType === "CHAT"
-      ? { temperature: 0.2, topP: 0.8, maxOutputTokens: Math.min(GEMINI_CHAT_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS) }
-      : boardType === "IT"
-      ? {
-          temperature: 0.1,
-          topP: 0.9,
-          maxOutputTokens: continueFrom
-            ? GEMINI_MAX_OUTPUT_TOKENS
-            : Math.min(GEMINI_POST_FAST_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS),
-        }
-      : boardType === "BIZ"
-        ? {
-            temperature: 0.2,
-            topP: 0.8,
-            maxOutputTokens: continueFrom
-              ? GEMINI_MAX_OUTPUT_TOKENS
-              : Math.min(GEMINI_POST_FAST_MAX_OUTPUT_TOKENS, GEMINI_MAX_OUTPUT_TOKENS),
-          }
-        : { temperature: 0.2, topP: 0.9, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS };
+  const aiSettings = readDb().aiSettings;
+  const prompt = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
+  const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
+    chatMax: GEMINI_CHAT_MAX_OUTPUT_TOKENS,
+    max: GEMINI_MAX_OUTPUT_TOKENS,
+    postFast: GEMINI_POST_FAST_MAX_OUTPUT_TOKENS,
+  });
 
   try {
     const useGrounding = shouldUseGrounding(boardType, title, content);
@@ -530,9 +457,6 @@ async function handleAiChat(req, res) {
       reply = merged;
       finishReason = continueFinishReason;
     }
-    if (finishReason === "MAX_TOKENS" && boardType !== "CHAT") {
-      reply = `${reply}\n\n(응답이 길어 핵심만 우선 제공되었습니다. 필요 시 '계속'이라고 입력해주세요.)`.trim();
-    }
     reply =
       boardType === "CHAT"
         ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
@@ -616,6 +540,30 @@ async function handleDbApi(req, res, url) {
     db.sharedBoardHelp = boardHelpMap;
     writeDb(db);
     sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/ai-settings") {
+    const db = readDb();
+    sendJson(res, 200, { aiSettings: db.aiSettings });
+    return true;
+  }
+  if (req.method === "PUT" && url.pathname === "/api/db/ai-settings") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+      return true;
+    }
+    const patch = body && body.aiSettings && typeof body.aiSettings === "object" ? body.aiSettings : null;
+    if (!patch) {
+      sendJson(res, 400, { error: "aiSettings 객체가 필요합니다." });
+      return true;
+    }
+    const db = readDb();
+    db.aiSettings = mergeAiSettingsPatch(db.aiSettings, patch);
+    writeDb(db);
+    sendJson(res, 200, { ok: true, aiSettings: db.aiSettings });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/reset") {

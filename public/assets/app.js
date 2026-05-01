@@ -605,6 +605,131 @@
             });
         }
 
+        const IT_AI_POST_KEYS = ['IT', 'BIZ', 'SYS', 'KNOW'];
+        let itAiPostTabsInited = false;
+        let itAiGenWired = false;
+
+        function clampItAiGen01(v) {
+            const n = Math.round(Number(v) * 10) / 10;
+            if (!Number.isFinite(n)) return 0.1;
+            return Math.min(1, Math.max(0, n));
+        }
+
+        function wireItAiGenControlsOnce() {
+            if (itAiGenWired) return;
+            itAiGenWired = true;
+            document.querySelectorAll('.it-ai-gen-range').forEach((range) => {
+                range.addEventListener('input', () => {
+                    const v = clampItAiGen01(range.value);
+                    range.value = String(v);
+                    const num = document.getElementById(`${range.id}-num`);
+                    if (num) num.value = String(v);
+                });
+            });
+            document.querySelectorAll('.it-ai-gen-num').forEach((num) => {
+                const syncFromNum = () => {
+                    const v = clampItAiGen01(num.value);
+                    num.value = String(v);
+                    const rangeId = num.id.replace(/-num$/, '');
+                    const range = document.getElementById(rangeId);
+                    if (range) range.value = String(v);
+                };
+                num.addEventListener('input', syncFromNum);
+                num.addEventListener('change', syncFromNum);
+            });
+        }
+
+        function initItAiPostTabsOnce() {
+            if (itAiPostTabsInited) return;
+            itAiPostTabsInited = true;
+            document.querySelectorAll('.it-ai-tab-btn').forEach((btn) => {
+                btn.addEventListener('click', () => selectItAiPostTab(btn.getAttribute('data-board')));
+            });
+            selectItAiPostTab('IT');
+        }
+
+        function selectItAiPostTab(board) {
+            document.querySelectorAll('.it-ai-tab-btn').forEach((b) => {
+                const on = b.getAttribute('data-board') === board;
+                b.classList.toggle('btn-primary', on);
+                b.classList.toggle('btn-outline', !on);
+            });
+            document.querySelectorAll('.it-ai-post-panel').forEach((p) => {
+                p.classList.toggle('hidden', p.getAttribute('data-board') !== board);
+            });
+        }
+
+        async function loadItAiSettingsView() {
+            try {
+                const data = await fetchJson('/api/db/ai-settings');
+                const cfg = data && data.aiSettings ? data.aiSettings : null;
+                if (!cfg) throw new Error('empty');
+                const chatPrompt = document.getElementById('itAi-chat-prompt');
+                if (chatPrompt) chatPrompt.value = cfg.chat && cfg.chat.systemPrompt != null ? cfg.chat.systemPrompt : '';
+                const chatT = clampItAiGen01(cfg.chat && cfg.chat.temperature != null ? cfg.chat.temperature : 0.1);
+                const chatTp = clampItAiGen01(cfg.chat && cfg.chat.topP != null ? cfg.chat.topP : 0.8);
+                [['itAi-chat-temp', chatT], ['itAi-chat-topP', chatTp]].forEach(([id, v]) => {
+                    const range = document.getElementById(id);
+                    const num = document.getElementById(`${id}-num`);
+                    if (range) range.value = String(v);
+                    if (num) num.value = String(v);
+                });
+                IT_AI_POST_KEYS.forEach((k) => {
+                    const p = cfg.posts && cfg.posts[k] ? cfg.posts[k] : {};
+                    const ta = document.getElementById(`itAi-post-${k}-prompt`);
+                    if (ta) ta.value = p.systemPrompt != null ? p.systemPrompt : '';
+                    const t = clampItAiGen01(p.temperature != null ? p.temperature : 0.1);
+                    const tp = clampItAiGen01(p.topP != null ? p.topP : 0.8);
+                    const rt = document.getElementById(`itAi-post-${k}-temp`);
+                    const rtp = document.getElementById(`itAi-post-${k}-topP`);
+                    const ntt = document.getElementById(`itAi-post-${k}-temp-num`);
+                    const ntp = document.getElementById(`itAi-post-${k}-topP-num`);
+                    if (rt) rt.value = String(t);
+                    if (rtp) rtp.value = String(tp);
+                    if (ntt) ntt.value = String(t);
+                    if (ntp) ntp.value = String(tp);
+                });
+            } catch (e) {
+                console.error(e);
+                showAlert('AI 설정을 불러오지 못했습니다.', 'error');
+            }
+        }
+
+        async function saveItAiSettingsToServer() {
+            if (currentRole !== 'it') {
+                showAlert('IT 관리자만 저장할 수 있습니다.', 'error');
+                return;
+            }
+            const readPair = (prefix) => ({
+                temperature: clampItAiGen01(document.getElementById(`${prefix}-temp-num`)?.value ?? document.getElementById(`${prefix}-temp`)?.value),
+                topP: clampItAiGen01(document.getElementById(`${prefix}-topP-num`)?.value ?? document.getElementById(`${prefix}-topP`)?.value),
+            });
+            const aiSettings = {
+                chat: {
+                    systemPrompt: String(document.getElementById('itAi-chat-prompt')?.value || ''),
+                    ...readPair('itAi-chat'),
+                },
+                posts: {},
+            };
+            IT_AI_POST_KEYS.forEach((k) => {
+                aiSettings.posts[k] = {
+                    systemPrompt: String(document.getElementById(`itAi-post-${k}-prompt`)?.value || ''),
+                    ...readPair(`itAi-post-${k}`),
+                };
+            });
+            try {
+                await fetchJson('/api/db/ai-settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aiSettings }),
+                });
+                showAlert('AI 설정을 저장했습니다.', 'success');
+            } catch (e) {
+                console.error(e);
+                showAlert('저장에 실패했습니다.', 'error');
+            }
+        }
+
         function formatAttachmentSize(bytes) {
             const n = Number(bytes) || 0;
             if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)}MB`;
@@ -1573,6 +1698,16 @@
                 else { el.classList.add('hidden'); el.classList.remove('flex'); }
             });
 
+            document.querySelectorAll('.it-admin-only').forEach(el => {
+                if (currentRole === 'it') {
+                    el.classList.remove('hidden');
+                    if (el.classList.contains('top-nav-item')) el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    if (el.classList.contains('top-nav-item')) el.classList.remove('flex');
+                }
+            });
+
             if (currentRole === 'branch' && currentBoardType === 'KNOW') { switchView('dashboard'); return; }
             const preferred = resolveInitialViewForRole();
             if (preferred) {
@@ -1920,6 +2055,10 @@
                     return;
                 }
             }
+            if (viewId === 'it-ai-settings' && currentRole !== 'it') {
+                showAlert('IT 관리자만 이용할 수 있습니다.', 'error');
+                return;
+            }
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.top-nav-item').forEach(el => el.classList.remove('active'));
@@ -1966,6 +2105,11 @@
                 const topNavId = `topnav-${viewId}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
                 if (viewId === 'ai-search') initializeAiSearchView();
+                if (viewId === 'it-ai-settings') {
+                    wireItAiGenControlsOnce();
+                    initItAiPostTabsOnce();
+                    loadItAiSettingsView();
+                }
             }
 
             if (viewId === 'dashboard') {
