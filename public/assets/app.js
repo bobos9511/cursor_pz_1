@@ -170,7 +170,7 @@
         // ==========================================
         const MOCK_INITIAL_DATA = [];
 
-        let appData = { posts: [], settings: { notify: true, sms: false, osNotify: true } };
+        let appData = { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
         let currentRole = 'branch'; let currentBoardType = 'IT'; let currentPostId = null;
         let currentSessionIp = '';
         let boardCurrentPage = 1;
@@ -243,6 +243,10 @@
             }
             if (page === 'dashboard') return { viewId: 'dashboard', boardType: null };
             return null;
+        }
+        function getPreferredInitialView() {
+            const v = appData && appData.settings ? String(appData.settings.initialView || 'ai-search') : 'ai-search';
+            return v === 'dashboard' ? 'dashboard' : 'ai-search';
         }
 
         function buildRouteState(viewId, boardType = null, postId = null) {
@@ -633,7 +637,7 @@
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
             const data = await fetchJson(`/api/db/app-data?scope=${scope}`);
-            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false, osNotify: true } };
+            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
             const hasSharedPosts = Array.isArray(sharedAppData.posts) && sharedAppData.posts.length > 0;
             if (hasSharedPosts) return sharedAppData;
 
@@ -790,9 +794,10 @@
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
             }
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
             if (typeof appData.settings.osNotify !== 'boolean') appData.settings.osNotify = true;
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
+            if (appData.settings.initialView !== 'dashboard' && appData.settings.initialView !== 'ai-search') appData.settings.initialView = 'ai-search';
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
             const localBoardHelp = appData.settings.boardHelp || {};
@@ -809,6 +814,8 @@
             if(document.getElementById('setNotify')) document.getElementById('setNotify').checked = appData.settings.notify;
             if(document.getElementById('setSms')) document.getElementById('setSms').checked = appData.settings.sms;
             if(document.getElementById('setOsNotify')) document.getElementById('setOsNotify').checked = appData.settings.osNotify !== false;
+            const initialViewEl = document.querySelector(`input[name="initialView"][value="${getPreferredInitialView()}"]`);
+            if (initialViewEl) initialViewEl.checked = true;
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
@@ -1296,10 +1303,18 @@
             void appContainer.offsetWidth;
             appContainer.classList.add('page-intro');
             await initApp();
-            goToAiSearchPage();
-            setTimeout(updateHeaderActionOverflow, 0);
-            setupHistoryNavigation();
-            syncHistoryRoute('ai-search', null, null, true);
+            const preferredInitialView = getPreferredInitialView();
+            if (preferredInitialView === 'dashboard') {
+                switchView('dashboard');
+                setTimeout(updateHeaderActionOverflow, 0);
+                setupHistoryNavigation();
+                syncHistoryRoute('dashboard', null, null, true);
+            } else {
+                goToAiSearchPage();
+                setTimeout(updateHeaderActionOverflow, 0);
+                setupHistoryNavigation();
+                syncHistoryRoute('ai-search', null, null, true);
+            }
         }
         function doLogout() {
             const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
@@ -1323,11 +1338,13 @@
             const smsEl = document.getElementById('setSms');
             const osNotifyEl = document.getElementById('setOsNotify');
             const themeEl = document.querySelector('input[name="themeMode"]:checked');
+            const initialViewEl = document.querySelector('input[name="initialView"]:checked');
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.notify = !!(notifyEl && notifyEl.checked);
             appData.settings.sms = !!(smsEl && smsEl.checked);
             appData.settings.osNotify = !(osNotifyEl && !osNotifyEl.checked);
             appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
+            appData.settings.initialView = initialViewEl && initialViewEl.value === 'dashboard' ? 'dashboard' : 'ai-search';
             applyThemeMode(appData.settings.themeMode);
             saveData();
             showAlert('설정이 저장되었습니다.', 'success');
@@ -1342,7 +1359,7 @@
             fetchJson('/api/db/reset', { method: 'POST' })
                 .then(() => {
                     clearCookie(USER_SCOPE_COOKIE);
-                    appData = { posts: [], settings: { notify: true, sms: false, osNotify: true } };
+                    appData = { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
                     signupUsers = [];
                     currentSessionIp = '';
                     doLogout();
@@ -1842,7 +1859,7 @@
                 switchView(preferred.viewId, preferred.boardType);
                 return;
             }
-            switchView('dashboard');
+            switchView(getPreferredInitialView());
         }
 
         function updatePermissionsUI() {
@@ -1877,7 +1894,7 @@
             return { text: legacyText, html: '', hasContent: !!legacyText, updatedAt: 0 };
         }
         function getBoardHelpUiState() {
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
             if (!appData.settings.boardHelpUi || typeof appData.settings.boardHelpUi !== 'object') appData.settings.boardHelpUi = {};
             const ui = appData.settings.boardHelpUi;
             if (!ui.collapsedByType || typeof ui.collapsedByType !== 'object') ui.collapsedByType = {};
@@ -2083,7 +2100,7 @@
         }
         function saveBoardHelpEditor() {
             if (currentRole !== 'it') return;
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedMap = loadSharedBoardHelpMap();
             const editor = document.getElementById('boardHelpEditor');
@@ -3647,7 +3664,8 @@
             if (history && history.state && history.state.page === 'app') {
                 applyHistoryRoute(history.state);
             } else {
-                syncHistoryRoute('ai-search', null, null, true);
+                const preferredInitialView = getPreferredInitialView();
+                syncHistoryRoute(preferredInitialView === 'dashboard' ? 'dashboard' : 'ai-search', null, null, true);
             }
         }
 

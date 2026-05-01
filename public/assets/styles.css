@@ -3803,11 +3803,13 @@
         .admin-perms-table-wrap {
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
             margin-bottom: 8px;
         }
         .admin-perms-table {
             width: 100%;
+            min-width: 980px;
             border-collapse: collapse;
             font-size: 13px;
             background: #fff;
@@ -3819,14 +3821,24 @@
             color: #475569;
             font-weight: 700;
             border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
         }
         .admin-perms-table td {
             padding: 12px 14px;
             border-bottom: 1px solid #f1f5f9;
             color: #334155;
+            white-space: nowrap;
+            vertical-align: middle;
         }
         .admin-perms-table tr:last-child td {
             border-bottom: none;
+        }
+        .admin-perms-table td:nth-child(1),
+        .admin-perms-table td:nth-child(3) {
+            font-weight: 700;
+        }
+        .admin-perms-table td:last-child .btn + .btn {
+            margin-left: 6px;
         }
         .admin-perm-isadmin {
             width: 20px;

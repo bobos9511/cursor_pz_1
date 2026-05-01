@@ -1021,6 +1021,17 @@
                                     <span>시스템 모드 (운영체제 설정 따름)</span>
                                 </label>
                             </div>
+                            <div class="panel-header" style="border:none; padding:20px 0 12px 0;">초기 화면 설정</div>
+                            <div class="flex-col gap-10">
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="initialView" value="ai-search">
+                                    <span>AI채팅 (기본)</span>
+                                </label>
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="initialView" value="dashboard">
+                                    <span>대시보드</span>
+                                </label>
+                            </div>
                             <div class="text-right mt-20" style="border-top: 1px solid #eee; padding-top: 20px;">
                                 <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
                             </div>
