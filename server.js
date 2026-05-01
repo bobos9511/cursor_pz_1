@@ -453,19 +453,49 @@ async function handleAiChat(req, res) {
   }
 
   function tokenizeForSearch(text) {
+    const stopwords = new Set([
+      "요청",
+      "문의",
+      "내용",
+      "관련",
+      "기준",
+      "안내",
+      "확인",
+      "처리",
+      "업무",
+      "정보",
+      "대한",
+      "위해",
+      "있습니다",
+      "합니다",
+      "the",
+      "and",
+      "for",
+      "with",
+      "that",
+      "this",
+    ]);
     return String(text || "")
       .toLowerCase()
       .replace(/[^0-9a-z\uac00-\ud7a3]+/g, " ")
       .split(/\s+/)
-      .filter((t) => t.length >= 2)
+      .filter((t) => t.length >= 2 && !stopwords.has(t))
       .slice(0, 60);
   }
 
-  function buildRagContext(queryText) {
+  function buildRagContext(queryText, boardTypeForRag) {
     const db = readDb();
     const shared = db.appDataByScope && db.appDataByScope.shared ? db.appDataByScope.shared : null;
     const posts = shared && Array.isArray(shared.posts) ? shared.posts : [];
-    const know = posts.filter((p) => p && p.type === "KNOW" && (p.status === "trained" || p.status === "ready"));
+    const bt = String(boardTypeForRag || "").toUpperCase();
+    const know = posts.filter((p) => {
+      if (!(p && p.type === "KNOW" && (p.status === "trained" || p.status === "ready"))) return false;
+      const domain = String(p.knowCategory || "").toUpperCase();
+      // 게시물 AI답변은 해당 게시판 도메인 지식만 사용(IT <-> IT, BIZ <-> BIZ)
+      if (bt === "IT") return domain === "IT";
+      if (bt === "BIZ") return domain === "BIZ";
+      return true; // CHAT은 양쪽 허용
+    });
     if (!know.length) return "";
     const qTokens = new Set(tokenizeForSearch(queryText));
     if (!qTokens.size) return "";
@@ -473,35 +503,54 @@ async function handleAiChat(req, res) {
     const scored = know
       .map((p) => {
         const meta = p.meta && typeof p.meta === "object" ? p.meta : {};
-        const hay = [
-          p.title,
-          meta.knowQuestion,
-          meta.knowAnswer,
-          meta.knowSummary,
-          meta.knowKeywords,
-          meta.knowSource,
-          stripHtmlToText(p.content),
-        ]
-          .filter(Boolean)
-          .join(" ");
-        const hayTokens = tokenizeForSearch(hay);
+        const fields = [
+          { text: p.title, w: 3.0 },
+          { text: meta.knowKeywords, w: 2.5 },
+          { text: meta.knowQuestion, w: 2.2 },
+          { text: meta.knowSummary, w: 1.8 },
+          { text: meta.knowAnswer, w: 1.4 },
+          { text: meta.knowSource, w: 1.2 },
+          { text: stripHtmlToText(p.content), w: 1.0 },
+        ];
+        const matchedTokenSet = new Set();
         let score = 0;
-        for (const t of hayTokens) if (qTokens.has(t)) score += 1;
-        // Small boost for exact contains.
+        for (const f of fields) {
+          const tokens = tokenizeForSearch(f.text);
+          let fieldHits = 0;
+          for (const t of tokens) {
+            if (!qTokens.has(t)) continue;
+            fieldHits += 1;
+            matchedTokenSet.add(t);
+          }
+          if (fieldHits > 0) score += fieldHits * f.w;
+        }
+        const overlapCount = matchedTokenSet.size;
+        // Small boost for exact full-query contains.
         const qStr = String(queryText || "").trim();
-        if (qStr && hay.toLowerCase().includes(qStr.toLowerCase())) score += 3;
-        return { p, score };
+        const hayFull = fields
+          .map((f) => String(f.text || ""))
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (qStr && hayFull.includes(qStr.toLowerCase())) score += 3;
+        return { p, score, overlapCount };
       })
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+      // 단일 토큰 우연 일치는 제외하여 무관 지식 유입 방지
+      .filter((x) => x.overlapCount >= 2 && x.score >= 3)
+      .sort((a, b) => b.score - a.score);
 
     if (!scored.length) return "";
+    const topScore = scored[0].score;
+    const gated = scored
+      // 상위 문서 대비 유사도가 낮은 꼬리 후보 제거
+      .filter((x) => x.score >= Math.max(3, topScore * 0.45))
+      .slice(0, 3);
+    if (!gated.length) return "";
 
     const lines = [];
     lines.push("RAG_CONTEXT_BEGIN");
     lines.push("Use the following KNOWLEDGE snippets only if relevant. Do not invent facts beyond them.");
-    for (const { p } of scored) {
+    for (const { p } of gated) {
       const meta = p.meta && typeof p.meta === "object" ? p.meta : {};
       lines.push("");
       lines.push(`- id: ${p.id} / domain: ${p.knowCategory || "-"}`);
@@ -548,7 +597,7 @@ async function handleAiChat(req, res) {
     300000,
     GEMINI_MAX_CONTINUATION_RUNTIME_MS,
   );
-  const rag = buildRagContext([title, content].join("\n"));
+  const rag = buildRagContext([title, content].join("\n"), boardType);
   const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
   const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
   const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
