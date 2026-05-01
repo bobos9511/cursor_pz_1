@@ -23,6 +23,8 @@
 
         function shouldPreferSystemNotification(options = {}) {
             if (!canUseSystemNotificationApi()) return false;
+            const osNotifyEnabled = !(appData && appData.settings && appData.settings.osNotify === false);
+            if (!osNotifyEnabled) return false;
             const isMobile = isMobileOsClient();
             if (!isMobile) return true;
             const isAsyncOnly = options && options.asyncOnly === true;
@@ -165,7 +167,7 @@
         // ==========================================
         const MOCK_INITIAL_DATA = [];
 
-        let appData = { posts: [], settings: { notify: true, sms: false } };
+        let appData = { posts: [], settings: { notify: true, sms: false, osNotify: true } };
         let currentRole = 'branch'; let currentBoardType = 'IT'; let currentPostId = null;
         let currentSessionIp = '';
         let boardCurrentPage = 1;
@@ -619,7 +621,7 @@
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
             const data = await fetchJson(`/api/db/app-data?scope=${scope}`);
-            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false } };
+            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false, osNotify: true } };
             const hasSharedPosts = Array.isArray(sharedAppData.posts) && sharedAppData.posts.length > 0;
             if (hasSharedPosts) return sharedAppData;
 
@@ -776,7 +778,8 @@
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
             }
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
+            if (typeof appData.settings.osNotify !== 'boolean') appData.settings.osNotify = true;
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
@@ -793,6 +796,7 @@
             
             if(document.getElementById('setNotify')) document.getElementById('setNotify').checked = appData.settings.notify;
             if(document.getElementById('setSms')) document.getElementById('setSms').checked = appData.settings.sms;
+            if(document.getElementById('setOsNotify')) document.getElementById('setOsNotify').checked = appData.settings.osNotify !== false;
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
@@ -1242,10 +1246,12 @@
         function saveSettings() {
             const notifyEl = document.getElementById('setNotify');
             const smsEl = document.getElementById('setSms');
+            const osNotifyEl = document.getElementById('setOsNotify');
             const themeEl = document.querySelector('input[name="themeMode"]:checked');
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.notify = !!(notifyEl && notifyEl.checked);
             appData.settings.sms = !!(smsEl && smsEl.checked);
+            appData.settings.osNotify = !(osNotifyEl && !osNotifyEl.checked);
             appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
             applyThemeMode(appData.settings.themeMode);
             saveData();
@@ -1261,7 +1267,7 @@
             fetchJson('/api/db/reset', { method: 'POST' })
                 .then(() => {
                     clearCookie(USER_SCOPE_COOKIE);
-                    appData = { posts: [], settings: { notify: true, sms: false } };
+                    appData = { posts: [], settings: { notify: true, sms: false, osNotify: true } };
                     signupUsers = [];
                     currentSessionIp = '';
                     doLogout();
@@ -1790,7 +1796,7 @@
             return { text: legacyText, html: '', hasContent: !!legacyText, updatedAt: 0 };
         }
         function getBoardHelpUiState() {
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
             if (!appData.settings.boardHelpUi || typeof appData.settings.boardHelpUi !== 'object') appData.settings.boardHelpUi = {};
             const ui = appData.settings.boardHelpUi;
             if (!ui.collapsedByType || typeof ui.collapsedByType !== 'object') ui.collapsedByType = {};
@@ -1996,7 +2002,7 @@
         }
         function saveBoardHelpEditor() {
             if (currentRole !== 'it') return;
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true };
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedMap = loadSharedBoardHelpMap();
             const editor = document.getElementById('boardHelpEditor');
