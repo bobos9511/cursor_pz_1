@@ -27,7 +27,7 @@ function updateAiSearchDeleteAllButtonState() {
     if (!deleteAllBtn) return;
     const disabled = !Array.isArray(aiSearchHistory) || aiSearchHistory.length === 0;
     deleteAllBtn.disabled = disabled;
-    deleteAllBtn.title = disabled ? "삭제할 지난 대화가 없습니다." : "지난대화를 모두 삭제합니다.";
+    deleteAllBtn.title = disabled ? "삭제할 대화가 없습니다." : "모든 대화를 삭제합니다.";
 }
 
 function toQuestionSourceText(post) {
