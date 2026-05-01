@@ -106,8 +106,17 @@ function summarizeQuestionText(text) {
 }
 
 function parseAiSearchDateTime(rawValue) {
+    if (rawValue instanceof Date && !Number.isNaN(rawValue.getTime())) {
+        return new Date(rawValue.getTime());
+    }
+    if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+        const byTs = new Date(rawValue);
+        return Number.isNaN(byTs.getTime()) ? null : byTs;
+    }
     const raw = String(rawValue || "").trim();
     if (!raw) return null;
+    const byNative = new Date(raw);
+    if (!Number.isNaN(byNative.getTime())) return byNative;
     const m = raw.match(/^(\d{4})[.\-/](\d{2})[.\-/](\d{2})(?:\s+(\d{2}):(\d{2}))?/);
     if (!m) return null;
     const dt = new Date(
@@ -294,11 +303,15 @@ function renderAiSearchMessages() {
         return false;
     };
     let lastDateKey = "";
-    const fallbackDate = parseAiSearchDateTime(aiSearchActive && aiSearchActive.updatedAt) || new Date();
+    let lastResolvedDate = parseAiSearchDateTime(aiSearchActive && aiSearchActive.updatedAt) || new Date();
     messages.forEach((msg, idx) => {
         const role = msg && msg.role === "user" ? "user" : "ai";
         const text = String(msg && msg.text ? msg.text : "");
-        const msgDate = parseAiSearchDateTime(msg && msg.createdAt) || fallbackDate;
+        const msgDate = parseAiSearchDateTime(msg && msg.createdAt) || lastResolvedDate;
+        if (msg && !msg.createdAt) {
+            msg.createdAt = formatAiSearchMessageDateKey(msgDate) + " " + formatAiSearchMessageTime(msgDate);
+        }
+        lastResolvedDate = msgDate;
         const dateKey = formatAiSearchMessageDateKey(msgDate);
         const timeLabel = formatAiSearchMessageTime(msgDate);
         if (dateKey && dateKey !== lastDateKey) {

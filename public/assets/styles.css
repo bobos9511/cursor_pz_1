@@ -3657,7 +3657,7 @@
         .ai-search-msg-row {
             display: flex;
             align-items: flex-end;
-            gap: 4px;
+            gap: 2px;
             margin-bottom: 8px;
             opacity: 0;
             transform: translateY(8px);
@@ -3709,7 +3709,7 @@
             letter-spacing: 0.2px;
         }
         .ai-search-msg.user {
-            margin-left: auto;
+            margin-left: 0;
             background: linear-gradient(145deg, #e0ecff 0%, #d6e8ff 55%, #c5ddff 100%);
             border: 1px solid #aecbff;
         }
@@ -3727,7 +3727,7 @@
             border-bottom-right-radius: 3px;
         }
         .ai-search-msg.ai {
-            margin-right: auto;
+            margin-right: 0;
             background: linear-gradient(145deg, #ffffff 0%, #f8fbff 62%, #eef5ff 100%);
             border: 1px solid #d1deef;
         }
@@ -3767,7 +3767,7 @@
             font-weight: 600;
             white-space: nowrap;
             line-height: 1;
-            padding-bottom: 3px;
+            padding-bottom: 1px;
             letter-spacing: -0.1px;
         }
         .ai-search-msg-prefer-outside {
