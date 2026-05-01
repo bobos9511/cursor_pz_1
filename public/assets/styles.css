@@ -15,6 +15,15 @@
             --sidebar-bg: #212529;
             --footer-bg: #1A1F27;
         }
+        body[data-theme="dark"] {
+            --bg-color: #0b1220;
+            --border-color: #334155;
+            --text-dark: #e2e8f0;
+            --text-gray: #cbd5e1;
+            --text-light: #94a3b8;
+            --sidebar-bg: #0f172a;
+            --footer-bg: #020617;
+        }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { width: 100%; height: 100vh; overflow: hidden; font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif; background-color: var(--bg-color); color: var(--text-dark); font-size: 14px; letter-spacing: -0.3px;}
@@ -630,6 +639,19 @@
         .input:focus { border-color: var(--ibk-blue); box-shadow: 0 0 0 2px rgba(0,75,155,0.1); }
         .input:disabled { background: #f5f5f5; cursor: not-allowed; }
         select.input { appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%); background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 11px) calc(50% - 3px); background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; }
+        .theme-mode-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+        .theme-mode-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--ibk-blue);
+        }
 
         .auth-radio { display: none; }
         .auth-label { display: block; border: 1px solid #ccc; text-align: center; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #666; cursor: pointer; transition: 0.2s; }
@@ -1356,6 +1378,47 @@
             color: #334155;
             line-height: 1.5;
         }
+        .integrated-ranking-board {
+            display: grid;
+            gap: 6px;
+        }
+        .integrated-ranking-row {
+            display: grid;
+            grid-template-columns: 26px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #dbe7f5;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #0f172a, #1e293b);
+            color: #f8fafc;
+            padding: 4px 8px;
+            min-height: 30px;
+            transform-origin: top center;
+            animation: integratedFlipDown 0.38s ease both;
+        }
+        .integrated-ranking-rank {
+            font-size: 11px;
+            font-weight: 900;
+            color: #93c5fd;
+            text-align: center;
+        }
+        .integrated-ranking-keyword {
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .integrated-ranking-count {
+            font-size: 11px;
+            font-weight: 800;
+            color: #facc15;
+        }
+        @keyframes integratedFlipDown {
+            0% { transform: perspective(360px) rotateX(-85deg); opacity: 0; }
+            65% { transform: perspective(360px) rotateX(10deg); opacity: 1; }
+            100% { transform: perspective(360px) rotateX(0deg); opacity: 1; }
+        }
         .integrated-search-results-body {
             padding: 0 !important;
             background: transparent !important;
@@ -1447,6 +1510,45 @@
         /* 푸터 스타일 */
         .footer-dark { background: linear-gradient(180deg, #1f2937, #1f252f); color: #94a3b8; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-top: auto; border-top: 1px solid rgba(148,163,184,0.2); }
         .engraved-logo { font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }
+        body[data-theme="dark"] .main-area-wrapper { background: #0b1220; }
+        body[data-theme="dark"] .panel,
+        body[data-theme="dark"] .modal-content,
+        body[data-theme="dark"] .admin-settings-card,
+        body[data-theme="dark"] .integrated-search-modal {
+            background: #111827;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .panel-header,
+        body[data-theme="dark"] .modal-footer,
+        body[data-theme="dark"] .notification-center-toolbar,
+        body[data-theme="dark"] .integrated-search-head,
+        body[data-theme="dark"] .integrated-search-controls,
+        body[data-theme="dark"] .integrated-search-insight {
+            background: #0f172a;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .input,
+        body[data-theme="dark"] textarea,
+        body[data-theme="dark"] select,
+        body[data-theme="dark"] .integrated-search-input-wrap {
+            background: #0f172a;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .table th,
+        body[data-theme="dark"] .table td,
+        body[data-theme="dark"] .admin-perms-table th,
+        body[data-theme="dark"] .admin-perms-table td,
+        body[data-theme="dark"] .admin-ai-logs-table th,
+        body[data-theme="dark"] .admin-ai-logs-table td {
+            border-color: #334155;
+            color: #e2e8f0;
+            background: transparent;
+        }
+        body[data-theme="dark"] .integrated-search-result-item { background: #111827; border-color: #334155; }
+        body[data-theme="dark"] .integrated-search-result-item:hover { background: #1f2937; }
 
         html, body { min-width: 320px; }
         @media (max-width: 768px) {

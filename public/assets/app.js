@@ -114,6 +114,8 @@
         let writeAttachmentItems = [];
         const aiExpandState = {};
         const aiRefreshingPostIds = new Set();
+        const systemThemeMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+        let systemThemeListenerBound = false;
         let isApplyingHistoryRoute = false;
         let historyRouteInitialized = false;
         const USER_SCOPE_COOKIE = 'knockUserScope';
@@ -217,6 +219,37 @@
             const now = new Date();
             return now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0') + ' ' + 
                    String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        }
+        function getCurrentThemeMode() {
+            const mode = appData && appData.settings ? String(appData.settings.themeMode || 'system') : 'system';
+            return mode === 'light' || mode === 'dark' || mode === 'system' ? mode : 'system';
+        }
+        function resolveThemeFromMode(mode) {
+            const m = String(mode || 'system');
+            if (m === 'light') return 'light';
+            if (m === 'dark') return 'dark';
+            return systemThemeMedia && systemThemeMedia.matches ? 'dark' : 'light';
+        }
+        function applyThemeMode(mode) {
+            const resolved = resolveThemeFromMode(mode);
+            document.body.setAttribute('data-theme', resolved);
+            const radios = document.querySelectorAll('input[name="themeMode"]');
+            radios.forEach((el) => {
+                el.checked = el.value === String(mode || 'system');
+            });
+        }
+        function bindSystemThemeListenerOnce() {
+            if (systemThemeListenerBound || !systemThemeMedia) return;
+            systemThemeListenerBound = true;
+            const handler = () => {
+                const mode = getCurrentThemeMode();
+                if (mode === 'system') applyThemeMode('system');
+            };
+            if (typeof systemThemeMedia.addEventListener === 'function') {
+                systemThemeMedia.addEventListener('change', handler);
+            } else if (typeof systemThemeMedia.addListener === 'function') {
+                systemThemeMedia.addListener(handler);
+            }
         }
         function getKnowCategoryLabel(category) {
             return KNOW_CATEGORY_LABEL[category] || '-';
@@ -678,6 +711,7 @@
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
             }
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false };
+            if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
             const localBoardHelp = appData.settings.boardHelp || {};
@@ -693,6 +727,8 @@
             
             if(document.getElementById('setNotify')) document.getElementById('setNotify').checked = appData.settings.notify;
             if(document.getElementById('setSms')) document.getElementById('setSms').checked = appData.settings.sms;
+            applyThemeMode(appData.settings.themeMode || 'system');
+            bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
             initSidebarNavTooltips();
             bindSidebarHoverTooltipEvents();
@@ -1140,9 +1176,12 @@
         function saveSettings() {
             const notifyEl = document.getElementById('setNotify');
             const smsEl = document.getElementById('setSms');
+            const themeEl = document.querySelector('input[name="themeMode"]:checked');
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.notify = !!(notifyEl && notifyEl.checked);
             appData.settings.sms = !!(smsEl && smsEl.checked);
+            appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
+            applyThemeMode(appData.settings.themeMode);
             saveData();
             showAlert('설정이 저장되었습니다.', 'success');
         }
@@ -3240,39 +3279,59 @@
             performModalSearch();
             input.focus();
         }
-        function renderIntegratedSearchInsights(keyword) {
-            const rankingEl = document.getElementById('integratedKeywordRanking');
-            const relatedEl = document.getElementById('integratedRelatedKeywords');
-            if (!rankingEl || !relatedEl) return;
-            const textSrc = (appData.posts || [])
-                .map((p) => `${p.title || ''} ${(p.content || '').replace(/<[^>]*>?/gm, ' ')}`)
-                .join(' ')
-                .toLowerCase();
-            const tokens = textSrc
+        function extractIntegratedTokensFromText(text) {
+            return String(text || '')
+                .toLowerCase()
                 .replace(/[^a-z0-9가-힣\s]/g, ' ')
                 .split(/\s+/)
                 .filter((t) => t && t.length >= 2);
+        }
+        function buildIntegratedKeywordCounts(posts) {
             const counts = new Map();
-            tokens.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+            (posts || []).forEach((p) => {
+                const merged = `${p && p.title ? p.title : ''} ${p && p.content ? String(p.content).replace(/<[^>]*>?/gm, ' ') : ''}`;
+                extractIntegratedTokensFromText(merged).forEach((t) => {
+                    counts.set(t, (counts.get(t) || 0) + 1);
+                });
+            });
+            return counts;
+        }
+        function renderIntegratedSearchInsights(keyword, matchedPosts = []) {
+            const rankingEl = document.getElementById('integratedKeywordRanking');
+            const relatedEl = document.getElementById('integratedRelatedKeywords');
+            if (!rankingEl || !relatedEl) return;
+            const counts = buildIntegratedKeywordCounts(appData.posts || []);
             const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            rankingEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:4px;">검색어 순위</div>${
+            rankingEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:6px;">검색어 순위</div>${
                 top.length
-                    ? top.map(([k, c], i) => `<span class="badge" style="margin-right:6px; margin-bottom:4px; background:#eef2ff; color:#3730a3;">${i + 1}. ${escapeHtml(k)} (${c})</span>`).join('')
+                    ? `<div class="integrated-ranking-board">${
+                          top
+                              .map(
+                                  ([k, c], i) => `
+                            <div class="integrated-ranking-row" style="animation-delay:${i * 90}ms;">
+                                <span class="integrated-ranking-rank">${i + 1}</span>
+                                <span class="integrated-ranking-keyword">${escapeHtml(k)}</span>
+                                <span class="integrated-ranking-count">${c}</span>
+                            </div>`,
+                              )
+                              .join('')
+                      }</div>`
                     : '<span style="color:#94a3b8;">데이터 없음</span>'
             }`;
             const kw = String(keyword || '').trim().toLowerCase();
+            const relatedCounts = kw && matchedPosts.length > 0 ? buildIntegratedKeywordCounts(matchedPosts) : counts;
             const rel = kw
-                ? Array.from(counts.entries())
-                      .filter(([k]) => k.includes(kw) || kw.includes(k))
+                ? Array.from(relatedCounts.entries())
+                      .filter(([k]) => (k.includes(kw) || kw.includes(k)) && k !== kw)
                       .sort((a, b) => b[1] - a[1])
-                      .slice(0, 6)
-                : top.slice(0, 6);
+                      .slice(0, 8)
+                : top.slice(0, 8);
             relatedEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:4px;">연관검색어</div>${
                 rel.length
                     ? rel
-                          .map(([k]) => {
+                          .map(([k, c]) => {
                               const safeJs = String(k).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-                              return `<button type="button" class="btn btn-outline integrated-search-chip" style="margin-right:6px; margin-bottom:4px;" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)}</button>`;
+                              return `<button type="button" class="btn btn-outline integrated-search-chip" style="margin-right:6px; margin-bottom:4px;" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span style="opacity:.75;">(${c})</span></button>`;
                           })
                           .join('')
                     : '<span style="color:#94a3b8;">연관 키워드 없음</span>'
@@ -3280,7 +3339,7 @@
         }
         function showIntegratedSearchModal() {
             document.getElementById('integratedSearchModal').classList.add('active');
-            renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '');
+            renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', []);
             setTimeout(() => document.getElementById('modalSearchInput').focus(), 100);
         }
         function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
@@ -3289,7 +3348,7 @@
             const kw = raw.toLowerCase().trim();
             const resContainer = document.getElementById('integratedSearchResults');
             const sort = getIntegratedSearchSortValue();
-            renderIntegratedSearchInsights(raw);
+            renderIntegratedSearchInsights(raw, []);
             if (!kw) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">검색어를 입력하세요.</div>'; return; }
             
             const results = appData.posts
@@ -3313,6 +3372,7 @@
                 if (sort === 'relevance') return b.score - a.score || b.post.id - a.post.id;
                 return b.post.id - a.post.id;
             });
+            renderIntegratedSearchInsights(raw, results.map((x) => x.post));
             if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">결과가 없습니다.</div>'; return; }
 
             resContainer.innerHTML = '<ul class="integrated-search-result-list">' + results.map(({ post: p, score }) => {
