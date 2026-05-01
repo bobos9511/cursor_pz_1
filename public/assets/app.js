@@ -119,6 +119,8 @@
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         const AI_REQUEST_TIMEOUT_MS = 60000;
         const AI_CHAT_REQUEST_TIMEOUT_MS = 60000;
+        const AI_SYSTEM_USER_EMP_NO = '000000';
+        const AI_SYSTEM_USER_NAME = 'AI';
         let signupUsers = [];
         let currentLoginUser = null;
         let aiSearchActive = null;
@@ -175,6 +177,25 @@
         function getKnowCategoryLabel(category) {
             return KNOW_CATEGORY_LABEL[category] || '-';
         }
+        function getNextPostIdByType(boardType) {
+            const scoped = (appData.posts || []).filter((p) => p && p.type === boardType);
+            if (!scoped.length) return 1;
+            return Math.max(...scoped.map((p) => Number(p.id) || 0)) + 1;
+        }
+        function getPostByIdAndType(id, typeHint = currentBoardType) {
+            const targetId = Number(id);
+            if (!Number.isFinite(targetId)) return null;
+            const byType = (appData.posts || []).find((p) => Number(p.id) === targetId && (!typeHint || p.type === typeHint));
+            if (byType) return byType;
+            return (appData.posts || []).find((p) => Number(p.id) === targetId) || null;
+        }
+        function getPostIndexByIdAndType(id, typeHint = currentBoardType) {
+            const targetId = Number(id);
+            if (!Number.isFinite(targetId)) return -1;
+            let idx = (appData.posts || []).findIndex((p) => Number(p.id) === targetId && (!typeHint || p.type === typeHint));
+            if (idx >= 0) return idx;
+            return (appData.posts || []).findIndex((p) => Number(p.id) === targetId);
+        }
         function getBoardDisplayLabel(post) {
             if (!post) return '-';
             if (post.type === 'KNOW') return getKnowCategoryLabel(post.knowCategory);
@@ -224,6 +245,133 @@
             else if (user.isAdmin === false) out.isAdmin = false;
             else delete out.isAdmin;
             return out;
+        }
+
+        function isAiSystemUser(user) {
+            if (!user) return false;
+            return String(user.employeeNo || '') === AI_SYSTEM_USER_EMP_NO;
+        }
+
+        function buildAiSystemUserRecord() {
+            return sanitizeSignupUserRecord({
+                id: 900000,
+                name: AI_SYSTEM_USER_NAME,
+                employeeNo: AI_SYSTEM_USER_EMP_NO,
+                deptName: 'AI 플랫폼',
+                deptCode: '0000',
+                grade: '시스템',
+                position: 'RAG 엔진',
+                role: 'it',
+                isAdmin: true,
+                createdAt: getCurrentDateTime()
+            });
+        }
+
+        function ensureAiSystemUserInSignupUsers() {
+            const idx = signupUsers.findIndex((u) => isAiSystemUser(u));
+            const aiUser = buildAiSystemUserRecord();
+            if (idx >= 0) {
+                const prev = signupUsers[idx];
+                const next = { ...aiUser, id: prev.id || aiUser.id, createdAt: prev.createdAt || aiUser.createdAt };
+                const changed = JSON.stringify(prev) !== JSON.stringify(next);
+                signupUsers[idx] = next;
+                return changed;
+            }
+            signupUsers.unshift(aiUser);
+            return true;
+        }
+
+        function stripHtmlForRag(rawHtml) {
+            return String(rawHtml || '')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function summarizeRagAnswer(answerText) {
+            const text = String(answerText || '').replace(/\s+/g, ' ').trim();
+            if (!text) return '';
+            if (text.length <= 140) return text;
+            return `${text.slice(0, 140).trim()}...`;
+        }
+
+        function extractRagKeywords(questionText, answerText) {
+            const raw = `${String(questionText || '')} ${String(answerText || '')}`
+                .toLowerCase()
+                .replace(/[^a-z0-9가-힣\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!raw) return '';
+            const stop = new Set(['그리고', '하지만', '에서', '으로', '입니다', '있습니다', '합니다', '대한', '관련', '문의', '질문', '답변', 'the', 'and', 'for', 'with', 'that', 'this']);
+            const counts = new Map();
+            raw.split(' ').forEach((token) => {
+                const t = token.trim();
+                if (!t || t.length < 2 || stop.has(t)) return;
+                counts.set(t, (counts.get(t) || 0) + 1);
+            });
+            return Array.from(counts.entries())
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8)
+                .map((item) => item[0])
+                .join(', ');
+        }
+
+        function createAutoRagKnowledgeFromQA(question, answer, options = {}) {
+            const questionText = String(question || '').replace(/\s+/g, ' ').trim();
+            const answerText = String(answer || '').replace(/\s+/g, ' ').trim();
+            if (!questionText || !answerText || answerText.length < 20) return false;
+            const sourceType = String(options.sourceType || 'AI').toUpperCase();
+            const sourceRef = String(options.sourceRef || `${Date.now()}`);
+            const autoRagKey = `${sourceType}:${sourceRef}`;
+            const existing = (appData.posts || []).find((p) =>
+                p &&
+                p.type === 'KNOW' &&
+                p.meta &&
+                p.meta.autoGenerated === true &&
+                String(p.meta.autoRagKey || '') === autoRagKey
+            );
+            if (existing) return false;
+            const knowCategory = options.boardType === 'IT' ? 'IT' : 'BIZ';
+            const now = getCurrentDateTime();
+            const nextId = getNextPostIdByType('KNOW');
+            const cleanQuestion = questionText.slice(0, 300);
+            const cleanAnswer = answerText.slice(0, 4000);
+            const summary = summarizeRagAnswer(cleanAnswer);
+            const keywords = extractRagKeywords(cleanQuestion, cleanAnswer);
+            const sourceLabel = String(options.sourceLabel || 'AI Chat 답변선호');
+            const content = `<div><b>Q.</b> ${escapeHtml(cleanQuestion)}</div><div style="margin-top:8px;"><b>A.</b><br>${escapeHtml(cleanAnswer).replace(/\n/g, '<br>')}</div>`;
+            const meta = {
+                knowQuestion: cleanQuestion,
+                knowAnswer: cleanAnswer,
+                knowMemo: 'AI 자동 수집 학습자료',
+                knowKeywords: keywords,
+                knowSource: sourceLabel,
+                knowSummary: summary,
+                autoGenerated: true,
+                autoRagKey,
+                generatedBy: AI_SYSTEM_USER_NAME,
+                generatedByEmpNo: AI_SYSTEM_USER_EMP_NO
+            };
+            appData.posts.unshift({
+                id: nextId,
+                type: 'KNOW',
+                knowCategory,
+                title: `[AI자동학습] ${cleanQuestion.slice(0, 48)}`,
+                writer: AI_SYSTEM_USER_NAME,
+                datetime: now,
+                ip: getDummyIp(),
+                status: 'trained',
+                content,
+                aiContent: '',
+                answer: '',
+                meta,
+                addInfoList: [],
+                thread: [],
+                attachments: []
+            });
+            saveData();
+            return true;
         }
 
         /** 플랫폼 관리자(관리자 설정). isAdmin === true 로 명시된 계정만 허용합니다. */
@@ -521,6 +669,8 @@
                 signupUsers = Array.isArray(data && data.signupUsers)
                     ? data.signupUsers.map(sanitizeSignupUserRecord).filter(Boolean)
                     : [];
+                const changed = ensureAiSystemUserInSignupUsers();
+                if (changed) saveSignupUsers();
             } catch (error) {
                 console.error('loadSignupUsers failed:', error);
                 signupUsers = [];
@@ -530,6 +680,7 @@
 
         function saveSignupUsers(options = {}) {
             const rethrow = !!options.rethrow;
+            ensureAiSystemUserInSignupUsers();
             return fetchJson('/api/db/signup-users', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -667,6 +818,10 @@
                 isAdmin: !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked),
                 createdAt: getCurrentDateTime()
             };
+            if (String(user.employeeNo) === AI_SYSTEM_USER_EMP_NO) {
+                showAlert('직원번호 000000은 AI 시스템 계정으로 예약되어 있습니다.', 'error');
+                return;
+            }
             const existsIdx = signupUsers.findIndex(u => u.employeeNo === user.employeeNo);
             if (existsIdx > -1) {
                 const prev = signupUsers[existsIdx];
@@ -725,7 +880,7 @@
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
                                     <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
-                                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})">삭제</button>
+                                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})" ${isAiSystemUser(u) ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -750,6 +905,10 @@
         function deleteSignupUser(memberId) {
             const user = signupUsers.find(u => u.id === memberId);
             if (!user) return;
+            if (isAiSystemUser(user)) {
+                showAlert('AI 시스템 계정은 삭제할 수 없습니다.', 'error');
+                return;
+            }
             showConfirm(`[${user.name}] 회원 정보를 삭제하시겠습니까?`, () => {
                 signupUsers = signupUsers.filter(u => u.id !== memberId);
                 saveSignupUsers();
@@ -762,7 +921,7 @@
         function clearAllSignupUsers() {
             if (signupUsers.length === 0) return;
             showConfirm('저장된 회원 정보를 모두 삭제하시겠습니까?', () => {
-                signupUsers = [];
+                signupUsers = signupUsers.filter((u) => isAiSystemUser(u));
                 currentLoginUser = null;
                 saveSignupUsers();
                 updateSignupSavedCount();
@@ -1853,9 +2012,9 @@
             renderDashCountModalTable();
         }
 
-        function openDetailFromDashCount(id) {
+        function openDetailFromDashCount(id, postType) {
             closeDashCountModal();
-            openDetail(id);
+            openDetail(id, postType);
         }
 
         function renderDashCountModalTable() {
@@ -1875,7 +2034,7 @@
                     const boardLabel = boardTitles[post.type] ? boardTitles[post.type].label : post.type;
                     const status = post.aiSolved ? 'AI채택' : (post.status === 'wait' || post.status === 'ing' ? '접수대기' : (post.status === 'moreInfo' ? '추가답변' : '답변완료'));
                     const dateTxt = (post.datetime || '').substring(0, 10);
-                    return `<tr onclick="openDetailFromDashCount(${post.id})">
+                    return `<tr onclick="openDetailFromDashCount(${post.id}, '${post.type}')">
                         <td>${post.id}</td>
                         <td>${boardLabel}</td>
                         <td class="text-left"><span class="truncate">${post.title || '-'}</span></td>
@@ -1912,7 +2071,7 @@
             const chip = getBoardDisplayLabel(post);
             const subLeft = mode === 'question' ? `등록자 ${writerName}` : `요청자 ${writerName}`;
             return `
-                <div class="dash-feed-item" onclick="switchView('list','${post.type}'); openDetail(${post.id})">
+                <div class="dash-feed-item" onclick="switchView('list','${post.type}'); openDetail(${post.id}, '${post.type}')">
                     <div class="dash-feed-top">
                         <div class="dash-feed-meta">
                             <span class="dash-type-chip">${chip}</span>
@@ -2202,7 +2361,7 @@
             if(checked.length === 0) { showAlert('삭제할 항목을 선택하세요.', 'error'); return; }
             showConfirm(`${checked.length}개의 게시물을 삭제하시겠습니까?`, () => {
                 const idsToDelete = Array.from(checked).map(c => parseInt(c.value));
-                appData.posts = appData.posts.filter(p => !idsToDelete.includes(p.id));
+                appData.posts = appData.posts.filter((p) => !(p.type === currentBoardType && idsToDelete.includes(Number(p.id))));
                 saveData();
                 showAlert(`${checked.length}개의 항목이 삭제되었습니다.`, 'success');
                 filterBoardList();
@@ -2210,10 +2369,11 @@
         }
 
         // --- 상세보기 ---
-        function openDetail(id) {
-            currentPostId = id;
-            const post = appData.posts.find(p => p.id === id);
+        function openDetail(id, typeHint = currentBoardType) {
+            const post = getPostByIdAndType(id, typeHint);
             if(!post) return;
+            currentPostId = Number(post.id);
+            currentBoardType = post.type;
 
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById('view-detail').classList.add('active');
@@ -2402,7 +2562,7 @@
                         inlineSimilarList.innerHTML = similarPosts.map((p) => {
                             const raw = String(p.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
                             const snippet = raw ? escapeHtml(raw.slice(0, 90)) : '내용 요약 없음';
-                            return `<button type="button" class="dtl-similar-card" onclick="openDetail(${p.id})">
+                            return `<button type="button" class="dtl-similar-card" onclick="openDetail(${p.id}, '${p.type}')">
                                 <div class="dtl-similar-card-title">${escapeHtml(p.title || '(제목 없음)')}</div>
                                 <div class="dtl-similar-card-snippet">${snippet}</div>
                                 <div class="dtl-similar-card-meta">${escapeHtml(p.writer || '-')} · ${escapeHtml(p.datetime || '-')}</div>
@@ -2415,7 +2575,7 @@
 
         function deletePost() {
             showConfirm('삭제하시겠습니까?', () => {
-                appData.posts = appData.posts.filter(p => p.id !== currentPostId);
+                appData.posts = appData.posts.filter((p) => !(Number(p.id) === Number(currentPostId) && p.type === currentBoardType));
                 saveData();
                 showAlert('삭제되었습니다.', 'success');
                 switchView('list', currentBoardType);
@@ -2423,7 +2583,7 @@
         }
 
         function editPost() {
-            const post = appData.posts.find(p => p.id === currentPostId);
+            const post = getPostByIdAndType(currentPostId, currentBoardType);
             switchView('write', post.type);
             document.getElementById('writePageTitle').innerText = '수정 모드';
             document.getElementById('editPostId').value = post.id;
@@ -2598,7 +2758,7 @@
             wrap.classList.toggle('hidden', select.value !== 'error');
         }
         function saveKnowStatus() {
-            const idx = appData.posts.findIndex(p => p.id === currentPostId);
+            const idx = getPostIndexByIdAndType(currentPostId, currentBoardType);
             if (idx < 0) return;
             if (currentRole !== 'it') { showAlert('IT 관리자만 상태를 변경할 수 있습니다.', 'error'); return; }
             const post = appData.posts[idx];
@@ -2754,7 +2914,7 @@
             }
 
             if (editId) { 
-                const idx = appData.posts.findIndex(p => p.id == editId);
+                const idx = getPostIndexByIdAndType(editId, currentBoardType);
                 if(idx > -1) {
                     if (!Array.isArray(appData.posts[idx].editHistory)) appData.posts[idx].editHistory = [];
                     appData.posts[idx].editHistory.push({
@@ -2768,7 +2928,7 @@
                 }
                 showAlert('수정되었습니다.', 'success');
             } else { 
-                const newId = appData.posts.length > 0 ? Math.max(...appData.posts.map(p => p.id)) + 1 : 1;
+                const newId = getNextPostIdByType(currentBoardType);
                 const dt = getCurrentDateTime(); const ipStr = getDummyIp();
                 
                 if (currentBoardType === 'KNOW') {
@@ -2783,10 +2943,18 @@
                     });
                     showAlert('학습 대기 상태로 지식베이스에 등록되었습니다.', 'success');
                 } else if (isAiSolved) {
+                    const aiSolvedContentText = stripHtmlForRag(content || '');
+                    const aiSolvedAnswerText = stripHtmlForRag(AI_FALLBACK_HTML);
                     appData.posts.unshift({
                         id: newId, type: currentBoardType, title: '[AI채택] ' + title, writer: getCurrentActorName(), 
                         datetime: dt, ip: ipStr, status: 'done', aiSolved: true, content: content, 
                         aiContent: AI_FALLBACK_HTML, answer: '질의자가 AI 추천 답변을 통해 스스로 문제를 해결(채택)하여 자동 종결 등록된 건입니다.', meta: meta, addInfoList: [], thread: [], attachments
+                    });
+                    createAutoRagKnowledgeFromQA(aiSolvedContentText || title || '', aiSolvedAnswerText, {
+                        sourceType: 'POST',
+                        sourceRef: String(newId),
+                        boardType: currentBoardType,
+                        sourceLabel: `게시물 AI답변채택 #${newId}`
                     });
                     showAlert('AI 답변 채택 완료! 자동 처리되었습니다.', 'success');
                 } else {
@@ -2822,7 +2990,7 @@
             
             const ansStatus = document.querySelector('input[name="ansStatus"]:checked').value; 
             const val = editor.innerHTML; 
-            const idx = appData.posts.findIndex(p => p.id === currentPostId);
+            const idx = getPostIndexByIdAndType(currentPostId, currentBoardType);
             
             if(idx > -1) { 
                 const post = appData.posts[idx];
@@ -2842,7 +3010,7 @@
             const val = document.getElementById('addInfoInput').value.trim();
             if(!val) { showAlert('추가 내용을 입력해주세요.', 'error'); return; }
             
-            const idx = appData.posts.findIndex(p => p.id === currentPostId);
+            const idx = getPostIndexByIdAndType(currentPostId, currentBoardType);
             if(idx > -1) {
                 if(!appData.posts[idx].addInfoList) appData.posts[idx].addInfoList = [];
                 const nowText = getCurrentDateTime();
@@ -2859,7 +3027,7 @@
         }
 
         function convertPostToAiSolved() {
-            const idx = appData.posts.findIndex(p => p.id === currentPostId);
+            const idx = getPostIndexByIdAndType(currentPostId, currentBoardType);
             if (idx < 0) return;
             const post = appData.posts[idx];
             const myName = getCurrentActorNameToken();
@@ -2880,6 +3048,14 @@
                     action: 'aiSolved',
                     content: '작성자가 AI 답변 채택으로 종결 처리했습니다.',
                     datetime: getCurrentDateTime()
+                });
+                const qa = stripHtmlForRag(post.content || '');
+                const aiAnswer = stripHtmlForRag(post.aiContent || '');
+                createAutoRagKnowledgeFromQA(qa || post.title || '', aiAnswer, {
+                    sourceType: 'POST',
+                    sourceRef: String(post.id || ''),
+                    boardType: post.type,
+                    sourceLabel: `게시물 AI답변채택 #${post.id || '-'}`
                 });
                 saveData();
                 showAlert('AI 답변 채택으로 변경되었습니다.', 'success');
@@ -2918,22 +3094,23 @@
                     else if(p.status === 'moreInfo') badge = '<span class="badge bg-moreInfo" style="font-size:10px; padding:2px 6px;">추가답변</span>';
                     else badge = '<span class="badge bg-done" style="font-size:10px; padding:2px 6px;">답변완료</span>';
                 }
-                return `<li style="padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer;" onmouseover="this.style.background='#f4f8fb'" onmouseout="this.style.background='#fff'" onclick="goFromIntegratedSearch(${p.id})">
+                return `<li style="padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer;" onmouseover="this.style.background='#f4f8fb'" onmouseout="this.style.background='#fff'" onclick="goFromIntegratedSearch(${p.id}, '${p.type}')">
                     <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10"><span style="font-weight:bold; color:#666; font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:#999;">${p.datetime.substring(0, 10)}</span></div>
                     <div style="font-weight:bold; color:var(--ibk-blue); font-size:15px; margin-bottom:5px;">${p.title}</div>
                     <div style="font-size:13px; color:#666;" class="truncate">${stripped}</div>
                 </li>`;
             }).join('') + '</ul>';
         }
-        function goFromIntegratedSearch(id) {
+        function goFromIntegratedSearch(id, postType) {
             closeIntegratedSearchModal(); document.getElementById('headerSearchInput').value = '';
-            const post = appData.posts.find(p => p.id === id);
+            const post = getPostByIdAndType(id, postType || currentBoardType);
+            if (!post) return;
             if(post) currentBoardType = post.type;
-            openDetail(id);
+            openDetail(id, post.type);
         }
 
         function openSimilarPostModal(id) {
-            const post = appData.posts.find(p => p.id === id);
+            const post = getPostByIdAndType(id, currentBoardType);
             if(!post) return;
             document.getElementById('simTitle').innerText = post.title;
             document.getElementById('simWriter').innerText = post.writer;

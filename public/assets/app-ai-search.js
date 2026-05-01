@@ -185,16 +185,63 @@ function renderAiSearchMessages() {
     if (!logEl) return;
     logEl.innerHTML = "";
     const messages = aiSearchActive && Array.isArray(aiSearchActive.messages) ? aiSearchActive.messages : [];
-    messages.forEach((msg) => {
+    messages.forEach((msg, idx) => {
         const role = msg && msg.role === "user" ? "user" : "ai";
         const text = String(msg && msg.text ? msg.text : "");
         const item = document.createElement("div");
         item.className = `ai-search-msg ${role}`;
-        if (role === "ai" && text.includes("ai-search-loading")) item.classList.add("loading");
-        item.innerHTML = role === "user" ? escapeHtml(text).replace(/\n/g, "<br>") : text;
+        const isLoadingMsg = role === "ai" && text.includes("ai-search-loading");
+        if (isLoadingMsg) item.classList.add("loading");
+        if (role === "user") {
+            item.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
+        } else {
+            const preferred = !!(msg && msg.preferred);
+            const preferBtn = !isLoadingMsg
+                ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "답변선호 취소" : "답변선호"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${preferred ? "선호됨" : "답변선호"}</button>`
+                : "";
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn}`;
+        }
         logEl.appendChild(item);
     });
     logEl.scrollTop = logEl.scrollHeight;
+}
+
+function getNearestAiSearchQuestion(messageIndex) {
+    if (!aiSearchActive || !Array.isArray(aiSearchActive.messages)) return "";
+    for (let i = messageIndex - 1; i >= 0; i -= 1) {
+        const msg = aiSearchActive.messages[i];
+        if (msg && msg.role === "user") return String(msg.text || "").trim();
+    }
+    return "";
+}
+
+function toggleAiSearchPreferred(messageIndex) {
+    if (!aiSearchActive || !Array.isArray(aiSearchActive.messages)) return;
+    const idx = Number(messageIndex);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= aiSearchActive.messages.length) return;
+    const msg = aiSearchActive.messages[idx];
+    if (!msg || msg.role !== "ai") return;
+    if (String(msg.text || "").includes("ai-search-loading")) return;
+    msg.preferred = !msg.preferred;
+    aiSearchActive.dirty = true;
+    saveAiSearchActiveState();
+    upsertAiSearchHistoryFromActive();
+    renderAiSearchMessages();
+    if (!msg.preferred) return;
+    const questionText = getNearestAiSearchQuestion(idx);
+    const answerText = stripHtmlForRag(msg.text || "");
+    const sourceRef = `${aiSearchActive.id || "chat"}:${idx}`;
+    const created = createAutoRagKnowledgeFromQA(questionText, answerText, {
+        sourceType: "CHAT",
+        sourceRef,
+        boardType: "BIZ",
+        sourceLabel: "AI Chat 답변선호"
+    });
+    if (created) {
+        showAlert("답변선호 내용을 AI 지식 베이스 학습자료로 등록했습니다.", "success");
+    } else {
+        showAlert("이미 등록된 학습자료이거나 등록 조건을 충족하지 않습니다.", "success");
+    }
 }
 
 function renderAiSearchHistory() {

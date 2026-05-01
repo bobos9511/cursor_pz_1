@@ -1633,6 +1633,30 @@
             background-size: 220% 100%;
             animation: aiSearchPulse 1.6s ease-in-out infinite;
         }
+        .ai-search-msg-body { width: 100%; }
+        .ai-prefer-btn {
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 9px;
+            cursor: pointer;
+        }
+        .ai-prefer-btn:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+        .ai-prefer-btn.active {
+            border-color: #2563eb;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
         .ai-search-loading {
             color: #334155;
             font-weight: 700;

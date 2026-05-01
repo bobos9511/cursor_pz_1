@@ -167,7 +167,7 @@ function openAiReplyHistoryModal() {
     const modal = document.getElementById("aiReplyHistoryModal");
     const body = document.getElementById("aiReplyHistoryBody");
     if (!modal || !body) return;
-    const post = appData.posts.find((p) => p.id === currentPostId);
+    const post = getPostByIdAndType(currentPostId, currentBoardType);
     const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
     if (!hist.length) {
         body.innerHTML = '<div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>';
@@ -198,12 +198,12 @@ function closeAiReplyHistoryModal() {
     if (modal) modal.classList.remove("active");
 }
 
-function moveToPostDetail(postId) {
-    const post = appData.posts.find((p) => p.id === postId);
+function moveToPostDetail(postId, postType = currentBoardType) {
+    const post = getPostByIdAndType(postId, postType);
     if (!post) return;
     currentBoardType = post.type;
     switchView("list", post.type);
-    openDetail(postId);
+    openDetail(postId, post.type);
 }
 
 function formatPostAlertRef(post) {
@@ -213,7 +213,7 @@ function formatPostAlertRef(post) {
 }
 
 async function refreshCurrentPostAiReply() {
-    const post = appData.posts.find((p) => p.id === currentPostId);
+    const post = getPostByIdAndType(currentPostId, currentBoardType);
     if (!post) return;
     if (!(post.type === "IT" || post.type === "BIZ") || post.aiSolved) return;
     const myName = getCurrentActorNameToken();
@@ -223,7 +223,7 @@ async function refreshCurrentPostAiReply() {
     if (!writerMayRefresh && !adminMayRefresh) return;
     if (aiRefreshingPostIds.has(post.id)) return;
     aiRefreshingPostIds.add(post.id);
-    openDetail(post.id);
+    openDetail(post.id, post.type);
     showAlert(`${formatPostAlertRef(post)} 새로운 AI 답변 생성을 시작합니다...`, "success");
     try {
         await queueAsyncAiAnswerForPost(post.id, post.type, String(post.title || "").trim(), stripHtmlToPlainText(post.content || ""), {
@@ -231,12 +231,12 @@ async function refreshCurrentPostAiReply() {
         });
     } finally {
         aiRefreshingPostIds.delete(post.id);
-        openDetail(post.id);
+        openDetail(post.id, post.type);
     }
 }
 
 function retryAiAnswerForPost(postId) {
-    const post = appData.posts.find((p) => p.id === postId);
+    const post = getPostByIdAndType(postId, currentBoardType);
     if (!post) return;
     queueAsyncAiAnswerForPost(post.id, post.type, String(post.title || "").trim(), stripHtmlToPlainText(post.content || ""), {
         strictContext: true,
@@ -282,7 +282,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
         const cleanedRaw = sanitizePostAiRawReply(result.rawReply || "");
         result = { ...result, rawReply: cleanedRaw, replyHtml: formatAiReplyHtml(cleanedRaw) };
     }
-    const idx = appData.posts.findIndex((p) => p.id === postId);
+    const idx = getPostIndexByIdAndType(postId, boardType);
     if (idx < 0) return;
     const post = appData.posts[idx];
     const postRef = formatPostAlertRef(post);
@@ -304,7 +304,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
         showAlert(`${postRef} AI 답변이 등록되었습니다.`, "success", {
             noticeLevel: "important",
             actionText: "해당 게시물 보기",
-            onClick: () => moveToPostDetail(postId),
+            onClick: () => moveToPostDetail(postId, boardType),
         });
     } else if (result && result.isTimeout) {
         showAlert(`${postRef} AI 응답 시간이 초과되었습니다.`, "error", {
@@ -314,7 +314,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
     } else {
         showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, "error", {
             actionText: "해당 게시물 보기",
-            onClick: () => moveToPostDetail(postId),
+            onClick: () => moveToPostDetail(postId, boardType),
         });
     }
 }
