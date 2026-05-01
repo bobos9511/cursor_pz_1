@@ -181,7 +181,8 @@ function toggleSignupUserAdminFlag(empNo, checked) {
 function renderAdminPermissionsPanel() {
     const mount = document.getElementById("adminPermissionsMount");
     if (!mount) return;
-    if (!signupUsers.length) {
+    const visibleUsers = signupUsers.filter((u) => !isAiSystemUser(u));
+    if (!visibleUsers.length) {
         mount.innerHTML =
             '<p class="admin-settings-hint">등록된 테스트 회원이 없습니다. 로그아웃 후 <strong>테스트용 회원가입</strong>에서 계정을 추가하세요.</p>';
         return;
@@ -198,7 +199,7 @@ function renderAdminPermissionsPanel() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${signupUsers
+                    ${visibleUsers
                         .map((u) => {
                             const emp = escapeHtml(String(u.employeeNo || ""));
                             const checked = resolveUserIsAdmin(u) ? " checked" : "";

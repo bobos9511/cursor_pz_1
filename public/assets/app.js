@@ -252,6 +252,50 @@
             return String(user.employeeNo || '') === AI_SYSTEM_USER_EMP_NO;
         }
 
+        function getVisibleSignupUsers() {
+            return signupUsers.filter((u) => !isAiSystemUser(u));
+        }
+
+        function formatSignupUserLastAccess(user) {
+            if (!user) return '-';
+            if (user.isOnline === true) return '접속중';
+            const ts = Number(user.lastAccessAt || 0);
+            if (!Number.isFinite(ts) || ts <= 0) return '-';
+            const diffMs = Math.max(0, Date.now() - ts);
+            const minMs = 60 * 1000;
+            const hourMs = 60 * minMs;
+            const dayMs = 24 * hourMs;
+            if (diffMs < minMs) return '1분전';
+            if (diffMs < hourMs) return `${Math.floor(diffMs / minMs)}분전`;
+            if (diffMs < dayMs) return `${Math.floor(diffMs / hourMs)}시간전`;
+            return `${Math.floor(diffMs / dayMs)}일전`;
+        }
+
+        async function markSignupUserLoginState(employeeNo, isOnline) {
+            const targetEmpNo = String(employeeNo || '');
+            if (!targetEmpNo || targetEmpNo === AI_SYSTEM_USER_EMP_NO) return;
+            const now = Date.now();
+            let changed = false;
+            signupUsers = signupUsers.map((u) => {
+                if (!u || isAiSystemUser(u)) return u;
+                const isTarget = String(u.employeeNo || '') === targetEmpNo;
+                const nextOnline = isTarget ? !!isOnline : false;
+                const prevOnline = !!u.isOnline;
+                const next = { ...u };
+                if (prevOnline !== nextOnline) {
+                    next.isOnline = nextOnline;
+                    changed = true;
+                }
+                if (isTarget) {
+                    next.lastAccessAt = now;
+                    changed = true;
+                }
+                return next;
+            });
+            if (!changed) return;
+            await saveSignupUsers();
+        }
+
         function buildAiSystemUserRecord() {
             return sanitizeSignupUserRecord({
                 id: 900000,
@@ -694,7 +738,7 @@
 
         function updateSignupSavedCount() {
             const countEl = document.getElementById('signupSavedCount');
-            if (countEl) countEl.innerText = `저장된 회원: ${signupUsers.length}명`;
+            if (countEl) countEl.innerText = `저장된 회원: ${getVisibleSignupUsers().length}명`;
         }
 
         function getRoleDisplayName(role) {
@@ -847,9 +891,10 @@
             const wrap = document.getElementById('memberListContainer');
             const summary = document.getElementById('memberListSummary');
             if (!wrap || !summary) return;
-            summary.innerText = `저장된 회원: ${signupUsers.length}명`;
+            const visibleUsers = getVisibleSignupUsers();
+            summary.innerText = `저장된 회원: ${visibleUsers.length}명`;
 
-            if (signupUsers.length === 0) {
+            if (visibleUsers.length === 0) {
                 wrap.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">저장된 회원이 없습니다. 먼저 회원가입을 진행해주세요.</div>';
                 return;
             }
@@ -864,12 +909,13 @@
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서코드</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직급/직책</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">업무 역할</th>
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">최근 접속</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center;">플랫폼 관리</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:170px;">관리</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${signupUsers.map(u => `
+                        ${visibleUsers.map(u => `
                             <tr>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.name}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.employeeNo}</td>
@@ -877,6 +923,7 @@
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.deptCode}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.grade} / ${u.position}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${getRoleDisplayName(u.role)}</td>
+                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${formatSignupUserLastAccess(u)}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
                                     <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
@@ -983,6 +1030,10 @@
                 showAlert('직원번호를 입력하거나 회원목록에서 선택해주세요.', 'error');
                 return;
             }
+            if (empNo === AI_SYSTEM_USER_EMP_NO) {
+                showAlert('AI 시스템 계정으로는 로그인할 수 없습니다.', 'error');
+                return;
+            }
             if (!skipAuthValidation && authType === 'pwd' && !authInput) {
                 showAlert('비밀번호를 입력해주세요.', 'error');
                 return;
@@ -1003,6 +1054,8 @@
                 showAlert('저장된 회원이 아닙니다. 회원가입 후 이용해주세요.', 'error');
                 return;
             }
+            await markSignupUserLoginState(currentLoginUser.employeeNo, true);
+            currentLoginUser = signupUsers.find(u => u.employeeNo === empNo) || currentLoginUser;
 
             currentRole = currentLoginUser.role || 'branch';
             if (currentLoginUser.employeeNo) setCookie(USER_SCOPE_COOKIE, currentLoginUser.employeeNo);
@@ -1021,6 +1074,12 @@
             goToAiSearchPage();
         }
         function doLogout() {
+            const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
+            if (logoutEmpNo) {
+                markSignupUserLoginState(logoutEmpNo, false).catch((error) => {
+                    console.error('markSignupUserLoginState(logout) failed:', error);
+                });
+            }
             clearCookie(USER_SCOPE_COOKIE);
             localStorage.setItem('knockLoginNonce', String(Date.now()));
             aiSearchInitialized = false;
@@ -3149,7 +3208,10 @@
             const scopedEmpNo = getCookie(USER_SCOPE_COOKIE);
             if (!scopedEmpNo) return;
             const matched = signupUsers.find(u => String(u.employeeNo) === String(scopedEmpNo));
-            if (!matched) return;
+            if (!matched || isAiSystemUser(matched)) {
+                clearCookie(USER_SCOPE_COOKIE);
+                return;
+            }
             currentLoginUser = matched;
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
