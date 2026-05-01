@@ -766,6 +766,7 @@
             min-width: 0;
             flex-wrap: wrap;
             row-gap: 8px;
+            position: relative;
         }
         #view-list #boardStatusFilter { flex: 0 1 130px; }
         #view-list #boardKnowCategoryFilter { flex: 0 1 150px; }
@@ -776,6 +777,66 @@
         #view-list #listWriteBtn,
         #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary {
             white-space: nowrap;
+            flex: 0 0 auto;
+        }
+        #boardToolsMoreBtn {
+            min-width: 74px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .board-tools-layer {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 12;
+            min-width: 180px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #dbe7f5;
+            background: #fff;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+            display: grid;
+            gap: 6px;
+        }
+        .board-tools-layer .btn {
+            width: 100%;
+            justify-content: center;
+            min-height: 36px;
+        }
+        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 {
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        #view-list.board-tools-compact #adminListTools {
+            display: none !important;
+        }
+        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            flex-wrap: nowrap;
+            row-gap: 0;
+            gap: 6px !important;
+        }
+        #view-list.board-tools-compact #boardStatusFilter {
+            flex: 0 0 118px;
+            width: 118px !important;
+        }
+        #view-list.board-tools-compact #boardKnowCategoryFilter {
+            flex: 0 0 122px;
+            width: 122px !important;
+        }
+        #view-list.board-tools-compact #boardKeywordInput {
+            flex: 1 1 auto;
+            min-width: 120px;
+        }
+        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
+        #view-list.board-tools-compact #listWriteBtn,
+        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="width:1px"] {
+            display: none !important;
+        }
+        #view-list.board-tools-compact #boardToolsMoreBtn {
+            display: inline-flex;
             flex: 0 0 auto;
         }
         .table { width: 100%; border-collapse: collapse; min-width: 800px; text-align: center; }
@@ -1964,6 +2025,25 @@
         body[data-theme="dark"] #dashCountModal .table tbody td::before,
         body[data-theme="dark"] #memberListContainer tbody td::before {
             color: #a7b6cc;
+        }
+        body[data-theme="dark"] #view-list .table tbody td,
+        body[data-theme="dark"] #view-list.list-card-mode .table tbody td,
+        body[data-theme="dark"] #view-list .table tbody td.text-left,
+        body[data-theme="dark"] #view-list .table tbody td.text-left .truncate {
+            color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] #view-list .table tbody td.text-left.font-bold {
+            color: #e6edf8 !important;
+        }
+        body[data-theme="dark"] .board-tools-layer {
+            background: #152238;
+            border-color: #4a5f7f;
+            box-shadow: 0 14px 30px rgba(2, 8, 24, 0.55);
+        }
+        body[data-theme="dark"] #boardToolsMoreBtn {
+            border-color: #4a5f7f;
+            color: #dce7f6;
+            background: #17253b;
         }
         body[data-theme="dark"] .ai-search-sidebar,
         body[data-theme="dark"] .ai-search-main,

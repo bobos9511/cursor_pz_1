@@ -628,6 +628,20 @@
                                     <button id="listWriteBtn" onclick="switchView('write', currentBoardType)" class="btn btn-outline" style="border-color: var(--ibk-blue); color: var(--ibk-blue);">
                                         <svg class="icon"><use href="#icon-edit"></use></svg> <span id="listWriteBtnText">신규 접수</span>
                                     </button>
+                                    <button id="boardToolsMoreBtn" class="btn btn-outline hidden" type="button" onclick="toggleBoardToolsLayer(event)">
+                                        <svg class="icon"><use href="#icon-bars"></use></svg> 도구
+                                    </button>
+                                    <div id="boardToolsLayer" class="board-tools-layer hidden" onclick="event.stopPropagation();">
+                                        <button type="button" class="btn btn-primary" onclick="closeBoardToolsLayer(); filterBoardList();">
+                                            <svg class="icon"><use href="#icon-search"></use></svg> 조회
+                                        </button>
+                                        <button id="boardToolsLayerWriteBtn" type="button" class="btn btn-outline" onclick="closeBoardToolsLayer(); switchView('write', currentBoardType);">
+                                            <svg class="icon"><use href="#icon-edit"></use></svg> <span id="boardToolsLayerWriteText">신규 접수</span>
+                                        </button>
+                                        <button id="boardToolsLayerDeleteBtn" type="button" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="closeBoardToolsLayer(); deleteSelectedPosts();">
+                                            <svg class="icon"><use href="#icon-trash"></use></svg> 선택 삭제
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

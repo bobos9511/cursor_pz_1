@@ -2612,6 +2612,53 @@
             const shouldCard = window.innerWidth <= 768 || wrap.clientWidth < 800;
             viewList.classList.toggle('list-card-mode', shouldCard);
         }
+        function syncBoardToolbarCompactMode() {
+            const viewList = document.getElementById('view-list');
+            if (!viewList) return;
+            const toolbar = viewList.querySelector('.panel > .flex.items-center.justify-between.p-20');
+            const rightTools = toolbar ? toolbar.querySelector('.flex.items-center.gap-10.flex-1.justify-end') : null;
+            const moreBtn = document.getElementById('boardToolsMoreBtn');
+            const layer = document.getElementById('boardToolsLayer');
+            const writeBtn = document.getElementById('listWriteBtn');
+            const layerWriteBtn = document.getElementById('boardToolsLayerWriteBtn');
+            const layerWriteText = document.getElementById('boardToolsLayerWriteText');
+            const layerDeleteBtn = document.getElementById('boardToolsLayerDeleteBtn');
+            const deleteBtn = document.getElementById('btnDeleteSelected');
+            if (!toolbar || !rightTools || !moreBtn || !layer) return;
+            const compact = window.innerWidth <= 1180;
+            viewList.classList.toggle('board-tools-compact', compact);
+            if (!compact) {
+                moreBtn.classList.add('hidden');
+                layer.classList.add('hidden');
+                return;
+            }
+            moreBtn.classList.remove('hidden');
+            const writeVisible = !!(writeBtn && writeBtn.style.display !== 'none' && !writeBtn.classList.contains('hidden'));
+            if (layerWriteBtn) layerWriteBtn.classList.toggle('hidden', !writeVisible);
+            if (layerWriteText && writeBtn) layerWriteText.innerText = (document.getElementById('listWriteBtnText') || writeBtn).innerText || '신규 접수';
+            const deleteVisible = !!(deleteBtn && !deleteBtn.disabled && !deleteBtn.classList.contains('hidden'));
+            if (layerDeleteBtn) {
+                layerDeleteBtn.classList.toggle('hidden', !deleteVisible);
+                layerDeleteBtn.disabled = !deleteVisible;
+            }
+        }
+        function syncBoardLayoutModes() {
+            syncBoardListCardMode();
+            syncBoardToolbarCompactMode();
+        }
+        function closeBoardToolsLayer() {
+            const layer = document.getElementById('boardToolsLayer');
+            if (layer) layer.classList.add('hidden');
+        }
+        function toggleBoardToolsLayer(event) {
+            if (event) event.stopPropagation();
+            const layer = document.getElementById('boardToolsLayer');
+            if (!layer) return;
+            syncBoardToolbarCompactMode();
+            layer.classList.toggle('hidden');
+        }
+        window.closeBoardToolsLayer = closeBoardToolsLayer;
+        window.toggleBoardToolsLayer = toggleBoardToolsLayer;
         function filterBoardList() {
             const st = document.getElementById('boardStatusFilter').value;
             const knowCategory = document.getElementById('boardKnowCategoryFilter').value;
@@ -2664,7 +2711,7 @@
             if (filtered.length === 0) { 
                 let cols = isIT ? 6 : 5;
                 tbody.innerHTML = `<tr><td colspan="${cols}" style="padding: 30px; color:#999;">데이터가 없습니다.</td></tr>`;
-                setTimeout(syncBoardListCardMode, 0);
+                setTimeout(syncBoardLayoutModes, 0);
                 return; 
             }
 
@@ -2687,7 +2734,7 @@
                     : '';
                 return `<tr onclick="openDetail(${item.id})"><td>${item.id}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${item.writer}</td><td>${item.datetime}</td></tr>`;
             }).join('');
-            setTimeout(syncBoardListCardMode, 0);
+            setTimeout(syncBoardLayoutModes, 0);
         }
 
         function toggleAllChecks() {
@@ -3634,11 +3681,12 @@
             }
             const listView = document.getElementById('view-list');
             if (listView && listView.classList.contains('active')) {
-                syncBoardListCardMode();
+                syncBoardLayoutModes();
             }
         });
         document.addEventListener('click', () => {
             closeHeaderActionsLayer();
+            closeBoardToolsLayer();
         });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
