@@ -1434,7 +1434,7 @@
 
         // --- 뷰 제어 ---
         function toggleSidebarPC() {
-            if (window.matchMedia('(max-width: 768px)').matches) {
+            if (window.matchMedia('(max-width: 1024px)').matches) {
                 const topNav = document.getElementById('topNavMobile');
                 if (topNav) topNav.classList.toggle('collapsed');
                 updateSidebarToggleButton();
@@ -1463,7 +1463,7 @@
             const btn = document.getElementById('sidebarToggleBtn');
             const iconUse = document.querySelector('#sidebarToggleIcon use');
             if (!btn || !iconUse) return;
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
             if (isMobile) {
                 const topNav = document.getElementById('topNavMobile');
                 const collapsed = !!topNav && topNav.classList.contains('collapsed');
@@ -3693,6 +3693,9 @@
             const integratedModal = document.getElementById('integratedSearchModal');
             if (integratedModal && integratedModal.classList.contains('active')) {
                 closeIntegratedSearchModal();
+            }
+            if (typeof closeAiSearchHistoryMobileModal === 'function') {
+                closeAiSearchHistoryMobileModal();
             }
         });
 

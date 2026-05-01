@@ -260,6 +260,7 @@ function renderAiSearchHistory() {
     if (!listEl) return;
     if (!aiSearchHistory.length) {
         listEl.innerHTML = '<div class="ai-search-history-empty">저장된 지난 대화가 없습니다.</div>';
+        renderAiSearchHistoryMobile();
         updateAiSearchDeleteAllButtonState();
         return;
     }
@@ -281,7 +282,37 @@ function renderAiSearchHistory() {
             `;
         })
         .join("");
+    renderAiSearchHistoryMobile();
     updateAiSearchDeleteAllButtonState();
+}
+
+function renderAiSearchHistoryMobile() {
+    const bodyEl = document.getElementById("aiSearchHistoryMobileBody");
+    if (!bodyEl) return;
+    if (!Array.isArray(aiSearchHistory) || !aiSearchHistory.length) {
+        bodyEl.innerHTML = '<div class="ai-history-mobile-empty">저장된 지난 대화가 없습니다.</div>';
+        return;
+    }
+    bodyEl.innerHTML = aiSearchHistory
+        .map((h) => {
+            const title = escapeHtml(String(h.title || "지난 대화"));
+            const meta = `${escapeHtml(String(h.updatedAt || "-"))} · ${escapeHtml(String(h.boardType || "IT"))}`;
+            const id = escapeHtml(String(h.id || ""));
+            return `
+                <div class="ai-history-mobile-item">
+                    <div class="ai-history-mobile-item-head">
+                        <div class="ai-history-mobile-title">${title}</div>
+                        <span class="badge bg-ready" style="font-size:11px;">기록</span>
+                    </div>
+                    <div class="ai-history-mobile-meta">${meta}</div>
+                    <div class="ai-history-mobile-actions">
+                        <button type="button" class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loadAiSearchConversation('${id}')">불러오기</button>
+                        <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="deleteAiSearchConversation('${id}')">삭제</button>
+                    </div>
+                </div>
+            `;
+        })
+        .join("");
 }
 
 function upsertAiSearchHistoryFromActive() {
@@ -320,8 +351,21 @@ function deleteAllAiSearchHistory() {
         const keys = getAiSearchStorageKeyBase();
         saveJsonToStorage(keys.historyKey, aiSearchHistory);
         renderAiSearchHistory();
+        closeAiSearchHistoryMobileModal();
         showAlert("지난 대화를 모두 삭제했습니다.", "success");
     });
+}
+
+function openAiSearchHistoryMobileModal() {
+    const modal = document.getElementById("aiSearchHistoryMobileModal");
+    if (!modal) return;
+    renderAiSearchHistoryMobile();
+    modal.classList.add("active");
+}
+
+function closeAiSearchHistoryMobileModal() {
+    const modal = document.getElementById("aiSearchHistoryMobileModal");
+    if (modal) modal.classList.remove("active");
 }
 
 function setAiSearchStateBadge(isLoading = aiSearchIsLoading) {
@@ -391,6 +435,7 @@ function loadAiSearchConversation(conversationId) {
     saveAiSearchActiveState();
     aiSearchIsLoading = false;
     setAiSearchStateBadge();
+    closeAiSearchHistoryMobileModal();
 }
 
 function setAiSearchPrompt(promptText) {

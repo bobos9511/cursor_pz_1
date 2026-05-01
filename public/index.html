@@ -534,6 +534,9 @@
                                     <button id="aiSearchDeleteAllBtn" type="button" class="btn btn-outline ai-search-history-clear ai-search-side-action-btn" onclick="deleteAllAiSearchHistory()">
                                         <svg class="icon"><use href="#icon-trash"></use></svg> 지난대화 삭제
                                     </button>
+                                    <button id="aiSearchHistoryMobileBtn" type="button" class="btn btn-outline ai-search-side-action-btn hidden" onclick="openAiSearchHistoryMobileModal()">
+                                        <svg class="icon"><use href="#icon-history"></use></svg> 지난대화기록
+                                    </button>
                                 </div>
                                 <div class="ai-search-side-title">지난 대화</div>
                                 <div id="aiSearchHistoryList" class="ai-search-history-list"></div>
@@ -1464,6 +1467,19 @@
             <div id="editHistoryModalBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeEditHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="aiSearchHistoryMobileModal" class="modal-overlay" style="z-index: 1018;" onclick="if(event.target===this) closeAiSearchHistoryMobileModal();">
+        <div class="modal-content ai-history-mobile-modal">
+            <div class="modal-header ai-history-mobile-head">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> 지난대화기록</span>
+                <button type="button" class="btn btn-outline" style="padding:4px 10px;" onclick="closeAiSearchHistoryMobileModal()">닫기</button>
+            </div>
+            <div id="aiSearchHistoryMobileBody" class="modal-body ai-history-mobile-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAiSearchHistoryMobileModal()">닫기</button>
+                <button type="button" class="btn btn-danger" onclick="deleteAllAiSearchHistory()">전체삭제</button>
             </div>
         </div>
     </div>
