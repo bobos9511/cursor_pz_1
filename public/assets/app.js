@@ -825,42 +825,42 @@
             const source = meta.knowSource || '-';
             const domain = getKnowCategoryLabel(post.knowCategory);
             const attachmentHtml = Array.isArray(post.attachments) && post.attachments.length > 0
-                ? post.attachments.map(att => `<li style="padding:6px 10px; border:1px solid #e2e8f0; border-radius:8px; background:#fff;">${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})</li>`).join('')
-                : '<li style="color:#94a3b8;">첨부파일 없음</li>';
+                ? post.attachments.map(att => `<li class="know-detail-attach-item">${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})</li>`).join('')
+                : '<li class="know-detail-attach-empty">첨부파일 없음</li>';
 
             return `
-                <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div style="border:1px solid #dbeafe; border-radius:10px; background:#f8fbff; padding:12px;">
-                        <span class="badge bg-ready" style="font-size:11px;">${domain}</span>
-                        <span class="rag-chip" style="margin-left:8px;">RAG 학습 데이터</span>
+                <div class="know-detail-stack">
+                    <div class="know-detail-banner">
+                        <span class="badge bg-ready know-detail-domain-badge">${domain}</span>
+                        <span class="rag-chip know-detail-rag-chip">RAG 학습 데이터</span>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">요약</div>
-                        <div style="font-size:14px; color:#334155; line-height:1.7; white-space:pre-line;">${summary}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">요약</div>
+                        <div class="know-detail-card-value">${summary}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">키워드</div>
-                        <div style="font-size:13px; color:#334155; line-height:1.7; white-space:pre-line;">${keywords}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">키워드</div>
+                        <div class="know-detail-card-value know-detail-card-value-sm">${keywords}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">출처</div>
-                        <div style="font-size:13px; color:#334155; line-height:1.7; word-break:break-word; white-space:pre-line;">${source}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">출처</div>
+                        <div class="know-detail-card-value know-detail-card-value-sm">${source}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">질문 (Q)</div>
-                        <div style="font-size:15px; color:#0f172a; line-height:1.65;">${q}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">질문 (Q)</div>
+                        <div class="know-detail-card-value know-detail-card-q">${q}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">답변 (A)</div>
-                        <div style="font-size:14px; color:#0f172a; line-height:1.75; white-space:pre-line;">${a}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">답변 (A)</div>
+                        <div class="know-detail-card-value know-detail-card-a">${a}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">비고</div>
-                        <div style="font-size:14px; color:#334155; line-height:1.7; white-space:pre-line;">${memo}</div>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">비고</div>
+                        <div class="know-detail-card-value">${memo}</div>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">첨부파일</div>
-                        <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px;">${attachmentHtml}</ul>
+                    <div class="know-detail-card">
+                        <div class="know-detail-card-label">첨부파일</div>
+                        <ul class="know-detail-attach-list">${attachmentHtml}</ul>
                     </div>
                 </div>
             `;

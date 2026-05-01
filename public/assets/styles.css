@@ -739,7 +739,16 @@
         input[type="password"], input[inputmode="numeric"], input[data-ime="off"] { ime-mode: inactive; }
         .input:focus { border-color: var(--ibk-blue); box-shadow: 0 0 0 2px rgba(0,75,155,0.1); }
         .input:disabled { background: #f5f5f5; cursor: not-allowed; }
-        select { appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat; }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 34px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 4.2L6 8l3.8-3.8' fill='none' stroke='%2364748b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-position: calc(100% - 12px) 50%;
+            background-size: 12px 12px;
+            background-repeat: no-repeat;
+        }
         select::-ms-expand { display: none; }
         select[multiple] { appearance: auto; -webkit-appearance: auto; -moz-appearance: auto; padding-right: 10px; background-image: none; }
         .theme-mode-item {
@@ -1207,6 +1216,54 @@
         .know-form-item label { color: #1e3a8a; font-weight: 700; }
         .know-form-item .input { border-color: #cbd5e1; }
         .know-form-item .input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .know-detail-stack { display: flex; flex-direction: column; gap: 14px; }
+        .know-detail-banner {
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            background: #f8fbff;
+            padding: 12px;
+        }
+        .know-detail-domain-badge { font-size: 11px; }
+        .know-detail-rag-chip { margin-left: 8px; }
+        .know-detail-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #fff;
+            padding: 14px;
+        }
+        .know-detail-card-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .know-detail-card-value {
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.7;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+        .know-detail-card-value-sm { font-size: 13px; }
+        .know-detail-card-q { font-size: 15px; color: #0f172a; line-height: 1.65; }
+        .know-detail-card-a { font-size: 14px; color: #0f172a; line-height: 1.75; }
+        .know-detail-attach-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .know-detail-attach-item {
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            color: #334155;
+            font-size: 13px;
+        }
+        .know-detail-attach-empty { color: #94a3b8; font-size: 13px; }
         .rag-chip {
             display: inline-flex;
             align-items: center;
@@ -1980,13 +2037,16 @@
             box-shadow: 0 2px 8px rgba(2, 8, 24, 0.5);
         }
         body[data-theme="dark"] select.input {
-            background-image: linear-gradient(45deg, transparent 50%, #9fb0c8 50%), linear-gradient(135deg, #9fb0c8 50%, transparent 50%);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 4.2L6 8l3.8-3.8' fill='none' stroke='%239fb0c8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         }
         body[data-theme="dark"] input[type="number"] {
             color-scheme: dark;
         }
         body[data-theme="dark"] select {
-            background-image: linear-gradient(45deg, transparent 50%, #9fb0c8 50%), linear-gradient(135deg, #9fb0c8 50%, transparent 50%);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 4.2L6 8l3.8-3.8' fill='none' stroke='%239fb0c8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-position: calc(100% - 12px) 50%;
+            background-size: 12px 12px;
+            background-repeat: no-repeat;
         }
         body[data-theme="dark"] select option {
             background: #13233a;
@@ -2687,6 +2747,27 @@
         }
         body[data-theme="dark"] .know-rag-title {
             color: #bfdbfe;
+        }
+        body[data-theme="dark"] .know-detail-banner {
+            border-color: #3f5475;
+            background: #15263d;
+        }
+        body[data-theme="dark"] .know-detail-card,
+        body[data-theme="dark"] .know-detail-attach-item {
+            border-color: #3f5475;
+            background: #13233a;
+        }
+        body[data-theme="dark"] .know-detail-card-label,
+        body[data-theme="dark"] .know-detail-attach-empty {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .know-detail-card-value,
+        body[data-theme="dark"] .know-detail-attach-item {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .know-detail-card-q,
+        body[data-theme="dark"] .know-detail-card-a {
+            color: #e6edf8;
         }
         body[data-theme="dark"] .admin-ai-log-detail-title { color: #b8c7dc; }
         body[data-theme="dark"] .admin-ai-log-detail-card [style*="color:#334155"],

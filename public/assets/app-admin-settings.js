@@ -496,6 +496,10 @@ function buildAdminAiApiLogPlainText(log) {
         lines.push(`게시물 이어쓰기 제한: ${String(runtime.postMaxContinuations ?? "-")}`);
         lines.push(`게시물 이어쓰기 시간(ms): ${String(runtime.postMaxContinuationRuntimeMs ?? "-")}`);
     }
+    lines.push(`RAG 최대 후보 수: ${String(runtime.ragMaxCandidates ?? "-")}`);
+    lines.push(`RAG 최소 토큰 일치 수: ${String(runtime.ragMinOverlapTokens ?? "-")}`);
+    lines.push(`RAG 최소 점수: ${String(runtime.ragMinScore ?? "-")}`);
+    lines.push(`RAG 상대 컷오프(%): ${String(runtime.ragRelativeCutoffPct ?? "-")}`);
     lines.push(`요청 maxOutputTokens: ${String(generation.maxOutputTokens ?? "-")}`);
     lines.push(`요청 temperature: ${String(generation.temperature ?? "-")}`);
     lines.push(`요청 topP: ${String(generation.topP ?? "-")}`);
@@ -818,6 +822,12 @@ function buildAdminLogInfoRows(log) {
               ["게시물 이어쓰기 제한", String(runtime.postMaxContinuations ?? "-")],
               ["게시물 이어쓰기 시간(ms)", String(runtime.postMaxContinuationRuntimeMs ?? "-")],
           ];
+    const ragRows = [
+        ["RAG 최대 후보 수", String(runtime.ragMaxCandidates ?? "-")],
+        ["RAG 최소 토큰 일치 수", String(runtime.ragMinOverlapTokens ?? "-")],
+        ["RAG 최소 점수", String(runtime.ragMinScore ?? "-")],
+        ["RAG 상대 컷오프(%)", String(runtime.ragRelativeCutoffPct ?? "-")],
+    ];
     const rows = [
         ["요청 시각", formatAdminAiApiLogTime(log.createdAt)],
         ["요청자 범위", String(log.requesterScope || "-")],
@@ -829,6 +839,7 @@ function buildAdminLogInfoRows(log) {
         ["이어쓰기 횟수", String(final.continuationCount || 0)],
         ["Truncated", final.truncated ? "예" : "아니오"],
         ...runtimeRows,
+        ...ragRows,
         ["요청 maxOutputTokens", String(generation.maxOutputTokens ?? "-")],
         ["요청 temperature", String(generation.temperature ?? "-")],
         ["요청 topP", String(generation.topP ?? "-")],
