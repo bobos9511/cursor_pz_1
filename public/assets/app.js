@@ -177,6 +177,7 @@
 
             appDialogConfirmHandler = onConfirm;
             appDialogCancelHandler = onCancel;
+            modal.style.zIndex = '12050';
             modal.classList.add('active');
         }
 
@@ -4105,6 +4106,26 @@
             const modal = document.getElementById('editHistoryModal');
             if (modal) modal.classList.remove('active');
         }
+        function getActiveModalOverlays() {
+            return Array.from(document.querySelectorAll('.modal-overlay.active'));
+        }
+        function closeModalOverlayElement(modalEl) {
+            if (!modalEl) return;
+            modalEl.classList.remove('active');
+            if (modalEl.id === 'appDialogModal') {
+                appDialogConfirmHandler = null;
+                appDialogCancelHandler = null;
+            }
+        }
+        function closeTopMostActiveModal() {
+            const activeModals = getActiveModalOverlays();
+            if (!activeModals.length) return false;
+            const topModal = activeModals
+                .map((el) => ({ el, z: Number(window.getComputedStyle(el).zIndex) || 0 }))
+                .sort((a, b) => b.z - a.z)[0];
+            closeModalOverlayElement(topModal.el);
+            return true;
+        }
         window.addEventListener('resize', () => {
             closeHeaderActionsLayer();
             updateHeaderActionOverflow();
@@ -4123,13 +4144,14 @@
         });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
-            const integratedModal = document.getElementById('integratedSearchModal');
-            if (integratedModal && integratedModal.classList.contains('active')) {
-                closeIntegratedSearchModal();
-            }
-            if (typeof closeAiSearchHistoryMobileModal === 'function') {
-                closeAiSearchHistoryMobileModal();
-            }
+            closeTopMostActiveModal();
+        });
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (!target.classList.contains('modal-overlay')) return;
+            if (!target.classList.contains('active')) return;
+            closeModalOverlayElement(target);
         });
 
         async function bootstrapSession() {
