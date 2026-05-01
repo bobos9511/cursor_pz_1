@@ -317,8 +317,88 @@ async function handleAiChat(req, res) {
     return;
   }
 
+  // Only AI chat + IT/BIZ post assistant use the model.
+  if (!(boardType === "CHAT" || boardType === "IT" || boardType === "BIZ")) {
+    sendJson(res, 400, { error: "AI ??? ???? ?? ??????." });
+    return;
+  }
+
+  function stripHtmlToText(html) {
+    return String(html || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function tokenizeForSearch(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^0-9a-z\uac00-\ud7a3]+/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 2)
+      .slice(0, 60);
+  }
+
+  function buildRagContext(queryText) {
+    const db = readDb();
+    const shared = db.appDataByScope && db.appDataByScope.shared ? db.appDataByScope.shared : null;
+    const posts = shared && Array.isArray(shared.posts) ? shared.posts : [];
+    const know = posts.filter((p) => p && p.type === "KNOW" && (p.status === "trained" || p.status === "ready"));
+    if (!know.length) return "";
+    const qTokens = new Set(tokenizeForSearch(queryText));
+    if (!qTokens.size) return "";
+
+    const scored = know
+      .map((p) => {
+        const meta = p.meta && typeof p.meta === "object" ? p.meta : {};
+        const hay = [
+          p.title,
+          meta.knowQuestion,
+          meta.knowAnswer,
+          meta.knowSummary,
+          meta.knowKeywords,
+          meta.knowSource,
+          stripHtmlToText(p.content),
+        ]
+          .filter(Boolean)
+          .join(" ");
+        const hayTokens = tokenizeForSearch(hay);
+        let score = 0;
+        for (const t of hayTokens) if (qTokens.has(t)) score += 1;
+        // Small boost for exact contains.
+        const qStr = String(queryText || "").trim();
+        if (qStr && hay.toLowerCase().includes(qStr.toLowerCase())) score += 3;
+        return { p, score };
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    if (!scored.length) return "";
+
+    const lines = [];
+    lines.push("RAG_CONTEXT_BEGIN");
+    lines.push("Use the following KNOWLEDGE snippets only if relevant. Do not invent facts beyond them.");
+    for (const { p } of scored) {
+      const meta = p.meta && typeof p.meta === "object" ? p.meta : {};
+      lines.push("");
+      lines.push(`- id: ${p.id} / domain: ${p.knowCategory || "-"}`);
+      if (meta.knowSummary) lines.push(`  summary: ${stripHtmlToText(meta.knowSummary)}`);
+      if (meta.knowQuestion) lines.push(`  Q: ${stripHtmlToText(meta.knowQuestion)}`);
+      if (meta.knowAnswer) lines.push(`  A: ${stripHtmlToText(meta.knowAnswer).slice(0, 700)}`);
+      if (meta.knowKeywords) lines.push(`  keywords: ${stripHtmlToText(meta.knowKeywords)}`);
+      if (meta.knowSource) lines.push(`  source: ${stripHtmlToText(meta.knowSource).slice(0, 300)}`);
+    }
+    lines.push("");
+    lines.push("RAG_CONTEXT_END");
+    return lines.join("\n");
+  }
+
   const aiSettings = readDb().aiSettings;
-  const prompt = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
+  const rag = buildRagContext([title, content].join("\n"));
+  const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
+  const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
   const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
     chatMax: GEMINI_CHAT_MAX_OUTPUT_TOKENS,
     max: GEMINI_MAX_OUTPUT_TOKENS,

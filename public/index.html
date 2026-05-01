@@ -334,7 +334,7 @@
             <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
-            <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>개선제안</button>
+            <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>KNOCK 개선</button>
             <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI지식</button>
             <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#7dd3fc;"><use href="#icon-admin-settings"></use></svg>관리자</button>
             <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
@@ -376,11 +376,11 @@
                 <div class="nav-title mt-10">통합 문의 게시판</div>
                 <div class="nav-item" id="nav-list-it" onclick="switchView('list', 'IT')"><svg class="icon" style="color: #60a5fa;"><use href="#icon-info"></use></svg> <span class="nav-text">IT/오류 문의</span></div>
                 <div class="nav-item" id="nav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon" style="color: #c084fc;"><use href="#icon-book"></use></svg> <span class="nav-text">규정/상품 문의</span></div>
-                <div class="nav-item" id="nav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon" style="color: #2dd4bf;"><use href="#icon-lightbulb"></use></svg> <span class="nav-text">시스템 개선 제안</span></div>
+                <div class="nav-item" id="nav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon" style="color: #2dd4bf;"><use href="#icon-lightbulb"></use></svg> <span class="nav-text">KNOCK 개선 제안</span></div>
                 
                 <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
                 <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
-                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식베이스 관리</span></div>
+                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식 베이스 (RAG 학습)</span></div>
                 <div class="nav-title mt-10 platform-admin-only hidden" style="color:#93c5fd;">관리</div>
                 <div class="nav-item platform-admin-only hidden" id="nav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-admin-settings"></use></svg> <span class="nav-text">관리자 설정</span></div>
             </aside>
@@ -805,8 +805,20 @@
                                         </select>
                                     </div>
                                     <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">검색 키워드 (쉼표로 구분)</label>
+                                        <input type="text" id="writeKnowKeywords" class="input" placeholder="예: 오류코드, 메뉴명, 업무용어, 약어">
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">출처 / 근거 링크</label>
+                                        <input type="text" id="writeKnowSource" class="input" placeholder="예: 매뉴얼 문서명, URL, 공지 번호">
+                                    </div>
+                                    <div class="know-form-item">
                                         <label class="font-bold mb-10" style="display:block;">질문 (Q) <span style="color:var(--danger)">*</span></label>
                                         <input type="text" id="writeKnowQuestion" class="input" placeholder="질문 내용을 입력하세요.">
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">요약 (1~3문장)</label>
+                                        <textarea id="writeKnowSummary" class="input" style="height: 70px; resize: vertical;" placeholder="RAG 검색/학습에 유리하도록 핵심만 요약해 주세요."></textarea>
                                     </div>
                                     <div class="know-form-item">
                                         <label class="font-bold mb-10" style="display:block;">답변 (A) <span style="color:var(--danger)">*</span></label>
@@ -980,8 +992,6 @@
                             <div class="admin-tab-row" id="adminAi-post-tabs">
                                 <button type="button" class="admin-tab-btn btn btn-outline" data-board="IT">IT / 오류</button>
                                 <button type="button" class="admin-tab-btn btn btn-outline" data-board="BIZ">규정·상품</button>
-                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="SYS">개선 제안</button>
-                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="KNOW">지식베이스</button>
                             </div>
                             <div id="adminAi-post-panels">
                                 <div class="admin-ai-post-panel" data-board="IT">
@@ -1024,46 +1034,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="admin-ai-post-panel hidden" data-board="SYS">
-                                    <div class="admin-default-block">
-                                        <div class="admin-default-label">기본(Default) — SYS</div>
-                                        <pre class="admin-default-pre" id="admin-default-post-SYS"></pre>
-                                    </div>
-                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
-                                    <textarea id="adminAi-post-SYS-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
-                                    <div class="admin-gen-grid">
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Temperature</label>
-                                            <input type="range" id="adminAi-post-SYS-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-SYS" data-field="temp" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-SYS-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-SYS" data-field="temp" min="0" max="1" step="0.1">
-                                        </div>
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Top-P</label>
-                                            <input type="range" id="adminAi-post-SYS-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-SYS" data-field="topP" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-SYS-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-SYS" data-field="topP" min="0" max="1" step="0.1">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="admin-ai-post-panel hidden" data-board="KNOW">
-                                    <div class="admin-default-block">
-                                        <div class="admin-default-label">기본(Default) — KNOW</div>
-                                        <pre class="admin-default-pre" id="admin-default-post-KNOW"></pre>
-                                    </div>
-                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
-                                    <textarea id="adminAi-post-KNOW-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
-                                    <div class="admin-gen-grid">
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Temperature</label>
-                                            <input type="range" id="adminAi-post-KNOW-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-KNOW-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1">
-                                        </div>
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Top-P</label>
-                                            <input type="range" id="adminAi-post-KNOW-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-KNOW-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1">
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- SYS/KNOW는 AI 답변 기능을 사용하지 않으므로 설정에서 제외 -->
                             </div>
                         </div>
 

@@ -139,8 +139,8 @@
         const boardTitles = {
             'IT': { icon: '#icon-info', title: 'IT/오류 문의 게시판', label: 'IT/오류' },
             'BIZ': { icon: '#icon-book', title: '규정/상품 문의 게시판', label: '규정/상품' },
-            'SYS': { icon: '#icon-lightbulb', title: '노크 개선 제안 게시판', label: '개선제안' },
-            'KNOW': { icon: '#icon-history', title: 'AI 지식베이스 관리', label: 'AI지식' }
+            'SYS': { icon: '#icon-lightbulb', title: 'KNOCK 개선 제안', label: 'KNOCK 개선' },
+            'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스 (RAG 학습 데이터)', label: 'AI 지식' }
         };
         const KNOW_CATEGORY_LABEL = { IT: 'IT 매뉴얼', BIZ: '업무 매뉴얼' };
 
@@ -679,7 +679,7 @@
             });
         }
 
-        const ADMIN_AI_POST_KEYS = ['IT', 'BIZ', 'SYS', 'KNOW'];
+        const ADMIN_AI_POST_KEYS = ['IT', 'BIZ'];
         let adminAiPostTabsInited = false;
         let adminAiGenWired = false;
 
@@ -920,6 +920,9 @@
             const q = meta.knowQuestion || post.title || '-';
             const a = meta.knowAnswer || '-';
             const memo = meta.knowMemo || '-';
+            const summary = meta.knowSummary || '-';
+            const keywords = meta.knowKeywords || '-';
+            const source = meta.knowSource || '-';
             const domain = getKnowCategoryLabel(post.knowCategory);
             const attachmentHtml = Array.isArray(post.attachments) && post.attachments.length > 0
                 ? post.attachments.map(att => `<li style="padding:6px 10px; border:1px solid #e2e8f0; border-radius:8px; background:#fff;">${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})</li>`).join('')
@@ -929,7 +932,19 @@
                 <div style="display:flex; flex-direction:column; gap:14px;">
                     <div style="border:1px solid #dbeafe; border-radius:10px; background:#f8fbff; padding:12px;">
                         <span class="badge bg-ready" style="font-size:11px;">${domain}</span>
-                        <span style="margin-left:8px; font-size:12px; color:#64748b;">지식정보 등록 템플릿</span>
+                        <span style="margin-left:8px; font-size:12px; color:#64748b;">RAG 학습용 지식 데이터</span>
+                    </div>
+                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
+                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">요약</div>
+                        <div style="font-size:14px; color:#334155; line-height:1.7; white-space:pre-line;">${summary}</div>
+                    </div>
+                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
+                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">키워드</div>
+                        <div style="font-size:13px; color:#334155; line-height:1.7; white-space:pre-line;">${keywords}</div>
+                    </div>
+                    <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
+                        <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">출처</div>
+                        <div style="font-size:13px; color:#334155; line-height:1.7; word-break:break-word; white-space:pre-line;">${source}</div>
                     </div>
                     <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
                         <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">질문 (Q)</div>
@@ -2976,6 +2991,9 @@
                 document.getElementById('writeKnowQuestion').value = (post.meta && post.meta.knowQuestion) || post.title || '';
                 document.getElementById('writeKnowAnswer').value = (post.meta && post.meta.knowAnswer) || (post.content || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
                 document.getElementById('writeKnowMemo').value = (post.meta && post.meta.knowMemo) || '';
+                const kw = document.getElementById('writeKnowKeywords'); if (kw) kw.value = (post.meta && post.meta.knowKeywords) || '';
+                const src = document.getElementById('writeKnowSource'); if (src) src.value = (post.meta && post.meta.knowSource) || '';
+                const sum = document.getElementById('writeKnowSummary'); if (sum) sum.value = (post.meta && post.meta.knowSummary) || '';
             }
             writeAttachmentItems = Array.isArray(post.attachments)
                 ? post.attachments.map(att => ({
@@ -3023,6 +3041,9 @@
             document.getElementById('writeKnowAnswer').value = '';
             document.getElementById('writeKnowMemo').value = '';
             document.getElementById('writeKnowDomain').value = '';
+            const kw = document.getElementById('writeKnowKeywords'); if (kw) kw.value = '';
+            const src = document.getElementById('writeKnowSource'); if (src) src.value = '';
+            const sum = document.getElementById('writeKnowSummary'); if (sum) sum.value = '';
             document.getElementById('writePageTitle').innerText = boardType === 'KNOW' ? '지식정보 등록요청' : '문의 접수';
             document.getElementById('writeCategoryArea').style.pointerEvents = 'auto';
             document.getElementById('writeCategoryArea').style.opacity = '1';
@@ -3051,7 +3072,7 @@
             let html = '';
             ['IT', 'BIZ', 'SYS'].forEach(t => {
                 const isHide = rules.includes(t) ? '' : 'hidden';
-                const label = t==='IT' ? 'IT / 전산 오류' : t==='BIZ' ? '규정 / 업무 문의' : '기능 개선 제안';
+                const label = t==='IT' ? 'IT / 전산 오류' : t==='BIZ' ? '규정 / 업무 문의' : 'KNOCK 개선 제안';
                 html += `<div id="btn-cat-${t}" class="${isHide} btn btn-outline write-category-btn" onclick="selectWriteCategory('${t}')">${label}</div>`;
             });
             document.getElementById('writeCategoryButtons').innerHTML = html;
@@ -3548,7 +3569,13 @@
                 if (!title || !q || !a) { showAlert('제목, 질문내용, 답변내용을 모두 입력해주세요.', 'error'); return; }
                 content = `<div><b>Q.</b> ${escapeHtml(q)}</div><div style="margin-top:8px;"><b>A.</b><br>${escapeHtml(a).replace(/\n/g, '<br>')}</div>`;
                 const memo = document.getElementById('writeKnowMemo').value.trim();
+                const keywords = (document.getElementById('writeKnowKeywords')?.value || '').trim();
+                const source = (document.getElementById('writeKnowSource')?.value || '').trim();
+                const summary = (document.getElementById('writeKnowSummary')?.value || '').trim();
                 if (memo) content += `<div style="margin-top:12px; color:#475569;"><b>추가 의견/별첨:</b><br>${escapeHtml(memo).replace(/\n/g, '<br>')}</div>`;
+                if (keywords) content += `<div style="margin-top:12px; color:#475569;"><b>키워드:</b> ${escapeHtml(keywords)}</div>`;
+                if (source) content += `<div style="margin-top:8px; color:#475569;"><b>출처:</b> ${escapeHtml(source)}</div>`;
+                if (summary) content += `<div style="margin-top:8px; color:#475569;"><b>요약:</b> ${escapeHtml(summary).replace(/\n/g, '<br>')}</div>`;
             } else if(!title || content === '<p><br></p>' || !content) {
                 showAlert('제목과 본문을 입력해주세요.', 'error');
                 return;
@@ -3587,6 +3614,9 @@
                 const q = document.getElementById('writeKnowQuestion').value.trim();
                 const a = document.getElementById('writeKnowAnswer').value.trim();
                 const memo = document.getElementById('writeKnowMemo').value.trim();
+                const keywords = (document.getElementById('writeKnowKeywords')?.value || '').trim();
+                const source = (document.getElementById('writeKnowSource')?.value || '').trim();
+                const summary = (document.getElementById('writeKnowSummary')?.value || '').trim();
                 if (!knowDomain) {
                     showAlert('학습분류 도메인을 선택해주세요.', 'error');
                     return;
@@ -3598,8 +3628,14 @@
                 meta.knowQuestion = q;
                 meta.knowAnswer = a;
                 meta.knowMemo = memo;
+                meta.knowKeywords = keywords;
+                meta.knowSource = source;
+                meta.knowSummary = summary;
                 content = `<div><b>Q.</b> ${escapeHtml(q)}</div><div style="margin-top:8px;"><b>A.</b><br>${escapeHtml(a).replace(/\n/g, '<br>')}</div>`;
                 if (memo) content += `<div style="margin-top:12px; color:#475569;"><b>추가 의견/별첨:</b><br>${escapeHtml(memo).replace(/\n/g, '<br>')}</div>`;
+                if (keywords) content += `<div style="margin-top:12px; color:#475569;"><b>키워드:</b> ${escapeHtml(keywords)}</div>`;
+                if (source) content += `<div style="margin-top:8px; color:#475569;"><b>출처:</b> ${escapeHtml(source)}</div>`;
+                if (summary) content += `<div style="margin-top:8px; color:#475569;"><b>요약:</b> ${escapeHtml(summary).replace(/\n/g, '<br>')}</div>`;
             }
 
             if (editId) { 
