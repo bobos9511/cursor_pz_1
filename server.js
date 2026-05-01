@@ -362,6 +362,54 @@ function saveAiApiLog(entry) {
   }
 }
 
+function saveClientAiApiErrorLog(payload = {}) {
+  const nowIso = new Date().toISOString();
+  const errorMessage = String(payload.error || payload.errorMessage || "ai_client_request_failed");
+  const entry = {
+    id: `ai_client_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+    createdAt: nowIso,
+    requesterScope: String(payload.requesterScope || "guest").slice(0, 64),
+    boardType: String(payload.boardType || "CHAT").slice(0, 32),
+    title: String(payload.title || "(클라이언트 요청)").slice(0, 200),
+    contentPreview: String(payload.contentPreview || "").slice(0, 1200),
+    model: String(payload.model || GEMINI_MODEL || "-"),
+    useGroundingRequested: false,
+    runtime: {
+      timeoutMs: Number(payload.timeoutMs || 0),
+      continueFromChars: Number(payload.continueFromChars || 0),
+      isTimeout: !!payload.isTimeout,
+    },
+    generationConfig: {},
+    promptText: String(payload.promptText || "").slice(0, 12000),
+    attempts: [
+      {
+        label: "client_request",
+        requestedAt: nowIso,
+        request: {
+          promptChars: String(payload.contentPreview || "").length,
+          promptText: String(payload.contentPreview || "").slice(0, 12000),
+        },
+        response: {
+          ok: false,
+          status: 0,
+          finishReason: "",
+          replyPreview: "",
+          errorMessage,
+        },
+      },
+    ],
+    final: {
+      ok: false,
+      statusCode: 0,
+      error: errorMessage,
+      truncated: false,
+      continuationCount: 0,
+    },
+    source: "client",
+  };
+  saveAiApiLog(entry);
+}
+
 async function handleAiChat(req, res) {
   if (!applyRateLimit(req, res)) return;
 
@@ -623,6 +671,14 @@ async function handleAiChat(req, res) {
     let { reply, finishReason } = extractReplyFromGeminiData(data);
 
     if (!reply) {
+      aiApiLog.final = {
+        ok: false,
+        statusCode: 502,
+        error: ko.errors.aiReplyParse,
+        truncated: false,
+        continuationCount: 0,
+      };
+      saveAiApiLog(aiApiLog);
       sendJson(res, 502, { error: ko.errors.aiReplyParse });
       return;
     }
@@ -780,6 +836,18 @@ async function handleDbApi(req, res, url) {
     const db = readDb();
     db.aiApiLogs = [];
     writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/ai-api-logs") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    saveClientAiApiErrorLog(body && typeof body === "object" ? body : {});
     sendJson(res, 200, { ok: true });
     return true;
   }

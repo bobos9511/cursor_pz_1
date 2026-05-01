@@ -8,16 +8,61 @@ function stripHtmlToPlainText(rawHtml) {
 
 function normalizeAiReplyText(rawReply) {
     let text = String(rawReply || "").replace(/\r/g, "").trim();
-    text = text.replace(/([가-힣A-Za-z0-9])\n([가-힣A-Za-z0-9])/g, "$1$2");
-    text = text.replace(/([^\n])\n(?!\s*(?:[0-9]+\)|[-*•]))/g, "$1 ");
+    text = text.replace(/[ \t]+\n/g, "\n");
+    text = text.replace(/\n[ \t]+/g, "\n");
     text = text.replace(/[ \t]{2,}/g, " ");
     text = text.replace(/\n{3,}/g, "\n\n");
     return text.trim();
 }
 
 function formatAiReplyHtml(rawReply) {
-    const escaped = escapeHtml(normalizeAiReplyText(rawReply));
-    return escaped.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+    const escaped = escapeHtml(normalizeAiReplyText(rawReply)).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    const lines = escaped.split("\n");
+    const html = [];
+    let paragraph = [];
+    let listItems = [];
+    const flushParagraph = () => {
+        if (!paragraph.length) return;
+        html.push(`<p>${paragraph.join("<br>")}</p>`);
+        paragraph = [];
+    };
+    const flushList = () => {
+        if (!listItems.length) return;
+        html.push(`<ul>${listItems.map((item) => `<li>${item}</li>`).join("")}</ul>`);
+        listItems = [];
+    };
+    lines.forEach((line) => {
+        const txt = String(line || "").trim();
+        if (!txt) {
+            flushParagraph();
+            flushList();
+            return;
+        }
+        const bulletMatch = txt.match(/^(?:[-*•]|[0-9]+[.)])\s+(.+)$/);
+        if (bulletMatch) {
+            flushParagraph();
+            listItems.push(bulletMatch[1]);
+            return;
+        }
+        flushList();
+        paragraph.push(txt);
+    });
+    flushParagraph();
+    flushList();
+    return html.join("");
+}
+
+async function recordAiApiClientErrorLog(payload = {}) {
+    try {
+        await fetch("/api/db/ai-api-logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                source: "client",
+                ...payload,
+            }),
+        });
+    } catch (_) {}
 }
 
 function sanitizePostAiRawReply(rawReply) {
@@ -65,6 +110,17 @@ async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQU
         };
     } catch (error) {
         console.error("AI preview request failed:", error);
+        await recordAiApiClientErrorLog({
+            title: String(title || "").slice(0, 200),
+            contentPreview: String(content || "").slice(0, 1000),
+            boardType: String(boardType || "").slice(0, 32),
+            error: String((error && error.message) || "ai_client_request_failed"),
+            timeoutMs: Number(timeoutMs || 0),
+            continueFromChars: String(continueFrom || "").length,
+            isTimeout: !!(error && error.name === "AbortError"),
+            requesterScope:
+                typeof getAppDataUserScope === "function" ? String(getAppDataUserScope() || "guest").slice(0, 64) : "guest",
+        });
         if (error && error.name === "AbortError") {
             return {
                 ok: false,

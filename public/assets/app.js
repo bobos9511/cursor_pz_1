@@ -2747,6 +2747,7 @@
             if (!toolbar || !rightTools || !moreBtn || !layer) return;
             const compact = window.innerWidth <= 1180;
             viewList.classList.toggle('board-tools-compact', compact);
+            viewList.classList.toggle('board-tools-know', currentBoardType === 'KNOW');
             if (!compact) {
                 moreBtn.classList.add('hidden');
                 layer.classList.add('hidden');
