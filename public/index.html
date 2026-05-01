@@ -134,6 +134,17 @@
             </form>
         </div>
     </div>
+    <div id="serverErrorPage" class="server-error-page hidden" aria-live="polite">
+        <div class="server-error-card">
+            <div class="server-error-title">서버 연결 오류</div>
+            <div id="serverErrorMessage" class="server-error-message">일시적인 서버 오류가 발생했습니다.</div>
+            <div id="serverErrorStatus" class="server-error-status">오류 코드: -</div>
+            <div class="server-error-actions">
+                <button type="button" class="btn btn-primary" onclick="retryServerRecovery()">지금 다시 확인</button>
+            </div>
+            <div class="server-error-hint">서버 상태를 주기적으로 확인 중이며, 정상화되면 자동 새로고침됩니다.</div>
+        </div>
+    </div>
 
     <!-- 지정맥 모달 -->
     <div id="veinModal" class="modal-overlay" style="z-index: 110;">

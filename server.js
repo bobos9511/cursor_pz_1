@@ -1057,6 +1057,10 @@ function serveStatic(req, res) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  if (req.method === "GET" && url.pathname === "/api/health") {
+    sendJson(res, 200, { ok: true, now: Date.now() });
+    return;
+  }
   if (url.pathname.startsWith("/api/db/")) {
     const handled = await handleDbApi(req, res, url);
     if (handled) return;

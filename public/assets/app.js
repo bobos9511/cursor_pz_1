@@ -4,6 +4,65 @@
         let appDialogConfirmHandler = null;
         let appDialogCancelHandler = null;
         let systemNotificationPermissionRequested = false;
+        let serverRecoveryTimer = null;
+        let serverErrorPageActive = false;
+        const SERVER_ERROR_RETRY_MS = 5000;
+
+        function shouldOpenServerErrorPage(status) {
+            const code = Number(status || 0);
+            if (!Number.isFinite(code)) return false;
+            return code === 403 || code === 502 || code === 503 || code === 504 || code >= 500;
+        }
+
+        function hideServerErrorPage() {
+            const page = document.getElementById('serverErrorPage');
+            if (page) page.classList.add('hidden');
+            serverErrorPageActive = false;
+            if (serverRecoveryTimer) {
+                clearInterval(serverRecoveryTimer);
+                serverRecoveryTimer = null;
+            }
+        }
+
+        async function retryServerRecovery() {
+            try {
+                const res = await fetch('/api/health', { cache: 'no-store' });
+                if (res.ok) {
+                    location.reload();
+                }
+            } catch (_) {
+                // keep waiting until server recovers
+            }
+        }
+        window.retryServerRecovery = retryServerRecovery;
+
+        function startServerRecoveryPolling() {
+            if (serverRecoveryTimer) return;
+            serverRecoveryTimer = setInterval(() => {
+                void retryServerRecovery();
+            }, SERVER_ERROR_RETRY_MS);
+        }
+
+        function openServerErrorPage(statusCode, message) {
+            const page = document.getElementById('serverErrorPage');
+            const loginPage = document.getElementById('loginPage');
+            const appContainer = document.getElementById('appContainer');
+            if (!page || !loginPage || !appContainer) return;
+            const code = Number(statusCode || 0);
+            const statusEl = document.getElementById('serverErrorStatus');
+            const msgEl = document.getElementById('serverErrorMessage');
+            if (statusEl) statusEl.innerText = `오류 코드: ${code > 0 ? code : '네트워크 오류'}`;
+            if (msgEl) {
+                const safeMsg = String(message || '').trim();
+                msgEl.innerText = safeMsg || '서버 연결에 문제가 발생했습니다. 잠시 후 자동으로 다시 연결합니다.';
+            }
+            loginPage.style.display = 'none';
+            appContainer.style.display = 'none';
+            appContainer.style.visibility = 'visible';
+            page.classList.remove('hidden');
+            serverErrorPageActive = true;
+            startServerRecoveryPolling();
+        }
 
         function isMobileOsClient() {
             const ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
@@ -902,12 +961,28 @@
             return cookieScope || 'guest';
         }
         async function fetchJson(url, options = {}) {
-            const response = await fetch(url, options);
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error((data && data.error) || '서버 요청에 실패했습니다.');
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const errorMessage = (data && data.error) || '서버 요청에 실패했습니다.';
+                    if (shouldOpenServerErrorPage(response.status)) {
+                        openServerErrorPage(response.status, errorMessage);
+                    }
+                    const err = new Error(errorMessage);
+                    err.statusCode = Number(response.status || 0);
+                    throw err;
+                }
+                if (serverErrorPageActive) hideServerErrorPage();
+                return data;
+            } catch (error) {
+                if (error && shouldOpenServerErrorPage(error.statusCode)) throw error;
+                // Network-level failure (offline, DNS, reset)
+                if (error && String(error.name || '') === 'TypeError') {
+                    openServerErrorPage(0, '서버와 연결할 수 없습니다. 네트워크 또는 서버 상태를 확인하세요.');
+                }
+                throw error;
             }
-            return data;
         }
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
@@ -1649,6 +1724,7 @@
         }
 
         async function doLogin(options = {}) { 
+            hideServerErrorPage();
             padEmployeeNo();
             await loadSignupUsers();
             const empNo = (document.getElementById('loginEmpNo').value || '').trim();
@@ -1718,6 +1794,7 @@
             requestAnimationFrame(() => { appContainer.style.visibility = 'visible'; });
         }
         function doLogout() {
+            hideServerErrorPage();
             const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
             if (logoutEmpNo) {
                 markSignupUserLoginState(logoutEmpNo, false).catch((error) => {
