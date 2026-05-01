@@ -115,6 +115,10 @@
     <!-- 지정맥 모달 -->
     <div id="veinModal" class="modal-overlay" style="z-index: 110;">
         <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <div class="modal-header">
+                <h3 style="font-size:17px;">안내</h3>
+                <button class="btn-icon" onclick="cancelVein()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
             <div class="modal-body" style="padding: 30px;">
                 <h3 style="font-size: 20px; font-weight: bold; color: var(--ibk-blue); margin-bottom: 10px;">지정맥 인증</h3>
                 <p style="color: #666; margin-bottom: 25px;">단말기에 손가락을 올려주세요.</p>
@@ -1188,13 +1192,16 @@
     <!-- 통합검색 모달 -->
     <div id="integratedSearchModal" class="modal-overlay" style="align-items: flex-start; padding-top: 80px;">
         <div class="modal-content integrated-search-modal">
+            <div class="modal-header integrated-search-modal-header">
+                <h3 style="font-size:16px;">통합검색</h3>
+                <button class="btn-icon" onclick="closeIntegratedSearchModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
             <div class="integrated-search-head">
                 <div class="integrated-search-input-wrap">
                     <svg class="icon icon-lg integrated-search-icon"><use href="#icon-search"></use></svg>
                     <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch()">
                     <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
-                <button type="button" class="integrated-search-close-btn" onclick="closeIntegratedSearchModal()"><svg class="icon icon-lg"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="integrated-search-controls">
                 <div class="integrated-search-chips">
