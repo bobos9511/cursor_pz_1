@@ -68,6 +68,38 @@
             border: 2px solid #dbeafe;
             box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
         }
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid #8aa0bd;
+            background: #ffffff;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            position: relative;
+            vertical-align: middle;
+            transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+        input[type="checkbox"]:checked {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        input[type="checkbox"]:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 1px;
+        }
 
         /* ==========================================
            2. UTILITIES
@@ -1241,11 +1273,39 @@
         .noti-item-compact { margin-top: 8px; margin-bottom: 0; }
         .noti-stack {
             margin-bottom: 10px;
-            border-radius: 14px;
+            position: relative;
+            border-radius: 16px;
             border: 1px solid #dbe7f5;
-            background: linear-gradient(180deg, #f9fcff, #f3f8ff);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+            background: linear-gradient(180deg, #ffffff, #f6faff);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
             overflow: hidden;
+        }
+        .noti-stack::before,
+        .noti-stack::after {
+            content: "";
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            border-radius: 12px;
+            border: 1px solid #dce7f6;
+            background: linear-gradient(180deg, #ffffff, #f3f8ff);
+            z-index: 0;
+            pointer-events: none;
+            transition: transform 0.24s ease, opacity 0.24s ease;
+        }
+        .noti-stack::before {
+            top: 44px;
+            height: 34px;
+            opacity: 0.55;
+            transform: translateY(0);
+        }
+        .noti-stack::after {
+            top: 52px;
+            left: 16px;
+            right: 16px;
+            height: 30px;
+            opacity: 0.35;
+            transform: translateY(0);
         }
         .noti-stack-head {
             width: 100%;
@@ -1255,8 +1315,10 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
-            padding: 11px 12px;
+            padding: 12px 13px;
             cursor: pointer;
+            position: relative;
+            z-index: 2;
         }
         .noti-stack-head-left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
         .noti-stack-title { font-size: 12px; font-weight: 800; color: #334155; }
@@ -1269,25 +1331,33 @@
             border-radius: 999px;
             padding: 2px 8px;
         }
-        .noti-stack-toggle { font-size: 11px; font-weight: 800; color: #475569; }
+        .noti-stack-toggle {
+            color: #334155;
+            border: 1px solid #cfdced;
+            border-radius: 999px;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fbff;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+        .noti-stack-toggle .icon {
+            width: 14px;
+            height: 14px;
+        }
         .noti-stack-preview {
             position: relative;
-            height: 16px;
-            margin: 0 12px 6px;
+            z-index: 1;
+            height: 10px;
+            margin: 0 12px 0;
+            opacity: 0;
+            pointer-events: none;
         }
         .noti-stack-layer {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 12px;
-            border-radius: 10px;
-            background: linear-gradient(180deg, #ffffff, #f1f5f9);
-            border: 1px solid #dbe7f5;
-            transform-origin: center top;
-            transition: transform 0.25s ease, opacity 0.25s ease;
+            display: none;
         }
-        .noti-stack-layer:nth-child(1) { top: 0; opacity: 0.95; transform: translateY(0) scale(0.99); }
-        .noti-stack-layer:nth-child(2) { top: 4px; opacity: 0.7; transform: translateY(0) scale(0.97); }
         .noti-stack-body {
             max-height: 0;
             opacity: 0;
@@ -1295,6 +1365,8 @@
             transform: translateY(-6px);
             transition: max-height 0.28s ease, opacity 0.22s ease, transform 0.22s ease;
             padding: 0 10px 0;
+            position: relative;
+            z-index: 2;
         }
         .noti-stack.expanded .noti-stack-body {
             max-height: 1400px;
@@ -1302,8 +1374,21 @@
             transform: translateY(0);
             padding-bottom: 10px;
         }
-        .noti-stack.expanded .noti-stack-layer:nth-child(1) { transform: translateY(-4px) scale(0.985); opacity: 0.5; }
-        .noti-stack.expanded .noti-stack-layer:nth-child(2) { transform: translateY(-8px) scale(0.97); opacity: 0.25; }
+        .noti-stack.expanded::before {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+        .noti-stack.expanded::after {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .noti-stack.expanded .noti-stack-toggle {
+            background: #eef4ff;
+            border-color: #bfd3ec;
+        }
+        .noti-stack.expanded .noti-stack-toggle .icon {
+            transform: rotate(180deg);
+        }
         .noti-empty {
             text-align: center;
             color: #64748b;
@@ -1747,6 +1832,9 @@
             border-color: #4a5f7f;
             color: #e6edf8;
         }
+        body[data-theme="dark"] {
+            color-scheme: dark;
+        }
         body[data-theme="dark"] input[type="range"]::-webkit-slider-runnable-track {
             background: linear-gradient(90deg, #334a68, #475d7d);
         }
@@ -1775,7 +1863,19 @@
         body[data-theme="dark"] input[type="number"]::-webkit-inner-spin-button,
         body[data-theme="dark"] input[type="number"]::-webkit-outer-spin-button {
             opacity: 1;
-            filter: invert(1) brightness(1.3) contrast(1.1);
+            filter: none;
+        }
+        body[data-theme="dark"] input[type="checkbox"] {
+            border-color: #6b86aa;
+            background: #13233a;
+            box-shadow: inset 0 0 0 1px rgba(7, 14, 28, 0.35);
+        }
+        body[data-theme="dark"] input[type="checkbox"]:checked {
+            background: #3b82f6;
+            border-color: #60a5fa;
+        }
+        body[data-theme="dark"] input[type="checkbox"]:checked::after {
+            border-color: #f8fbff;
         }
         body[data-theme="dark"] .btn {
             border-color: #465b79;
@@ -1921,6 +2021,11 @@
             border-color: #3a4a63;
             color: #e2ebf8;
         }
+        body[data-theme="dark"] .noti-stack::before,
+        body[data-theme="dark"] .noti-stack::after {
+            background: linear-gradient(180deg, #1a2b45, #15243c);
+            border-color: #40577b;
+        }
         body[data-theme="dark"] .noti-item-msg,
         body[data-theme="dark"] .noti-stack-title,
         body[data-theme="dark"] .notification-filter-label {
@@ -1930,6 +2035,15 @@
         body[data-theme="dark"] .noti-stack-toggle,
         body[data-theme="dark"] .noti-empty {
             color: #a7b6cc;
+        }
+        body[data-theme="dark"] .noti-stack-toggle {
+            background: #1a2b45;
+            border-color: #41597b;
+            color: #d7e6fb;
+        }
+        body[data-theme="dark"] .noti-stack.expanded .noti-stack-toggle {
+            background: #223a5c;
+            border-color: #5f7da4;
         }
         body[data-theme="dark"] .board-help-card,
         body[data-theme="dark"] .know-form-shell,
@@ -2437,10 +2551,6 @@
         body[data-theme="dark"] .integrated-ranking-row {
             border-color: #4a5f7f;
             background: linear-gradient(180deg, #1a283f, #152238);
-        }
-        body[data-theme="dark"] .noti-stack-layer {
-            background: linear-gradient(180deg, #1a283f, #13233a);
-            border-color: #3f5475;
         }
         body[data-theme="dark"] .noti-stack-count {
             color: #dbeafe;

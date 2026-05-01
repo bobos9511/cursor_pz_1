@@ -10,6 +10,80 @@ const notificationCenterState = {
     stackOpen: {},
     seq: 1,
 };
+const NOTIFICATION_CENTER_STORAGE_KEY = "knock-notification-center-v1";
+
+function persistNotificationCenterState() {
+    try {
+        const safeItems = notificationCenterState.items.slice(0, 300).map((it) => ({
+            id: String(it.id || ""),
+            message: String(it.message || ""),
+            type: String(it.type || "success"),
+            topic: String(it.topic || "일반"),
+            level: it.level === "important" ? "important" : "general",
+            at: Number(it.at || Date.now()),
+            atLabel: String(it.atLabel || ""),
+            dateLabel: String(it.dateLabel || ""),
+            timeBand: String(it.timeBand || ""),
+            pageKey: String(it.pageKey || "page:unknown"),
+            pageLabel: String(it.pageLabel || "기타"),
+            isRead: !!it.isRead,
+            hasAction: false,
+            onClick: null,
+            actionText: String(it.actionText || "바로가기"),
+        }));
+        localStorage.setItem(
+            NOTIFICATION_CENTER_STORAGE_KEY,
+            JSON.stringify({
+                items: safeItems,
+                seq: Number(notificationCenterState.seq || 1),
+                viewMode: notificationCenterState.viewMode === "topic" ? "topic" : "time",
+                levelMode:
+                    notificationCenterState.levelMode === "important"
+                        ? "important"
+                        : notificationCenterState.levelMode === "general"
+                          ? "general"
+                          : "all",
+            })
+        );
+    } catch (_) {}
+}
+
+function restoreNotificationCenterState() {
+    try {
+        const raw = localStorage.getItem(NOTIFICATION_CENTER_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return;
+        const loaded = Array.isArray(parsed.items) ? parsed.items : [];
+        notificationCenterState.items = loaded
+            .map((it) => ({
+                id: String((it && it.id) || `noti_${Date.now()}_${Math.random().toString(16).slice(2)}`),
+                message: String((it && it.message) || ""),
+                type: String((it && it.type) || "success"),
+                topic: String((it && it.topic) || "일반"),
+                level: (it && it.level) === "important" ? "important" : "general",
+                at: Number((it && it.at) || Date.now()),
+                atLabel: String((it && it.atLabel) || ""),
+                dateLabel: String((it && it.dateLabel) || ""),
+                timeBand: String((it && it.timeBand) || ""),
+                pageKey: String((it && it.pageKey) || "page:unknown"),
+                pageLabel: String((it && it.pageLabel) || "기타"),
+                isRead: !!(it && it.isRead),
+                hasAction: false,
+                onClick: null,
+                actionText: String((it && it.actionText) || "바로가기"),
+            }))
+            .sort((a, b) => Number(b.at || 0) - Number(a.at || 0))
+            .slice(0, 300);
+        notificationCenterState.seq = Math.max(1, Number(parsed.seq || notificationCenterState.items.length + 1));
+        notificationCenterState.viewMode = parsed.viewMode === "topic" ? "topic" : "time";
+        notificationCenterState.levelMode =
+            parsed.levelMode === "important" ? "important" : parsed.levelMode === "general" ? "general" : "all";
+        notificationCenterState.filterDraftViewMode = notificationCenterState.viewMode;
+        notificationCenterState.filterDraftLevelMode = notificationCenterState.levelMode;
+        recalcNotificationUnreadCount();
+    } catch (_) {}
+}
 
 function resolveNotificationTopic(message) {
     const m = String(message || "");
@@ -206,7 +280,9 @@ function renderNotificationStack(cluster) {
                     <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
                     <span class="noti-stack-count">${cluster.items.length}건 모아보기</span>
                 </div>
-                <span class="noti-stack-toggle">${expanded ? "접기" : "펼치기"}</span>
+                <span class="noti-stack-toggle" title="${expanded ? "접기" : "펼치기"}">
+                    <svg class="icon"><use href="#icon-chevron-down"></use></svg>
+                </span>
             </button>
             <div class="noti-stack-preview" aria-hidden="true">
                 <div class="noti-stack-layer"></div>
@@ -273,6 +349,7 @@ function setNotificationViewMode(mode) {
     }
     updateNotificationFilterButton();
     renderNotificationCenterBody();
+    persistNotificationCenterState();
 }
 
 function setNotificationLevelMode(mode) {
@@ -293,6 +370,7 @@ function setNotificationLevelMode(mode) {
     }
     updateNotificationFilterButton();
     renderNotificationCenterBody();
+    persistNotificationCenterState();
 }
 
 function openNotificationFilterModal() {
@@ -344,6 +422,7 @@ function openNotificationCenter() {
     modal.classList.add("active");
     updateNotificationBadge();
     updateNotificationFilterButton();
+    persistNotificationCenterState();
 }
 
 function closeNotificationCenter() {
@@ -357,6 +436,7 @@ function deleteNotificationItem(id) {
     recalcNotificationUnreadCount();
     updateNotificationBadge();
     renderNotificationCenterBody();
+    persistNotificationCenterState();
 }
 
 function clearAllNotifications() {
@@ -366,6 +446,7 @@ function clearAllNotifications() {
         notificationCenterState.unreadCount = 0;
         updateNotificationBadge();
         renderNotificationCenterBody();
+        persistNotificationCenterState();
     });
 }
 
@@ -403,7 +484,11 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
     notificationCenterState.items = notificationCenterState.items.slice(0, 300);
     recalcNotificationUnreadCount();
     updateNotificationBadge();
+    persistNotificationCenterState();
 };
+
+restoreNotificationCenterState();
+updateNotificationBadge();
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
