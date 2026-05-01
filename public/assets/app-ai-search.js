@@ -22,6 +22,120 @@ function saveJsonToStorage(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
 
+function updateAiSearchDeleteAllButtonState() {
+    const deleteAllBtn = document.getElementById("aiSearchDeleteAllBtn");
+    if (!deleteAllBtn) return;
+    const disabled = !Array.isArray(aiSearchHistory) || aiSearchHistory.length === 0;
+    deleteAllBtn.disabled = disabled;
+    deleteAllBtn.title = disabled ? "삭제할 지난 대화가 없습니다." : "지난대화를 모두 삭제합니다.";
+}
+
+function toQuestionSourceText(post) {
+    if (!post) return "";
+    const title = String(post.title || "").replace(/\[AI채택\]\s*/g, "").trim();
+    const body = String(post.content || "")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    return `${title} ${body}`.trim();
+}
+
+function parsePostDateTime(post) {
+    if (!post) return null;
+    const raw = String(post.datetime || "").trim();
+    if (!raw) return null;
+    const m = raw.match(/^(\d{4})\.(\d{2})\.(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]) - 1;
+    const d = Number(m[3]);
+    const h = Number(m[4] || 0);
+    const mi = Number(m[5] || 0);
+    const dt = new Date(y, mo, d, h, mi, 0, 0);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function collectPopularSuggestionsByDays(basePosts, lookbackDays, limit) {
+    const now = Date.now();
+    const windowMs = lookbackDays * 24 * 60 * 60 * 1000;
+    const scoped = basePosts.filter((post) => {
+        const dt = parsePostDateTime(post);
+        if (!dt) return false;
+        return now - dt.getTime() <= windowMs;
+    });
+    if (!scoped.length) return [];
+    const buckets = new Map();
+    scoped.forEach((post) => {
+        const source = toQuestionSourceText(post);
+        if (!source) return;
+        const key = normalizeQuestionKey(source);
+        if (!key) return;
+        const current = buckets.get(key) || { prompt: source, count: 0, latestTs: 0 };
+        current.count += 1;
+        const ts = parsePostDateTime(post);
+        current.latestTs = Math.max(current.latestTs, ts ? ts.getTime() : 0);
+        if (!current.prompt || current.prompt.length > source.length) current.prompt = source;
+        buckets.set(key, current);
+    });
+    return Array.from(buckets.values())
+        .sort((a, b) => {
+            if (b.count !== a.count) return b.count - a.count;
+            return b.latestTs - a.latestTs;
+        })
+        .slice(0, limit)
+        .map((item) => ({
+            prompt: item.prompt,
+            label: summarizeQuestionText(item.prompt),
+            count: item.count,
+        }));
+}
+
+function normalizeQuestionKey(text) {
+    return String(text || "")
+        .toLowerCase()
+        .replace(/[^\w가-힣\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function summarizeQuestionText(text) {
+    const plain = String(text || "").replace(/\s+/g, " ").trim();
+    if (plain.length <= 18) return plain;
+    return `${plain.slice(0, 18).trim()}...`;
+}
+
+function getAiSearchPopularSuggestions(limit = 5) {
+    const posts = appData && Array.isArray(appData.posts) ? appData.posts : [];
+    const targetPosts = posts.filter((p) => p && (p.type === "IT" || p.type === "BIZ"));
+    if (!targetPosts.length) return [];
+    const recent7 = collectPopularSuggestionsByDays(targetPosts, 7, limit);
+    if (recent7.length >= Math.min(3, limit)) return recent7;
+    return collectPopularSuggestionsByDays(targetPosts, 30, limit);
+}
+
+function renderAiSearchSuggestions() {
+    const rowEl = document.getElementById("aiSearchSuggestRow");
+    if (!rowEl) return;
+    const suggestions = getAiSearchPopularSuggestions(5);
+    if (!suggestions.length) {
+        rowEl.classList.add("hidden");
+        rowEl.innerHTML = "";
+        return;
+    }
+    rowEl.classList.remove("hidden");
+    rowEl.innerHTML = "";
+    suggestions.forEach((suggestion) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ai-search-suggest-chip";
+        btn.title = `많이 물어본 질문 (${Number(suggestion.count) || 1}건)`;
+        btn.textContent = String(suggestion.label || "추천 질문");
+        btn.addEventListener("click", () => setAiSearchPrompt(String(suggestion.prompt || "")));
+        rowEl.appendChild(btn);
+    });
+}
+
 function buildAiSearchGreeting() {
     const d = new Date();
     const hour = d.getHours();
@@ -88,6 +202,7 @@ function renderAiSearchHistory() {
     if (!listEl) return;
     if (!aiSearchHistory.length) {
         listEl.innerHTML = '<div class="ai-search-history-empty">저장된 지난 대화가 없습니다.</div>';
+        updateAiSearchDeleteAllButtonState();
         return;
     }
     listEl.innerHTML = aiSearchHistory
@@ -108,6 +223,7 @@ function renderAiSearchHistory() {
             `;
         })
         .join("");
+    updateAiSearchDeleteAllButtonState();
 }
 
 function upsertAiSearchHistoryFromActive() {
@@ -170,6 +286,7 @@ function initializeAiSearchView() {
     }
     renderAiSearchMessages();
     renderAiSearchHistory();
+    renderAiSearchSuggestions();
     if (inputEl) inputEl.addEventListener("input", saveAiSearchActiveState);
     if (inputEl) {
         inputEl.addEventListener("keydown", (event) => {
@@ -252,7 +369,7 @@ async function continueAiSearchAnswer() {
     while (needsMore && step < 8) {
         step += 1;
         const result = await requestAiPreview({
-            title: `AI 검색 이어쓰기 ${step}`,
+            title: `AI Chat 이어쓰기 ${step}`,
             content: pending.question,
             boardType: "CHAT",
             timeoutMs: 0,
@@ -334,7 +451,7 @@ async function submitAiSearchQuestion() {
     }, AI_CHAT_REQUEST_TIMEOUT_MS);
     try {
         const result = await requestAiPreview({
-            title: `AI 검색: ${question.slice(0, 45)}`,
+            title: `AI Chat: ${question.slice(0, 45)}`,
             content: question,
             boardType: "CHAT",
             timeoutMs: 0,

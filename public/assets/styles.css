@@ -929,6 +929,19 @@
             padding: 2px 8px;
             letter-spacing: 0.02em;
         }
+        .board-rag-badge {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: #4c1d95;
+            background: linear-gradient(180deg, #f5f3ff, #ede9fe);
+            border: 1px solid #c4b5fd;
+            border-radius: 999px;
+            padding: 3px 9px;
+            line-height: 1.2;
+        }
         .write-section-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; background: #fff; }
         .write-section-title { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 10px; }
         .write-section-title::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: #3b82f6; display: inline-block; }
@@ -1101,8 +1114,47 @@
         .ai-content-toggle-btn:hover { background: #eff6ff; }
 
         #integratedSearchModal { z-index: 110; }
-        #aiSubmitModal { z-index: 120; }
         #similarPostModal { z-index: 130; }
+        .dtl-similar-card {
+            width: 100%;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+            margin-bottom: 10px;
+        }
+        .dtl-similar-card:last-child { margin-bottom: 0; }
+        .dtl-similar-card:hover {
+            border-color: #bfdbfe;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
+        }
+        .dtl-similar-card-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #1d4ed8;
+            margin-bottom: 6px;
+            line-height: 1.45;
+        }
+        .dtl-similar-card-snippet {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .dtl-similar-card-meta {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .dtl-similar-empty {
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: center;
+            padding: 12px 8px;
+        }
 
         /* 아코디언 */
         details > summary { list-style: none; cursor: pointer; }

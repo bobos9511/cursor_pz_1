@@ -1707,7 +1707,10 @@
                 const topNavId = `topnav-list-${currentBoardType.toLowerCase()}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
                 
-                document.getElementById('boardMainTitle').innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><svg class="icon"><use href="${boardTitles[currentBoardType].icon}"></use></svg><span>${boardTitles[currentBoardType].title}</span></span>`;
+                const knowRagBadge = currentBoardType === 'KNOW'
+                    ? '<span class="board-rag-badge">RAG 학습</span>'
+                    : '';
+                document.getElementById('boardMainTitle').innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><svg class="icon"><use href="${boardTitles[currentBoardType].icon}"></use></svg><span>${boardTitles[currentBoardType].title}</span>${knowRagBadge}</span>`;
                 boardHelpEditing = false;
                 boardHelpCollapsed = !!(getBoardHelpUiState().collapsedByType[currentBoardType]);
                 renderBoardHelpCard();
@@ -2384,17 +2387,30 @@
                 }
             }
 
-            // 유사 질문 (우측)
-            const similarPosts = appData.posts.filter(p => p.type === post.type && p.id !== post.id).slice(0, 3);
-            let similarHtml = '';
-            if(similarPosts.length > 0) {
-                similarHtml = '<ul style="margin:0; padding:0;">' + similarPosts.map(p => {
-                    return `<li style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;" onmouseover="this.style.background='#f4f8fb'" onmouseout="this.style.background='#fff'" onclick="openDetail(${p.id})">
-                        <div style="font-weight: bold; color: var(--ibk-blue); font-size: 13px;" class="truncate">${p.title}</div>
-                    </li>`;
-                }).join('') + '</ul>';
-            } else { similarHtml = '<div style="padding: 20px; text-align: center; color: #999;">내역 없음</div>'; }
-            document.getElementById('dtlSimilarList').innerHTML = similarHtml;
+            const inlineSimilarWrap = document.getElementById('dtlInlineSimilarWrap');
+            const inlineSimilarList = document.getElementById('dtlInlineSimilarList');
+            if (inlineSimilarWrap && inlineSimilarList) {
+                const showInlineSimilar = post.type === 'IT' || post.type === 'BIZ';
+                inlineSimilarWrap.classList.toggle('hidden', !showInlineSimilar);
+                if (showInlineSimilar) {
+                    const similarPosts = appData.posts
+                        .filter((p) => p.type === post.type && p.id !== post.id)
+                        .slice(0, 5);
+                    if (!similarPosts.length) {
+                        inlineSimilarList.innerHTML = '<div class="dtl-similar-empty">유사한 질문이 없습니다.</div>';
+                    } else {
+                        inlineSimilarList.innerHTML = similarPosts.map((p) => {
+                            const raw = String(p.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                            const snippet = raw ? escapeHtml(raw.slice(0, 90)) : '내용 요약 없음';
+                            return `<button type="button" class="dtl-similar-card" onclick="openDetail(${p.id})">
+                                <div class="dtl-similar-card-title">${escapeHtml(p.title || '(제목 없음)')}</div>
+                                <div class="dtl-similar-card-snippet">${snippet}</div>
+                                <div class="dtl-similar-card-meta">${escapeHtml(p.writer || '-')} · ${escapeHtml(p.datetime || '-')}</div>
+                            </button>`;
+                        }).join('');
+                    }
+                }
+            }
         }
 
         function deletePost() {
@@ -2690,10 +2706,7 @@
             await savePost(false);
         }
 
-        function closeAiModal() { document.getElementById('aiSubmitModal').classList.remove('active'); }
-
         async function savePost(isAiSolved) {
-            closeAiModal();
             const editId = document.getElementById('editPostId').value;
             let title = document.getElementById('writeTitle').value;
             let content = document.getElementById('writeContent').innerHTML;
@@ -2773,11 +2786,11 @@
                     appData.posts.unshift({
                         id: newId, type: currentBoardType, title: '[AI채택] ' + title, writer: getCurrentActorName(), 
                         datetime: dt, ip: ipStr, status: 'done', aiSolved: true, content: content, 
-                        aiContent: document.getElementById('modalAiContent').innerHTML || AI_FALLBACK_HTML, answer: '질의자가 AI 추천 답변을 통해 스스로 문제를 해결(채택)하여 자동 종결 등록된 건입니다.', meta: meta, addInfoList: [], thread: [], attachments
+                        aiContent: AI_FALLBACK_HTML, answer: '질의자가 AI 추천 답변을 통해 스스로 문제를 해결(채택)하여 자동 종결 등록된 건입니다.', meta: meta, addInfoList: [], thread: [], attachments
                     });
                     showAlert('AI 답변 채택 완료! 자동 처리되었습니다.', 'success');
                 } else {
-                    let aiContentHtml = document.getElementById('modalAiContent').innerHTML || AI_FALLBACK_HTML;
+                    let aiContentHtml = AI_FALLBACK_HTML;
                     if (!isAiSolved && (currentBoardType === 'IT' || currentBoardType === 'BIZ')) {
                         aiContentHtml = makeAiPendingHtml();
                     }

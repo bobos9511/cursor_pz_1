@@ -24,6 +24,7 @@
         <symbol id="icon-check" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></symbol>
         <symbol id="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
         <symbol id="icon-history" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5L4 18v1h16v-1l-2-2z"/></symbol>
         <symbol id="icon-info" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></symbol>
         <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
@@ -324,7 +325,7 @@
                     <div class="header-action-hovercard">환경 설정</div>
                 </button>
                 <button id="headerNotificationBtn" class="header-action-btn" onclick="openNotificationCenter()" title="알림센터">
-                    <svg class="icon" style="font-size: 18px;"><use href="#icon-history"></use></svg>
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-bell"></use></svg>
                     <span id="headerNotificationBadge" class="header-noti-badge hidden">0</span>
                     <div class="header-action-hovercard">알림센터</div>
                 </button>
@@ -335,7 +336,7 @@
             </div>
         </header>
         <div id="topNavMobile" class="top-nav-mobile">
-            <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI에게 물어보기</button>
+            <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI Chat</button>
             <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
@@ -375,7 +376,7 @@
             <!-- 사이드바 -->
             <aside class="sidebar" id="sidebar">
                 <div class="nav-title mt-10">메인메뉴</div>
-                <div class="nav-item" id="nav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI에게 물어보기</span></div>
+                <div class="nav-item" id="nav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI Chat</span></div>
                 <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
                 
                 <div class="nav-title mt-10">통합 문의 게시판</div>
@@ -459,14 +460,14 @@
                          [뷰 1.5] AI 검색
                          ========================================== -->
                     <div id="view-ai-search" class="view-section">
-                        <h2 class="page-title" style="margin-bottom: 14px;">AI에게 물어보기</h2>
+                        <h2 class="page-title" style="margin-bottom: 14px;">AI Chat</h2>
                         <div class="ai-search-shell">
                             <aside class="ai-search-sidebar">
                                 <div class="ai-search-side-head">
                                     <button type="button" class="btn btn-primary" style="width:100%; justify-content:center;" onclick="startNewAiSearchChat()">
                                         <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
                                     </button>
-                                    <button type="button" class="btn btn-outline ai-search-history-clear" style="width:100%; justify-content:center; margin-top:8px;" onclick="deleteAllAiSearchHistory()">
+                                    <button id="aiSearchDeleteAllBtn" type="button" class="btn btn-outline ai-search-history-clear" style="width:100%; justify-content:center; margin-top:8px;" onclick="deleteAllAiSearchHistory()">
                                         <svg class="icon"><use href="#icon-trash"></use></svg> 지난대화 삭제
                                     </button>
                                 </div>
@@ -477,15 +478,15 @@
                             <section class="ai-search-main panel">
                                 <div class="panel-header ai-search-main-head">
                                     <div class="flex items-center gap-10">
-                                        <svg class="icon"><use href="#icon-magic"></use></svg> AI 검색 채팅
+                                        <svg class="icon"><use href="#icon-magic"></use></svg> AI Chat
                                     </div>
                                     <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
                                 </div>
                                 <div class="panel-body ai-search-main-body">
-                                    <div class="ai-search-suggest-row">
-                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('대량이체 오류 발생 시 점검 순서를 단계별로 알려줘')">대량이체 오류 점검</button>
-                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('담보대출 만기연장 심사 시 필수 확인 항목 3가지를 알려줘')">담보대출 만기연장</button>
-                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('권한 신청 반려 사유를 줄이는 제출 기준을 알려줘')">권한 신청 반려 줄이기</button>
+                                    <div id="aiSearchSuggestRow" class="ai-search-suggest-row">
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('대량이체 오류 발생 시 점검 순서를 단계별로 알려줘')" title="많이 물어본 질문 (1건)">대량이체 오류 점검</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('담보대출 만기연장 심사 시 필수 확인 항목 3가지를 알려줘')" title="많이 물어본 질문 (1건)">담보대출 만기연장</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('권한 신청 반려 사유를 줄이는 제출 기준을 알려줘')" title="많이 물어본 질문 (1건)">권한 신청 반려 줄이기</button>
                                     </div>
                                     <div id="aiSearchLog" class="ai-search-log"></div>
                                     <div class="ai-search-input-row">
@@ -651,6 +652,13 @@
                                     </div>
                                 </div>
 
+                                <div class="panel hidden" id="dtlInlineSimilarWrap" style="margin-bottom: 0; border: 1px solid #e2e8f0;">
+                                    <div class="panel-header" style="background:#f8fafc; color:#334155;">
+                                        <span><svg class="icon"><use href="#icon-history"></use></svg> 나와 유사한 질문</span>
+                                    </div>
+                                    <div class="panel-body" id="dtlInlineSimilarList" style="padding: 14px;"></div>
+                                </div>
+
                                 <!-- 1.5 추가정보 입력 폼 -->
                                 <div class="panel hidden" id="addInfoBox" style="border-color: var(--warning); margin-bottom: 0;">
                                     <div class="panel-header" style="background: #fffbeb; color: #b45309;"><svg class="icon"><use href="#icon-info"></use></svg> 담당자가 추가 정보를 요청했습니다.</div>
@@ -767,16 +775,6 @@
 
                             </div>
 
-                            <!-- 우측 영역: 유사 질문 카드 -->
-                            <div class="flex-col hidden xl:flex" style="width: 350px; flex-shrink: 0;" id="similarPostArea">
-                                <div class="panel" style="margin-bottom: 0;">
-                                    <div class="panel-header" style="background: #F8FAFC;">
-                                        <span><svg class="icon"><use href="#icon-history"></use></svg> 유사 질문 목록</span>
-                                    </div>
-                                    <div class="panel-body" style="padding: 0; overflow-y: auto; max-height: 600px;" id="dtlSimilarList">
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -1094,31 +1092,6 @@
             </div>
             <div class="modal-body" id="integratedSearchResults" style="padding: 0; background: #fff;">
                 <div class="text-center" style="color:#999; padding: 60px;">검색어를 입력하고 Enter를 누르세요.</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI 자동 종결 스마트 모달 -->
-    <div id="aiSubmitModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 650px;">
-            <div class="modal-header" style="background: linear-gradient(to right, var(--ibk-blue), var(--ibk-light));">
-                <span><svg class="icon"><use href="#icon-magic"></use></svg> AI 추천 답변 및 유사 질문</span>
-                <button onclick="closeAiModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 15px;">이 답변으로 문제가 해결된다면 <b>AI 채택으로 접수를 종결</b>해 주세요.</p>
-                <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                    <span style="font-weight: bold; color: var(--ibk-blue); display: block; margin-bottom: 10px;">[AI 스마트 해결책]</span>
-                    <span id="modalAiContent"></span>
-                </div>
-                <div style="border: 1px solid #eee; border-radius: 4px; overflow: hidden;">
-                    <div style="background: #fafafa; padding: 10px; font-weight: bold; border-bottom: 1px solid #eee; font-size: 13px;">나와 유사한 질문 내역</div>
-                    <ul id="modalSimilarList" style="margin: 0; padding: 0; list-style: none; font-size: 13px;"></ul>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" style="background: #7E22CE; border-color: #7E22CE;" onclick="savePost(true)">AI 답변 채택</button>
-                <button class="btn btn-outline" onclick="savePost(false)">계속 등록 진행</button>
             </div>
         </div>
     </div>
