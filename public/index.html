@@ -1308,6 +1308,11 @@
                                         <span id="adminAi-runtime-ragKeywordBlocklist-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">RAG 학습 키워드에서 제외할 의미 없는 표현/꾸밈말 목록입니다. (예: 대해, 설명해줘)</div>
+                                    <div class="admin-settings-actions" style="justify-content:flex-start; gap:8px; margin-top:8px;">
+                                        <button type="button" class="btn btn-outline" onclick="exportAdminRagKeywordBlocklist()">금칙어 내보내기</button>
+                                        <button type="button" class="btn btn-outline" onclick="importAdminRagKeywordBlocklist()">금칙어 가져오기</button>
+                                        <input id="adminAi-ragKeywordImportInput" type="file" accept=".txt,.csv,.json" style="display:none;" onchange="handleAdminRagKeywordImport(event)">
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -2307,6 +2307,9 @@
         body[data-theme="dark"] .ai-search-msg-time {
             color: #9fb0c8;
         }
+        body[data-theme="dark"] .ai-search-msg-prefer-outside .ai-prefer-btn {
+            box-shadow: 0 2px 8px rgba(2, 8, 24, 0.4);
+        }
         body[data-theme="dark"] .ai-search-input-help,
         body[data-theme="dark"] .ai-search-history-meta,
         body[data-theme="dark"] .ai-search-history-empty {
@@ -3590,7 +3593,7 @@
         .ai-search-msg-row {
             display: flex;
             align-items: flex-end;
-            gap: 8px;
+            gap: 4px;
             margin-bottom: 8px;
             opacity: 0;
             transform: translateY(8px);
@@ -3700,7 +3703,17 @@
             font-weight: 600;
             white-space: nowrap;
             line-height: 1;
-            padding-bottom: 2px;
+            padding-bottom: 3px;
+            letter-spacing: -0.1px;
+        }
+        .ai-search-msg-prefer-outside {
+            display: inline-flex;
+            align-items: flex-end;
+            padding-bottom: 1px;
+            margin: 0 2px;
+        }
+        .ai-search-msg-prefer-outside .ai-prefer-btn {
+            margin: 0;
         }
         .ai-prefer-btn {
             display: inline-flex;

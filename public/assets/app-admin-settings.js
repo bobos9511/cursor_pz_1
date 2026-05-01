@@ -35,6 +35,65 @@ function parseAdminKeywordBlocklist(raw) {
     return out;
 }
 
+function getAdminRagKeywordInputEl() {
+    return document.getElementById("adminAi-runtime-ragKeywordBlocklist");
+}
+
+function exportAdminRagKeywordBlocklist() {
+    const input = getAdminRagKeywordInputEl();
+    if (!input) return;
+    const list = parseAdminKeywordBlocklist(input.value);
+    const payload = list.join("\n");
+    const blob = new Blob([payload], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rag-keyword-blocklist-${y}${m}${d}-${hh}${mm}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showAlert(`금칙어 목록 ${list.length}개를 내보냈습니다.`, "success");
+}
+
+function importAdminRagKeywordBlocklist() {
+    const input = document.getElementById("adminAi-ragKeywordImportInput");
+    if (!input) return;
+    input.value = "";
+    input.click();
+}
+
+async function handleAdminRagKeywordImport(event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+        const raw = await file.text();
+        let sourceText = raw;
+        if ((file.name || "").toLowerCase().endsWith(".json")) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) sourceText = parsed.join(",");
+            else if (parsed && Array.isArray(parsed.ragKeywordBlocklist)) sourceText = parsed.ragKeywordBlocklist.join(",");
+        }
+        const list = parseAdminKeywordBlocklist(sourceText);
+        const target = getAdminRagKeywordInputEl();
+        if (!target) return;
+        target.value = list.join(", ");
+        if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
+            window.applyRuntimeRagKeywordBlocklist(list);
+        }
+        showAlert(`금칙어 목록 ${list.length}개를 가져왔습니다. 저장 버튼으로 반영해주세요.`, "success");
+    } catch (error) {
+        console.error(error);
+        showAlert("금칙어 목록 파일을 읽지 못했습니다.", "error");
+    }
+}
+
 function setAdminRuntimeInputValue(id, value, defaultValue) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1070,6 +1129,9 @@ function openAdminAiHelpModal(topic) {
 
 window.openAdminAiHelpModal = openAdminAiHelpModal;
 window.closeAdminAiHelpModal = closeAdminAiHelpModal;
+window.exportAdminRagKeywordBlocklist = exportAdminRagKeywordBlocklist;
+window.importAdminRagKeywordBlocklist = importAdminRagKeywordBlocklist;
+window.handleAdminRagKeywordImport = handleAdminRagKeywordImport;
 window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
 window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;
 window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;

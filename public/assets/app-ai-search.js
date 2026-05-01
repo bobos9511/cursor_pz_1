@@ -253,6 +253,32 @@ function renderAiSearchMessages() {
         if (!plain) return false;
         return /^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패");
     };
+    const isRefusalOrNeedsConfirmationMessage = (text) => {
+        const normalized = stripHtmlForRag(String(text || "")).replace(/\s+/g, " ").trim().toLowerCase();
+        if (!normalized) return false;
+        const refusalHints = [
+            "답변할 수 없습니다",
+            "도와드릴 수 없습니다",
+            "지원하지 않습니다",
+            "제공된 근거 자료에 포함되어 있지",
+            "거절",
+            "불가",
+            "죄송하지만",
+            "권한이 없습니다",
+        ];
+        const needsCheckHints = [
+            "확인이 필요",
+            "확인하시기 바랍니다",
+            "확인해주시기 바랍니다",
+            "확인 후 안내",
+            "정확한 확인",
+            "공식 경로를 통해",
+            "창구나 고객센터를 통해",
+        ];
+        if (refusalHints.some((hint) => normalized.includes(hint))) return true;
+        if (needsCheckHints.some((hint) => normalized.includes(hint))) return true;
+        return false;
+    };
     const isPreferButtonHiddenMessage = (text, idx) => {
         const plain = stripHtmlForRag(String(text || ""));
         const normalized = plain.replace(/\s+/g, " ").trim();
@@ -263,6 +289,8 @@ function renderAiSearchMessages() {
         if (normalized.includes("추가 정보") && normalized.includes("요청")) return true;
         // AI 오류 메시지에는 선호 버튼을 표시하지 않음
         if (isErrorAiMessage(text)) return true;
+        // 사용자가 원하는 직접 답변 대신 확인/거절 성격인 메시지에는 선호 버튼 숨김
+        if (isRefusalOrNeedsConfirmationMessage(text)) return true;
         return false;
     };
     let lastDateKey = "";
@@ -300,9 +328,10 @@ function renderAiSearchMessages() {
             const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
-            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn ? `<div class="ai-search-msg-actions">${preferBtn}</div>` : ""}`;
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>`;
             row.insertAdjacentHTML("beforeend", avatarHtml);
             row.appendChild(item);
+            if (preferBtn) row.insertAdjacentHTML("beforeend", `<span class="ai-search-msg-prefer-outside">${preferBtn}</span>`);
             row.insertAdjacentHTML("beforeend", timeHtml);
         }
         logEl.appendChild(row);
@@ -328,6 +357,15 @@ function toggleAiSearchPreferred(messageIndex) {
     if (String(msg.text || "").includes("ai-search-loading")) return;
     const plain = stripHtmlForRag(String(msg.text || "")).replace(/\s+/g, " ").trim();
     if (/^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패")) return;
+    if (
+        plain.includes("답변할 수 없습니다") ||
+        plain.includes("도와드릴 수 없습니다") ||
+        plain.includes("지원하지 않습니다") ||
+        plain.includes("확인이 필요") ||
+        plain.includes("확인하시기 바랍니다") ||
+        plain.includes("확인해주시기 바랍니다") ||
+        plain.includes("제공된 근거 자료에 포함되어 있지")
+    ) return;
     msg.preferred = !msg.preferred;
     aiSearchActive.dirty = true;
     saveAiSearchActiveState();
