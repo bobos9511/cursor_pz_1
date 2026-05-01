@@ -461,6 +461,9 @@
                                     <button type="button" class="btn btn-primary" style="width:100%; justify-content:center;" onclick="startNewAiSearchChat()">
                                         <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
                                     </button>
+                                    <button type="button" class="btn btn-outline ai-search-history-clear" style="width:100%; justify-content:center; margin-top:8px;" onclick="deleteAllAiSearchHistory()">
+                                        <svg class="icon"><use href="#icon-trash"></use></svg> 지난대화 삭제
+                                    </button>
                                 </div>
                                 <div class="ai-search-side-title">지난 대화</div>
                                 <div id="aiSearchHistoryList" class="ai-search-history-list"></div>
@@ -655,19 +658,21 @@
                                 </div>
 
                                 <!-- 2. AI 분석 창 -->
-                                <details class="panel hidden" id="dtlAiWrap" open style="border: 1px solid var(--ibk-light); margin-bottom: 0;">
-                                    <summary class="panel-header" style="background: var(--ibk-light); color: #fff;">
+                                <div class="panel hidden" id="dtlAiWrap" style="border: 1px solid var(--ibk-light); margin-bottom: 0;">
+                                    <div class="panel-header ai-panel-head-row" style="background: var(--ibk-light); color: #fff;">
                                         <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
                                         <div class="ai-header-right">
+                                        <button id="btnAiReplyHistory" type="button" class="btn btn-outline" style="padding:5px 10px; border-color: rgba(255,255,255,0.7); color:#fff; background: rgba(255,255,255,0.08);" onclick="openAiReplyHistoryModal();">
+                                            <svg class="icon"><use href="#icon-history"></use></svg> 이력보기
+                                        </button>
                                             <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
-                                                <button id="btnRefreshAiReply" class="btn btn-outline" onclick="event.stopPropagation(); refreshCurrentPostAiReply();"><svg class="icon"><use href="#icon-search"></use></svg> AI 답변 새로고침</button>
-                                                <button id="btnConvertAiSolved" class="btn btn-outline" onclick="event.stopPropagation(); convertPostToAiSolved();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                                <button id="btnRefreshAiReply" type="button" class="btn btn-outline" onclick="refreshCurrentPostAiReply();"><svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성</button>
+                                                <button id="btnConvertAiSolved" type="button" class="btn btn-outline" onclick="convertPostToAiSolved();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
                                             </div>
-                                            <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
                                         </div>
-                                    </summary>
+                                    </div>
                                     <div id="aiPanelContent" style="padding: 24px; background: #f0f9ff; font-size: 14px; line-height: 1.6;"></div>
-                                </details>
+                                </div>
 
                                 <!-- 3. 담당자 답변 폼 -->
                                 <div class="panel hidden" id="answerFormBox" style="border-top: 2px solid var(--ibk-blue); margin-bottom: 0;">
@@ -1171,6 +1176,22 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeSimilarPostModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 답변 이력 모달 -->
+    <div id="aiReplyHistoryModal" class="modal-overlay" style="z-index: 1011;">
+        <div class="modal-content" style="max-width: 760px; width: min(92vw, 760px);">
+            <div class="modal-header" style="background: linear-gradient(to right, var(--ibk-blue), var(--ibk-light));">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> AI 답변 이력</span>
+                <button onclick="closeAiReplyHistoryModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" id="aiReplyHistoryBody" style="background:#f8fafc;">
+                <div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAiReplyHistoryModal()">닫기</button>
             </div>
         </div>
     </div>

@@ -279,6 +279,26 @@
             const mm = String(d.getMinutes()).padStart(2, '0');
             return `${y}.${m}.${day} ${hh}:${mm}`;
         }
+        function buildAiSearchGreeting() {
+            const d = new Date();
+            const hour = d.getHours();
+            const activeUser = currentLoginUser || roleMatrix[currentRole];
+            const rawName = activeUser ? String(activeUser.name || '') : '';
+            const rawPosition = activeUser ? String(activeUser.position || '') : '';
+            const name = normalizeDisplayText(rawName, getCurrentActorNameToken() || '고객');
+            const position = normalizeDisplayText(rawPosition, '');
+            const dept = normalizeDisplayText(activeUser && (activeUser.deptName || activeUser.dept) || '', '');
+            const who = `${name}${position ? ` ${position}` : ''}`.trim();
+            const dayPart = hour < 6 ? '이른 시간' : (hour < 12 ? '오전' : (hour < 18 ? '오후' : '저녁'));
+            const mood = [
+                `${dayPart}에도 접속해 주셔서 반갑습니다, <b>${escapeHtml(who)}</b>님.`,
+                `${dayPart} 업무도 힘내세요, <b>${escapeHtml(who)}</b>님.`,
+                `${dayPart}에 도움이 필요하시면 바로 정리해드릴게요, <b>${escapeHtml(who)}</b>님.`,
+            ];
+            const ctx = dept ? ` <span style="color:#64748b;">(${escapeHtml(dept)})</span>` : '';
+            const idx = Math.floor(Math.random() * mood.length);
+            return `${mood[idx]}${ctx}<br><span style="color:#475569;">질문을 입력하면 핵심만 간단히 정리해 드립니다. 필요한 정보가 부족하면 추가로 물어볼게요.</span>`;
+        }
         function makeDefaultAiSearchState() {
             return {
                 id: `chat_${Date.now()}`,
@@ -286,7 +306,9 @@
                 boardType: 'IT',
                 draft: '',
                 updatedAt: nowDateTimeLabel(),
-                messages: [{ role: 'ai', text: '안녕하세요. 핵심 위주로 답변하는 AI 검색 채팅입니다.' }]
+                messages: [{ role: 'ai', text: buildAiSearchGreeting() }],
+                loadedFromHistoryId: null,
+                dirty: false
             };
         }
         function saveAiSearchActiveState() {
@@ -324,11 +346,23 @@
             listEl.innerHTML = aiSearchHistory.map((h) => {
                 const title = escapeHtml(String(h.title || '지난 대화'));
                 const meta = `${escapeHtml(String(h.updatedAt || '-'))} · ${escapeHtml(String(h.boardType || 'IT'))}`;
-                return `<button type="button" class="ai-search-history-item" onclick="loadAiSearchConversation('${escapeHtml(String(h.id || ''))}')"><div class="ai-search-history-title">${title}</div><div class="ai-search-history-meta">${meta}</div></button>`;
+                const id = escapeHtml(String(h.id || ''));
+                return `
+                    <div class="ai-search-history-row">
+                        <button type="button" class="ai-search-history-item" onclick="loadAiSearchConversation('${id}')">
+                            <div class="ai-search-history-title">${title}</div>
+                            <div class="ai-search-history-meta">${meta}</div>
+                        </button>
+                        <button type="button" class="btn btn-outline ai-search-history-del" onclick="event.stopPropagation(); deleteAiSearchConversation('${id}')" title="지난대화 삭제">
+                            <svg class="icon"><use href="#icon-trash"></use></svg>
+                        </button>
+                    </div>
+                `;
             }).join('');
         }
         function upsertAiSearchHistoryFromActive() {
             if (!aiSearchActive || !Array.isArray(aiSearchActive.messages) || aiSearchActive.messages.length < 2) return;
+            if (aiSearchActive.loadedFromHistoryId && !aiSearchActive.dirty) return;
             const copy = {
                 id: aiSearchActive.id,
                 title: aiSearchActive.title || '지난 대화',
@@ -344,6 +378,25 @@
             saveJsonToStorage(keys.historyKey, aiSearchHistory);
             renderAiSearchHistory();
         }
+        function deleteAiSearchConversation(conversationId) {
+            const before = aiSearchHistory.length;
+            aiSearchHistory = aiSearchHistory.filter((h) => String(h.id) !== String(conversationId));
+            if (aiSearchHistory.length === before) return;
+            const keys = getAiSearchStorageKeyBase();
+            saveJsonToStorage(keys.historyKey, aiSearchHistory);
+            renderAiSearchHistory();
+            showAlert('지난 대화를 삭제했습니다.', 'success');
+        }
+        function deleteAllAiSearchHistory() {
+            if (!aiSearchHistory.length) return;
+            showConfirm('지난 대화를 모두 삭제하시겠습니까?', () => {
+                aiSearchHistory = [];
+                const keys = getAiSearchStorageKeyBase();
+                saveJsonToStorage(keys.historyKey, aiSearchHistory);
+                renderAiSearchHistory();
+                showAlert('지난 대화를 모두 삭제했습니다.', 'success');
+            });
+        }
         function setAiSearchStateBadge(isLoading = aiSearchIsLoading) {
             const badgeEl = document.getElementById('aiSearchStateBadge');
             if (!badgeEl) return;
@@ -358,6 +411,9 @@
             aiSearchHistory = loadJsonFromStorage(keys.historyKey, []);
             aiSearchActive = loadJsonFromStorage(keys.activeKey, null) || makeDefaultAiSearchState();
             if (inputEl) inputEl.value = aiSearchActive.draft || '';
+            if (aiSearchActive && Array.isArray(aiSearchActive.messages) && aiSearchActive.messages.length === 1 && aiSearchActive.messages[0].role === 'ai') {
+                aiSearchActive.messages[0].text = buildAiSearchGreeting();
+            }
             renderAiSearchMessages();
             renderAiSearchHistory();
             if (inputEl) inputEl.addEventListener('input', saveAiSearchActiveState);
@@ -393,7 +449,9 @@
                 boardType: found.boardType || 'IT',
                 draft: '',
                 updatedAt: nowDateTimeLabel(),
-                messages: Array.isArray(found.messages) ? found.messages : []
+                messages: Array.isArray(found.messages) ? found.messages : [],
+                loadedFromHistoryId: String(found.id || ''),
+                dirty: false
             };
             if (!aiSearchActive.messages.length) aiSearchActive.messages = [{ role: 'ai', text: '대화를 불러왔습니다.' }];
             const inputEl = document.getElementById('aiSearchInput');
@@ -483,6 +541,7 @@
             }
             aiSearchIsLoading = false;
             setAiSearchStateBadge();
+            if (aiSearchActive) aiSearchActive.dirty = true;
             upsertAiSearchHistoryFromActive();
         }
         async function submitAiSearchQuestion() {
@@ -493,6 +552,7 @@
             if (!question) return;
             if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
             aiSearchActive.boardType = 'CHAT';
+            aiSearchActive.dirty = true;
             aiSearchActive.messages.push({ role: 'user', text: question });
             if (!aiSearchActive.title || aiSearchActive.title === '새 대화') aiSearchActive.title = question.slice(0, 28);
             aiSearchActive.messages.push({
@@ -2810,17 +2870,26 @@
             const aiConvertBtn = document.getElementById('btnConvertAiSolved');
             const aiRefreshBtn = document.getElementById('btnRefreshAiReply');
             const aiActionRow = document.getElementById('aiActionRow');
+            const aiHistoryBtn = document.getElementById('btnAiReplyHistory');
             if (aiConvertBtn && aiRefreshBtn && aiActionRow) {
-                const canUseAiAction = isWriter && post.status === 'wait' && !post.aiSolved && (post.type === 'IT' || post.type === 'BIZ');
-                aiActionRow.classList.toggle('hidden', !canUseAiAction);
+                const writerAiActions = isWriter && post.status === 'wait' && !post.aiSolved && (post.type === 'IT' || post.type === 'BIZ');
+                const adminCanRegenerateAi = currentUserHasAdminAccess() && !post.aiSolved && (post.type === 'IT' || post.type === 'BIZ');
+                const showAiActionRow = writerAiActions || adminCanRegenerateAi;
+                aiActionRow.classList.toggle('hidden', !showAiActionRow);
+                aiConvertBtn.classList.toggle('hidden', !writerAiActions);
                 const aiReady = hasAdoptableAiReply(post);
-                aiConvertBtn.disabled = !aiReady;
-                aiConvertBtn.title = aiReady ? '' : 'AI 답변이 정상 생성된 후 채택할 수 있습니다.';
+                aiConvertBtn.disabled = !writerAiActions || !aiReady;
+                aiConvertBtn.title = !writerAiActions ? '' : (aiReady ? '' : 'AI 답변이 정상 생성된 후 채택할 수 있습니다.');
                 const isRefreshing = aiRefreshingPostIds.has(post.id);
-                aiRefreshBtn.disabled = isRefreshing;
+                const canRefresh = writerAiActions || adminCanRegenerateAi;
+                aiRefreshBtn.disabled = isRefreshing || !canRefresh;
                 aiRefreshBtn.innerHTML = isRefreshing
-                    ? '<svg class="icon"><use href="#icon-info"></use></svg> 새로고침 중...'
-                    : '<svg class="icon"><use href="#icon-search"></use></svg> 새로고침';
+                    ? '<svg class="icon"><use href="#icon-info"></use></svg> 생성 중...'
+                    : '<svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성';
+            }
+            if (aiHistoryBtn) {
+                const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
+                aiHistoryBtn.classList.toggle('hidden', !hist.length);
             }
 
             const formBox = document.getElementById('answerFormBox');
@@ -3235,6 +3304,23 @@
             if (aiText.includes('AI 분석 실패')) return false;
             return aiText.length >= 40;
         }
+        function ensurePostMeta(post) {
+            if (!post || typeof post !== 'object') return {};
+            if (!post.meta || typeof post.meta !== 'object') post.meta = {};
+            return post.meta;
+        }
+        function pushAiReplyHistory(post, prevAiHtml) {
+            const prevText = stripHtmlToPlainText(prevAiHtml || '').trim();
+            if (!prevText) return;
+            if (prevText.includes('AI 답변 생성 중입니다')) return;
+            const meta = ensurePostMeta(post);
+            if (!Array.isArray(meta.aiReplyHistory)) meta.aiReplyHistory = [];
+            meta.aiReplyHistory.unshift({
+                at: nowDateTimeLabel(),
+                html: String(prevAiHtml || ''),
+            });
+            meta.aiReplyHistory = meta.aiReplyHistory.slice(0, 30);
+        }
 
         function isAiContentLong(aiHtml) {
             return stripHtmlToPlainText(aiHtml).length > 220;
@@ -3246,9 +3332,27 @@
             const expanded = !!aiExpandState[stateKey];
             const textClass = canToggle && !expanded ? 'ai-content-text collapsed' : 'ai-content-text';
             const toggleBtn = canToggle
-                ? `<button class="ai-content-toggle-btn" onclick="toggleAiContentExpand('${stateKey}')">${expanded ? '짧게보기' : '전체보기'}</button>`
+                ? `<button type="button" class="ai-content-toggle-btn" onclick="event.stopPropagation(); toggleAiContentExpand('${stateKey}')">${expanded ? '짧게보기' : '전체보기'}</button>`
                 : '';
-            return `<div class="${textClass}">${html}</div>${toggleBtn}`;
+            const blockOpen = canToggle && !expanded
+                ? ` class="ai-content-block ai-content-block--collapsed-hit" onclick="expandAiShortViewIfNeeded(event, '${stateKey}')"`
+                : ' class="ai-content-block"';
+            return `<div${blockOpen}><div class="${textClass}">${html}</div>${toggleBtn}</div>`;
+        }
+
+        function expandAiShortViewIfNeeded(event, stateKey) {
+            if (event.target.closest && event.target.closest('.ai-content-toggle-btn')) return;
+            if (event.target.closest && event.target.closest('a,button,input,select,textarea,label')) return;
+            if (aiExpandState[stateKey]) return;
+            aiExpandState[stateKey] = true;
+            if (stateKey.startsWith('detail-') && currentPostId != null) {
+                openDetail(currentPostId);
+                return;
+            }
+            if (stateKey.startsWith('similar-')) {
+                const id = Number(String(stateKey).replace(/^similar-/, ''));
+                if (Number.isFinite(id)) openSimilarPostModal(id);
+            }
         }
 
         function toggleAiContentExpand(stateKey) {
@@ -3257,9 +3361,43 @@
                 openDetail(currentPostId);
                 return;
             }
-            if (stateKey.startsWith('similar-') && currentPostId != null) {
-                openSimilarPostModal(currentPostId);
+            if (stateKey.startsWith('similar-')) {
+                const id = Number(String(stateKey).replace(/^similar-/, ''));
+                if (Number.isFinite(id)) openSimilarPostModal(id);
             }
+        }
+
+        function openAiReplyHistoryModal() {
+            const modal = document.getElementById('aiReplyHistoryModal');
+            const body = document.getElementById('aiReplyHistoryBody');
+            if (!modal || !body) return;
+            const post = appData.posts.find(p => p.id === currentPostId);
+            const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
+            if (!hist.length) {
+                body.innerHTML = '<div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>';
+                modal.classList.add('active');
+                return;
+            }
+            body.innerHTML = hist.map((h, idx) => {
+                const at = escapeHtml(String(h.at || `#${idx + 1}`));
+                const html = String(h.html || '');
+                return `
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="font-size:12px; color:#64748b; font-weight:700;">${at}</div>
+                        </div>
+                        <div style="padding:12px; background:#f0f9ff; border-radius:8px; border:1px solid #bae6fd;">
+                            ${renderAiContentWithToggle(html, `history-${currentPostId}-${idx}`)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            modal.classList.add('active');
+        }
+
+        function closeAiReplyHistoryModal() {
+            const modal = document.getElementById('aiReplyHistoryModal');
+            if (modal) modal.classList.remove('active');
         }
 
         function moveToPostDetail(postId) {
@@ -3279,11 +3417,16 @@
         async function refreshCurrentPostAiReply() {
             const post = appData.posts.find(p => p.id === currentPostId);
             if (!post) return;
-            if (post.aiSolved || post.status !== 'wait' || !(post.type === 'IT' || post.type === 'BIZ')) return;
+            if (!(post.type === 'IT' || post.type === 'BIZ') || post.aiSolved) return;
+            const myName = getCurrentActorNameToken();
+            const isWriter = post.writer.includes(myName);
+            const writerMayRefresh = isWriter && post.status === 'wait';
+            const adminMayRefresh = currentUserHasAdminAccess();
+            if (!writerMayRefresh && !adminMayRefresh) return;
             if (aiRefreshingPostIds.has(post.id)) return;
             aiRefreshingPostIds.add(post.id);
             openDetail(post.id);
-            showAlert(`${formatPostAlertRef(post)} AI 답변 새로고침을 시작합니다...`, 'success');
+            showAlert(`${formatPostAlertRef(post)} 새로운 AI 답변 생성을 시작합니다...`, 'success');
             try {
                 await queueAsyncAiAnswerForPost(
                     post.id,
@@ -3362,6 +3505,7 @@
             const postRef = formatPostAlertRef(post);
 
             if (result.ok) {
+                pushAiReplyHistory(post, post.aiContent);
                 const aiContentHtml = `<b>AI 분석 결과:</b><br>${result.replyHtml}`;
                 appData.posts[idx].aiContent = aiContentHtml;
             } else {

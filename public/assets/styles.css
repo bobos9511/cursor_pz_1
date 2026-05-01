@@ -715,7 +715,14 @@
             border-color: rgba(255,255,255,0.75);
         }
         .ai-action-row-header #btnRefreshAiReply:hover { background: rgba(255,255,255,0.18); }
-        .ai-action-row-header .rotate-icon { margin-left: 0; flex-shrink: 0; }
+        .ai-panel-head-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            cursor: default;
+        }
         #btnConvertAiSolved {
             border-color: #7E22CE;
             color: #fff;
@@ -950,6 +957,15 @@
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; font-size: 14px; color: #444; line-height: 1.5; overflow-y: auto; max-height: 60vh; }
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .ai-content-block {
+            margin: 0;
+        }
+        .ai-content-block--collapsed-hit {
+            cursor: pointer;
+            margin: -6px -10px 0;
+            padding: 6px 10px 4px;
+            border-radius: 8px;
+        }
         .ai-content-text {
             line-height: 1.7;
             word-break: break-word;
@@ -958,6 +974,7 @@
             max-height: 148px;
             overflow: hidden;
             position: relative;
+            cursor: pointer;
         }
         .ai-content-text.collapsed::after {
             content: '';
@@ -1584,6 +1601,21 @@
                 -webkit-overflow-scrolling: touch;
                 padding-bottom: 2px;
             }
+        .ai-search-history-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .ai-search-history-row + .ai-search-history-row { margin-top: 8px; }
+        .ai-search-history-row .ai-search-history-item { flex: 1; }
+        .ai-search-history-del {
+            width: 44px;
+            min-width: 44px;
+            padding: 0 !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
             .ai-search-suggest-chip {
                 flex: 0 0 auto;
                 min-height: 40px;
