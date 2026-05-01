@@ -1721,6 +1721,39 @@
             font-weight: 700;
         }
         .ai-content-toggle-btn:hover { background: #eff6ff; }
+        .ai-history-empty {
+            color: #64748b;
+            padding: 40px;
+            text-align: center;
+        }
+        .ai-history-item-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .ai-history-item-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .ai-history-item-at {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 700;
+        }
+        .ai-history-item-content {
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+        .ai-reply-history-body {
+            background: #f8fafc;
+        }
 
         #integratedSearchModal { z-index: 110; }
         .integrated-search-modal {
@@ -4152,6 +4185,33 @@
             border-color: #9f4357;
             background: #3f1f2b;
             color: #fecdd3;
+        }
+        body[data-theme="dark"] .ai-content-toggle-btn {
+            border-color: #4a5f7f;
+            background: #1a2b45;
+            color: #dbeafe;
+        }
+        body[data-theme="dark"] .ai-content-toggle-btn:hover {
+            background: #223a5c;
+            border-color: #6488b8;
+            color: #eff6ff;
+        }
+        body[data-theme="dark"] .ai-history-empty {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .ai-history-item-card {
+            background: #13233a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .ai-history-item-at {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .ai-history-item-content {
+            background: #102336;
+            border-color: #285070;
+        }
+        body[data-theme="dark"] .ai-reply-history-body {
+            background: #0f172a;
         }
         @media (max-width: 480px) {
             html, body, #appContainer, .body-wrapper, .main-area-wrapper, .main-area {

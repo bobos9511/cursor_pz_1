@@ -240,7 +240,7 @@ function openAiReplyHistoryModal() {
     const post = getPostByIdAndType(currentPostId, currentBoardType);
     const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
     if (!hist.length) {
-        body.innerHTML = '<div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>';
+        body.innerHTML = '<div class="ai-history-empty">이력이 없습니다.</div>';
         modal.classList.add("active");
         return;
     }
@@ -249,11 +249,11 @@ function openAiReplyHistoryModal() {
             const at = escapeHtml(String(h.at || `#${idx + 1}`));
             const html = String(h.html || "");
             return `
-                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
-                        <div style="font-size:12px; color:#64748b; font-weight:700;">${at}</div>
+                <div class="ai-history-item-card">
+                    <div class="ai-history-item-head">
+                        <div class="ai-history-item-at">${at}</div>
                     </div>
-                    <div style="padding:12px; background:#f0f9ff; border-radius:8px; border:1px solid #bae6fd;">
+                    <div class="ai-history-item-content">
                         ${renderAiContentWithToggle(html, `history-${currentPostId}-${idx}`)}
                     </div>
                 </div>
