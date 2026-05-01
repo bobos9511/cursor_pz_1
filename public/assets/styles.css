@@ -147,7 +147,7 @@
         .login-box { background: rgba(255,255,255,0.97); backdrop-filter: blur(2px); padding: 40px; border-radius: 14px; box-shadow: 0 22px 48px rgba(15,23,42,0.24); width: 100%; max-width: 430px; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.8); animation: loginCardIn 0.55s cubic-bezier(.2,.8,.2,1) both; }
         .login-brand-title {
             font-size: 38px;
-            color: var(--ibk-blue);
+            color: #f8fbff;
             margin-bottom: 10px;
             cursor: pointer;
             line-height: 1.04;
@@ -2440,11 +2440,11 @@
             box-shadow: 0 20px 44px rgba(2, 8, 24, 0.55);
         }
         body[data-theme="dark"] #loginPage .login-brand-title {
-            color: #7fb7ff;
+            color: #eaf2ff;
             text-shadow: none;
         }
         body[data-theme="dark"] #loginPage .login-brand-point {
-            color: #8fd9ff;
+            color: #60a5fa;
         }
         body[data-theme="dark"] #loginPage .login-brand-subtitle {
             color: #dce7f6;
@@ -2496,6 +2496,29 @@
         }
         body[data-theme="dark"] .signup-admin-grant label {
             color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] #memberListContainer {
+            border-color: #3f5475 !important;
+            background: #121d31;
+        }
+        body[data-theme="dark"] #memberListContainer table {
+            background: #121d31;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #memberListContainer thead {
+            background: #1b2a42 !important;
+            border-bottom: 1px solid #3f5475;
+        }
+        body[data-theme="dark"] #memberListContainer th {
+            color: #dce7f6 !important;
+            border-bottom-color: #3f5475 !important;
+        }
+        body[data-theme="dark"] #memberListContainer tbody tr {
+            background: #121d31;
+        }
+        body[data-theme="dark"] #memberListContainer td {
+            color: #dce7f6 !important;
+            border-bottom-color: #2f425f !important;
         }
         body[data-theme="dark"] .signup-admin-grant input[type="checkbox"] {
             accent-color: #60a5fa;
