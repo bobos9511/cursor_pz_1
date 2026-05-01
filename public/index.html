@@ -1474,11 +1474,10 @@
         <div class="modal-content ai-history-mobile-modal">
             <div class="modal-header ai-history-mobile-head">
                 <span><svg class="icon"><use href="#icon-history"></use></svg> 지난대화기록</span>
-                <button type="button" class="btn btn-outline" style="padding:4px 10px;" onclick="closeAiSearchHistoryMobileModal()">닫기</button>
+                <button type="button" class="btn-icon" onclick="closeAiSearchHistoryMobileModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div id="aiSearchHistoryMobileBody" class="modal-body ai-history-mobile-body"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeAiSearchHistoryMobileModal()">닫기</button>
+            <div class="modal-footer" style="justify-content:flex-start;">
                 <button type="button" class="btn btn-danger" onclick="deleteAllAiSearchHistory()">전체삭제</button>
             </div>
         </div>

@@ -299,16 +299,14 @@ function renderAiSearchHistoryMobile() {
             const meta = `${escapeHtml(String(h.updatedAt || "-"))} · ${escapeHtml(String(h.boardType || "IT"))}`;
             const id = escapeHtml(String(h.id || ""));
             return `
-                <div class="ai-history-mobile-item">
+                <div class="ai-history-mobile-item" onclick="loadAiSearchConversation('${id}')">
                     <div class="ai-history-mobile-item-head">
                         <div class="ai-history-mobile-title">${title}</div>
-                        <span class="badge bg-ready" style="font-size:11px;">기록</span>
+                        <button type="button" class="ai-history-mobile-del" title="지난대화 삭제" onclick="event.stopPropagation(); deleteAiSearchConversation('${id}')">
+                            <svg class="icon"><use href="#icon-close"></use></svg>
+                        </button>
                     </div>
                     <div class="ai-history-mobile-meta">${meta}</div>
-                    <div class="ai-history-mobile-actions">
-                        <button type="button" class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loadAiSearchConversation('${id}')">불러오기</button>
-                        <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="deleteAiSearchConversation('${id}')">삭제</button>
-                    </div>
                 </div>
             `;
         })
