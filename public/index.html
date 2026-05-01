@@ -340,7 +340,7 @@
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
             <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>KNOCK 개선</button>
-            <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI지식</button>
+            <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI 지식 베이스</button>
             <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#7dd3fc;"><use href="#icon-admin-settings"></use></svg>관리자</button>
             <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
         </div>
@@ -385,7 +385,7 @@
                 
                 <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
                 <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
-                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식 베이스 (RAG 학습)</span></div>
+                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식 베이스</span></div>
                 <div class="nav-title mt-10 platform-admin-only hidden" style="color:#93c5fd;">관리</div>
                 <div class="nav-item platform-admin-only hidden" id="nav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-admin-settings"></use></svg> <span class="nav-text">관리자 설정</span></div>
             </aside>
@@ -801,6 +801,10 @@
 
                             <div id="writeDynamicFields" class="flex-col gap-20" style="margin-bottom: 30px;">
                                 <div id="field-know-qa" class="hidden flex-col gap-10 know-form-shell">
+                                    <div class="know-rag-banner">
+                                        <div class="know-rag-title"><svg class="icon"><use href="#icon-brain"></use></svg> AI 지식 베이스</div>
+                                        <div class="know-rag-sub">RAG 학습 데이터로 사용됩니다. 요약·키워드·출처를 함께 입력하면 검색 정확도가 높아집니다.</div>
+                                    </div>
                                     <div class="know-form-item">
                                         <label class="font-bold mb-10" style="display:block;">학습분류 도메인 <span style="color:var(--danger)">*</span></label>
                                         <select id="writeKnowDomain" class="input">

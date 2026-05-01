@@ -892,10 +892,43 @@
         .meta-item-value { font-size: 13px; color: #0f172a; line-height: 1.5; word-break: break-word; }
         .meta-item-value.code { color: var(--danger); font-weight: bold; }
         .know-form-shell { border: 1px solid #dbeafe; background: linear-gradient(180deg, #f8fbff, #f1f7ff); border-radius: 12px; padding: 14px; }
+        .know-rag-banner {
+            border: 1px solid #bfdbfe;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+        .know-rag-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+        }
+        .know-rag-sub {
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.5;
+        }
         .know-form-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
         .know-form-item label { color: #1e3a8a; font-weight: 700; }
         .know-form-item .input { border-color: #cbd5e1; }
         .know-form-item .input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+        .rag-chip {
+            display: inline-flex;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: #155e75;
+            border: 1px solid #67e8f9;
+            background: #ecfeff;
+            border-radius: 999px;
+            padding: 2px 8px;
+            letter-spacing: 0.02em;
+        }
         .write-section-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; background: #fff; }
         .write-section-title { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 10px; }
         .write-section-title::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: #3b82f6; display: inline-block; }

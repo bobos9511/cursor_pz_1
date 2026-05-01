@@ -143,7 +143,7 @@
             'IT': { icon: '#icon-info', title: 'IT/오류 문의 게시판', label: 'IT/오류' },
             'BIZ': { icon: '#icon-book', title: '규정/상품 문의 게시판', label: '규정/상품' },
             'SYS': { icon: '#icon-lightbulb', title: 'KNOCK 개선 제안', label: 'KNOCK 개선' },
-            'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스 (RAG 학습 데이터)', label: 'AI 지식' }
+            'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스', label: 'AI 지식 베이스' }
         };
         const KNOW_CATEGORY_LABEL = { IT: 'IT 매뉴얼', BIZ: '업무 매뉴얼' };
 
@@ -363,7 +363,7 @@
                 <div style="display:flex; flex-direction:column; gap:14px;">
                     <div style="border:1px solid #dbeafe; border-radius:10px; background:#f8fbff; padding:12px;">
                         <span class="badge bg-ready" style="font-size:11px;">${domain}</span>
-                        <span style="margin-left:8px; font-size:12px; color:#64748b;">RAG 학습용 지식 데이터</span>
+                        <span class="rag-chip" style="margin-left:8px;">RAG 학습 데이터</span>
                     </div>
                     <div style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:14px;">
                         <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:8px;">요약</div>
