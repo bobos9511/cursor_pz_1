@@ -1884,6 +1884,76 @@
             background: #22324c;
             color: #f1f6ff;
         }
+        body[data-theme="dark"] .bg-wait {
+            background: #3a2a14;
+            border-color: #a16207;
+            color: #fde68a;
+        }
+        body[data-theme="dark"] .bg-moreInfo {
+            background: #3b2418;
+            border-color: #c2410c;
+            color: #fdba74;
+        }
+        body[data-theme="dark"] .bg-done {
+            background: #223048;
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .bg-ai {
+            background: #31214f;
+            border-color: #7c3aed;
+            color: #ddd6fe;
+        }
+        body[data-theme="dark"] .bg-ready {
+            background: #1f2f49;
+            border-color: #64748b;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .bg-trained {
+            background: #12352b;
+            border-color: #0f766e;
+            color: #99f6e4;
+        }
+        body[data-theme="dark"] .bg-error {
+            background: #3a1f27;
+            border-color: #dc2626;
+            color: #fecaca;
+        }
+        body[data-theme="dark"] .board-help-status-chip.wait {
+            background: #3a2a14;
+            border-color: #a16207;
+            color: #fde68a;
+        }
+        body[data-theme="dark"] .board-help-status-chip.moreInfo {
+            background: #3b2418;
+            border-color: #c2410c;
+            color: #fdba74;
+        }
+        body[data-theme="dark"] .board-help-status-chip.done {
+            background: #223048;
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .board-help-status-chip.aiSolved {
+            background: #31214f;
+            border-color: #7c3aed;
+            color: #ddd6fe;
+        }
+        body[data-theme="dark"] .board-help-status-chip.ready {
+            background: #1f2f49;
+            border-color: #64748b;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .board-help-status-chip.trained {
+            background: #12352b;
+            border-color: #0f766e;
+            color: #99f6e4;
+        }
+        body[data-theme="dark"] .board-help-status-chip.error {
+            background: #3a1f27;
+            border-color: #dc2626;
+            color: #fecaca;
+        }
         body[data-theme="dark"] [style*="color:#64748b"],
         body[data-theme="dark"] [style*="color: #64748b"],
         body[data-theme="dark"] [style*="color:#1e293b"],
