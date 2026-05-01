@@ -153,6 +153,16 @@ function formatAiSearchMessageTime(dt) {
     return `${hh}:${mm}`;
 }
 
+function buildAiSearchBubbleAvatar(role) {
+    if (role === "ai") {
+        return '<span class="ai-search-msg-avatar ai" aria-hidden="true"><svg class="icon"><use href="#icon-magic"></use></svg></span>';
+    }
+    const activeUser = currentLoginUser || roleMatrix[currentRole] || {};
+    const rawName = String(activeUser.name || getCurrentActorNameToken() || "U").trim();
+    const initial = escapeHtml((rawName.replace(/\s+/g, "").slice(0, 1) || "U").toUpperCase());
+    return `<span class="ai-search-msg-avatar user" aria-hidden="true">${initial}</span>`;
+}
+
 function getAiSearchPopularSuggestions(limit = 5) {
     const posts = appData && Array.isArray(appData.posts) ? appData.posts : [];
     const targetPosts = posts.filter((p) => p && (p.type === "IT" || p.type === "BIZ"));
@@ -278,10 +288,12 @@ function renderAiSearchMessages() {
         const isLoadingMsg = role === "ai" && text.includes("ai-search-loading");
         if (isLoadingMsg) item.classList.add("loading");
         const timeHtml = `<span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span>`;
+        const avatarHtml = buildAiSearchBubbleAvatar(role);
         if (role === "user") {
             item.innerHTML = `<div class="ai-search-msg-body">${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
             row.innerHTML = `${timeHtml}`;
             row.appendChild(item);
+            row.insertAdjacentHTML("beforeend", avatarHtml);
         } else {
             const preferred = !!(msg && msg.preferred);
             const hidePrefer = isPreferButtonHiddenMessage(text, idx);
@@ -289,6 +301,7 @@ function renderAiSearchMessages() {
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
             item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn ? `<div class="ai-search-msg-actions">${preferBtn}</div>` : ""}`;
+            row.insertAdjacentHTML("beforeend", avatarHtml);
             row.appendChild(item);
             row.insertAdjacentHTML("beforeend", timeHtml);
         }
