@@ -318,22 +318,43 @@
                 </div>
             </div>
             <div class="header-right">
-                <button class="header-action-btn header-search-mobile-btn" onclick="showIntegratedSearchModal()" title="통합검색">
+                <button class="header-action-btn header-search-mobile-btn" data-overflow-target="true" data-overflow-priority="40" onclick="showIntegratedSearchModal()" title="통합검색">
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-search"></use></svg>
                 </button>
-                <button class="header-action-btn" onclick="switchView('settings')" title="설정">
+                <button class="header-action-btn" data-overflow-target="true" data-overflow-priority="10" onclick="switchView('settings')" title="설정">
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-cog"></use></svg>
                     <div class="header-action-hovercard">환경 설정</div>
                 </button>
-                <button id="headerNotificationBtn" class="header-action-btn" onclick="openNotificationCenter()" title="알림센터">
+                <button id="headerNotificationBtn" class="header-action-btn" data-overflow-target="true" data-overflow-priority="20" onclick="openNotificationCenter()" title="알림센터">
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-bell"></use></svg>
                     <span id="headerNotificationBadge" class="header-noti-badge hidden">0</span>
                     <div class="header-action-hovercard">알림센터</div>
                 </button>
-                <button id="headerProfileBtn" class="header-profile-btn" onclick="toggleHeaderProfileOverlay(event)" title="사용자 정보">
+                <button id="headerProfileBtn" class="header-profile-btn" data-overflow-target="true" data-overflow-priority="30" onclick="toggleHeaderProfileOverlay(event)" title="사용자 정보">
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-user"></use></svg>
                     <div class="header-profile-hovercard" id="headerProfileHoverText">홍길동 대리 | 영업부(-)</div>
                 </button>
+                <button id="headerActionsMoreBtn" class="header-action-btn hidden" onclick="toggleHeaderActionsLayer(event)" title="더보기">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-bars"></use></svg>
+                </button>
+                <div id="headerActionsLayer" class="header-actions-layer" onclick="event.stopPropagation()">
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); showIntegratedSearchModal();">
+                        <svg class="icon"><use href="#icon-search"></use></svg>
+                        <span class="header-actions-layer-caption">통합검색</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); switchView('settings');">
+                        <svg class="icon"><use href="#icon-cog"></use></svg>
+                        <span class="header-actions-layer-caption">설정</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); openNotificationCenter();">
+                        <svg class="icon"><use href="#icon-bell"></use></svg>
+                        <span class="header-actions-layer-caption">알림센터</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); toggleHeaderProfileOverlay();">
+                        <svg class="icon"><use href="#icon-user"></use></svg>
+                        <span class="header-actions-layer-caption">사용자정보</span>
+                    </button>
+                </div>
             </div>
         </header>
         <div id="topNavMobile" class="top-nav-mobile">
@@ -465,10 +486,10 @@
                         <div class="ai-search-shell">
                             <aside class="ai-search-sidebar">
                                 <div class="ai-search-side-head">
-                                    <button type="button" class="btn btn-primary" style="width:100%; justify-content:center;" onclick="startNewAiSearchChat()">
-                                        <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
+                                    <button type="button" class="btn btn-primary ai-search-side-action-btn" onclick="startNewAiSearchChat()">
+                                        <svg class="icon"><use href="#icon-edit"></use></svg> 새로운 대화
                                     </button>
-                                    <button id="aiSearchDeleteAllBtn" type="button" class="btn btn-outline ai-search-history-clear" style="width:100%; justify-content:center; margin-top:8px;" onclick="deleteAllAiSearchHistory()">
+                                    <button id="aiSearchDeleteAllBtn" type="button" class="btn btn-outline ai-search-history-clear ai-search-side-action-btn" onclick="deleteAllAiSearchHistory()">
                                         <svg class="icon"><use href="#icon-trash"></use></svg> 지난대화 삭제
                                     </button>
                                 </div>
@@ -1144,13 +1165,35 @@
 
     <!-- 통합검색 모달 -->
     <div id="integratedSearchModal" class="modal-overlay" style="align-items: flex-start; padding-top: 80px;">
-        <div class="modal-content" style="max-width: 700px; max-height: 70vh;">
-            <div style="padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 10px;">
-                <svg class="icon icon-lg" style="color: #999;"><use href="#icon-search"></use></svg>
-                <input type="text" id="modalSearchInput" style="flex:1; border:none; background:transparent; font-size:16px; outline:none;" placeholder="검색어를 입력하세요." onkeyup="if(event.key === 'Enter') performModalSearch()">
-                <button onclick="closeIntegratedSearchModal()"><svg class="icon icon-lg" style="color:#999;"><use href="#icon-close"></use></svg></button>
+        <div class="modal-content integrated-search-modal">
+            <div class="integrated-search-head">
+                <div class="integrated-search-input-wrap">
+                    <svg class="icon icon-lg integrated-search-icon"><use href="#icon-search"></use></svg>
+                    <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch()">
+                    <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
+                <button type="button" class="integrated-search-close-btn" onclick="closeIntegratedSearchModal()"><svg class="icon icon-lg"><use href="#icon-close"></use></svg></button>
             </div>
-            <div class="modal-body" id="integratedSearchResults" style="padding: 0; background: #fff;">
+            <div class="integrated-search-controls">
+                <div class="integrated-search-chips">
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">AI답변</button>
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">오류코드</button>
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">규정문의</button>
+                </div>
+                <div class="integrated-search-sort-wrap">
+                    <label for="integratedSearchSort" style="font-size:12px; color:#64748b; font-weight:700;">정렬</label>
+                    <select id="integratedSearchSort" class="input integrated-search-sort" onchange="performModalSearch()">
+                        <option value="latest">최신순</option>
+                        <option value="views">조회수순</option>
+                        <option value="relevance">관련도순</option>
+                    </select>
+                </div>
+            </div>
+            <div class="integrated-search-insight">
+                <div id="integratedKeywordRanking" class="integrated-search-insight-block"></div>
+                <div id="integratedRelatedKeywords" class="integrated-search-insight-block"></div>
+            </div>
+            <div class="modal-body integrated-search-results-body" id="integratedSearchResults">
                 <div class="text-center" style="color:#999; padding: 60px;">검색어를 입력하고 Enter를 누르세요.</div>
             </div>
         </div>

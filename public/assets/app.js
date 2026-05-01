@@ -1116,6 +1116,7 @@
             appContainer.classList.add('page-intro');
             await initApp();
             goToAiSearchPage();
+            setTimeout(updateHeaderActionOverflow, 0);
             setupHistoryNavigation();
             syncHistoryRoute('ai-search', null, null, true);
         }
@@ -1168,6 +1169,7 @@
         }
         function toggleHeaderProfileOverlay(event) {
             if (event) event.stopPropagation();
+            closeHeaderActionsLayer();
             const overlay = document.getElementById('headerProfileOverlay');
             if (!overlay) return;
             overlay.classList.toggle('active');
@@ -1175,6 +1177,40 @@
         function closeHeaderProfileOverlay() {
             const overlay = document.getElementById('headerProfileOverlay');
             if (overlay) overlay.classList.remove('active');
+        }
+        function closeHeaderActionsLayer() {
+            const layer = document.getElementById('headerActionsLayer');
+            if (layer) layer.classList.remove('active');
+        }
+        function toggleHeaderActionsLayer(event) {
+            if (event) event.stopPropagation();
+            closeHeaderProfileOverlay();
+            const layer = document.getElementById('headerActionsLayer');
+            if (!layer) return;
+            layer.classList.toggle('active');
+        }
+        function updateHeaderActionOverflow() {
+            const right = document.querySelector('.header-right');
+            const moreBtn = document.getElementById('headerActionsMoreBtn');
+            if (!right || !moreBtn) return;
+            closeHeaderActionsLayer();
+            const targets = Array.from(right.querySelectorAll('[data-overflow-target="true"]'));
+            targets.forEach((el) => el.classList.remove('hidden'));
+            moreBtn.classList.add('hidden');
+            const visibleTargets = targets.filter((el) => !!el && el.offsetParent !== null);
+            if (!visibleTargets.length) return;
+            if (right.scrollWidth <= right.clientWidth) return;
+            moreBtn.classList.remove('hidden');
+            const sortedHideOrder = [...visibleTargets].sort(
+                (a, b) => Number(b.dataset.overflowPriority || 0) - Number(a.dataset.overflowPriority || 0),
+            );
+            for (const el of sortedHideOrder) {
+                el.classList.add('hidden');
+                if (right.scrollWidth <= right.clientWidth) break;
+            }
+            if (right.scrollWidth > right.clientWidth) {
+                moreBtn.classList.add('hidden');
+            }
         }
         
         function changeAuthType(type) {
@@ -3187,17 +3223,99 @@
             showIntegratedSearchModal(); 
             performModalSearch(); 
         }
-        function showIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.add('active'); setTimeout(() => document.getElementById('modalSearchInput').focus(), 100); }
+        function getIntegratedSearchSortValue() {
+            const sortEl = document.getElementById('integratedSearchSort');
+            return sortEl ? String(sortEl.value || 'latest') : 'latest';
+        }
+        function clearIntegratedSearchInput() {
+            const input = document.getElementById('modalSearchInput');
+            if (input) input.value = '';
+            performModalSearch();
+            if (input) input.focus();
+        }
+        function applyIntegratedRelatedKeyword(keyword) {
+            const input = document.getElementById('modalSearchInput');
+            if (!input) return;
+            input.value = String(keyword || '').trim();
+            performModalSearch();
+            input.focus();
+        }
+        function renderIntegratedSearchInsights(keyword) {
+            const rankingEl = document.getElementById('integratedKeywordRanking');
+            const relatedEl = document.getElementById('integratedRelatedKeywords');
+            if (!rankingEl || !relatedEl) return;
+            const textSrc = (appData.posts || [])
+                .map((p) => `${p.title || ''} ${(p.content || '').replace(/<[^>]*>?/gm, ' ')}`)
+                .join(' ')
+                .toLowerCase();
+            const tokens = textSrc
+                .replace(/[^a-z0-9가-힣\s]/g, ' ')
+                .split(/\s+/)
+                .filter((t) => t && t.length >= 2);
+            const counts = new Map();
+            tokens.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+            const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            rankingEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:4px;">검색어 순위</div>${
+                top.length
+                    ? top.map(([k, c], i) => `<span class="badge" style="margin-right:6px; margin-bottom:4px; background:#eef2ff; color:#3730a3;">${i + 1}. ${escapeHtml(k)} (${c})</span>`).join('')
+                    : '<span style="color:#94a3b8;">데이터 없음</span>'
+            }`;
+            const kw = String(keyword || '').trim().toLowerCase();
+            const rel = kw
+                ? Array.from(counts.entries())
+                      .filter(([k]) => k.includes(kw) || kw.includes(k))
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 6)
+                : top.slice(0, 6);
+            relatedEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:4px;">연관검색어</div>${
+                rel.length
+                    ? rel
+                          .map(([k]) => {
+                              const safeJs = String(k).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+                              return `<button type="button" class="btn btn-outline integrated-search-chip" style="margin-right:6px; margin-bottom:4px;" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)}</button>`;
+                          })
+                          .join('')
+                    : '<span style="color:#94a3b8;">연관 키워드 없음</span>'
+            }`;
+        }
+        function showIntegratedSearchModal() {
+            document.getElementById('integratedSearchModal').classList.add('active');
+            renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '');
+            setTimeout(() => document.getElementById('modalSearchInput').focus(), 100);
+        }
         function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
         function performModalSearch() {
-            const kw = document.getElementById('modalSearchInput').value.toLowerCase();
+            const raw = document.getElementById('modalSearchInput').value || '';
+            const kw = raw.toLowerCase().trim();
             const resContainer = document.getElementById('integratedSearchResults');
-            if (!kw.trim()) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">검색어를 입력하세요.</div>'; return; }
+            const sort = getIntegratedSearchSortValue();
+            renderIntegratedSearchInsights(raw);
+            if (!kw) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">검색어를 입력하세요.</div>'; return; }
             
-            const results = appData.posts.filter(p => p.title.toLowerCase().includes(kw) || p.content.toLowerCase().includes(kw)).sort((a,b) => b.id - a.id);
+            const results = appData.posts
+                .map((p) => {
+                    const title = String(p.title || '').toLowerCase();
+                    const content = String(p.content || '').replace(/<[^>]*>?/gm, ' ').toLowerCase();
+                    const writer = String(p.writer || '').toLowerCase();
+                    let score = 0;
+                    if (title.includes(kw)) score += 5;
+                    if (content.includes(kw)) score += 2;
+                    if (writer.includes(kw)) score += 1;
+                    return { post: p, score };
+                })
+                .filter((x) => x.score > 0);
+            results.sort((a, b) => {
+                if (sort === 'views') {
+                    const va = Number(a.post.views || (a.post.meta && a.post.meta.views) || 0);
+                    const vb = Number(b.post.views || (b.post.meta && b.post.meta.views) || 0);
+                    return vb - va || b.post.id - a.post.id;
+                }
+                if (sort === 'relevance') return b.score - a.score || b.post.id - a.post.id;
+                return b.post.id - a.post.id;
+            });
             if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">결과가 없습니다.</div>'; return; }
 
-            resContainer.innerHTML = '<ul style="margin:0; padding:0;">' + results.map(p => {
+            resContainer.innerHTML = '<ul class="integrated-search-result-list">' + results.map(({ post: p, score }) => {
                 const stripped = p.content.replace(/<[^>]*>?/gm, ''); 
                 let badge = '';
                 if (p.type === 'KNOW') {
@@ -3210,10 +3328,11 @@
                     else if(p.status === 'moreInfo') badge = '<span class="badge bg-moreInfo" style="font-size:10px; padding:2px 6px;">추가답변</span>';
                     else badge = '<span class="badge bg-done" style="font-size:10px; padding:2px 6px;">답변완료</span>';
                 }
-                return `<li style="padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer;" onmouseover="this.style.background='#f4f8fb'" onmouseout="this.style.background='#fff'" onclick="goFromIntegratedSearch(${p.id}, '${p.type}')">
+                return `<li class="integrated-search-result-item" onclick="goFromIntegratedSearch(${p.id}, '${p.type}')">
                     <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10"><span style="font-weight:bold; color:#666; font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:#999;">${p.datetime.substring(0, 10)}</span></div>
                     <div style="font-weight:bold; color:var(--ibk-blue); font-size:15px; margin-bottom:5px;">${p.title}</div>
                     <div style="font-size:13px; color:#666;" class="truncate">${stripped}</div>
+                    <div style="margin-top:6px; font-size:11px; color:#64748b;">관련도 점수: ${score}</div>
                 </li>`;
             }).join('') + '</ul>';
         }
@@ -3250,6 +3369,8 @@
         }
         function closeSimilarPostModal() { document.getElementById('similarPostModal').classList.remove('active'); }
         window.addEventListener('resize', () => {
+            closeHeaderActionsLayer();
+            updateHeaderActionOverflow();
             const dashView = document.getElementById('view-dashboard');
             if (dashView && dashView.classList.contains('active')) {
                 setTimeout(renderCSSCharts, 80);
@@ -3258,6 +3379,9 @@
             if (listView && listView.classList.contains('active')) {
                 syncBoardListCardMode();
             }
+        });
+        document.addEventListener('click', () => {
+            closeHeaderActionsLayer();
         });
 
         async function bootstrapSession() {
