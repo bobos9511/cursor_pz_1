@@ -1547,6 +1547,45 @@
             color: #e2e8f0;
             background: transparent;
         }
+        body[data-theme="dark"] .table-wrap { background: #0f172a; border-color: #334155; }
+        body[data-theme="dark"] .table th { background: #1e293b; color: #e2e8f0; }
+        body[data-theme="dark"] .table tbody tr:hover { background: #1f2937; }
+        body[data-theme="dark"] #view-list.list-card-mode .table tbody tr,
+        body[data-theme="dark"] #view-list .table tbody tr,
+        body[data-theme="dark"] #dashCountModal .table tbody tr {
+            background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+            border-color: #334155;
+            box-shadow: 0 8px 20px rgba(2, 6, 23, 0.45);
+        }
+        body[data-theme="dark"] #view-list .table tbody td:last-child,
+        body[data-theme="dark"] #view-list.list-card-mode .table tbody td:nth-child(1),
+        body[data-theme="dark"] #dashCountModal .table tbody td::before,
+        body[data-theme="dark"] #memberListContainer tbody td::before {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .ai-search-sidebar,
+        body[data-theme="dark"] .ai-search-main,
+        body[data-theme="dark"] .ai-search-main-head,
+        body[data-theme="dark"] .ai-search-main-body,
+        body[data-theme="dark"] .ai-search-log,
+        body[data-theme="dark"] .ai-search-msg.ai,
+        body[data-theme="dark"] .ai-search-input,
+        body[data-theme="dark"] .ai-search-history-item,
+        body[data-theme="dark"] .ai-search-suggest-chip {
+            background: #111827;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .ai-search-msg.user { background: #1d4ed8; color: #eff6ff; }
+        body[data-theme="dark"] .ai-search-msg.loading {
+            background: linear-gradient(90deg, #0f172a, #1e293b, #0f172a);
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .ai-search-input-help,
+        body[data-theme="dark"] .ai-search-history-meta,
+        body[data-theme="dark"] .ai-search-history-empty {
+            color: #94a3b8;
+        }
         body[data-theme="dark"] .integrated-search-result-item { background: #111827; border-color: #334155; }
         body[data-theme="dark"] .integrated-search-result-item:hover { background: #1f2937; }
 
