@@ -668,6 +668,49 @@
             return `${text.slice(0, 140).trim()}...`;
         }
 
+        const KNOW_KEYWORD_BLOCKLIST = new Set([
+            '대해',
+            '대한',
+            '설명해줘',
+            '설명해주세요',
+            '설명해',
+            '알려줘',
+            '알려주세요',
+            '내용',
+            '문의',
+            '질문',
+            '답변',
+        ]);
+
+        function normalizeKnowKeywordToken(rawToken) {
+            return String(rawToken || '')
+                .toLowerCase()
+                .replace(/[^\w가-힣]/g, '')
+                .trim();
+        }
+
+        function splitAndSanitizeKnowKeywords(rawKeywords) {
+            const parts = String(rawKeywords || '')
+                .split(',')
+                .map((part) => String(part || '').replace(/\s+/g, ' ').trim())
+                .filter(Boolean);
+            const kept = [];
+            const blocked = [];
+            const seen = new Set();
+            parts.forEach((token) => {
+                const normalized = normalizeKnowKeywordToken(token);
+                if (!normalized) return;
+                if (normalized.length < 2 || KNOW_KEYWORD_BLOCKLIST.has(normalized)) {
+                    blocked.push(token);
+                    return;
+                }
+                if (seen.has(normalized)) return;
+                seen.add(normalized);
+                kept.push(token);
+            });
+            return { kept, blocked };
+        }
+
         function extractRagKeywords(questionText, answerText) {
             const raw = `${String(questionText || '')} ${String(answerText || '')}`
                 .toLowerCase()
@@ -679,7 +722,7 @@
             const counts = new Map();
             raw.split(' ').forEach((token) => {
                 const t = token.trim();
-                if (!t || t.length < 2 || stop.has(t)) return;
+                if (!t || t.length < 2 || stop.has(t) || KNOW_KEYWORD_BLOCKLIST.has(t)) return;
                 counts.set(t, (counts.get(t) || 0) + 1);
             });
             return Array.from(counts.entries())
@@ -3600,7 +3643,8 @@
                 const q = document.getElementById('writeKnowQuestion').value.trim();
                 const a = document.getElementById('writeKnowAnswer').value.trim();
                 const memo = document.getElementById('writeKnowMemo').value.trim();
-                const keywords = (document.getElementById('writeKnowKeywords')?.value || '').trim();
+                const keywordsInput = document.getElementById('writeKnowKeywords');
+                const rawKeywords = (keywordsInput?.value || '').trim();
                 const source = (document.getElementById('writeKnowSource')?.value || '').trim();
                 const summary = (document.getElementById('writeKnowSummary')?.value || '').trim();
                 if (!knowDomain) {
@@ -3611,6 +3655,13 @@
                     showAlert('제목, 질문내용, 답변내용을 모두 입력해주세요.', 'error');
                     return;
                 }
+                const parsedKeywords = splitAndSanitizeKnowKeywords(rawKeywords);
+                if (parsedKeywords.blocked.length > 0) {
+                    showAlert(`등록할 수 없는 키워드가 포함되어 있습니다: ${parsedKeywords.blocked.join(', ')}`, 'error');
+                    return;
+                }
+                const keywords = parsedKeywords.kept.join(', ');
+                if (keywordsInput) keywordsInput.value = keywords;
                 meta.knowQuestion = q;
                 meta.knowAnswer = a;
                 meta.knowMemo = memo;
