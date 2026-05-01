@@ -14,6 +14,14 @@ const DEFAULT_AI_SETTINGS = {
     SYS: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
     KNOW: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
   },
+  runtime: {
+    chatMaxOutputTokens: null,
+    postMaxOutputTokens: null,
+    chatMaxContinuations: null,
+    postMaxContinuations: null,
+    chatMaxContinuationRuntimeMs: null,
+    postMaxContinuationRuntimeMs: null,
+  },
 };
 
 let cachedPromptDefaults = null;
@@ -36,6 +44,13 @@ function roundGenParam(n) {
   return Math.round(Math.min(1, Math.max(0, x)) * 10) / 10;
 }
 
+function clampIntOrNull(v, min, max) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
 function mergeAiSettingsFromDb(parsed) {
   const base = deepCloneAiSettings();
   const src = parsed && parsed.aiSettings && typeof parsed.aiSettings === "object" ? parsed.aiSettings : {};
@@ -51,6 +66,15 @@ function mergeAiSettingsFromDb(parsed) {
       base.posts[key].temperature = roundGenParam(p.temperature ?? base.posts[key].temperature);
       base.posts[key].topP = roundGenParam(p.topP ?? base.posts[key].topP);
     }
+  }
+  if (src.runtime && typeof src.runtime === "object") {
+    const r = src.runtime;
+    base.runtime.chatMaxOutputTokens = clampIntOrNull(r.chatMaxOutputTokens, 50, 8192);
+    base.runtime.postMaxOutputTokens = clampIntOrNull(r.postMaxOutputTokens, 50, 8192);
+    base.runtime.chatMaxContinuations = clampIntOrNull(r.chatMaxContinuations, 0, 200);
+    base.runtime.postMaxContinuations = clampIntOrNull(r.postMaxContinuations, 0, 200);
+    base.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
+    base.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
   }
   return base;
 }
@@ -72,6 +96,21 @@ function mergeAiSettingsPatch(base, patch) {
       if (p.temperature !== undefined) out.posts[key].temperature = roundGenParam(p.temperature);
       if (p.topP !== undefined) out.posts[key].topP = roundGenParam(p.topP);
     }
+  }
+  if (patch.runtime && typeof patch.runtime === "object") {
+    const r = patch.runtime;
+    if (r.chatMaxOutputTokens !== undefined)
+      out.runtime.chatMaxOutputTokens = clampIntOrNull(r.chatMaxOutputTokens, 50, 8192);
+    if (r.postMaxOutputTokens !== undefined)
+      out.runtime.postMaxOutputTokens = clampIntOrNull(r.postMaxOutputTokens, 50, 8192);
+    if (r.chatMaxContinuations !== undefined)
+      out.runtime.chatMaxContinuations = clampIntOrNull(r.chatMaxContinuations, 0, 200);
+    if (r.postMaxContinuations !== undefined)
+      out.runtime.postMaxContinuations = clampIntOrNull(r.postMaxContinuations, 0, 200);
+    if (r.chatMaxContinuationRuntimeMs !== undefined)
+      out.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
+    if (r.postMaxContinuationRuntimeMs !== undefined)
+      out.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
   }
   return out;
 }

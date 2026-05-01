@@ -11,6 +11,12 @@ function clampAdminAiGen01(v) {
     return Math.min(1, Math.max(0, n));
 }
 
+function clampAdminAiInt(v, min, max, fallback) {
+    const n = Math.round(Number(v));
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
+}
+
 function wireAdminAiGenControlsOnce() {
     if (adminAiGenWired) return;
     adminAiGenWired = true;
@@ -82,6 +88,18 @@ async function loadAdminAiSettingsView() {
             if (range) range.value = String(v);
             if (num) num.value = String(v);
         });
+        const runtime = cfg.runtime && typeof cfg.runtime === "object" ? cfg.runtime : {};
+        const setIntInput = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = value == null ? "" : String(value);
+        };
+        setIntInput("adminAi-runtime-chatMaxOutputTokens", runtime.chatMaxOutputTokens);
+        setIntInput("adminAi-runtime-postMaxOutputTokens", runtime.postMaxOutputTokens);
+        setIntInput("adminAi-runtime-chatMaxContinuations", runtime.chatMaxContinuations);
+        setIntInput("adminAi-runtime-postMaxContinuations", runtime.postMaxContinuations);
+        setIntInput("adminAi-runtime-chatMaxContinuationRuntimeMs", runtime.chatMaxContinuationRuntimeMs);
+        setIntInput("adminAi-runtime-postMaxContinuationRuntimeMs", runtime.postMaxContinuationRuntimeMs);
         ADMIN_AI_POST_KEYS.forEach((k) => {
             const p = cfg.posts && cfg.posts[k] ? cfg.posts[k] : {};
             const ta = document.getElementById(`adminAi-post-${k}-prompt`);
@@ -122,6 +140,44 @@ async function saveAdminAiSettingsToServer() {
             ...readPair("adminAi-chat"),
         },
         posts: {},
+        runtime: {
+            chatMaxOutputTokens: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxOutputTokens")?.value,
+                50,
+                8192,
+                null,
+            ),
+            postMaxOutputTokens: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxOutputTokens")?.value,
+                50,
+                8192,
+                null,
+            ),
+            chatMaxContinuations: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxContinuations")?.value,
+                0,
+                200,
+                null,
+            ),
+            postMaxContinuations: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxContinuations")?.value,
+                0,
+                200,
+                null,
+            ),
+            chatMaxContinuationRuntimeMs: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-chatMaxContinuationRuntimeMs")?.value,
+                500,
+                300000,
+                null,
+            ),
+            postMaxContinuationRuntimeMs: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-postMaxContinuationRuntimeMs")?.value,
+                500,
+                300000,
+                null,
+            ),
+        },
     };
     ADMIN_AI_POST_KEYS.forEach((k) => {
         aiSettings.posts[k] = {

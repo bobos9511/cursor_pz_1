@@ -1046,6 +1046,40 @@
                             </div>
                         </div>
 
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">RUNTIME</span>
+                                <h3 class="admin-settings-card-title">토큰/이어쓰기 설정</h3>
+                            </div>
+                            <p class="admin-settings-hint">비워두면 서버 환경변수 기본값을 사용합니다. 저장 시 AI 응답 길이/이어쓰기 제한에 즉시 반영됩니다.</p>
+                            <div class="admin-gen-grid">
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">채팅 최대 토큰</label>
+                                    <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">게시물 최대 토큰</label>
+                                    <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
+                                    <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
+                                    <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
+                                    <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
+                                    <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="admin-settings-actions">
                             <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
                             <button type="button" class="btn btn-primary" onclick="saveAdminAiSettingsToServer()">설정 저장</button>
@@ -1156,20 +1190,49 @@
                 <button onclick="closeNotificationCenter()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="notification-center-toolbar">
-                <div class="notification-view-tabs">
-                    <button type="button" id="notiTabTime" class="btn btn-primary" onclick="setNotificationViewMode('time')">시간대별</button>
-                    <button type="button" id="notiTabTopic" class="btn btn-outline" onclick="setNotificationViewMode('topic')">주제별</button>
+                <div class="notification-toolbar-left">
+                    <span class="notification-toolbar-caption">카드형 알림 보기</span>
                 </div>
-                <div class="notification-view-tabs">
-                    <button type="button" id="notiLevelAll" class="btn btn-primary" onclick="setNotificationLevelMode('all')">전체</button>
-                    <button type="button" id="notiLevelImportant" class="btn btn-outline" onclick="setNotificationLevelMode('important')">중요알림</button>
-                    <button type="button" id="notiLevelGeneral" class="btn btn-outline" onclick="setNotificationLevelMode('general')">일반알림</button>
+                <div class="notification-toolbar-right">
+                    <button type="button" id="notiFilterBtn" class="btn btn-outline" onclick="openNotificationFilterModal()">
+                        <svg class="icon"><use href="#icon-cog"></use></svg> 필터
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>
+                    <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
                 </div>
-                <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
             </div>
             <div id="notificationCenterBody" class="modal-body notification-center-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeNotificationCenter()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="notificationFilterModal" class="modal-overlay" style="z-index: 1013;">
+        <div class="modal-content notification-filter-modal">
+            <div class="modal-header notification-center-head">
+                <span><svg class="icon"><use href="#icon-cog"></use></svg> 알림 필터</span>
+                <button onclick="closeNotificationFilterModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="background:#f8fafc;">
+                <div class="notification-filter-group">
+                    <div class="notification-filter-label">보기 방식</div>
+                    <div class="notification-view-tabs">
+                        <button type="button" id="notiFilterViewTime" class="btn btn-outline" onclick="setNotificationFilterViewMode('time')">시간대별</button>
+                        <button type="button" id="notiFilterViewTopic" class="btn btn-outline" onclick="setNotificationFilterViewMode('topic')">주제별</button>
+                    </div>
+                </div>
+                <div class="notification-filter-group" style="margin-top:14px;">
+                    <div class="notification-filter-label">알림 유형</div>
+                    <div class="notification-view-tabs" style="flex-wrap:wrap;">
+                        <button type="button" id="notiFilterLevelAll" class="btn btn-outline" onclick="setNotificationFilterLevelMode('all')">전체</button>
+                        <button type="button" id="notiFilterLevelImportant" class="btn btn-outline" onclick="setNotificationFilterLevelMode('important')">중요알림</button>
+                        <button type="button" id="notiFilterLevelGeneral" class="btn btn-outline" onclick="setNotificationFilterLevelMode('general')">일반알림</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">초기화</button>
+                <button type="button" class="btn btn-primary" onclick="applyNotificationFilters()">적용</button>
             </div>
         </div>
     </div>

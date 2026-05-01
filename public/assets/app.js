@@ -71,8 +71,9 @@
             `;
             if (hasAction) {
                 toast.addEventListener('click', (event) => {
+                    const actionBtn = event.target && event.target.closest('.toast-action-btn');
                     const closeBtn = event.target && event.target.closest('.toast-close');
-                    if (closeBtn) return;
+                    if (closeBtn || !actionBtn) return;
                     options.onClick();
                     closeToast(toast);
                 });
@@ -113,6 +114,8 @@
         let writeAttachmentItems = [];
         const aiExpandState = {};
         const aiRefreshingPostIds = new Set();
+        let isApplyingHistoryRoute = false;
+        let historyRouteInitialized = false;
         const USER_SCOPE_COOKIE = 'knockUserScope';
         const APP_DATA_SHARED_SCOPE = 'shared';
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
@@ -167,6 +170,47 @@
             }
             if (page === 'dashboard') return { viewId: 'dashboard', boardType: null };
             return null;
+        }
+
+        function buildRouteState(viewId, boardType = null, postId = null) {
+            const state = { page: 'app', viewId: String(viewId || 'dashboard') };
+            if (boardType) state.boardType = String(boardType);
+            if (postId != null) state.postId = Number(postId);
+            return state;
+        }
+
+        function syncHistoryRoute(viewId, boardType = null, postId = null, replace = false) {
+            if (isApplyingHistoryRoute) return;
+            const state = buildRouteState(viewId, boardType, postId);
+            if (replace) history.replaceState(state, '');
+            else history.pushState(state, '');
+        }
+
+        function applyHistoryRoute(state) {
+            if (!state || state.page !== 'app' || !state.viewId) return false;
+            isApplyingHistoryRoute = true;
+            try {
+                if (state.viewId === 'detail') {
+                    const targetBoardType = state.boardType || currentBoardType || 'IT';
+                    switchView('list', targetBoardType, { fromHistory: true, skipHistory: true });
+                    if (state.postId != null) openDetail(Number(state.postId), targetBoardType, { fromHistory: true, skipHistory: true });
+                    return true;
+                }
+                switchView(state.viewId, state.boardType || null, { fromHistory: true, skipHistory: true });
+                return true;
+            } finally {
+                isApplyingHistoryRoute = false;
+            }
+        }
+
+        function setupHistoryNavigation() {
+            if (historyRouteInitialized) return;
+            historyRouteInitialized = true;
+            window.addEventListener('popstate', (event) => {
+                if (!currentLoginUser) return;
+                const handled = applyHistoryRoute(event.state);
+                if (!handled) switchView('dashboard', null, { fromHistory: true, skipHistory: true });
+            });
         }
 
         function getCurrentDateTime() {
@@ -1072,6 +1116,8 @@
             appContainer.classList.add('page-intro');
             await initApp();
             goToAiSearchPage();
+            setupHistoryNavigation();
+            syncHistoryRoute('ai-search', null, null, true);
         }
         function doLogout() {
             const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
@@ -1895,7 +1941,9 @@
             }
         }
 
-        function switchView(viewId, boardType = null) {
+        function switchView(viewId, boardType = null, options = {}) {
+            const fromHistory = !!options.fromHistory;
+            const skipHistory = !!options.skipHistory;
             if (boardHelpEditing) {
                 const changingListBoard = viewId === 'list' && boardType && boardType !== currentBoardType;
                 const leavingListView = viewId !== 'list';
@@ -1903,7 +1951,7 @@
                     showConfirm('도움말 편집 내용이 저장되지 않습니다. 계속 진행하시겠습니까?', () => {
                         boardHelpEditing = false;
                         boardHelpSavedRange = null;
-                        switchView(viewId, boardType);
+                        switchView(viewId, boardType, options);
                     });
                     return;
                 }
@@ -1981,6 +2029,10 @@
                 setTimeout(renderCSSCharts, 50); 
             }
             if (viewId === 'list') setTimeout(syncBoardListCardMode, 0);
+            if (!fromHistory && !skipHistory) {
+                const routeBoardType = viewId === 'list' ? currentBoardType : null;
+                syncHistoryRoute(viewId, routeBoardType, null, false);
+            }
         }
 
         // --- Dashboard Update ---
@@ -2428,7 +2480,9 @@
         }
 
         // --- 상세보기 ---
-        function openDetail(id, typeHint = currentBoardType) {
+        function openDetail(id, typeHint = currentBoardType, options = {}) {
+            const fromHistory = !!options.fromHistory;
+            const skipHistory = !!options.skipHistory;
             const post = getPostByIdAndType(id, typeHint);
             if(!post) return;
             currentPostId = Number(post.id);
@@ -2629,6 +2683,9 @@
                         }).join('');
                     }
                 }
+            }
+            if (!fromHistory && !skipHistory) {
+                syncHistoryRoute('detail', post.type, post.id, false);
             }
         }
 
@@ -3216,6 +3273,11 @@
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
             await doLogin({ skipAuthValidation: true });
+            if (history && history.state && history.state.page === 'app') {
+                applyHistoryRoute(history.state);
+            } else {
+                syncHistoryRoute('ai-search', null, null, true);
+            }
         }
 
         bootstrapSession();

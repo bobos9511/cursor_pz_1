@@ -186,6 +186,12 @@ function sanitizePostReplyText(text) {
   return out;
 }
 
+function clampIntWithFallback(v, min, max, fallback) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
 function mergeContinuationText(base, next) {
   const a = String(base || "").trim();
   const b = String(next || "").trim();
@@ -396,13 +402,44 @@ async function handleAiChat(req, res) {
   }
 
   const aiSettings = readDb().aiSettings;
+  const runtime = aiSettings && aiSettings.runtime && typeof aiSettings.runtime === "object" ? aiSettings.runtime : {};
+  const chatMaxOutputTokens = clampIntWithFallback(
+    runtime.chatMaxOutputTokens,
+    50,
+    8192,
+    GEMINI_CHAT_MAX_OUTPUT_TOKENS,
+  );
+  const postMaxOutputTokens = clampIntWithFallback(runtime.postMaxOutputTokens, 50, 8192, GEMINI_MAX_OUTPUT_TOKENS);
+  const postFastMaxOutputTokens = Math.min(
+    clampIntWithFallback(GEMINI_POST_FAST_MAX_OUTPUT_TOKENS, 50, 8192, GEMINI_POST_FAST_MAX_OUTPUT_TOKENS),
+    postMaxOutputTokens,
+  );
+  const chatMaxContinuations = clampIntWithFallback(
+    runtime.chatMaxContinuations,
+    0,
+    200,
+    GEMINI_CHAT_MAX_CONTINUATIONS,
+  );
+  const postMaxContinuations = clampIntWithFallback(runtime.postMaxContinuations, 0, 200, GEMINI_MAX_CONTINUATIONS);
+  const chatMaxContinuationRuntimeMs = clampIntWithFallback(
+    runtime.chatMaxContinuationRuntimeMs,
+    500,
+    300000,
+    GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS,
+  );
+  const postMaxContinuationRuntimeMs = clampIntWithFallback(
+    runtime.postMaxContinuationRuntimeMs,
+    500,
+    300000,
+    GEMINI_MAX_CONTINUATION_RUNTIME_MS,
+  );
   const rag = buildRagContext([title, content].join("\n"));
   const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
   const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
   const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
-    chatMax: GEMINI_CHAT_MAX_OUTPUT_TOKENS,
-    max: GEMINI_MAX_OUTPUT_TOKENS,
-    postFast: GEMINI_POST_FAST_MAX_OUTPUT_TOKENS,
+    chatMax: chatMaxOutputTokens,
+    max: postMaxOutputTokens,
+    postFast: postFastMaxOutputTokens,
   });
 
   try {
@@ -459,9 +496,9 @@ async function handleAiChat(req, res) {
     }
 
     // Continue until complete when truncated by token limit (bounded).
-    const maxContinuations = boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATIONS : GEMINI_MAX_CONTINUATIONS;
+    const maxContinuations = boardType === "CHAT" ? chatMaxContinuations : postMaxContinuations;
     const maxContinuationRuntimeMs =
-      boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS : GEMINI_MAX_CONTINUATION_RUNTIME_MS;
+      boardType === "CHAT" ? chatMaxContinuationRuntimeMs : postMaxContinuationRuntimeMs;
     let continuationCount = 0;
     const continuationStartAt = Date.now();
     while (finishReason === "MAX_TOKENS" && continuationCount < maxContinuations) {

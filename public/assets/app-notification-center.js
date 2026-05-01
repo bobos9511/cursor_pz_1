@@ -2,8 +2,12 @@
 
 const notificationCenterState = {
     items: [],
+    unreadCount: 0,
     viewMode: "time",
     levelMode: "all",
+    filterDraftViewMode: "time",
+    filterDraftLevelMode: "all",
+    stackOpen: {},
     seq: 1,
 };
 
@@ -47,13 +51,179 @@ function fmtDateTime(d) {
 function updateNotificationBadge() {
     const badge = document.getElementById("headerNotificationBadge");
     if (!badge) return;
-    const n = notificationCenterState.items.length;
+    const n = Number(notificationCenterState.unreadCount || 0);
     if (n <= 0) {
         badge.classList.add("hidden");
         return;
     }
     badge.classList.remove("hidden");
     badge.textContent = String(Math.min(n, 99));
+}
+
+function recalcNotificationUnreadCount() {
+    notificationCenterState.unreadCount = notificationCenterState.items.filter((it) => !it.isRead).length;
+}
+
+function getNotificationActiveFilterCount() {
+    let count = 0;
+    if (notificationCenterState.viewMode !== "time") count += 1;
+    if (notificationCenterState.levelMode !== "all") count += 1;
+    return count;
+}
+
+function updateNotificationFilterButton() {
+    const btn = document.getElementById("notiFilterBtn");
+    if (!btn) return;
+    const active = getNotificationActiveFilterCount();
+    btn.innerHTML =
+        active > 0
+            ? `<svg class="icon"><use href="#icon-cog"></use></svg> 필터 (${active})`
+            : `<svg class="icon"><use href="#icon-cog"></use></svg> 필터`;
+}
+
+function syncNotificationFilterModalButtons() {
+    const viewTime = document.getElementById("notiFilterViewTime");
+    const viewTopic = document.getElementById("notiFilterViewTopic");
+    if (viewTime && viewTopic) {
+        const timeOn = notificationCenterState.filterDraftViewMode === "time";
+        viewTime.classList.toggle("btn-primary", timeOn);
+        viewTime.classList.toggle("btn-outline", !timeOn);
+        viewTopic.classList.toggle("btn-primary", !timeOn);
+        viewTopic.classList.toggle("btn-outline", timeOn);
+    }
+    const all = document.getElementById("notiFilterLevelAll");
+    const imp = document.getElementById("notiFilterLevelImportant");
+    const gen = document.getElementById("notiFilterLevelGeneral");
+    if (all && imp && gen) {
+        const allOn = notificationCenterState.filterDraftLevelMode === "all";
+        const impOn = notificationCenterState.filterDraftLevelMode === "important";
+        const genOn = notificationCenterState.filterDraftLevelMode === "general";
+        all.classList.toggle("btn-primary", allOn);
+        all.classList.toggle("btn-outline", !allOn);
+        imp.classList.toggle("btn-primary", impOn);
+        imp.classList.toggle("btn-outline", !impOn);
+        gen.classList.toggle("btn-primary", genOn);
+        gen.classList.toggle("btn-outline", !genOn);
+    }
+}
+
+function makeSafePageSlug(text) {
+    return String(text || "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9\-_.:]/g, "")
+        .trim();
+}
+
+function prettifyViewId(viewId) {
+    const raw = String(viewId || "").replace(/^view-/, "").trim();
+    if (!raw) return "기타";
+    return raw
+        .split("-")
+        .map((v) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : ""))
+        .join(" ");
+}
+
+function getCurrentPageContextFallback() {
+    const active = document.querySelector(".view-section.active");
+    const viewId = active && active.id ? String(active.id).replace(/^view-/, "") : "";
+    if (!viewId) return { pageKey: "page:unknown", pageLabel: "기타" };
+    if (viewId === "list") {
+        const board = typeof currentBoardType !== "undefined" ? String(currentBoardType || "") : "";
+        const navText =
+            (document.getElementById(`nav-list-${board.toLowerCase()}`) || document.getElementById(`topnav-list-${board.toLowerCase()}`))
+                ?.innerText || "";
+        const pageLabel = navText.trim() || `게시판 ${board || ""}`.trim();
+        return { pageKey: `page:list:${board || "all"}`.toLowerCase(), pageLabel };
+    }
+    return { pageKey: `page:${makeSafePageSlug(viewId) || "unknown"}`, pageLabel: prettifyViewId(viewId) };
+}
+
+function resolvePageContextFromMessage(message, fallback) {
+    const msg = String(message || "");
+    const boardRefMatch = msg.match(/^\[([^\]#]+)\s*#\d+\]/);
+    if (boardRefMatch && boardRefMatch[1]) {
+        const label = boardRefMatch[1].trim();
+        return { pageKey: `page:board:${makeSafePageSlug(label) || "unknown"}`, pageLabel: label };
+    }
+    return fallback;
+}
+
+function clusterNotificationItems(list) {
+    const order = [];
+    const byKey = new Map();
+    list.forEach((it) => {
+        const key = String(it.pageKey || "page:unknown");
+        if (!byKey.has(key)) {
+            byKey.set(key, { key, pageLabel: String(it.pageLabel || "기타"), items: [] });
+            order.push(key);
+        }
+        byKey.get(key).items.push(it);
+    });
+    return order.map((k) => byKey.get(k));
+}
+
+function formatNotificationGroupTitle(label) {
+    const base = String(label || "").trim() || "기타";
+    if (base.endsWith("알림")) return base;
+    return `${base} 관련 알림`;
+}
+
+function renderNotificationItemCard(it, options = {}) {
+    const compact = !!options.compact;
+    const readChip = it.isRead
+        ? '<span class="noti-topic-chip" style="background:#f1f5f9; color:#475569; border-color:#cbd5e1;">확인됨</span>'
+        : '<span class="noti-topic-chip important" style="background:#fee2e2; color:#b91c1c; border-color:#fecaca;">신규</span>';
+    const actionBtn = it.hasAction
+        ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
+        : "";
+    return `
+        <div class="noti-item${compact ? " noti-item-compact" : ""}">
+            <div class="noti-item-top">
+                <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    ${readChip}
+                    <div class="noti-topic-chip ${it.level === "important" ? "important" : ""}">${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}</div>
+                </div>
+            </div>
+            <div class="noti-item-msg">${escapeHtml(it.message).replace(/\n/g, "<br>")}</div>
+            <div class="noti-item-actions">
+                ${actionBtn}
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="deleteNotificationItem('${it.id}')">삭제</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderNotificationStack(cluster) {
+    const stackId = String(cluster.items[0] && cluster.items[0].id ? cluster.items[0].id : cluster.key);
+    const expanded = !!notificationCenterState.stackOpen[stackId];
+    const latest = cluster.items[0];
+    return `
+        <div class="noti-stack ${expanded ? "expanded" : ""}">
+            <button type="button" class="noti-stack-head" onclick="toggleNotificationStack('${stackId}')">
+                <div class="noti-stack-head-left">
+                    <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
+                    <span class="noti-stack-count">${cluster.items.length}건 모아보기</span>
+                </div>
+                <span class="noti-stack-toggle">${expanded ? "접기" : "펼치기"}</span>
+            </button>
+            <div class="noti-stack-preview" aria-hidden="true">
+                <div class="noti-stack-layer"></div>
+                <div class="noti-stack-layer"></div>
+            </div>
+            <div class="noti-stack-body">
+                ${cluster.items.map((it) => renderNotificationItemCard(it, { compact: true })).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function toggleNotificationStack(stackId) {
+    const key = String(stackId || "");
+    if (!key) return;
+    notificationCenterState.stackOpen[key] = !notificationCenterState.stackOpen[key];
+    renderNotificationCenterBody();
 }
 
 function renderNotificationCenterBody() {
@@ -78,24 +248,11 @@ function renderNotificationCenterBody() {
 
     body.innerHTML = Array.from(groups.entries())
         .map(([groupKey, list]) => {
-            const rows = list
-                .map((it) => {
-                    const actionBtn = it.hasAction
-                        ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
-                        : "";
-                    return `
-                        <div class="noti-item">
-                            <div class="noti-item-top">
-                                <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
-                                <div class="noti-topic-chip ${it.level === "important" ? "important" : ""}">${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}</div>
-                            </div>
-                            <div class="noti-item-msg">${escapeHtml(it.message).replace(/\n/g, "<br>")}</div>
-                            <div class="noti-item-actions">
-                                ${actionBtn}
-                                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="deleteNotificationItem('${it.id}')">삭제</button>
-                            </div>
-                        </div>
-                    `;
+            const rows = clusterNotificationItems(list)
+                .map((cluster) => {
+                    if (!cluster || !Array.isArray(cluster.items) || cluster.items.length === 0) return "";
+                    if (cluster.items.length === 1) return renderNotificationItemCard(cluster.items[0]);
+                    return renderNotificationStack(cluster);
                 })
                 .join("");
             return `<div class="noti-group"><div class="noti-group-title">${escapeHtml(groupKey)}</div>${rows}</div>`;
@@ -114,6 +271,7 @@ function setNotificationViewMode(mode) {
         t2.classList.toggle("btn-primary", !timeOn);
         t2.classList.toggle("btn-outline", timeOn);
     }
+    updateNotificationFilterButton();
     renderNotificationCenterBody();
 }
 
@@ -133,23 +291,70 @@ function setNotificationLevelMode(mode) {
         g.classList.toggle("btn-primary", genOn);
         g.classList.toggle("btn-outline", !genOn);
     }
+    updateNotificationFilterButton();
     renderNotificationCenterBody();
+}
+
+function openNotificationFilterModal() {
+    notificationCenterState.filterDraftViewMode = notificationCenterState.viewMode;
+    notificationCenterState.filterDraftLevelMode = notificationCenterState.levelMode;
+    syncNotificationFilterModalButtons();
+    const modal = document.getElementById("notificationFilterModal");
+    if (modal) modal.classList.add("active");
+}
+
+function closeNotificationFilterModal() {
+    const modal = document.getElementById("notificationFilterModal");
+    if (modal) modal.classList.remove("active");
+}
+
+function setNotificationFilterViewMode(mode) {
+    notificationCenterState.filterDraftViewMode = mode === "topic" ? "topic" : "time";
+    syncNotificationFilterModalButtons();
+}
+
+function setNotificationFilterLevelMode(mode) {
+    notificationCenterState.filterDraftLevelMode =
+        mode === "important" ? "important" : mode === "general" ? "general" : "all";
+    syncNotificationFilterModalButtons();
+}
+
+function applyNotificationFilters() {
+    setNotificationViewMode(notificationCenterState.filterDraftViewMode);
+    setNotificationLevelMode(notificationCenterState.filterDraftLevelMode);
+    closeNotificationFilterModal();
+}
+
+function resetNotificationFilters() {
+    notificationCenterState.filterDraftViewMode = "time";
+    notificationCenterState.filterDraftLevelMode = "all";
+    setNotificationViewMode("time");
+    setNotificationLevelMode("all");
+    syncNotificationFilterModalButtons();
 }
 
 function openNotificationCenter() {
     const modal = document.getElementById("notificationCenterModal");
     if (!modal) return;
+    notificationCenterState.items.forEach((it) => {
+        it.isRead = true;
+    });
+    recalcNotificationUnreadCount();
     renderNotificationCenterBody();
     modal.classList.add("active");
+    updateNotificationBadge();
+    updateNotificationFilterButton();
 }
 
 function closeNotificationCenter() {
     const modal = document.getElementById("notificationCenterModal");
     if (modal) modal.classList.remove("active");
+    closeNotificationFilterModal();
 }
 
 function deleteNotificationItem(id) {
     notificationCenterState.items = notificationCenterState.items.filter((it) => String(it.id) !== String(id));
+    recalcNotificationUnreadCount();
     updateNotificationBadge();
     renderNotificationCenterBody();
 }
@@ -158,6 +363,7 @@ function clearAllNotifications() {
     if (!notificationCenterState.items.length) return;
     showConfirm("알림을 모두 삭제하시겠습니까?", () => {
         notificationCenterState.items = [];
+        notificationCenterState.unreadCount = 0;
         updateNotificationBadge();
         renderNotificationCenterBody();
     });
@@ -172,6 +378,10 @@ function runNotificationAction(id) {
 window.recordNotificationEntry = function recordNotificationEntry(message, type = "success", options = {}) {
     const now = new Date();
     const id = `noti_${Date.now()}_${notificationCenterState.seq++}`;
+    const fallbackPage = getCurrentPageContextFallback();
+    const resolvedPage = resolvePageContextFromMessage(message, fallbackPage);
+    const pageKey = String(options.pageKey || resolvedPage.pageKey || fallbackPage.pageKey || "page:unknown");
+    const pageLabel = String(options.pageLabel || resolvedPage.pageLabel || fallbackPage.pageLabel || "기타");
     const item = {
         id,
         message: String(message || ""),
@@ -182,15 +392,22 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
         atLabel: fmtDateTime(now),
         dateLabel: now.toLocaleDateString("ko-KR"),
         timeBand: resolveTimeBand(now),
+        pageKey,
+        pageLabel,
+        isRead: false,
         hasAction: typeof options.onClick === "function",
         onClick: typeof options.onClick === "function" ? options.onClick : null,
         actionText: options.actionText || "바로가기",
     };
     notificationCenterState.items.unshift(item); // 최근 알림 상단
     notificationCenterState.items = notificationCenterState.items.slice(0, 300);
+    recalcNotificationUnreadCount();
     updateNotificationBadge();
 };
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeNotificationCenter();
+    if (e.key === "Escape") {
+        closeNotificationFilterModal();
+        closeNotificationCenter();
+    }
 });
