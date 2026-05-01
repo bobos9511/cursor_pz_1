@@ -412,14 +412,14 @@ function renderAiSearchHistory() {
             const meta = `${escapeHtml(String(h.updatedAt || "-"))} · ${escapeHtml(String(h.boardType || "IT"))}`;
             const id = escapeHtml(String(h.id || ""));
             return `
-                <div class="ai-search-history-row">
-                    <button type="button" class="ai-search-history-item" onclick="loadAiSearchConversation('${id}')">
+                <div class="ai-search-history-card" role="button" tabindex="0" onclick="loadAiSearchConversation('${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); loadAiSearchConversation('${id}');}">
+                    <button type="button" class="ai-search-history-close" onclick="event.stopPropagation(); deleteAiSearchConversation('${id}')" title="지난대화 삭제" aria-label="지난대화 삭제">
+                        <svg class="icon"><use href="#icon-close"></use></svg>
+                    </button>
+                    <div class="ai-search-history-item">
                         <div class="ai-search-history-title">${title}</div>
                         <div class="ai-search-history-meta">${meta}</div>
-                    </button>
-                    <button type="button" class="btn btn-outline ai-search-history-del" onclick="event.stopPropagation(); deleteAiSearchConversation('${id}')" title="지난대화 삭제">
-                        <svg class="icon"><use href="#icon-trash"></use></svg>
-                    </button>
+                    </div>
                 </div>
             `;
         })
