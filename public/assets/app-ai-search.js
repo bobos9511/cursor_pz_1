@@ -185,6 +185,16 @@ function renderAiSearchMessages() {
     if (!logEl) return;
     logEl.innerHTML = "";
     const messages = aiSearchActive && Array.isArray(aiSearchActive.messages) ? aiSearchActive.messages : [];
+    const getPreferButtonLabel = (preferred) => {
+        const compact = typeof window !== "undefined" && window.innerWidth <= 520;
+        if (preferred) return compact ? "선호됨" : "도움이 됐음";
+        return compact ? "답변선호" : "도움이 됐어요";
+    };
+    const isErrorAiMessage = (text) => {
+        const plain = stripHtmlForRag(String(text || "")).replace(/\s+/g, " ").trim();
+        if (!plain) return false;
+        return /^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패");
+    };
     const isPreferButtonHiddenMessage = (text, idx) => {
         const plain = stripHtmlForRag(String(text || ""));
         const normalized = plain.replace(/\s+/g, " ").trim();
@@ -193,6 +203,8 @@ function renderAiSearchMessages() {
         if (idx === 0 && normalized.includes("질문을 입력하면 핵심만 간단히 정리해")) return true;
         // 추가정보 요청 안내 성격 메시지에는 선호 버튼을 표시하지 않음
         if (normalized.includes("추가 정보") && normalized.includes("요청")) return true;
+        // AI 오류 메시지에는 선호 버튼을 표시하지 않음
+        if (isErrorAiMessage(text)) return true;
         return false;
     };
     messages.forEach((msg, idx) => {
@@ -208,7 +220,7 @@ function renderAiSearchMessages() {
             const preferred = !!(msg && msg.preferred);
             const hidePrefer = isPreferButtonHiddenMessage(text, idx);
             const preferBtn = !isLoadingMsg && !hidePrefer
-                ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "답변선호 취소" : "답변선호"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${preferred ? "선호됨" : "답변선호"}</button>`
+                ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
             item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn}`;
         }
@@ -233,6 +245,8 @@ function toggleAiSearchPreferred(messageIndex) {
     const msg = aiSearchActive.messages[idx];
     if (!msg || msg.role !== "ai") return;
     if (String(msg.text || "").includes("ai-search-loading")) return;
+    const plain = stripHtmlForRag(String(msg.text || "")).replace(/\s+/g, " ").trim();
+    if (/^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패")) return;
     msg.preferred = !msg.preferred;
     aiSearchActive.dirty = true;
     saveAiSearchActiveState();
@@ -246,10 +260,10 @@ function toggleAiSearchPreferred(messageIndex) {
         sourceType: "CHAT",
         sourceRef,
         boardType: "BIZ",
-        sourceLabel: "AI Chat 답변선호"
+        sourceLabel: "AI Chat 도움이 됐어요"
     });
     if (created) {
-        showAlert("답변선호 내용을 AI 지식 베이스 학습자료로 등록했습니다.", "success");
+        showAlert("\"도움이 됐어요\" 답변을 AI 지식 베이스 학습자료로 등록했습니다.", "success");
     } else {
         showAlert("이미 등록된 학습자료이거나 등록 조건을 충족하지 않습니다.", "success");
     }

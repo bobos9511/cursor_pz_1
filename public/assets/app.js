@@ -25,7 +25,7 @@
             return {
                 master: 'allow',
                 level: 'all',
-                timeMode: 'work',
+                timeMode: 'all',
                 customStart: '09:00',
                 customEnd: '18:00',
                 excludeKeywords: [],
@@ -47,7 +47,7 @@
             const out = { ...base, ...src };
             out.master = out.master === 'block' ? 'block' : 'allow';
             out.level = out.level === 'important' ? 'important' : 'all';
-            out.timeMode = out.timeMode === 'all' || out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'work';
+            out.timeMode = out.timeMode === 'all' || out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'all';
             out.customStart = /^\d{2}:\d{2}$/.test(String(out.customStart || '')) ? String(out.customStart) : '09:00';
             out.customEnd = /^\d{2}:\d{2}$/.test(String(out.customEnd || '')) ? String(out.customEnd) : '18:00';
             out.excludeKeywords = Array.isArray(out.excludeKeywords) ? normalizeKeywordList(out.excludeKeywords.join(',')) : normalizeKeywordList(out.excludeKeywords);
@@ -1460,7 +1460,7 @@
             appData.settings.notifyPolicy = normalizeNotifyPolicy({
                 master: notifyMasterEl && notifyMasterEl.value === 'block' ? 'block' : 'allow',
                 level: notifyLevelEl && notifyLevelEl.value === 'important' ? 'important' : 'all',
-                timeMode: notifyTimeEl ? String(notifyTimeEl.value || 'work') : 'work',
+                timeMode: notifyTimeEl ? String(notifyTimeEl.value || 'all') : 'all',
                 customStart: notifyTimeStartEl ? String(notifyTimeStartEl.value || '09:00') : '09:00',
                 customEnd: notifyTimeEndEl ? String(notifyTimeEndEl.value || '18:00') : '18:00',
                 excludeKeywords: normalizeKeywordList(notifyExcludeEl ? notifyExcludeEl.value : ''),
