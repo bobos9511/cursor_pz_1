@@ -4,6 +4,7 @@ const ADMIN_AI_POST_KEYS = ["IT", "BIZ"];
 let adminAiPostTabsInited = false;
 let adminAiGenWired = false;
 let adminSettingsMainTabsInited = false;
+let adminRuntimeHumanHintWired = false;
 let adminAiApiLogs = [];
 let adminAiSettingsHistory = [];
 
@@ -42,6 +43,46 @@ function getAdminActorName() {
         // no-op
     }
     return "unknown";
+}
+
+function formatMsToHumanReadable(msRaw) {
+    const n = Number(msRaw);
+    if (!Number.isFinite(n) || n < 0) return "-";
+    if (n < 1000) return `${(n / 1000).toFixed(1)}초`;
+    const totalSec = Math.floor(n / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const chunks = [];
+    if (h > 0) chunks.push(`${h}시간`);
+    if (m > 0 || h > 0) chunks.push(`${m}분`);
+    chunks.push(`${s}초`);
+    return chunks.join(" ");
+}
+
+function updateAdminRuntimeHumanHint(inputId) {
+    const inputEl = document.getElementById(inputId);
+    if (!inputEl) return;
+    const targetId = inputEl.getAttribute("data-ms-human-target");
+    if (!targetId) return;
+    const hintEl = document.getElementById(targetId);
+    if (!hintEl) return;
+    const raw = String(inputEl.value || "").trim();
+    if (!raw) {
+        hintEl.innerHTML = '<span class="admin-ms-hint-chip">입력 시 시간 환산</span>';
+        return;
+    }
+    hintEl.innerHTML = `<span class="admin-ms-hint-chip">환산: ${escapeHtml(formatMsToHumanReadable(raw))}</span>`;
+}
+
+function wireAdminRuntimeHumanHintOnce() {
+    if (adminRuntimeHumanHintWired) return;
+    adminRuntimeHumanHintWired = true;
+    document.querySelectorAll('input[data-ms-human-target]').forEach((inputEl) => {
+        const handler = () => updateAdminRuntimeHumanHint(inputEl.id);
+        inputEl.addEventListener("input", handler);
+        inputEl.addEventListener("change", handler);
+    });
 }
 
 function collectAdminAiSettingsFromForm() {
@@ -240,6 +281,8 @@ async function loadAdminAiSettingsView() {
         setAdminRuntimeDefaultText("adminAi-runtime-ragMinOverlapTokens-default", defaults.ragMinOverlapTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-ragMinScore-default", defaults.ragMinScore);
         setAdminRuntimeDefaultText("adminAi-runtime-ragRelativeCutoffPct-default", defaults.ragRelativeCutoffPct);
+        updateAdminRuntimeHumanHint("adminAi-runtime-chatMaxContinuationRuntimeMs");
+        updateAdminRuntimeHumanHint("adminAi-runtime-postMaxContinuationRuntimeMs");
         ADMIN_AI_POST_KEYS.forEach((k) => {
             const p = cfg.posts && cfg.posts[k] ? cfg.posts[k] : {};
             const ta = document.getElementById(`adminAi-post-${k}-prompt`);
@@ -421,6 +464,102 @@ function initAdminSettingsMainTabsOnce() {
             const emp = t.getAttribute("data-emp");
             if (emp != null) toggleSignupUserAdminFlag(emp, !!t.checked);
         });
+    }
+    wireAdminRuntimeHumanHintOnce();
+}
+
+function buildAdminAiApiLogPlainText(log) {
+    if (!log || typeof log !== "object") return "";
+    const final = log.final && typeof log.final === "object" ? log.final : {};
+    const runtime = log.runtime && typeof log.runtime === "object" ? log.runtime : {};
+    const generation = log.generationConfig && typeof log.generationConfig === "object" ? log.generationConfig : {};
+    const boardMeta = getAdminAiApiBoardMeta(log.boardType);
+    const lines = [];
+    lines.push("=== AI API 로그 상세 ===");
+    lines.push(`요청 시각: ${formatAdminAiApiLogTime(log.createdAt)}`);
+    lines.push(`요청자 범위: ${String(log.requesterScope || "-")}`);
+    lines.push(`게시판 구분: ${boardMeta.boardLabel}`);
+    lines.push(`모델: ${String(log.model || "-")}`);
+    lines.push(`Grounding 사용: ${log.useGroundingRequested ? "예" : "아니오"}`);
+    lines.push(`응답 결과: ${final.ok ? "성공" : "실패"} / 코드 ${String(final.statusCode || "-")}`);
+    lines.push(`이어쓰기 횟수: ${String(final.continuationCount || 0)}`);
+    lines.push(`Truncated: ${final.truncated ? "예" : "아니오"}`);
+    lines.push("");
+    lines.push(`적용 설정: ${boardMeta.settingsLabel}`);
+    if (boardMeta.isChat) {
+        lines.push(`채팅 최대 토큰: ${String(runtime.chatMaxOutputTokens ?? "-")}`);
+        lines.push(`채팅 이어쓰기 제한: ${String(runtime.chatMaxContinuations ?? "-")}`);
+        lines.push(`채팅 이어쓰기 시간(ms): ${String(runtime.chatMaxContinuationRuntimeMs ?? "-")}`);
+    } else {
+        lines.push(`게시물 최대 토큰: ${String(runtime.postMaxOutputTokens ?? "-")}`);
+        lines.push(`게시물 빠른생성 토큰: ${String(runtime.postFastMaxOutputTokens ?? "-")}`);
+        lines.push(`게시물 이어쓰기 제한: ${String(runtime.postMaxContinuations ?? "-")}`);
+        lines.push(`게시물 이어쓰기 시간(ms): ${String(runtime.postMaxContinuationRuntimeMs ?? "-")}`);
+    }
+    lines.push(`요청 maxOutputTokens: ${String(generation.maxOutputTokens ?? "-")}`);
+    lines.push(`요청 temperature: ${String(generation.temperature ?? "-")}`);
+    lines.push(`요청 topP: ${String(generation.topP ?? "-")}`);
+    lines.push("");
+    lines.push("[요청 제목]");
+    lines.push(normalizeAdminAiApiLogText(String(log.title || "")) || "-");
+    lines.push("");
+    lines.push("[요청 본문 요약]");
+    lines.push(normalizeAdminAiApiLogText(String(log.contentPreview || "")) || "-");
+    lines.push("");
+    lines.push("[최종 프롬프트(메인)]");
+    lines.push(normalizeAdminAiApiLogText(String(log.promptText || "")) || "-");
+    const attempts = Array.isArray(log.attempts) ? log.attempts : [];
+    if (attempts.length) {
+        lines.push("");
+        lines.push("[요청/수신 상세 시도 로그]");
+        attempts.forEach((a, idx) => {
+            const req = a && a.request && typeof a.request === "object" ? a.request : {};
+            const resp = a && a.response && typeof a.response === "object" ? a.response : {};
+            lines.push(`- 시도 ${idx + 1} (${String(a.label || "-")})`);
+            lines.push(`  요청 시각: ${formatAdminAiApiLogTime(a.requestedAt)}`);
+            lines.push(`  도구 사용: ${req.hasTools ? "예" : "아니오"}`);
+            lines.push(`  프롬프트 길이: ${String(req.promptChars || 0)}자`);
+            lines.push(`  응답 상태: ${resp.ok ? "성공" : "실패"} (${String(resp.status || "-")})`);
+            lines.push(`  finishReason: ${String(resp.finishReason || "-")}`);
+            lines.push(`  오류 메시지: ${String(resp.errorMessage || "-")}`);
+            lines.push("  [요청 프롬프트]");
+            lines.push(`  ${normalizeAdminAiApiLogText(String(req.promptText || "")) || "-"}`);
+            lines.push("  [수신 요약]");
+            lines.push(`  ${normalizeAdminAiApiLogText(String(resp.replyPreview || "")) || "-"}`);
+        });
+    }
+    return lines.join("\n");
+}
+
+async function copyAdminAiApiLogDetail(logId) {
+    const log = adminAiApiLogs.find((x) => String(x.id) === String(logId));
+    if (!log) {
+        showAlert("복사할 로그를 찾지 못했습니다.", "error");
+        return;
+    }
+    const plainText = buildAdminAiApiLogPlainText(log);
+    if (!plainText) {
+        showAlert("복사할 로그 내용이 없습니다.", "error");
+        return;
+    }
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(plainText);
+        } else {
+            const ta = document.createElement("textarea");
+            ta.value = plainText;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        showAlert("AI API 로그 상세 내용을 클립보드에 복사했습니다.", "success");
+    } catch (e) {
+        console.error(e);
+        showAlert("클립보드 복사에 실패했습니다.", "error");
     }
 }
 
@@ -733,6 +872,11 @@ function openAdminAiApiLogModal(logId) {
               .join("")
         : '<div class="admin-settings-hint">시도 로그가 없습니다.</div>';
     body.innerHTML = `
+        <div class="admin-ai-log-copy-row">
+            <button type="button" class="btn btn-outline admin-ai-log-copy-btn" onclick="copyAdminAiApiLogDetail('${escapeHtml(String(log.id || ""))}')">
+                <svg class="icon"><use href="#icon-edit"></use></svg> 상세 텍스트 복사
+            </button>
+        </div>
         <div class="admin-ai-log-detail-grid">${buildAdminLogInfoRows(log)}</div>
         <div class="admin-ai-log-detail-title">요청 제목</div>
         <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(log.title || "")))}</pre>
@@ -873,6 +1017,7 @@ function openAdminAiHelpModal(topic) {
 
 window.openAdminAiHelpModal = openAdminAiHelpModal;
 window.closeAdminAiHelpModal = closeAdminAiHelpModal;
+window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
 window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;
 window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
 window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;
