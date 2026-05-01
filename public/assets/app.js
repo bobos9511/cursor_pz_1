@@ -21,6 +21,95 @@
             return typeof window !== 'undefined' && typeof window.Notification !== 'undefined';
         }
 
+        function getDefaultNotifyPolicy() {
+            return {
+                master: 'allow',
+                level: 'all',
+                timeMode: 'work',
+                customStart: '09:00',
+                customEnd: '18:00',
+                excludeKeywords: [],
+                includeKeywords: [],
+            };
+        }
+
+        function normalizeKeywordList(text) {
+            const parts = String(text || '')
+                .split(',')
+                .map((v) => v.trim())
+                .filter(Boolean);
+            return Array.from(new Set(parts)).slice(0, 50);
+        }
+
+        function normalizeNotifyPolicy(raw) {
+            const base = getDefaultNotifyPolicy();
+            const src = raw && typeof raw === 'object' ? raw : {};
+            const out = { ...base, ...src };
+            out.master = out.master === 'block' ? 'block' : 'allow';
+            out.level = out.level === 'important' ? 'important' : 'all';
+            out.timeMode = out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'work';
+            out.customStart = /^\d{2}:\d{2}$/.test(String(out.customStart || '')) ? String(out.customStart) : '09:00';
+            out.customEnd = /^\d{2}:\d{2}$/.test(String(out.customEnd || '')) ? String(out.customEnd) : '18:00';
+            out.excludeKeywords = Array.isArray(out.excludeKeywords) ? normalizeKeywordList(out.excludeKeywords.join(',')) : normalizeKeywordList(out.excludeKeywords);
+            out.includeKeywords = Array.isArray(out.includeKeywords) ? normalizeKeywordList(out.includeKeywords.join(',')) : normalizeKeywordList(out.includeKeywords);
+            return out;
+        }
+
+        function getCurrentNotifyPolicy() {
+            const settings = appData && appData.settings ? appData.settings : {};
+            return normalizeNotifyPolicy(settings.notifyPolicy);
+        }
+
+        function resolveNoticeLevelLocal(message, type, options = {}) {
+            if (options.noticeLevel === 'important' || options.noticeLevel === 'general') return options.noticeLevel;
+            const msg = String(message || '');
+            const t = String(type || '');
+            if (t === 'error' || msg.includes('오류') || msg.includes('실패')) return 'important';
+            return 'general';
+        }
+
+        function toMinutes(hhmm) {
+            const m = String(hhmm || '').match(/^(\d{2}):(\d{2})$/);
+            if (!m) return null;
+            const hh = Number(m[1]);
+            const mm = Number(m[2]);
+            if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+            return hh * 60 + mm;
+        }
+
+        function isNowInTimeRange(policy) {
+            const now = new Date();
+            const cur = now.getHours() * 60 + now.getMinutes();
+            const workStart = 9 * 60;
+            const workEnd = 18 * 60;
+            if (policy.timeMode === 'night') return cur >= workEnd || cur < workStart;
+            if (policy.timeMode !== 'custom') return cur >= workStart && cur < workEnd;
+            const s = toMinutes(policy.customStart);
+            const e = toMinutes(policy.customEnd);
+            if (s == null || e == null) return true;
+            if (s === e) return true;
+            if (s < e) return cur >= s && cur < e;
+            return cur >= s || cur < e;
+        }
+
+        function shouldDeliverUserNotification(message, type = 'success', options = {}) {
+            const policy = getCurrentNotifyPolicy();
+            if (policy.master === 'block') return false;
+            const level = resolveNoticeLevelLocal(message, type, options);
+            if (policy.level === 'important' && level !== 'important') return false;
+            if (!isNowInTimeRange(policy)) return false;
+            const text = String(message || '').toLowerCase();
+            if (policy.includeKeywords.length) {
+                const hasInclude = policy.includeKeywords.some((k) => text.includes(String(k).toLowerCase()));
+                if (!hasInclude) return false;
+            }
+            if (policy.excludeKeywords.length) {
+                const hasExclude = policy.excludeKeywords.some((k) => text.includes(String(k).toLowerCase()));
+                if (hasExclude) return false;
+            }
+            return true;
+        }
+
         function shouldPreferSystemNotification(options = {}) {
             if (!canUseSystemNotificationApi()) return false;
             const osNotifyEnabled = !(appData && appData.settings && appData.settings.osNotify === false);
@@ -114,6 +203,7 @@
             if (typeof window.recordNotificationEntry === 'function') {
                 window.recordNotificationEntry(message, type, options);
             }
+            if (!shouldDeliverUserNotification(message, type, options)) return;
             const wantsSystem = shouldPreferSystemNotification(options);
             if (wantsSystem && Notification.permission === 'default') {
                 maybeRequestSystemNotificationPermission();
@@ -170,7 +260,7 @@
         // ==========================================
         const MOCK_INITIAL_DATA = [];
 
-        let appData = { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
+        let appData = { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
         let currentRole = 'branch'; let currentBoardType = 'IT'; let currentPostId = null;
         let currentSessionIp = '';
         let boardCurrentPage = 1;
@@ -637,7 +727,7 @@
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
             const data = await fetchJson(`/api/db/app-data?scope=${scope}`);
-            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
+            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
             const hasSharedPosts = Array.isArray(sharedAppData.posts) && sharedAppData.posts.length > 0;
             if (hasSharedPosts) return sharedAppData;
 
@@ -794,10 +884,11 @@
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
             }
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };
             if (typeof appData.settings.osNotify !== 'boolean') appData.settings.osNotify = true;
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
             if (appData.settings.initialView !== 'dashboard' && appData.settings.initialView !== 'ai-search') appData.settings.initialView = 'ai-search';
+            appData.settings.notifyPolicy = normalizeNotifyPolicy(appData.settings.notifyPolicy);
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
             const localBoardHelp = appData.settings.boardHelp || {};
@@ -811,9 +902,22 @@
             if (migrated) saveSharedBoardHelpMap(sharedBoardHelp);
             appData.settings.boardHelp = { ...sharedBoardHelp };
             
-            if(document.getElementById('setNotify')) document.getElementById('setNotify').checked = appData.settings.notify;
-            if(document.getElementById('setSms')) document.getElementById('setSms').checked = appData.settings.sms;
             if(document.getElementById('setOsNotify')) document.getElementById('setOsNotify').checked = appData.settings.osNotify !== false;
+            const notifyPolicy = getCurrentNotifyPolicy();
+            const notifyMasterEl = document.querySelector(`input[name="notifyMasterMode"][value="${notifyPolicy.master}"]`);
+            const notifyLevelEl = document.querySelector(`input[name="notifyLevelMode"][value="${notifyPolicy.level}"]`);
+            const notifyTimeEl = document.querySelector(`input[name="notifyTimeMode"][value="${notifyPolicy.timeMode}"]`);
+            if (notifyMasterEl) notifyMasterEl.checked = true;
+            if (notifyLevelEl) notifyLevelEl.checked = true;
+            if (notifyTimeEl) notifyTimeEl.checked = true;
+            const notifyTimeStartEl = document.getElementById('setNotifyTimeStart');
+            const notifyTimeEndEl = document.getElementById('setNotifyTimeEnd');
+            const notifyExcludeEl = document.getElementById('setNotifyExcludeKeywords');
+            const notifyIncludeEl = document.getElementById('setNotifyIncludeKeywords');
+            if (notifyTimeStartEl) notifyTimeStartEl.value = notifyPolicy.customStart;
+            if (notifyTimeEndEl) notifyTimeEndEl.value = notifyPolicy.customEnd;
+            if (notifyExcludeEl) notifyExcludeEl.value = notifyPolicy.excludeKeywords.join(', ');
+            if (notifyIncludeEl) notifyIncludeEl.value = notifyPolicy.includeKeywords.join(', ');
             const initialViewEl = document.querySelector(`input[name="initialView"][value="${getPreferredInitialView()}"]`);
             if (initialViewEl) initialViewEl.checked = true;
             applyThemeMode(appData.settings.themeMode || 'system');
@@ -1298,6 +1402,7 @@
             if (!currentSessionIp) currentSessionIp = getDummyIp();
             document.getElementById('loginPage').style.display = 'none'; 
             const appContainer = document.getElementById('appContainer');
+            appContainer.style.visibility = 'hidden';
             appContainer.style.display = 'flex';
             appContainer.classList.remove('page-intro');
             void appContainer.offsetWidth;
@@ -1315,6 +1420,7 @@
                 setupHistoryNavigation();
                 syncHistoryRoute('ai-search', null, null, true);
             }
+            requestAnimationFrame(() => { appContainer.style.visibility = 'visible'; });
         }
         function doLogout() {
             const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
@@ -1329,22 +1435,36 @@
             aiSearchActive = null;
             aiSearchHistory = [];
             document.getElementById('loginPage').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
+            const appContainer = document.getElementById('appContainer');
+            appContainer.style.display = 'none';
+            appContainer.style.visibility = 'visible';
             closeHeaderProfileOverlay();
             currentLoginUser = null;
         }
         function saveSettings() {
-            const notifyEl = document.getElementById('setNotify');
-            const smsEl = document.getElementById('setSms');
             const osNotifyEl = document.getElementById('setOsNotify');
             const themeEl = document.querySelector('input[name="themeMode"]:checked');
             const initialViewEl = document.querySelector('input[name="initialView"]:checked');
+            const notifyMasterEl = document.querySelector('input[name="notifyMasterMode"]:checked');
+            const notifyLevelEl = document.querySelector('input[name="notifyLevelMode"]:checked');
+            const notifyTimeEl = document.querySelector('input[name="notifyTimeMode"]:checked');
+            const notifyTimeStartEl = document.getElementById('setNotifyTimeStart');
+            const notifyTimeEndEl = document.getElementById('setNotifyTimeEnd');
+            const notifyExcludeEl = document.getElementById('setNotifyExcludeKeywords');
+            const notifyIncludeEl = document.getElementById('setNotifyIncludeKeywords');
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
-            appData.settings.notify = !!(notifyEl && notifyEl.checked);
-            appData.settings.sms = !!(smsEl && smsEl.checked);
             appData.settings.osNotify = !(osNotifyEl && !osNotifyEl.checked);
             appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
             appData.settings.initialView = initialViewEl && initialViewEl.value === 'dashboard' ? 'dashboard' : 'ai-search';
+            appData.settings.notifyPolicy = normalizeNotifyPolicy({
+                master: notifyMasterEl && notifyMasterEl.value === 'block' ? 'block' : 'allow',
+                level: notifyLevelEl && notifyLevelEl.value === 'important' ? 'important' : 'all',
+                timeMode: notifyTimeEl ? String(notifyTimeEl.value || 'work') : 'work',
+                customStart: notifyTimeStartEl ? String(notifyTimeStartEl.value || '09:00') : '09:00',
+                customEnd: notifyTimeEndEl ? String(notifyTimeEndEl.value || '18:00') : '18:00',
+                excludeKeywords: normalizeKeywordList(notifyExcludeEl ? notifyExcludeEl.value : ''),
+                includeKeywords: normalizeKeywordList(notifyIncludeEl ? notifyIncludeEl.value : ''),
+            });
             applyThemeMode(appData.settings.themeMode);
             saveData();
             showAlert('설정이 저장되었습니다.', 'success');
@@ -1359,7 +1479,7 @@
             fetchJson('/api/db/reset', { method: 'POST' })
                 .then(() => {
                     clearCookie(USER_SCOPE_COOKIE);
-                    appData = { posts: [], settings: { notify: true, sms: false, osNotify: true, initialView: 'ai-search' } };
+                    appData = { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
                     signupUsers = [];
                     currentSessionIp = '';
                     doLogout();
@@ -1894,7 +2014,7 @@
             return { text: legacyText, html: '', hasContent: !!legacyText, updatedAt: 0 };
         }
         function getBoardHelpUiState() {
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };
             if (!appData.settings.boardHelpUi || typeof appData.settings.boardHelpUi !== 'object') appData.settings.boardHelpUi = {};
             const ui = appData.settings.boardHelpUi;
             if (!ui.collapsedByType || typeof ui.collapsedByType !== 'object') ui.collapsedByType = {};
@@ -2100,7 +2220,7 @@
         }
         function saveBoardHelpEditor() {
             if (currentRole !== 'it') return;
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { notify: true, sms: false, osNotify: true, initialView: 'ai-search' };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedMap = loadSharedBoardHelpMap();
             const editor = document.getElementById('boardHelpEditor');
@@ -2609,7 +2729,7 @@
             if (!viewList) return;
             const wrap = viewList.querySelector('.table-wrap');
             if (!wrap) return;
-            const shouldCard = window.innerWidth <= 768 || wrap.clientWidth < 800;
+            const shouldCard = window.innerWidth <= 1024 || wrap.clientWidth < 800;
             viewList.classList.toggle('list-card-mode', shouldCard);
         }
         function syncBoardToolbarCompactMode() {

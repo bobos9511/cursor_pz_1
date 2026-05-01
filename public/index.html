@@ -1006,22 +1006,60 @@
                         <h2 class="page-title">환경 설정</h2>
                         <div class="panel p-20">
                             <div class="panel-header" style="border:none; padding:0 0 20px 0;">알림 수신 설정</div>
-                            <div class="flex-col gap-20">
-                                <div class="flex items-center justify-between">
-                                    <span>답변 등록 시 메신저 알림 수신</span>
-                                    <input type="checkbox" id="setNotify" style="width:20px; height:20px;">
+                            <div class="flex-col gap-15">
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">1) 알림 설정 여부</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyMasterMode" value="allow">
+                                        <span>전체 알림 허용 (기본값)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyMasterMode" value="block">
+                                        <span>전체 알림 차단 (알림센터에는 기록)</span>
+                                    </label>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span>오류 지연 시 SMS 알림 수신</span>
-                                    <input type="checkbox" id="setSms" style="width:20px; height:20px;">
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">2) 중요도 선택 수신</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyLevelMode" value="all">
+                                        <span>모든 알림 받기</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyLevelMode" value="important">
+                                        <span>중요 알림만 받기</span>
+                                    </label>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span>운영체제(OS) 알림 사용</span>
-                                    <input type="checkbox" id="setOsNotify" style="width:20px; height:20px;">
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">3) 알림 수신 시간대</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="work">
+                                        <span>업무시간 (09:00 ~ 18:00)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="night">
+                                        <span>야간시간 (18:00 ~ 09:00)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="custom">
+                                        <span>시작시간 ~ 종료시간 (수기입력)</span>
+                                    </label>
+                                    <div class="flex items-center gap-10 notification-time-range">
+                                        <input id="setNotifyTimeStart" type="time" class="input" value="09:00">
+                                        <span>~</span>
+                                        <input id="setNotifyTimeEnd" type="time" class="input" value="18:00">
+                                    </div>
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">4) 특정 키워드 알림 제외 목록</div>
+                                    <input id="setNotifyExcludeKeywords" type="text" class="input" placeholder="예: 점검, 테스트, 홍보 (쉼표로 구분)">
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">5) 특정 키워드 알림 허용 목록</div>
+                                    <input id="setNotifyIncludeKeywords" type="text" class="input" placeholder="예: 장애, 오류, 긴급 (쉼표로 구분)">
                                 </div>
                             </div>
                             <p style="font-size:12px; color:#64748b; margin:8px 0 0 0;">
-                                브라우저 알림 권한이 필요하며, 권한이 거부된 경우 페이지 내 알림으로 대체됩니다.
+                                알림센터에는 모든 알림이 기록됩니다. 위 설정은 사용자에게 표시되는 알림(토스트/OS 알림)만 제어합니다.
                             </p>
                             <div class="panel-header" style="border:none; padding:20px 0 12px 0;">테마 모드</div>
                             <div class="flex-col gap-10">

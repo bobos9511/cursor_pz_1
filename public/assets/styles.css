@@ -755,6 +755,22 @@
             height: 18px;
             accent-color: var(--ibk-blue);
         }
+        .notification-policy-box {
+            border: 1px solid #dbe7f5;
+            border-radius: 10px;
+            background: #f8fbff;
+            padding: 10px 12px;
+        }
+        .notification-policy-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .notification-time-range .input {
+            width: 140px;
+            max-width: 100%;
+        }
 
         .auth-radio { display: none; }
         .auth-label { display: block; border: 1px solid #ccc; text-align: center; padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #666; cursor: pointer; transition: 0.2s; }
@@ -809,6 +825,9 @@
             flex-wrap: nowrap !important;
             align-items: center !important;
             gap: 8px !important;
+            background: transparent !important;
+            border-bottom-color: transparent !important;
+            padding-bottom: 8px !important;
         }
         #view-list.board-tools-compact #adminListTools {
             display: none !important;
@@ -1975,6 +1994,13 @@
         body[data-theme="dark"] .btn {
             border-color: #465b79;
             color: #e6edf8;
+        }
+        body[data-theme="dark"] .notification-policy-box {
+            background: #16243a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .notification-policy-title {
+            color: #dce7f6;
         }
         body[data-theme="dark"] .btn-outline {
             background: #1a263b;
