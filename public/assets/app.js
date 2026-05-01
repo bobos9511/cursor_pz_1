@@ -3515,6 +3515,13 @@
         document.addEventListener('click', () => {
             closeHeaderActionsLayer();
         });
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const integratedModal = document.getElementById('integratedSearchModal');
+            if (integratedModal && integratedModal.classList.contains('active')) {
+                closeIntegratedSearchModal();
+            }
+        });
 
         async function bootstrapSession() {
             await loadSignupUsers();
