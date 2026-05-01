@@ -84,10 +84,10 @@
             cursor: pointer;
             line-height: 1.04;
             letter-spacing: -0.6px;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.65);
             opacity: 0;
             animation: loginLogoIn 0.52s cubic-bezier(.2,.8,.2,1) forwards;
         }
+        .login-brand-point { color: var(--ibk-light); }
         .login-brand-subtitle {
             display: inline-flex;
             align-items: center;
@@ -472,6 +472,18 @@
             border-radius: 12px;
             padding: 12px;
             text-align: center;
+        }
+        .vein-title { color: var(--ibk-blue); }
+        .vein-guide-text { color: #64748b; }
+        .vein-fingerprint-btn {
+            background: #eff6ff;
+            border: 2px solid #bae6fd;
+            box-shadow: 0 8px 22px rgba(14, 116, 144, 0.16), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .vein-fingerprint-btn .icon { color: #38bdf8; }
+        .signup-admin-grant input[type="checkbox"] {
+            accent-color: var(--ibk-blue);
+            border-radius: 4px;
         }
         .profile-dept-label { font-size: 11px; color: #64748b; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.15px; }
         .profile-dept-value { font-size: 14px; color: #0f172a; font-weight: 800; }
@@ -1492,6 +1504,68 @@
             font-size: 11px;
             color: #94a3b8;
         }
+        .admin-help-hero {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #bfdbfe;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+            margin-bottom: 14px;
+        }
+        .admin-help-hero-title {
+            font-size: 14px;
+            font-weight: 900;
+            color: #1e3a8a;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .admin-help-hero-sub {
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.6;
+        }
+        .admin-help-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .admin-help-card {
+            border: 1px solid #dbe7f5;
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px 12px;
+        }
+        .admin-help-card-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #1d4ed8;
+            margin-bottom: 6px;
+        }
+        .admin-help-card ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #334155;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .admin-help-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .admin-help-chip {
+            font-size: 11px;
+            font-weight: 800;
+            border-radius: 999px;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            background: #eff6ff;
+            padding: 3px 8px;
+        }
         .dtl-similar-empty {
             font-size: 13px;
             color: #94a3b8;
@@ -1935,6 +2009,24 @@
             background: #16243a !important;
             color: #dce7f6 !important;
         }
+        body[data-theme="dark"] .dtl-similar-card {
+            background: #162841;
+            border-color: #3f5475;
+            box-shadow: 0 6px 16px rgba(3, 12, 30, 0.35);
+        }
+        body[data-theme="dark"] .dtl-similar-card:hover {
+            border-color: #5d79a1;
+            box-shadow: 0 8px 20px rgba(3, 12, 30, 0.45);
+        }
+        body[data-theme="dark"] .dtl-similar-card-title {
+            color: #bfdbfe;
+        }
+        body[data-theme="dark"] .dtl-similar-card-snippet {
+            color: #c8d7eb;
+        }
+        body[data-theme="dark"] .dtl-similar-card-meta {
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] #view-detail #addInfoBox .panel-header {
             background: #3a2a14 !important;
             color: #fde68a !important;
@@ -1974,6 +2066,10 @@
         body[data-theme="dark"] .profile-overlay-body,
         body[data-theme="dark"] .profile-overlay-foot {
             background: transparent;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .profile-dept-box {
+            background: linear-gradient(180deg, #172841 0%, #13233a 100%);
             border-color: #3f5475;
         }
         body[data-theme="dark"] .profile-contact-item {
@@ -2022,12 +2118,53 @@
             color: #e6edf8;
             border-bottom-color: #3f5475;
         }
+        body[data-theme="dark"] .admin-perms-table {
+            background: #13233a;
+        }
+        body[data-theme="dark"] .admin-perms-table tbody tr {
+            background: #13233a;
+        }
+        body[data-theme="dark"] .admin-perms-table tbody tr:nth-child(even) {
+            background: #152842;
+        }
         body[data-theme="dark"] .admin-perms-table td {
             color: #dce7f6;
             border-bottom-color: #2c3f5d;
         }
+        body[data-theme="dark"] .admin-perm-isadmin {
+            accent-color: #60a5fa;
+            filter: saturate(1.1);
+        }
         body[data-theme="dark"] #adminAiHelpModal hr {
             border-top-color: #3f5475 !important;
+        }
+        body[data-theme="dark"] .admin-help-hero {
+            border-color: #3f5475;
+            background: linear-gradient(135deg, #1b2c47 0%, #15243b 100%);
+        }
+        body[data-theme="dark"] .admin-help-hero-title {
+            color: #bfdbfe;
+        }
+        body[data-theme="dark"] .admin-help-hero-sub {
+            color: #c8d7eb;
+        }
+        body[data-theme="dark"] .admin-help-card {
+            background: #13233a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-help-card-title {
+            color: #93c5fd;
+        }
+        body[data-theme="dark"] .admin-help-card ul {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .admin-help-chip {
+            background: #1b3354;
+            border-color: #496281;
+            color: #bfdbfe;
+        }
+        body[data-theme="dark"] .ai-content-text.collapsed::after {
+            background: linear-gradient(180deg, rgba(17,28,48,0), rgba(17,28,48,1));
         }
         body[data-theme="dark"] #loginPage {
             background: radial-gradient(circle at 15% 10%, #13243f 0%, #0e1a2d 45%, #0a1424 100%);
@@ -2046,6 +2183,13 @@
             border-color: #3f5475;
             box-shadow: 0 20px 44px rgba(2, 8, 24, 0.55);
         }
+        body[data-theme="dark"] #loginPage .login-brand-title {
+            color: #7fb7ff;
+            text-shadow: none;
+        }
+        body[data-theme="dark"] #loginPage .login-brand-point {
+            color: #8fd9ff;
+        }
         body[data-theme="dark"] #loginPage .login-brand-subtitle {
             color: #dce7f6;
             background: linear-gradient(180deg, #203554, #1a2b45);
@@ -2055,6 +2199,16 @@
         body[data-theme="dark"] #loginPage label {
             color: #c8d7eb !important;
         }
+        body[data-theme="dark"] #loginSsoBtn {
+            border-color: #4f7fb8 !important;
+            color: #dce7f6 !important;
+            background: linear-gradient(180deg, #1c2f4c, #162841) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        body[data-theme="dark"] #loginSsoBtn:hover {
+            background: linear-gradient(180deg, #243c5f, #1b3150) !important;
+            border-color: #6a97cf !important;
+        }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,
@@ -2062,6 +2216,53 @@
             background: #121b2d;
             border-color: #3f5475;
             color: #dce7f6;
+        }
+        body[data-theme="dark"] .signup-modal-title,
+        body[data-theme="dark"] .member-list-modal-title,
+        body[data-theme="dark"] .login-test-tools-modal-title {
+            color: #e6edf8 !important;
+        }
+        body[data-theme="dark"] #loginTestToolsModal .btn[style*="background: #eff6ff"],
+        body[data-theme="dark"] #loginTestToolsModal .btn[style*="background:#eff6ff"] {
+            background: linear-gradient(180deg, #1d3f6e, #18335a) !important;
+            border-color: #3d5f8d !important;
+            color: #dbeafe !important;
+        }
+        body[data-theme="dark"] #loginTestToolsModal .btn[style*="background: #f8fafc"],
+        body[data-theme="dark"] #loginTestToolsModal .btn[style*="background:#f8fafc"] {
+            background: #17243a !important;
+            border-color: #3f5475 !important;
+            color: #d4e0f2 !important;
+        }
+        body[data-theme="dark"] .signup-admin-grant {
+            background: #17243a !important;
+            border-color: #3f5475 !important;
+        }
+        body[data-theme="dark"] .signup-admin-grant label {
+            color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] .signup-admin-grant input[type="checkbox"] {
+            accent-color: #60a5fa;
+            outline: 1px solid #4a5f7f;
+            outline-offset: 1px;
+        }
+        body[data-theme="dark"] .vein-title { color: #93c5fd; }
+        body[data-theme="dark"] .vein-guide-text { color: #b8c7dc; }
+        body[data-theme="dark"] .vein-fingerprint-btn {
+            background: radial-gradient(circle at 30% 30%, #1f4f7d 0%, #153559 65%, #122846 100%);
+            border-color: #3f6ea0;
+            box-shadow: 0 10px 24px rgba(3, 12, 30, 0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        body[data-theme="dark"] .vein-fingerprint-btn .icon {
+            color: #93c5fd;
+        }
+        body[data-theme="dark"] .know-rag-banner {
+            background: linear-gradient(135deg, #1b2c47 0%, #15243b 100%);
+            border-color: #3f5475;
+            box-shadow: none;
+        }
+        body[data-theme="dark"] .know-rag-title {
+            color: #bfdbfe;
         }
         body[data-theme="dark"] .admin-ai-log-detail-title { color: #b8c7dc; }
         body[data-theme="dark"] .admin-ai-log-detail-card [style*="color:#334155"],
@@ -2390,6 +2591,41 @@
             }
             .write-category-grid { grid-template-columns: 1fr; gap: 8px; }
             .write-category-btn { min-height: 42px; font-size: 12px; padding: 7px 10px; }
+            #view-write .panel[style*="padding: 40px"] {
+                padding: 14px !important;
+            }
+            #view-write #writeDynamicFields {
+                margin-bottom: 16px !important;
+                gap: 12px !important;
+            }
+            #view-write .know-form-shell {
+                padding: 10px;
+                border-radius: 10px;
+            }
+            #view-write .know-form-item {
+                padding: 10px;
+            }
+            #view-write .know-form-item .input,
+            #view-write .know-form-item textarea,
+            #view-write .know-form-item select {
+                width: 100%;
+                min-width: 0;
+            }
+            #view-write .write-section-card {
+                margin-bottom: 14px !important;
+            }
+            #view-write .write-section-card .input[type="file"] {
+                font-size: 12px;
+                padding: 8px;
+            }
+            #view-write .editor-shell .editor-toolbar {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            #view-write .editor-shell .editor-toolbar .editor-btn,
+            #view-write .editor-shell .editor-toolbar .editor-select {
+                flex: 0 0 auto;
+            }
             #view-list .table tbody td {
                 display: flex;
                 align-items: center;

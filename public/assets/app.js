@@ -2734,7 +2734,6 @@
             
             // 메타
             const metaBox = document.getElementById('dtlMetaBox');
-            const editHistoryBox = document.getElementById('dtlEditHistoryBox');
             const hasMeta = !!(
                 (post.meta && (post.meta.gid || post.meta.custType || post.meta.custVal1 || post.meta.custVal2 || post.meta.errCode || post.meta.errMsg || post.meta.knowErrorMemo || post.meta.knowQuestion || post.meta.knowAnswer || post.meta.knowMemo))
                 || (Array.isArray(post.attachments) && post.attachments.length > 0)
@@ -2767,16 +2766,13 @@
                 mHtml += '</div>';
                 metaBox.innerHTML = mHtml;
             } else { metaBox.classList.add('hidden'); }
-            if (editHistoryBox) {
-                if (Array.isArray(post.editHistory) && post.editHistory.length > 0) {
-                    editHistoryBox.classList.remove('hidden');
-                    const list = [...post.editHistory].reverse().map(h =>
-                        `<div class="meta-item"><div class="meta-item-label">${h.datetime || '-'}</div><div class="meta-item-value">${h.editor || '-'} 수정</div></div>`
-                    ).join('');
-                    editHistoryBox.innerHTML = `<div class="meta-field-title">수정 이력</div><div class="meta-grid">${list}</div>`;
-                } else {
-                    editHistoryBox.classList.add('hidden');
-                }
+            const editHistoryBtn = document.getElementById('dtlEditHistoryBtn');
+            const editHistoryBadge = document.getElementById('dtlEditHistoryBadge');
+            const editHistoryCount = Array.isArray(post.editHistory) ? post.editHistory.length : 0;
+            if (editHistoryBtn) editHistoryBtn.classList.toggle('hidden', editHistoryCount <= 0);
+            if (editHistoryBadge) {
+                editHistoryBadge.classList.toggle('hidden', editHistoryCount <= 0);
+                editHistoryBadge.innerText = editHistoryCount > 0 ? String(editHistoryCount) : '';
             }
 
             // 본문 + 추가질의/답변 이력
@@ -3575,6 +3571,39 @@
             document.getElementById('similarPostModal').classList.add('active');
         }
         function closeSimilarPostModal() { document.getElementById('similarPostModal').classList.remove('active'); }
+
+        function openEditHistoryModal() {
+            const modal = document.getElementById('editHistoryModal');
+            const body = document.getElementById('editHistoryModalBody');
+            if (!modal || !body) return;
+            const post = getPostByIdAndType(currentPostId, currentBoardType);
+            const hist = post && Array.isArray(post.editHistory) ? [...post.editHistory].reverse() : [];
+            if (!hist.length) {
+                body.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">수정 이력이 없습니다.</div>';
+                modal.classList.add('active');
+                return;
+            }
+            body.innerHTML = `
+                <div class="meta-field-group" style="margin-bottom:0;">
+                    <div class="meta-field-title">총 ${hist.length}건</div>
+                    <div class="meta-grid">
+                        ${hist
+                            .map(
+                                (h) => `<div class="meta-item">
+                                    <div class="meta-item-label">${escapeHtml(h.datetime || '-')}</div>
+                                    <div class="meta-item-value">${escapeHtml(h.editor || '-')} 수정</div>
+                                </div>`,
+                            )
+                            .join('')}
+                    </div>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+        function closeEditHistoryModal() {
+            const modal = document.getElementById('editHistoryModal');
+            if (modal) modal.classList.remove('active');
+        }
         window.addEventListener('resize', () => {
             closeHeaderActionsLayer();
             updateHeaderActionOverflow();

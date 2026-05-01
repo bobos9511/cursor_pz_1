@@ -59,7 +59,7 @@
         <div class="login-bg"></div>
         <div class="login-box">
             <div class="text-center mb-20">
-                <div class="font-bold login-brand-title" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기">IBK KN<span style="color: var(--ibk-light);">O</span>CK</div>
+                <div class="font-bold login-brand-title" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기">IBK KN<span class="login-brand-point">O</span>CK</div>
                 <p class="login-brand-subtitle">IBK 스마트 업무지식센터</p>
             </div>
             
@@ -107,7 +107,7 @@
                     <div class="flex-1" style="border-top: 1px solid #eee;"></div>
                 </div>
 
-                <button type="button" onclick="doLogin()" class="btn w-full" style="border: 2px solid var(--ibk-blue); color: var(--ibk-blue); background: #fff; padding: 14px; font-size: 15px;">통합인증 (SSO) 자동 로그인</button>
+                <button type="button" id="loginSsoBtn" onclick="doLogin()" class="btn w-full" style="border: 2px solid var(--ibk-blue); color: var(--ibk-blue); background: #fff; padding: 14px; font-size: 15px;">통합인증 (SSO) 자동 로그인</button>
             </form>
         </div>
     </div>
@@ -120,10 +120,10 @@
                 <button class="btn-icon" onclick="cancelVein()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body" style="padding: 30px;">
-                <h3 style="font-size: 20px; font-weight: bold; color: var(--ibk-blue); margin-bottom: 10px;">지정맥 인증</h3>
-                <p style="color: #666; margin-bottom: 25px;">단말기에 손가락을 올려주세요.</p>
-                <div onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기" style="background: #eff6ff; padding: 30px; border-radius: 50%; width: 120px; height: 120px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; border: 2px solid #bae6fd; cursor: pointer;">
-                    <svg class="icon icon-xl" style="color: #38bdf8;"><use href="#icon-fingerprint"></use></svg>
+                <h3 class="vein-title" style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">지정맥 인증</h3>
+                <p class="vein-guide-text" style="margin-bottom: 25px;">단말기에 손가락을 올려주세요.</p>
+                <div class="vein-fingerprint-btn" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기" style="padding: 30px; border-radius: 50%; width: 120px; height: 120px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <svg class="icon icon-xl"><use href="#icon-fingerprint"></use></svg>
                 </div>
                 <div class="flex">
                     <button class="btn btn-outline w-full" onclick="cancelVein()">취소</button>
@@ -136,7 +136,7 @@
     <div id="signupModal" class="modal-overlay" style="z-index: 120;">
         <div class="modal-content" style="max-width: 520px;">
             <div class="modal-header">
-                <h3 style="font-size:18px; color: var(--ibk-blue);">테스트용 회원가입</h3>
+                <h3 class="signup-modal-title" style="font-size:18px;">테스트용 회원가입</h3>
                 <button class="btn-icon" onclick="closeSignupModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <form onsubmit="event.preventDefault(); submitSignup();" class="modal-body flex-col gap-10">
@@ -205,7 +205,7 @@
                     <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">휴대전화번호</label>
                     <input type="text" id="signupMobileNo" class="input" placeholder="예: 010-0000-0000" value="010-0000-0000">
                 </div>
-                <div class="flex items-center gap-10" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+                <div class="flex items-center gap-10 signup-admin-grant" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
                     <input type="checkbox" id="signupIsAdmin" style="width:18px; height:18px;">
                     <label for="signupIsAdmin" class="font-bold" style="margin:0; color:#334155; cursor:pointer;">플랫폼 관리자 권한 부여</label>
                 </div>
@@ -225,7 +225,7 @@
     <div id="memberListModal" class="modal-overlay" style="z-index: 121;">
         <div class="modal-content" style="max-width: 920px; width: min(92vw, 920px);">
             <div class="modal-header">
-                <h3 style="font-size:18px; color: var(--ibk-blue);">저장된 회원 목록 관리 (테스트용)</h3>
+                <h3 class="member-list-modal-title" style="font-size:18px;">저장된 회원 목록 관리 (테스트용)</h3>
                 <button class="btn-icon" onclick="closeMemberListModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body">
@@ -242,7 +242,7 @@
     <div id="loginTestToolsModal" class="modal-overlay" style="z-index: 122;">
         <div class="modal-content" style="max-width: 360px;">
             <div class="modal-header">
-                <h3 style="font-size:18px; color: var(--ibk-blue);">테스트 도구</h3>
+                <h3 class="login-test-tools-modal-title" style="font-size:18px;">테스트 도구</h3>
                 <button class="btn-icon" onclick="closeLoginTestToolsModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body flex-col gap-10">
@@ -684,13 +684,16 @@
                                         <div class="flex items-center gap-20 text-gray" style="font-size: 13px;">
                                             <span><svg class="icon"><use href="#icon-user"></use></svg> <span id="dtlWriter"></span></span>
                                             <span><svg class="icon"><use href="#icon-clock"></use></svg> <span id="dtlTime"></span></span>
+                                            <button type="button" id="dtlEditHistoryBtn" class="btn btn-outline hidden" style="padding:4px 10px; font-size:12px;" onclick="openEditHistoryModal()">
+                                                <svg class="icon"><use href="#icon-history"></use></svg> 수정이력
+                                                <span id="dtlEditHistoryBadge" class="badge bg-error hidden" style="margin-left:6px; padding:1px 6px; font-size:10px;"></span>
+                                            </button>
                                             <span class="hidden sm:inline-block"><i class="fas fa-network-wired mr-1 text-gray-400"></i><span id="dtlIp"></span></span>
                                         </div>
                                     </div>
                                     <div style="padding: 30px; font-size: 15px; line-height: 1.8;">
                                         <!-- 메타 정보 영역 -->
                                         <div id="dtlMetaBox" class="meta-field-group hidden"></div>
-                                        <div id="dtlEditHistoryBox" class="meta-field-group hidden"></div>
                                         <!-- 본문 내용 출력 -->
                                         <div id="dtlContent" style="min-height: 100px;"></div>
                                     </div>
@@ -1085,11 +1088,13 @@
                                             <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-settings-subhint">Temperature가 높을수록 문장 다양성이 올라가고, 낮을수록 사실 중심의 답변이 안정적입니다.</div>
                                         <div class="admin-gen-row">
                                             <label class="admin-gen-label">Top-P</label>
                                             <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-settings-subhint">Top-P는 답변 후보 폭을 조절합니다. 낮추면 보수적, 높이면 표현 범위가 넓어집니다.</div>
                                     </div>
                                 </div>
                                 <div class="admin-ai-post-panel hidden" data-board="BIZ">
@@ -1105,11 +1110,13 @@
                                             <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-settings-subhint">Temperature가 높으면 설명형 문장이 자연스러워지고, 낮으면 규정형 답변의 일관성이 높아집니다.</div>
                                         <div class="admin-gen-row">
                                             <label class="admin-gen-label">Top-P</label>
                                             <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-settings-subhint">Top-P는 단어 선택 폭 제어값입니다. 규정/상품 안내는 0.8~0.95 범위에서 시작하는 것을 권장합니다.</div>
                                     </div>
                                 </div>
                                 <!-- SYS/KNOW는 AI 답변 기능을 사용하지 않으므로 설정에서 제외 -->
@@ -1383,6 +1390,19 @@
             <div id="adminAiHelpModalBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeAdminAiHelpModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editHistoryModal" class="modal-overlay" style="z-index: 1016;">
+        <div class="modal-content" style="max-width: 640px; width:min(94vw,640px);">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">수정 이력</h3>
+                <button class="btn-icon" onclick="closeEditHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="editHistoryModalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeEditHistoryModal()">닫기</button>
             </div>
         </div>
     </div>

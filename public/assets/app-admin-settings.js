@@ -536,49 +536,106 @@ function openAdminAiHelpModal(topic) {
         chat: {
             title: "AI 채팅 설정 도움말",
             html: `
-                <div style="line-height:1.65;">
-                    <p><strong>시스템 프롬프트</strong>: AI 채팅의 말투/역할/금지사항을 정합니다. 비워두면 기본 프롬프트가 적용됩니다.</p>
-                    <p><strong>Temperature</strong>: 0에 가까울수록 안정적, 1에 가까울수록 창의적입니다.</p>
-                    <p><strong>Top-P</strong>: 후보 단어 범위를 제한해 답변의 다양성을 조절합니다.</p>
-                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
-                    <p><strong>운영 가이드(권장값)</strong></p>
-                    <p>- 일반 업무 Q&A: Temperature <b>0.2~0.4</b>, Top-P <b>0.7~0.9</b></p>
-                    <p>- 아이디어/초안 작성: Temperature <b>0.5~0.7</b>, Top-P <b>0.8~1.0</b></p>
-                    <p>- 오답이 잦으면 Temperature를 먼저 낮추고, 그 다음 Top-P를 낮춰 보세요.</p>
-                    <p><strong>운영 예시</strong>: "내부 규정 질의 답변이 들쭉날쭉"할 때 Temperature를 0.3으로 고정하고 Top-P를 0.8로 두면 일관성이 올라갑니다.</p>
+                <div class="admin-help-hero">
+                    <div class="admin-help-hero-title">CHAT 운영 가이드</div>
+                    <div class="admin-help-hero-sub">업무 Q&A는 안정성 중심, 초안 작성은 유연성 중심으로 운영하세요.</div>
+                    <div class="admin-help-chip-row">
+                        <span class="admin-help-chip">권장 Temperature 0.2~0.4</span>
+                        <span class="admin-help-chip">권장 Top-P 0.7~0.9</span>
+                    </div>
+                </div>
+                <div class="admin-help-grid">
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">핵심 설정 의미</div>
+                        <ul>
+                            <li><b>시스템 프롬프트</b>: 말투/역할/금지사항을 정의합니다. 비우면 기본 프롬프트를 사용합니다.</li>
+                            <li><b>Temperature</b>: 낮을수록 일관적, 높을수록 창의적입니다.</li>
+                            <li><b>Top-P</b>: 후보 단어 범위를 제어해 표현 다양성을 조절합니다.</li>
+                        </ul>
+                    </div>
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">운영 팁</div>
+                        <ul>
+                            <li>일반 업무 답변: Temperature 0.2~0.4, Top-P 0.7~0.9</li>
+                            <li>아이디어/초안: Temperature 0.5~0.7, Top-P 0.8~1.0</li>
+                            <li>오답 증가 시 Temperature를 먼저 낮춘 후 Top-P를 조정하세요.</li>
+                        </ul>
+                    </div>
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">실무 예시</div>
+                        <ul>
+                            <li>"규정 답변이 들쭉날쭉"하면 Temperature 0.3, Top-P 0.8부터 고정 운영합니다.</li>
+                        </ul>
+                    </div>
                 </div>
             `,
         },
         post: {
             title: "AI 답변(게시물) 설정 도움말",
             html: `
-                <div style="line-height:1.65;">
-                    <p><strong>IT/규정 게시판별 프롬프트</strong>: 게시판 성격에 맞는 답변 기준을 분리해 설정합니다.</p>
-                    <p><strong>Temperature/Top-P</strong>: IT 문의는 보수적으로(낮게), 설명형 규정문의는 약간 높게 두면 자연스럽습니다.</p>
-                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
-                    <p><strong>운영 가이드(권장값)</strong></p>
-                    <p>- IT 문의 자동답변: Temperature <b>0.1~0.3</b>, Top-P <b>0.7~0.85</b></p>
-                    <p>- 규정/상품 안내: Temperature <b>0.2~0.5</b>, Top-P <b>0.8~0.95</b></p>
-                    <p>- 답변이 너무 딱딱하면 Temperature를 0.1씩 올리고, 사실 오류가 생기면 0.1씩 내리세요.</p>
-                    <p><strong>운영 예시</strong>: "규정 설명은 이해하기 쉽게, IT 오류는 정확하게"가 목표라면 게시판별로 다른 프롬프트와 온도를 분리 운영하세요.</p>
+                <div class="admin-help-hero">
+                    <div class="admin-help-hero-title">POST 운영 가이드</div>
+                    <div class="admin-help-hero-sub">게시판 성격(IT/규정)에 맞춰 프롬프트와 생성값을 분리 운영하세요.</div>
+                    <div class="admin-help-chip-row">
+                        <span class="admin-help-chip">IT: T 0.1~0.3 / P 0.7~0.85</span>
+                        <span class="admin-help-chip">BIZ: T 0.2~0.5 / P 0.8~0.95</span>
+                    </div>
+                </div>
+                <div class="admin-help-grid">
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">핵심 설정 의미</div>
+                        <ul>
+                            <li>게시판별 <b>시스템 프롬프트</b>를 분리해 답변 기준을 명확히 합니다.</li>
+                            <li><b>Temperature/Top-P</b>를 분리하면 정확도와 가독성을 동시에 관리할 수 있습니다.</li>
+                        </ul>
+                    </div>
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">운영 팁</div>
+                        <ul>
+                            <li>IT 문의는 낮은 Temperature로 사실/절차 중심으로 운영합니다.</li>
+                            <li>규정/상품 문의는 설명력이 필요한 만큼 Temperature를 약간 높입니다.</li>
+                            <li>값 변경은 한 번에 하나씩 조정 후 결과를 비교하세요.</li>
+                        </ul>
+                    </div>
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">실무 예시</div>
+                        <ul>
+                            <li>"규정은 이해하기 쉽게, IT는 정확하게" 목표라면 게시판별 프롬프트와 온도를 분리하는 것이 안정적입니다.</li>
+                        </ul>
+                    </div>
                 </div>
             `,
         },
         runtime: {
             title: "토큰/이어쓰기 설정 도움말",
             html: `
-                <div style="line-height:1.65;">
-                    <p><strong>최대 토큰</strong>: 1회 응답 길이 제한입니다. 너무 낮으면 답변이 잘릴 수 있고, 너무 높으면 비용/시간이 증가합니다.</p>
-                    <p><strong>이어쓰기 횟수</strong>: 잘린 답변을 자동 이어서 생성하는 시도 횟수입니다.</p>
-                    <p><strong>이어쓰기 시간(ms)</strong>: 이어쓰기 전체 실행의 타임아웃입니다. 장시간 지연 방지용 안전장치입니다.</p>
-                    <p>입력을 비우면 서버 기본값을 자동 사용합니다.</p>
-                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
-                    <p><strong>운영 가이드(초기 권장값)</strong></p>
-                    <p>- 채팅 최대 토큰: <b>1024~2048</b></p>
-                    <p>- 게시물 최대 토큰: <b>1536~3072</b></p>
-                    <p>- 이어쓰기 횟수: <b>1~3</b></p>
-                    <p>- 이어쓰기 시간: <b>15000~45000ms</b></p>
-                    <p><strong>운영 예시</strong>: 답변이 자주 중간에 끊기면 최대 토큰을 먼저 늘리고, 그래도 끊기면 이어쓰기 횟수를 1씩 늘리세요. 지연이 길면 이어쓰기 시간 제한을 낮춰 응답 체감을 개선할 수 있습니다.</p>
+                <div class="admin-help-hero">
+                    <div class="admin-help-hero-title">RUNTIME 운영 가이드</div>
+                    <div class="admin-help-hero-sub">응답 길이, 끊김, 지연시간은 토큰과 이어쓰기 설정으로 균형을 맞춥니다.</div>
+                    <div class="admin-help-chip-row">
+                        <span class="admin-help-chip">채팅 토큰 1024~2048</span>
+                        <span class="admin-help-chip">게시물 토큰 1536~3072</span>
+                        <span class="admin-help-chip">이어쓰기 1~3회</span>
+                    </div>
+                </div>
+                <div class="admin-help-grid">
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">핵심 설정 의미</div>
+                        <ul>
+                            <li><b>최대 토큰</b>: 1회 응답 길이 제한</li>
+                            <li><b>이어쓰기 횟수</b>: 잘린 답변 자동 이어쓰기 시도 횟수</li>
+                            <li><b>이어쓰기 시간(ms)</b>: 전체 이어쓰기 타임아웃</li>
+                        </ul>
+                    </div>
+                    <div class="admin-help-card">
+                        <div class="admin-help-card-title">운영 팁</div>
+                        <ul>
+                            <li>답변이 자주 끊기면 최대 토큰을 먼저 늘립니다.</li>
+                            <li>그래도 끊기면 이어쓰기 횟수를 1씩 증가시킵니다.</li>
+                            <li>지연이 길면 이어쓰기 시간 제한을 낮춰 체감 속도를 개선합니다.</li>
+                            <li>입력을 비우면 서버 기본값이 자동 적용됩니다.</li>
+                        </ul>
+                    </div>
                 </div>
             `,
         },
