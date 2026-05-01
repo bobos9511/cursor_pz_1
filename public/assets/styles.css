@@ -2497,6 +2497,10 @@
             border-color: #3f5475;
             color: #dce7f6;
         }
+        body[data-theme="dark"] .admin-ai-log-modal-body {
+            background: #13233a;
+            color: #dce7f6;
+        }
         body[data-theme="dark"] .admin-perms-table thead th {
             background: #1c2f4c;
             color: #e6edf8;
@@ -4223,6 +4227,9 @@
             overflow: auto;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+        .admin-ai-log-modal-body {
+            background: #f8fafc;
         }
         @media (max-width: 768px) {
             .admin-ai-log-detail-grid {

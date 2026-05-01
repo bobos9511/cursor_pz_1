@@ -586,26 +586,69 @@ function closeAdminAiApiLogModal() {
     if (modal) modal.classList.remove("active");
 }
 
+function getAdminAiApiBoardMeta(boardTypeRaw) {
+    const boardType = String(boardTypeRaw || "").toUpperCase();
+    if (boardType === "CHAT") {
+        return { boardType, boardLabel: "AI채팅", settingsLabel: "AI채팅 설정", isChat: true };
+    }
+    if (boardType === "IT") {
+        return { boardType, boardLabel: "AI답변(IT)", settingsLabel: "AI답변 설정(IT)", isChat: false };
+    }
+    if (boardType === "BIZ") {
+        return { boardType, boardLabel: "AI답변(규정/상품)", settingsLabel: "AI답변 설정(규정/상품)", isChat: false };
+    }
+    return { boardType, boardLabel: boardType || "-", settingsLabel: "AI 설정", isChat: false };
+}
+
+function normalizeAdminAiApiLogText(rawText) {
+    let text = String(rawText || "").replace(/\r/g, "").trim();
+    if (!text) return "";
+    const PARA_MARK = "__ADMIN_AI_LOG_PARA__";
+    const LIST_MARK = "__ADMIN_AI_LOG_LIST__";
+    text = text
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/\n{2,}/g, PARA_MARK)
+        .replace(/\n(?=\s*(?:[-*•]|[0-9]+[.)]))/g, LIST_MARK)
+        .replace(/([가-힣A-Za-z]{1,3})\n([가-힣A-Za-z]{1,3})/g, "$1$2")
+        .replace(/\n/g, " ")
+        .replace(new RegExp(LIST_MARK, "g"), "\n")
+        .replace(new RegExp(PARA_MARK, "g"), "\n\n")
+        .replace(/[ \t]{2,}/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    return text;
+}
+
 function buildAdminLogInfoRows(log) {
     const final = log && log.final && typeof log.final === "object" ? log.final : {};
     const runtime = log && log.runtime && typeof log.runtime === "object" ? log.runtime : {};
     const generation = log && log.generationConfig && typeof log.generationConfig === "object" ? log.generationConfig : {};
+    const boardMeta = getAdminAiApiBoardMeta(log && log.boardType);
+    const runtimeRows = boardMeta.isChat
+        ? [
+              ["적용 설정", boardMeta.settingsLabel],
+              ["채팅 최대 토큰", String(runtime.chatMaxOutputTokens ?? "-")],
+              ["채팅 이어쓰기 제한", String(runtime.chatMaxContinuations ?? "-")],
+              ["채팅 이어쓰기 시간(ms)", String(runtime.chatMaxContinuationRuntimeMs ?? "-")],
+          ]
+        : [
+              ["적용 설정", boardMeta.settingsLabel],
+              ["게시물 최대 토큰", String(runtime.postMaxOutputTokens ?? "-")],
+              ["게시물 빠른생성 토큰", String(runtime.postFastMaxOutputTokens ?? "-")],
+              ["게시물 이어쓰기 제한", String(runtime.postMaxContinuations ?? "-")],
+              ["게시물 이어쓰기 시간(ms)", String(runtime.postMaxContinuationRuntimeMs ?? "-")],
+          ];
     const rows = [
         ["요청 시각", formatAdminAiApiLogTime(log.createdAt)],
         ["요청자 범위", String(log.requesterScope || "-")],
-        ["게시판 구분", String(log.boardType || "-")],
+        ["게시판 구분", boardMeta.boardLabel],
         ["모델", String(log.model || "-")],
         ["Grounding 사용", log.useGroundingRequested ? "예" : "아니오"],
         ["응답 결과", final.ok ? "성공" : "실패"],
         ["응답 코드", String(final.statusCode || "-")],
         ["이어쓰기 횟수", String(final.continuationCount || 0)],
         ["Truncated", final.truncated ? "예" : "아니오"],
-        ["채팅 최대 토큰", String(runtime.chatMaxOutputTokens ?? "-")],
-        ["게시물 최대 토큰", String(runtime.postMaxOutputTokens ?? "-")],
-        ["채팅 이어쓰기 제한", String(runtime.chatMaxContinuations ?? "-")],
-        ["게시물 이어쓰기 제한", String(runtime.postMaxContinuations ?? "-")],
-        ["채팅 이어쓰기 시간(ms)", String(runtime.chatMaxContinuationRuntimeMs ?? "-")],
-        ["게시물 이어쓰기 시간(ms)", String(runtime.postMaxContinuationRuntimeMs ?? "-")],
+        ...runtimeRows,
         ["요청 maxOutputTokens", String(generation.maxOutputTokens ?? "-")],
         ["요청 temperature", String(generation.temperature ?? "-")],
         ["요청 topP", String(generation.topP ?? "-")],
@@ -640,9 +683,9 @@ function openAdminAiApiLogModal(logId) {
                             - 오류 메시지: ${escapeHtml(String(resp.errorMessage || "-"))}
                         </div>
                         <div class="admin-ai-log-detail-title" style="margin-top:8px;">요청 프롬프트(시도)</div>
-                        <pre class="admin-ai-log-pre">${escapeHtml(String(req.promptText || ""))}</pre>
+                        <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(req.promptText || "")))}</pre>
                         <div class="admin-ai-log-detail-title" style="margin-top:8px;">수신 요약(시도)</div>
-                        <pre class="admin-ai-log-pre">${escapeHtml(String(resp.replyPreview || ""))}</pre>
+                        <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(resp.replyPreview || "")))}</pre>
                     </div>
                   `;
               })
@@ -651,11 +694,11 @@ function openAdminAiApiLogModal(logId) {
     body.innerHTML = `
         <div class="admin-ai-log-detail-grid">${buildAdminLogInfoRows(log)}</div>
         <div class="admin-ai-log-detail-title">요청 제목</div>
-        <pre class="admin-ai-log-pre">${escapeHtml(String(log.title || ""))}</pre>
+        <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(log.title || "")))}</pre>
         <div class="admin-ai-log-detail-title" style="margin-top:10px;">요청 본문 요약</div>
-        <pre class="admin-ai-log-pre">${escapeHtml(String(log.contentPreview || ""))}</pre>
+        <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(log.contentPreview || "")))}</pre>
         <div class="admin-ai-log-detail-title" style="margin-top:10px;">최종 프롬프트(메인)</div>
-        <pre class="admin-ai-log-pre">${escapeHtml(String(log.promptText || ""))}</pre>
+        <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(log.promptText || "")))}</pre>
         <div class="admin-ai-log-detail-title" style="margin-top:10px;">요청/수신 상세 시도 로그</div>
         ${attemptsHtml}
     `;
