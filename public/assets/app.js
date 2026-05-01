@@ -290,6 +290,7 @@
         const AI_SYSTEM_USER_NAME = 'AI';
         let signupUsers = [];
         let currentLoginUser = null;
+        let pendingProfileImageData = '';
         let aiSearchActive = null;
         let aiSearchHistory = [];
         let aiSearchInitialized = false;
@@ -500,6 +501,55 @@
                 .trim();
             return cleaned || fallback;
         }
+        function normalizeProfileImageData(rawValue) {
+            const value = String(rawValue || '').trim();
+            if (!value) return '';
+            if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value)) return '';
+            return value;
+        }
+        function getUserInitial(nameRaw) {
+            const name = String(nameRaw || '').replace(/\s+/g, '');
+            return name ? name.slice(0, 1) : 'U';
+        }
+        function getAvatarGradient(seedRaw) {
+            const seed = String(seedRaw || '');
+            let hash = 0;
+            for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+            const gradients = [
+                'linear-gradient(135deg, #4f46e5, #06b6d4)',
+                'linear-gradient(135deg, #7c3aed, #ec4899)',
+                'linear-gradient(135deg, #2563eb, #10b981)',
+                'linear-gradient(135deg, #0ea5e9, #14b8a6)',
+                'linear-gradient(135deg, #f59e0b, #ef4444)',
+                'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+            ];
+            return gradients[hash % gradients.length];
+        }
+        function findSignupUserByWriter(writerRaw) {
+            const writer = String(writerRaw || '').trim();
+            if (!writer) return null;
+            const token = writer.split(/\s+/)[0] || writer;
+            if (!token) return null;
+            return signupUsers.find((u) => String(u && u.name || '').trim() === token) || null;
+        }
+        function getUserAvatarMarkup(user, nameText, options = {}) {
+            const className = String(options.className || 'user-avatar');
+            const imageData = normalizeProfileImageData(user && user.profileImage);
+            const initial = escapeHtml(getUserInitial(nameText));
+            if (imageData) {
+                return `<span class="${className}"><img src="${imageData}" alt="프로필"></span>`;
+            }
+            const seed = String((user && (user.employeeNo || user.name)) || nameText || 'avatar');
+            const bg = getAvatarGradient(seed);
+            return `<span class="${className}" style="background:${bg};">${initial}</span>`;
+        }
+        function renderWriterWithAvatar(writerRaw, options = {}) {
+            const writerText = normalizeDisplayText(writerRaw, '-');
+            const user = findSignupUserByWriter(writerText);
+            const avatarMarkup = getUserAvatarMarkup(user, writerText, { className: options.avatarClassName || 'writer-avatar' });
+            const wrapperClass = String(options.wrapperClass || 'writer-cell');
+            return `<span class="${wrapperClass}">${avatarMarkup}<span class="writer-name">${escapeHtml(writerText)}</span></span>`;
+        }
         function sanitizeSignupUserRecord(user) {
             if (!user || typeof user !== 'object') return null;
             const out = {
@@ -514,6 +564,7 @@
                 extNo: normalizeDisplayText(user.extNo, '8-0000'),
                 faxNo: normalizeDisplayText(user.faxNo, '02-0000-0000'),
                 mobileNo: normalizeDisplayText(user.mobileNo, '010-0000-0000'),
+                profileImage: normalizeProfileImageData(user.profileImage),
             };
             if (user.isAdmin === true) out.isAdmin = true;
             else if (user.isAdmin === false) out.isAdmin = false;
@@ -1250,6 +1301,105 @@
             document.getElementById('memberListModal').classList.remove('active');
         }
 
+        function updateProfileImagePreview() {
+            const preview = document.getElementById('profileImagePreview');
+            if (!preview) return;
+            const activeUser = currentLoginUser || roleMatrix[currentRole];
+            const nameText = normalizeDisplayText(activeUser && activeUser.name, '사용자');
+            const rawImage = pendingProfileImageData === '__REMOVE__'
+                ? ''
+                : (pendingProfileImageData || (activeUser && activeUser.profileImage));
+            const imageData = normalizeProfileImageData(rawImage);
+            if (imageData) {
+                preview.innerHTML = `<span class="profile-image-preview-avatar"><img src="${imageData}" alt="프로필"></span>`;
+                return;
+            }
+            const initial = escapeHtml(getUserInitial(nameText));
+            const gradient = getAvatarGradient(String((activeUser && (activeUser.employeeNo || activeUser.name)) || 'profile'));
+            preview.innerHTML = `<span class="profile-image-preview-avatar" style="background:${gradient};">${initial}</span>`;
+        }
+
+        function openProfileImageModal() {
+            if (!currentLoginUser || !currentLoginUser.employeeNo) {
+                showAlert('로그인 사용자만 프로필 사진을 등록할 수 있습니다.', 'error');
+                return;
+            }
+            pendingProfileImageData = '';
+            const input = document.getElementById('profileImageInput');
+            if (input) input.value = '';
+            updateProfileImagePreview();
+            const modal = document.getElementById('profileImageModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeProfileImageModal() {
+            const modal = document.getElementById('profileImageModal');
+            if (modal) modal.classList.remove('active');
+            pendingProfileImageData = '';
+        }
+
+        function handleProfileImageFileChange(event) {
+            const file = event && event.target && event.target.files && event.target.files[0];
+            if (!file) {
+                pendingProfileImageData = '';
+                updateProfileImagePreview();
+                return;
+            }
+            if (!/^image\//.test(file.type || '')) {
+                showAlert('이미지 파일만 업로드할 수 있습니다.', 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert('이미지는 2MB 이하만 등록할 수 있습니다.', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                pendingProfileImageData = normalizeProfileImageData(reader.result);
+                updateProfileImagePreview();
+            };
+            reader.onerror = () => showAlert('이미지 파일을 읽지 못했습니다.', 'error');
+            reader.readAsDataURL(file);
+        }
+
+        function removeProfileImage() {
+            pendingProfileImageData = '__REMOVE__';
+            const input = document.getElementById('profileImageInput');
+            if (input) input.value = '';
+            updateProfileImagePreview();
+        }
+
+        async function saveProfileImage() {
+            if (!currentLoginUser || !currentLoginUser.employeeNo) return;
+            const targetEmpNo = String(currentLoginUser.employeeNo);
+            const targetIdx = signupUsers.findIndex((u) => String(u && u.employeeNo || '') === targetEmpNo);
+            if (targetIdx < 0) {
+                showAlert('사용자 정보를 찾을 수 없습니다.', 'error');
+                return;
+            }
+            const nextImage = pendingProfileImageData === '__REMOVE__'
+                ? ''
+                : normalizeProfileImageData(pendingProfileImageData || currentLoginUser.profileImage);
+            signupUsers[targetIdx] = sanitizeSignupUserRecord({ ...signupUsers[targetIdx], profileImage: nextImage });
+            await saveSignupUsers();
+            currentLoginUser = signupUsers[targetIdx];
+            changeRole();
+            filterBoardList();
+            if (currentPostId != null) {
+                const post = getPostByIdAndType(currentPostId, currentBoardType);
+                if (post) openDetail(post.id, post.type, { fromHistory: true, skipHistory: true });
+            }
+            closeProfileImageModal();
+            showAlert('프로필 사진이 저장되었습니다.', 'success');
+        }
+        window.openProfileImageModal = openProfileImageModal;
+        window.closeProfileImageModal = closeProfileImageModal;
+        window.handleProfileImageFileChange = handleProfileImageFileChange;
+        window.removeProfileImage = removeProfileImage;
+        window.saveProfileImage = saveProfileImage;
+
         function renderMemberList() {
             const wrap = document.getElementById('memberListContainer');
             const summary = document.getElementById('memberListSummary');
@@ -1963,8 +2113,16 @@
             if (overlayUserDept) overlayUserDept.innerText = deptDisplay;
             const overlayProfileInitial = document.getElementById('overlayProfileInitial');
             if (overlayProfileInitial) {
-                const initial = (activeName || '').replace(/\s+/g, '').slice(0, 2) || 'USER';
-                overlayProfileInitial.innerText = initial;
+                const imageData = normalizeProfileImageData(activeUser.profileImage);
+                if (imageData) {
+                    overlayProfileInitial.style.background = '';
+                    overlayProfileInitial.innerHTML = `<img src="${imageData}" alt="프로필">`;
+                } else {
+                    const initial = escapeHtml(getUserInitial(activeName));
+                    const gradient = getAvatarGradient(String(activeUser.employeeNo || activeName || 'overlay'));
+                    overlayProfileInitial.innerHTML = initial;
+                    overlayProfileInitial.style.background = gradient;
+                }
             }
             const overlayEmployeeNo = document.getElementById('overlayEmployeeNo');
             if (overlayEmployeeNo) overlayEmployeeNo.innerText = activeUser.employeeNo || '-';
@@ -2883,7 +3041,7 @@
                 const knowCatBadge = currentBoardType === 'KNOW'
                     ? `<span class="badge bg-ready badge-domain">${getKnowCategoryLabel(item.knowCategory)}</span>`
                     : '';
-                return `<tr onclick="openDetail(${item.id})"><td>${item.id}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${item.writer}</td><td>${item.datetime}</td></tr>`;
+                return `<tr onclick="openDetail(${item.id})"><td>${item.id}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer)}</td><td>${item.datetime}</td></tr>`;
             }).join('');
             setTimeout(syncBoardLayoutModes, 0);
         }
@@ -2937,7 +3095,7 @@
             document.getElementById('dtlBoardTypeLabel').innerText = getBoardDisplayLabel(post);
             document.getElementById('dtlTitle').innerText = post.title;
             document.getElementById('dtlPostId').innerText = post.id;
-            document.getElementById('dtlWriter').innerText = post.writer;
+            document.getElementById('dtlWriter').innerHTML = renderWriterWithAvatar(post.writer, { avatarClassName: 'writer-avatar detail', wrapperClass: 'writer-cell detail' });
             document.getElementById('dtlTime').innerText = post.datetime;
             document.getElementById('dtlIp').innerText = `IP: ${post.ip}`;
             

@@ -768,6 +768,11 @@ async function clearAdminAiApiLogs() {
 function closeAdminAiApiLogModal() {
     const modal = document.getElementById("adminAiApiLogModal");
     if (modal) modal.classList.remove("active");
+    const copyBtn = document.getElementById("adminAiApiLogCopyBtn");
+    if (copyBtn) {
+        copyBtn.classList.add("hidden");
+        copyBtn.dataset.logId = "";
+    }
 }
 
 function getAdminAiApiBoardMeta(boardTypeRaw) {
@@ -855,6 +860,7 @@ function openAdminAiApiLogModal(logId) {
     const log = adminAiApiLogs.find((x) => String(x.id) === String(logId));
     const body = document.getElementById("adminAiApiLogModalBody");
     const modal = document.getElementById("adminAiApiLogModal");
+    const copyBtn = document.getElementById("adminAiApiLogCopyBtn");
     if (!log || !body || !modal) return;
     const attempts = Array.isArray(log.attempts) ? log.attempts : [];
     const attemptsHtml = attempts.length
@@ -883,11 +889,6 @@ function openAdminAiApiLogModal(logId) {
               .join("")
         : '<div class="admin-settings-hint">시도 로그가 없습니다.</div>';
     body.innerHTML = `
-        <div class="admin-ai-log-copy-row">
-            <button type="button" class="btn btn-outline admin-ai-log-copy-btn" onclick="copyAdminAiApiLogDetail('${escapeHtml(String(log.id || ""))}')">
-                <svg class="icon"><use href="#icon-edit"></use></svg> 상세 텍스트 복사
-            </button>
-        </div>
         <div class="admin-ai-log-detail-grid">${buildAdminLogInfoRows(log)}</div>
         <div class="admin-ai-log-detail-title">요청 제목</div>
         <pre class="admin-ai-log-pre">${escapeHtml(normalizeAdminAiApiLogText(String(log.title || "")))}</pre>
@@ -898,6 +899,10 @@ function openAdminAiApiLogModal(logId) {
         <div class="admin-ai-log-detail-title" style="margin-top:10px;">요청/수신 상세 시도 로그</div>
         ${attemptsHtml}
     `;
+    if (copyBtn) {
+        copyBtn.classList.remove("hidden");
+        copyBtn.dataset.logId = String(log.id || "");
+    }
     modal.classList.add("active");
 }
 
