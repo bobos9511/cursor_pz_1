@@ -262,11 +262,7 @@ function toggleAiSearchPreferred(messageIndex) {
         boardType: "BIZ",
         sourceLabel: "AI Chat 도움이 됐어요"
     });
-    if (created) {
-        showAlert("\"도움이 됐어요\" 답변을 AI 지식 베이스 학습자료로 등록했습니다.", "success");
-    } else {
-        showAlert("이미 등록된 학습자료이거나 등록 조건을 충족하지 않습니다.", "success");
-    }
+    if (!created) return;
 }
 
 function renderAiSearchHistory() {

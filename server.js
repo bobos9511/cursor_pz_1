@@ -44,6 +44,10 @@ const GEMINI_MAX_CONTINUATIONS = Number(process.env.GEMINI_MAX_CONTINUATIONS || 
 const GEMINI_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_MAX_CONTINUATION_RUNTIME_MS || 60000);
 const GEMINI_CHAT_MAX_CONTINUATIONS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATIONS || 0);
 const GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS = Number(process.env.GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS || 3000);
+const RAG_MAX_CANDIDATES = Number(process.env.RAG_MAX_CANDIDATES || 3);
+const RAG_MIN_OVERLAP_TOKENS = Number(process.env.RAG_MIN_OVERLAP_TOKENS || 2);
+const RAG_MIN_SCORE = Number(process.env.RAG_MIN_SCORE || 3);
+const RAG_RELATIVE_CUTOFF_PCT = Number(process.env.RAG_RELATIVE_CUTOFF_PCT || 45);
 const AI_SETTINGS_HISTORY_MAX = 120;
 function createDefaultDb() {
   return {
@@ -214,6 +218,14 @@ function mergeContinuationText(base, next) {
     }
   }
   return overlap > 0 ? `${a}${b.slice(overlap)}`.trim() : `${a}\n${b}`.trim();
+}
+
+function normalizeKnowStatus(statusRaw) {
+  const s = String(statusRaw || "").toLowerCase().trim();
+  if (s === "approved" || s === "trained") return "approved";
+  if (s === "pending" || s === "ready") return "pending";
+  if (s === "rejected" || s === "error") return "rejected";
+  return "pending";
 }
 
 function shouldUseGrounding(boardType, title, content) {
@@ -483,13 +495,14 @@ async function handleAiChat(req, res) {
       .slice(0, 60);
   }
 
-  function buildRagContext(queryText, boardTypeForRag) {
+  function buildRagContext(queryText, boardTypeForRag, ragConfig = {}) {
     const db = readDb();
     const shared = db.appDataByScope && db.appDataByScope.shared ? db.appDataByScope.shared : null;
     const posts = shared && Array.isArray(shared.posts) ? shared.posts : [];
     const bt = String(boardTypeForRag || "").toUpperCase();
     const know = posts.filter((p) => {
-      if (!(p && p.type === "KNOW" && (p.status === "trained" || p.status === "ready"))) return false;
+      if (!(p && p.type === "KNOW")) return false;
+      if (normalizeKnowStatus(p.status) !== "approved") return false;
       const domain = String(p.knowCategory || "").toUpperCase();
       // 게시물 AI답변은 해당 게시판 도메인 지식만 사용(IT <-> IT, BIZ <-> BIZ)
       if (bt === "IT") return domain === "IT";
@@ -536,15 +549,20 @@ async function handleAiChat(req, res) {
         return { p, score, overlapCount };
       })
       // 단일 토큰 우연 일치는 제외하여 무관 지식 유입 방지
-      .filter((x) => x.overlapCount >= 2 && x.score >= 3)
+      .filter(
+        (x) =>
+          x.overlapCount >= Number(ragConfig.minOverlapTokens || 2) &&
+          x.score >= Number(ragConfig.minScore || 3),
+      )
       .sort((a, b) => b.score - a.score);
 
     if (!scored.length) return "";
     const topScore = scored[0].score;
+    const relPct = Number(ragConfig.relativeCutoffPct || 45);
     const gated = scored
       // 상위 문서 대비 유사도가 낮은 꼬리 후보 제거
-      .filter((x) => x.score >= Math.max(3, topScore * 0.45))
-      .slice(0, 3);
+      .filter((x) => x.score >= Math.max(Number(ragConfig.minScore || 3), topScore * (relPct / 100)))
+      .slice(0, Number(ragConfig.maxCandidates || 3));
     if (!gated.length) return "";
 
     const lines = [];
@@ -597,7 +615,26 @@ async function handleAiChat(req, res) {
     300000,
     GEMINI_MAX_CONTINUATION_RUNTIME_MS,
   );
-  const rag = buildRagContext([title, content].join("\n"), boardType);
+  const ragMaxCandidates = clampIntWithFallback(runtime.ragMaxCandidates, 1, 10, RAG_MAX_CANDIDATES);
+  const ragMinOverlapTokens = clampIntWithFallback(
+    runtime.ragMinOverlapTokens,
+    1,
+    10,
+    RAG_MIN_OVERLAP_TOKENS,
+  );
+  const ragMinScore = clampIntWithFallback(runtime.ragMinScore, 0, 100, RAG_MIN_SCORE);
+  const ragRelativeCutoffPct = clampIntWithFallback(
+    runtime.ragRelativeCutoffPct,
+    0,
+    100,
+    RAG_RELATIVE_CUTOFF_PCT,
+  );
+  const rag = buildRagContext([title, content].join("\n"), boardType, {
+    maxCandidates: ragMaxCandidates,
+    minOverlapTokens: ragMinOverlapTokens,
+    minScore: ragMinScore,
+    relativeCutoffPct: ragRelativeCutoffPct,
+  });
   const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
   const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
   const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
@@ -624,6 +661,10 @@ async function handleAiChat(req, res) {
       postMaxContinuations,
       chatMaxContinuationRuntimeMs,
       postMaxContinuationRuntimeMs,
+      ragMaxCandidates,
+      ragMinOverlapTokens,
+      ragMinScore,
+      ragRelativeCutoffPct,
     },
     generationConfig,
     promptText: String(prompt || "").slice(0, 12000),
@@ -867,6 +908,10 @@ async function handleDbApi(req, res, url) {
         postMaxContinuations: GEMINI_MAX_CONTINUATIONS,
         chatMaxContinuationRuntimeMs: GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS,
         postMaxContinuationRuntimeMs: GEMINI_MAX_CONTINUATION_RUNTIME_MS,
+        ragMaxCandidates: RAG_MAX_CANDIDATES,
+        ragMinOverlapTokens: RAG_MIN_OVERLAP_TOKENS,
+        ragMinScore: RAG_MIN_SCORE,
+        ragRelativeCutoffPct: RAG_RELATIVE_CUTOFF_PCT,
       },
     });
     return true;

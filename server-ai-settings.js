@@ -21,6 +21,10 @@ const DEFAULT_AI_SETTINGS = {
     postMaxContinuations: null,
     chatMaxContinuationRuntimeMs: null,
     postMaxContinuationRuntimeMs: null,
+    ragMaxCandidates: null,
+    ragMinOverlapTokens: null,
+    ragMinScore: null,
+    ragRelativeCutoffPct: null,
   },
 };
 
@@ -84,6 +88,10 @@ function mergeAiSettingsFromDb(parsed) {
     base.runtime.postMaxContinuations = clampIntOrNull(r.postMaxContinuations, 0, 200);
     base.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
     base.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
+    base.runtime.ragMaxCandidates = clampIntOrNull(r.ragMaxCandidates, 1, 10);
+    base.runtime.ragMinOverlapTokens = clampIntOrNull(r.ragMinOverlapTokens, 1, 10);
+    base.runtime.ragMinScore = clampIntOrNull(r.ragMinScore, 0, 100);
+    base.runtime.ragRelativeCutoffPct = clampIntOrNull(r.ragRelativeCutoffPct, 0, 100);
   }
   return base;
 }
@@ -120,6 +128,12 @@ function mergeAiSettingsPatch(base, patch) {
       out.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
     if (r.postMaxContinuationRuntimeMs !== undefined)
       out.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
+    if (r.ragMaxCandidates !== undefined) out.runtime.ragMaxCandidates = clampIntOrNull(r.ragMaxCandidates, 1, 10);
+    if (r.ragMinOverlapTokens !== undefined)
+      out.runtime.ragMinOverlapTokens = clampIntOrNull(r.ragMinOverlapTokens, 1, 10);
+    if (r.ragMinScore !== undefined) out.runtime.ragMinScore = clampIntOrNull(r.ragMinScore, 0, 100);
+    if (r.ragRelativeCutoffPct !== undefined)
+      out.runtime.ragRelativeCutoffPct = clampIntOrNull(r.ragRelativeCutoffPct, 0, 100);
   }
   return out;
 }

@@ -96,6 +96,30 @@ function collectAdminAiSettingsFromForm() {
                 300000,
                 null,
             ),
+            ragMaxCandidates: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-ragMaxCandidates")?.value,
+                1,
+                10,
+                null,
+            ),
+            ragMinOverlapTokens: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-ragMinOverlapTokens")?.value,
+                1,
+                10,
+                null,
+            ),
+            ragMinScore: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-ragMinScore")?.value,
+                0,
+                100,
+                null,
+            ),
+            ragRelativeCutoffPct: clampAdminAiInt(
+                document.getElementById("adminAi-runtime-ragRelativeCutoffPct")?.value,
+                0,
+                100,
+                null,
+            ),
         },
     };
     ADMIN_AI_POST_KEYS.forEach((k) => {
@@ -194,12 +218,28 @@ async function loadAdminAiSettingsView() {
             runtime.postMaxContinuationRuntimeMs,
             defaults.postMaxContinuationRuntimeMs,
         );
+        setAdminRuntimeInputValue("adminAi-runtime-ragMaxCandidates", runtime.ragMaxCandidates, defaults.ragMaxCandidates);
+        setAdminRuntimeInputValue(
+            "adminAi-runtime-ragMinOverlapTokens",
+            runtime.ragMinOverlapTokens,
+            defaults.ragMinOverlapTokens,
+        );
+        setAdminRuntimeInputValue("adminAi-runtime-ragMinScore", runtime.ragMinScore, defaults.ragMinScore);
+        setAdminRuntimeInputValue(
+            "adminAi-runtime-ragRelativeCutoffPct",
+            runtime.ragRelativeCutoffPct,
+            defaults.ragRelativeCutoffPct,
+        );
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxOutputTokens-default", defaults.chatMaxOutputTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-postMaxOutputTokens-default", defaults.postMaxOutputTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxContinuations-default", defaults.chatMaxContinuations);
         setAdminRuntimeDefaultText("adminAi-runtime-postMaxContinuations-default", defaults.postMaxContinuations);
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxContinuationRuntimeMs-default", defaults.chatMaxContinuationRuntimeMs);
         setAdminRuntimeDefaultText("adminAi-runtime-postMaxContinuationRuntimeMs-default", defaults.postMaxContinuationRuntimeMs);
+        setAdminRuntimeDefaultText("adminAi-runtime-ragMaxCandidates-default", defaults.ragMaxCandidates);
+        setAdminRuntimeDefaultText("adminAi-runtime-ragMinOverlapTokens-default", defaults.ragMinOverlapTokens);
+        setAdminRuntimeDefaultText("adminAi-runtime-ragMinScore-default", defaults.ragMinScore);
+        setAdminRuntimeDefaultText("adminAi-runtime-ragRelativeCutoffPct-default", defaults.ragRelativeCutoffPct);
         ADMIN_AI_POST_KEYS.forEach((k) => {
             const p = cfg.posts && cfg.posts[k] ? cfg.posts[k] : {};
             const ta = document.getElementById(`adminAi-post-${k}-prompt`);
@@ -284,6 +324,7 @@ function summarizeAiSettingsHtml(settings) {
             <div class="admin-ai-settings-version-card"><b>IT 답변</b><span>T ${postIT.temperature ?? "-"} / P ${postIT.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>BIZ 답변</b><span>T ${postBIZ.temperature ?? "-"} / P ${postBIZ.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>토큰/이어쓰기</b><span>chat ${r.chatMaxOutputTokens ?? "-"} / post ${r.postMaxOutputTokens ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>RAG</b><span>후보 ${r.ragMaxCandidates ?? "-"} / 최소점수 ${r.ragMinScore ?? "-"}</span></div>
         </div>
     `;
 }

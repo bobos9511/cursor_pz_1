@@ -315,6 +315,11 @@
             'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스', label: 'AI 지식 베이스' }
         };
         const KNOW_CATEGORY_LABEL = { IT: 'IT 매뉴얼', BIZ: '업무 매뉴얼' };
+        const KNOW_STATUS = {
+            PENDING: 'pending',
+            APPROVED: 'approved',
+            REJECTED: 'rejected',
+        };
 
         const roleMatrix = {
             'branch': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '홍길동 대리', dept: '영업부', showKnow: false },
@@ -422,6 +427,26 @@
         }
         function getKnowCategoryLabel(category) {
             return KNOW_CATEGORY_LABEL[category] || '-';
+        }
+        function normalizeKnowStatus(statusRaw) {
+            const s = String(statusRaw || '').toLowerCase().trim();
+            if (s === KNOW_STATUS.APPROVED || s === 'trained') return KNOW_STATUS.APPROVED;
+            if (s === KNOW_STATUS.REJECTED || s === 'error') return KNOW_STATUS.REJECTED;
+            if (s === KNOW_STATUS.PENDING || s === 'ready') return KNOW_STATUS.PENDING;
+            return KNOW_STATUS.PENDING;
+        }
+        function getKnowStatusMeta(statusRaw) {
+            const s = normalizeKnowStatus(statusRaw);
+            if (s === KNOW_STATUS.APPROVED) return { value: KNOW_STATUS.APPROVED, label: '승인', badgeClass: 'bg-trained' };
+            if (s === KNOW_STATUS.REJECTED) return { value: KNOW_STATUS.REJECTED, label: '불승인', badgeClass: 'bg-error' };
+            return { value: KNOW_STATUS.PENDING, label: '미승인', badgeClass: 'bg-ready' };
+        }
+        function normalizeKnowPostStatuses(posts) {
+            if (!Array.isArray(posts)) return;
+            posts.forEach((p) => {
+                if (!p || p.type !== 'KNOW') return;
+                p.status = normalizeKnowStatus(p.status);
+            });
         }
         function getNextPostIdByType(boardType) {
             const scoped = (appData.posts || []).filter((p) => p && p.type === boardType);
@@ -635,7 +660,7 @@
             const cleanAnswer = answerText.slice(0, 4000);
             const summary = summarizeRagAnswer(cleanAnswer);
             const keywords = extractRagKeywords(cleanQuestion, cleanAnswer);
-            const sourceLabel = String(options.sourceLabel || 'AI Chat 답변선호');
+            const sourceLabel = String(options.sourceLabel || 'AI Chat 도움이 됐어요');
             const content = `<div><b>Q.</b> ${escapeHtml(cleanQuestion)}</div><div style="margin-top:8px;"><b>A.</b><br>${escapeHtml(cleanAnswer).replace(/\n/g, '<br>')}</div>`;
             const meta = {
                 knowQuestion: cleanQuestion,
@@ -657,7 +682,7 @@
                 writer: AI_SYSTEM_USER_NAME,
                 datetime: now,
                 ip: getDummyIp(),
-                status: 'trained',
+                status: KNOW_STATUS.PENDING,
                 content,
                 aiContent: '',
                 answer: '',
@@ -885,6 +910,7 @@
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
             }
+            normalizeKnowPostStatuses(appData.posts);
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };
             if (typeof appData.settings.osNotify !== 'boolean') appData.settings.osNotify = true;
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
@@ -2069,7 +2095,10 @@
                 'AI채택': { cls: 'aiSolved' },
                 '학습대기': { cls: 'ready' },
                 '학습완료': { cls: 'trained' },
-                '오류': { cls: 'error' }
+                '오류': { cls: 'error' },
+                '미승인': { cls: 'ready' },
+                '승인': { cls: 'trained' },
+                '불승인': { cls: 'error' }
             };
             return map[label] || { cls: '' };
         }
@@ -2349,7 +2378,7 @@
                 
                 const filterSelect = document.getElementById('boardStatusFilter');
                 const knowFilter = document.getElementById('boardKnowCategoryFilter');
-                if (currentBoardType === 'KNOW') filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="ready">학습대기</option><option value="trained">학습완료</option><option value="error">오류</option>';
+                if (currentBoardType === 'KNOW') filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="pending">미승인</option><option value="approved">승인</option><option value="rejected">불승인</option>';
                 else if (currentBoardType === 'SYS') filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="wait">접수대기</option><option value="moreInfo">추가답변</option><option value="done">답변완료</option>';
                 else filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="wait">접수대기</option><option value="moreInfo">추가답변</option><option value="done">답변완료</option><option value="aiSolved">AI채택</option>';
 
@@ -2788,7 +2817,8 @@
             let filtered = appData.posts.filter(p => p.type === currentBoardType).sort((a,b) => b.id - a.id);
 
             if (st !== 'all') {
-                if (st === 'aiSolved') filtered = filtered.filter(p => p.aiSolved);
+                if (currentBoardType === 'KNOW') filtered = filtered.filter((p) => normalizeKnowStatus(p.status) === st);
+                else if (st === 'aiSolved') filtered = filtered.filter(p => p.aiSolved);
                 else filtered = filtered.filter(p => p.status === st && !p.aiSolved);
             }
             if (currentBoardType === 'KNOW' && knowCategory !== 'all') {
@@ -2840,9 +2870,8 @@
             tbody.innerHTML = pageItems.map(item => {
                 let badge = '';
                 if (currentBoardType === 'KNOW') {
-                    if(item.status === 'ready') badge = '<span class="badge bg-ready">학습대기</span>';
-                    else if(item.status === 'trained') badge = '<span class="badge bg-trained">학습완료</span>';
-                    else badge = '<span class="badge bg-error">오류</span>';
+                    const knowMeta = getKnowStatusMeta(item.status);
+                    badge = `<span class="badge ${knowMeta.badgeClass}">${knowMeta.label}</span>`;
                 } else {
                     if (item.aiSolved) badge = '<span class="badge bg-ai">AI 채택</span>';
                     else if(item.status === 'wait') badge = '<span class="badge bg-wait">접수대기</span>';
@@ -2914,9 +2943,9 @@
             
             const badgeEl = document.getElementById('dtlStatus');
             if (post.type === 'KNOW') {
-                if(post.status === 'ready') { badgeEl.className = 'badge bg-ready'; badgeEl.innerText = '학습대기'; }
-                else if(post.status === 'trained') { badgeEl.className = 'badge bg-trained'; badgeEl.innerText = '학습완료'; }
-                else if(post.status === 'error') { badgeEl.className = 'badge bg-error'; badgeEl.innerText = '오류'; }
+                const knowMeta = getKnowStatusMeta(post.status);
+                badgeEl.className = `badge ${knowMeta.badgeClass}`;
+                badgeEl.innerText = knowMeta.label;
             } else {
                 if (post.aiSolved) { badgeEl.className = 'badge bg-ai'; badgeEl.innerText = 'AI 채택'; }
                 else if (post.status === 'wait') { badgeEl.className = 'badge bg-wait'; badgeEl.innerText = '접수대기'; }
@@ -2950,7 +2979,7 @@
                     mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">오류내용</div><div class="meta-item-value">${post.meta.errMsg}</div></div>`;
                 }
                 if(post.type === 'KNOW' && post.meta.knowErrorMemo) {
-                    mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">학습오류 관리자 의견</div><div class="meta-item-value">${post.meta.knowErrorMemo}</div></div>`;
+                    mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">불승인 관리자 의견</div><div class="meta-item-value">${post.meta.knowErrorMemo}</div></div>`;
                 }
                 if (Array.isArray(post.attachments) && post.attachments.length > 0) {
                     mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">첨부파일</div><div class="meta-item-value">${post.attachments.map(att => `${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})`).join('<br>')}</div></div>`;
@@ -3035,7 +3064,7 @@
                 if (currentRole === 'it' && knowStatusBox) {
                     knowStatusBox.classList.remove('hidden');
                     const sel = document.getElementById('knowStatusSelect');
-                    sel.value = (post.status === 'error') ? 'error' : 'trained';
+                    sel.value = normalizeKnowStatus(post.status);
                     document.getElementById('knowErrorMemoInput').value = (post.meta && post.meta.knowErrorMemo) ? post.meta.knowErrorMemo : '';
                     toggleKnowErrorMemo();
                 }
@@ -3279,7 +3308,7 @@
             const select = document.getElementById('knowStatusSelect');
             const wrap = document.getElementById('knowErrorMemoWrap');
             if (!select || !wrap) return;
-            wrap.classList.toggle('hidden', select.value !== 'error');
+            wrap.classList.toggle('hidden', select.value !== KNOW_STATUS.REJECTED);
         }
         function saveKnowStatus() {
             const idx = getPostIndexByIdAndType(currentPostId, currentBoardType);
@@ -3287,18 +3316,18 @@
             if (currentRole !== 'it') { showAlert('IT 관리자만 상태를 변경할 수 있습니다.', 'error'); return; }
             const post = appData.posts[idx];
             if (post.type !== 'KNOW') return;
-            const status = document.getElementById('knowStatusSelect').value;
+            const status = normalizeKnowStatus(document.getElementById('knowStatusSelect').value);
             const memo = document.getElementById('knowErrorMemoInput').value.trim();
-            if (status === 'error' && !memo) { showAlert('학습 오류 의견을 입력해주세요.', 'error'); return; }
+            if (status === KNOW_STATUS.REJECTED && !memo) { showAlert('불승인 사유(관리자 의견)를 입력해주세요.', 'error'); return; }
 
             post.status = status;
             if (!post.meta) post.meta = {};
-            post.meta.knowErrorMemo = status === 'error' ? memo : '';
-            if (status === 'error') {
+            post.meta.knowErrorMemo = status === KNOW_STATUS.REJECTED ? memo : '';
+            if (status === KNOW_STATUS.REJECTED) {
                 ensurePostThread(post).push({
                     role: 'manager',
                     action: 'knowError',
-                    content: `학습오류 사유: ${memo}`,
+                    content: `지식 불승인 사유: ${memo}`,
                     datetime: getCurrentDateTime()
                 });
             }
@@ -3463,9 +3492,9 @@
                     }
                     appData.posts.unshift({
                         id: newId, type: 'KNOW', knowCategory: knowCat, title: title, writer: getCurrentActorName(), 
-                        datetime: dt, ip: ipStr, status: 'ready', content: content, aiContent: '', answer: '', meta: meta, addInfoList: [], thread: [], attachments
+                        datetime: dt, ip: ipStr, status: KNOW_STATUS.PENDING, content: content, aiContent: '', answer: '', meta: meta, addInfoList: [], thread: [], attachments
                     });
-                    showAlert('학습 대기 상태로 지식베이스에 등록되었습니다.', 'success');
+                    showAlert('미승인 상태로 지식베이스에 등록되었습니다.', 'success');
                 } else if (isAiSolved) {
                     const aiSolvedContentText = stripHtmlForRag(content || '');
                     const aiSolvedAnswerText = stripHtmlForRag(AI_FALLBACK_HTML);
@@ -3712,9 +3741,8 @@
                 const stripped = p.content.replace(/<[^>]*>?/gm, ''); 
                 let badge = '';
                 if (p.type === 'KNOW') {
-                    if(p.status === 'ready') badge = '<span class="badge bg-ready" style="font-size:10px; padding:2px 6px;">학습대기</span>';
-                    else if(p.status === 'trained') badge = '<span class="badge bg-trained" style="font-size:10px; padding:2px 6px;">학습완료</span>';
-                    else badge = '<span class="badge bg-error" style="font-size:10px; padding:2px 6px;">오류</span>';
+                    const knowMeta = getKnowStatusMeta(p.status);
+                    badge = `<span class="badge ${knowMeta.badgeClass}" style="font-size:10px; padding:2px 6px;">${knowMeta.label}</span>`;
                 } else {
                     if (p.aiSolved) badge = '<span class="badge bg-ai" style="font-size:10px; padding:2px 6px;">AI 채택</span>';
                     else if(p.status === 'wait') badge = '<span class="badge bg-wait" style="font-size:10px; padding:2px 6px;">접수대기</span>';

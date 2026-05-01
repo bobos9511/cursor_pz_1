@@ -834,13 +834,14 @@
                                         <div class="flex items-center gap-10 mb-20">
                                             <span style="font-weight:bold; color:#334155;">상태</span>
                                             <select id="knowStatusSelect" class="input" style="max-width: 180px;" onchange="toggleKnowErrorMemo()">
-                                                <option value="trained">학습완료</option>
-                                                <option value="error">학습오류</option>
+                                                <option value="approved">승인</option>
+                                                <option value="pending">미승인</option>
+                                                <option value="rejected">불승인</option>
                                             </select>
                                         </div>
                                         <div id="knowErrorMemoWrap" class="hidden">
-                                            <label class="font-bold mb-10" style="display:block;">오류 관리자 의견</label>
-                                            <textarea id="knowErrorMemoInput" class="input" style="height: 100px; resize: none;" placeholder="학습 오류 원인 또는 조치 의견을 입력하세요."></textarea>
+                                            <label class="font-bold mb-10" style="display:block;">불승인 관리자 의견</label>
+                                            <textarea id="knowErrorMemoInput" class="input" style="height: 100px; resize: none;" placeholder="불승인 사유 또는 검토 의견을 입력하세요."></textarea>
                                         </div>
                                         <div class="text-right mt-20">
                                             <button class="btn btn-primary" style="background:#4f46e5; border-color:#4f46e5;" onclick="saveKnowStatus()">상태 저장</button>
@@ -1259,6 +1260,31 @@
                                     <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
                                 <div class="admin-settings-subhint">게시물 이어쓰기 전체 동작 시간 제한입니다.</div>
+                                <div class="admin-field-label" style="margin:8px 0 2px;">RAG 관련 설정</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">RAG 최대 후보 수</label>
+                                    <input type="number" id="adminAi-runtime-ragMaxCandidates" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-ragMaxCandidates-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-settings-subhint">프롬프트에 포함할 RAG 지식 최대 개수입니다.</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">RAG 최소 토큰 일치 수</label>
+                                    <input type="number" id="adminAi-runtime-ragMinOverlapTokens" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-ragMinOverlapTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-settings-subhint">질문과 겹치는 토큰 수가 이 값 이상일 때만 후보로 인정합니다.</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">RAG 최소 점수</label>
+                                    <input type="number" id="adminAi-runtime-ragMinScore" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-ragMinScore-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-settings-subhint">후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다.</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">RAG 상대 컷오프(%)</label>
+                                    <input type="number" id="adminAi-runtime-ragRelativeCutoffPct" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-ragRelativeCutoffPct-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-settings-subhint">최고 점수 대비 낮은 꼬리 후보를 제거하는 비율입니다.</div>
                             </div>
                         </div>
 
