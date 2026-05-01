@@ -259,10 +259,10 @@ function renderNotificationItemCard(it, options = {}) {
     const compact = !!options.compact;
     const sourceLabel = resolveNotificationSourceLabel(it);
     const readChip = it.isRead
-        ? '<span class="noti-topic-chip noti-status-chip">[확인됨]</span>'
-        : '<span class="noti-topic-chip important noti-status-chip">[신규]</span>';
-    const sourceChip = `<span class="noti-topic-chip noti-source-chip">[${escapeHtml(sourceLabel)}]</span>`;
-    const levelTopicChip = `<span class="noti-topic-chip ${it.level === "important" ? "important" : ""}">[${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}]</span>`;
+        ? '<span class="noti-topic-chip noti-status-chip">확인됨</span>'
+        : '<span class="noti-topic-chip important noti-status-chip">신규</span>';
+    const sourceChip = `<span class="noti-topic-chip noti-source-chip">${escapeHtml(sourceLabel)}</span>`;
+    const levelTopicChip = `<span class="noti-topic-chip ${it.level === "important" ? "important" : ""}">${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}</span>`;
     const actionBtn = it.hasAction
         ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
         : "";
