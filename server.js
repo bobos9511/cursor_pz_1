@@ -9,6 +9,7 @@ const {
   buildAiPrompt,
   buildGenerationConfig,
 } = require("./server-ai-settings");
+const ko = require("./server-messages.ko.cjs");
 
 loadEnv(path.join(__dirname, ".env"));
 
@@ -18,7 +19,7 @@ function resolveDataDir() {
   const raw = String(process.env.DATA_DIR || "").trim();
   const isRender = String(process.env.RENDER || "").toLowerCase() === "true";
   if (isRender) {
-    // Render에서 /tmp 경로는 재배포 시 초기화될 수 있으므로 영속 디스크 경로를 우선 사용한다.
+    // On Render, /tmp may be wiped on redeploy; prefer a persistent disk path.
     if (!raw || raw.startsWith("/tmp")) return "/var/data";
   }
   return raw ? path.resolve(raw) : path.join(__dirname, "data");
@@ -115,20 +116,18 @@ function extractReplyFromGeminiData(data) {
 
 function sanitizeAiReplyText(text) {
   let out = String(text || "").trim();
-  // 불필요한 서두 문구 제거
-  out = out.replace(/^은행 헬프데스크 시니어 분석가로서[,\s:]*/i, "");
-  out = out.replace(/^질의하신[^\n]{0,120}\n?/i, "");
-  out = out.replace(/^문의하신[^\n]{0,120}\n?/i, "");
+  out = out.replace(ko.re.sanitizeDeskIntro, "");
+  out = out.replace(ko.re.sanitizeQueryLead, "");
+  out = out.replace(ko.re.sanitizeAskLead, "");
   return out.trim();
 }
 
 function sanitizeChatReplyText(text) {
   let out = String(text || "").replace(/\r/g, "").trim();
-  // 숫자/단어가 줄바꿈으로 깨지는 현상 보정
   out = out.replace(/([0-9])\n([0-9])/g, "$1$2");
-  out = out.replace(/([0-9])\n(%|건|명|원|만원|억원|일|개월|년)/g, "$1$2");
-  out = out.replace(/([가-힣A-Za-z0-9])\n([가-힣A-Za-z0-9])/g, "$1$2");
-  // 내부 추론/시스템 파편 라인 제거
+  out = out.replace(ko.re.chatNumUnitSplit, "$1$2");
+  out = out.replace(ko.re.chatWordSplit, "$1$2");
+
   const blocked =
     /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt)/i;
   const normalized = out
@@ -136,10 +135,9 @@ function sanitizeChatReplyText(text) {
     .map((v) => v.trim())
     .filter(Boolean)
     .filter((line) => !blocked.test(line))
-    // bullet 표기 통일
-    .map((line) => line.replace(/^[•*]\s*/, "- ").replace(/^\d+\)\s*/, "- "));
+    .map((line) => line.replace(/^[?*]\s*/, "- ").replace(/^\d+\)\s*/, "- "));
 
-  // bullet 아닌 라인은 이전 bullet에 이어 붙여 자연스럽게 정리
+
   const merged = [];
   for (const line of normalized) {
     if (/^- /.test(line)) {
@@ -150,7 +148,6 @@ function sanitizeChatReplyText(text) {
     else merged[merged.length - 1] = `${merged[merged.length - 1]} ${line}`.replace(/\s{2,}/g, " ").trim();
   }
 
-  // bullet만 유지하고 최대 50줄 제한
   out = merged.map((line) => line.replace(/\s{2,}/g, " ").trim()).slice(0, 50).join("\n");
   return out.trim();
 }
@@ -158,7 +155,6 @@ function sanitizeChatReplyText(text) {
 function compressAiReply(text) {
   const src = String(text || "").trim();
   if (!src) return src;
-  // 줄바꿈/공백만 정리하고 본문은 최대한 보존(이어쓰기 손실 방지)
   return src
     .replace(/\r/g, "")
     .replace(/[ \t]{2,}/g, " ")
@@ -210,45 +206,8 @@ function mergeContinuationText(base, next) {
 function shouldUseGrounding(boardType, title, content) {
   if (!GEMINI_ENABLE_GROUNDING) return false;
   const text = `${title || ""} ${content || ""}`.toLowerCase();
-  const latestInfoKeywords = [
-    "최신",
-    "최근",
-    "오늘",
-    "금일",
-    "이번달",
-    "올해",
-    "2025",
-    "2026",
-    "2027",
-    "업데이트",
-    "개정",
-    "발표",
-    "공지",
-    "뉴스",
-    "금리",
-    "환율",
-    "정책",
-    "규정 변경",
-    "보도자료",
-  ];
-  const bizKeywords = [
-    "규정",
-    "약관",
-    "지침",
-    "내규",
-    "법령",
-    "세법",
-    "감독규정",
-    "금감원",
-    "대출",
-    "담보",
-    "이자",
-    "한도",
-    "연장",
-    "중도상환",
-  ];
-  const needsLatestGrounding = latestInfoKeywords.some((kw) => text.includes(kw));
-  const isBizContext = bizKeywords.some((kw) => text.includes(kw));
+  const needsLatestGrounding = ko.latestInfoKeywords.some((kw) => text.includes(kw));
+  const isBizContext = ko.bizKeywords.some((kw) => text.includes(kw));
   const type = String(boardType || "").toUpperCase();
   if (type === "CHAT") return needsLatestGrounding || isBizContext;
   if (type === "BIZ") return true;
@@ -322,7 +281,7 @@ function applyRateLimit(req, res) {
     return true;
   }
   if (entry.count >= RATE_LIMIT_MAX) {
-    sendJson(res, 429, { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." });
+    sendJson(res, 429, { error: ko.errors.rateLimit });
     return false;
   }
   entry.count += 1;
@@ -336,7 +295,7 @@ async function handleAiChat(req, res) {
   try {
     body = await readJsonBody(req);
   } catch (error) {
-    sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+    sendJson(res, 400, { error: ko.errors.invalidJsonBody });
     return;
   }
 
@@ -346,13 +305,13 @@ async function handleAiChat(req, res) {
   const continueFrom = String(body.continueFrom || "").slice(0, 6000);
 
   if (!title || !content) {
-    sendJson(res, 400, { error: "title/content는 필수입니다." });
+    sendJson(res, 400, { error: ko.errors.titleContentRequired });
     return;
   }
 
   if (!GEMINI_API_KEY) {
     sendJson(res, 200, {
-      reply: `데모 모드 응답입니다. (${boardType})\n제목: ${title}\n핵심 확인 포인트를 정리한 뒤 담당자에게 전달하세요.`,
+      reply: ko.demoModeReply(boardType, title),
     });
     return;
   }
@@ -388,7 +347,7 @@ async function handleAiChat(req, res) {
 
     let { res: geminiRes, json: data } = await callGemini(requestBody);
 
-    // 모델/권한 이슈로 grounding 도구가 거부되는 경우 도구 없이 한 번 재시도
+    // If grounding is rejected (model/permissions), retry once without tools.
     if (!geminiRes.ok && useGrounding) {
       const msg = data && data.error && data.error.message ? String(data.error.message) : "";
       if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
@@ -399,21 +358,10 @@ async function handleAiChat(req, res) {
       }
     }
     if (!geminiRes.ok) {
-      const apiError = data && data.error && data.error.message ? data.error.message : "Gemini API 오류";
+      const apiError = data && data.error && data.error.message ? data.error.message : ko.errors.geminiApiGeneric;
       if (isQuotaOrRateLimitError(apiError)) {
         sendJson(res, 200, {
-          reply: [
-            "1) 추정 원인",
-            "- 현재 Gemini API 사용량 한도(쿼터/요금제)가 초과되었습니다.",
-            "",
-            "2) 즉시 확인 항목 3개",
-            "- API 키가 연결된 프로젝트의 과금/한도 상태를 확인하세요.",
-            "- 분당 요청량(RPM)과 일일 사용량을 확인하세요.",
-            "- 필요 시 Grounding 사용을 잠시 비활성화해 호출 비용을 낮추세요.",
-            "",
-            "3) 사용자 안내 문구",
-            "- 현재 AI 분석 서비스 사용량이 일시적으로 초과되어 기본 진단 안내로 접수되었습니다.",
-          ].join("\n"),
+          reply: ko.quotaDegradedReplyLines().join("\n"),
           degraded: true,
           reason: "quota_exceeded",
         });
@@ -425,11 +373,11 @@ async function handleAiChat(req, res) {
     let { reply, finishReason } = extractReplyFromGeminiData(data);
 
     if (!reply) {
-      sendJson(res, 502, { error: "AI 응답을 해석할 수 없습니다." });
+      sendJson(res, 502, { error: ko.errors.aiReplyParse });
       return;
     }
 
-    // 토큰 한도로 잘리면 완료될 때까지 이어쓰기(안전 상한 포함)
+    // Continue until complete when truncated by token limit (bounded).
     const maxContinuations = boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATIONS : GEMINI_MAX_CONTINUATIONS;
     const maxContinuationRuntimeMs =
       boardType === "CHAT" ? GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS : GEMINI_MAX_CONTINUATION_RUNTIME_MS;
@@ -438,13 +386,7 @@ async function handleAiChat(req, res) {
     while (finishReason === "MAX_TOKENS" && continuationCount < maxContinuations) {
       if (Date.now() - continuationStartAt > maxContinuationRuntimeMs) break;
       continuationCount += 1;
-      const continuePrompt = [
-        "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
-        "이미 쓴 문장을 반복하지 말고, 남은 내용만 이어서 작성하세요.",
-        "",
-        "[앞부분]",
-        reply,
-      ].join("\n");
+      const continuePrompt = ko.internalContinuationPrompt(reply);
       const { res: continueRes, json: continueData } = await callGemini({
         contents: [{ parts: [{ text: continuePrompt }] }],
         generationConfig,
@@ -463,7 +405,7 @@ async function handleAiChat(req, res) {
         : compressAiReply(sanitizePostReplyText(sanitizeAiReplyText(reply)));
     sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
   } catch (error) {
-    sendJson(res, 500, { error: "AI 서버 통신 중 오류가 발생했습니다." });
+    sendJson(res, 500, { error: ko.errors.aiServerError });
   }
 }
 
@@ -481,12 +423,12 @@ async function handleDbApi(req, res, url) {
     try {
       body = await readJsonBody(req);
     } catch {
-      sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
     const appData = body && typeof body.appData === "object" ? body.appData : null;
     if (!appData) {
-      sendJson(res, 400, { error: "appData가 필요합니다." });
+      sendJson(res, 400, { error: ko.errors.appDataRequired });
       return true;
     }
     const db = readDb();
@@ -505,11 +447,11 @@ async function handleDbApi(req, res, url) {
     try {
       body = await readJsonBody(req);
     } catch {
-      sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
     if (!Array.isArray(body && body.signupUsers)) {
-      sendJson(res, 400, { error: "signupUsers 배열이 필요합니다." });
+      sendJson(res, 400, { error: ko.errors.signupUsersRequired });
       return true;
     }
     const db = readDb();
@@ -528,12 +470,12 @@ async function handleDbApi(req, res, url) {
     try {
       body = await readJsonBody(req);
     } catch {
-      sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
     const boardHelpMap = body && typeof body.boardHelpMap === "object" ? body.boardHelpMap : null;
     if (!boardHelpMap) {
-      sendJson(res, 400, { error: "boardHelpMap 객체가 필요합니다." });
+      sendJson(res, 400, { error: ko.errors.boardHelpMapRequired });
       return true;
     }
     const db = readDb();
@@ -552,12 +494,12 @@ async function handleDbApi(req, res, url) {
     try {
       body = await readJsonBody(req);
     } catch {
-      sendJson(res, 400, { error: "요청 본문(JSON) 형식이 올바르지 않습니다." });
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
     const patch = body && body.aiSettings && typeof body.aiSettings === "object" ? body.aiSettings : null;
     if (!patch) {
-      sendJson(res, 400, { error: "aiSettings 객체가 필요합니다." });
+      sendJson(res, 400, { error: ko.errors.aiSettingsRequired });
       return true;
     }
     const db = readDb();

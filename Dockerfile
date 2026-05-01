@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev
 
-COPY server.js server-ai-settings.js ./
+COPY server.js server-ai-settings.js server-messages.ko.cjs ./
 COPY public ./public
 COPY .env.example ./.env.example
 
