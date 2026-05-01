@@ -1073,6 +1073,16 @@
         .board-help-title::before { content: ''; width: 8px; height: 8px; border-radius: 999px; background: #3b82f6; }
         .board-help-new-badge { font-size: 10px; font-weight: 900; letter-spacing: 0.3px; color: #fff; background: linear-gradient(180deg, #ef4444, #dc2626); border-radius: 999px; padding: 2px 7px; box-shadow: 0 4px 10px rgba(220,38,38,0.25); }
         .board-help-actions { display: flex; align-items: center; gap: 8px; }
+        .board-help-edit-btn {
+            min-height: 32px;
+            padding: 0 10px !important;
+            font-size: 12px !important;
+            border-radius: 8px !important;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .board-help-toggle-arrow { width: 32px; min-width: 32px; padding: 5px 0; font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
         .board-help-toggle-arrow .icon { font-size: 14px; transition: transform 0.18s ease; margin-right: 0 !important; display: block; }
         .board-help-toggle-arrow.collapsed .icon { transform: rotate(180deg); }
@@ -2766,6 +2776,19 @@
             background: #13233a;
             color: #dce7f6;
         }
+        body[data-theme="dark"] .admin-ai-logs-toolbar {
+            background: #102036;
+            border-bottom-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-ai-logs-toolbar-left,
+        body[data-theme="dark"] .admin-ai-logs-page-status {
+            color: #c7d7ec;
+        }
+        body[data-theme="dark"] .admin-ai-logs-page-size {
+            background: #13233a;
+            border-color: #4a5f7f;
+            color: #e6edf8;
+        }
         body[data-theme="dark"] .admin-ai-logs-table tbody tr:hover {
             background: #1b2f4c;
         }
@@ -2778,6 +2801,10 @@
             border-color: #dc2626;
             background: rgba(220,38,38,0.2);
             color: #fecaca;
+        }
+        body[data-theme="dark"] .admin-ai-logs-pagination {
+            background: #102036;
+            border-top-color: #3f5475;
         }
         body[data-theme="dark"] .profile-image-preview {
             background: #0f1b30;
@@ -4635,6 +4662,26 @@
             background: #fff;
             overflow: hidden;
         }
+        .admin-ai-logs-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .admin-ai-logs-toolbar-left {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+        }
+        .admin-ai-logs-page-size {
+            min-width: 98px;
+            height: 34px;
+            padding: 6px 30px 6px 10px;
+            font-size: 12px;
+        }
         .admin-ai-settings-history-wrap {
             border: 1px solid #dbe7f5;
             border-radius: 12px;
@@ -4734,6 +4781,29 @@
             border-color: #fecaca;
             background: #fee2e2;
             color: #b91c1c;
+        }
+        .admin-ai-logs-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 12px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        .admin-ai-logs-page-btn {
+            min-height: 30px;
+            padding: 5px 10px !important;
+            font-size: 12px !important;
+            border-radius: 8px !important;
+        }
+        .admin-ai-logs-page-status {
+            min-width: 56px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
         }
         .admin-ai-log-detail-grid {
             display: grid;

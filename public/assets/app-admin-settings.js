@@ -6,6 +6,8 @@ let adminAiGenWired = false;
 let adminSettingsMainTabsInited = false;
 let adminRuntimeHumanHintWired = false;
 let adminAiApiLogs = [];
+let adminAiApiLogsPageSize = 10;
+let adminAiApiLogsPage = 1;
 let adminAiSettingsHistory = [];
 
 function clampAdminAiGen01(v) {
@@ -794,12 +796,30 @@ function renderAdminAiApiLogsList() {
     const mount = document.getElementById("adminAiApiLogsList");
     const summary = document.getElementById("adminAiApiLogsSummary");
     if (!mount || !summary) return;
-    summary.innerText = `요청 기록: ${adminAiApiLogs.length}건`;
+    const total = adminAiApiLogs.length;
+    const pageSize = [10, 30, 50, 100].includes(Number(adminAiApiLogsPageSize)) ? Number(adminAiApiLogsPageSize) : 10;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    adminAiApiLogsPage = Math.min(totalPages, Math.max(1, Number(adminAiApiLogsPage) || 1));
+    const startIndex = total > 0 ? (adminAiApiLogsPage - 1) * pageSize : 0;
+    const endIndex = Math.min(total, startIndex + pageSize);
+    const pageItems = total > 0 ? adminAiApiLogs.slice(startIndex, endIndex) : [];
+    summary.innerText = `요청 기록: ${total}건 (표시 ${total > 0 ? startIndex + 1 : 0}~${endIndex}, 페이지 ${adminAiApiLogsPage}/${totalPages})`;
     if (!adminAiApiLogs.length) {
         mount.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">로그가 없습니다.</div>';
         return;
     }
     mount.innerHTML = `
+        <div class="admin-ai-logs-toolbar">
+            <div class="admin-ai-logs-toolbar-left">페이지당 표시</div>
+            <div class="admin-ai-logs-toolbar-right">
+                <select class="input admin-ai-logs-page-size" onchange="changeAdminAiApiLogPageSize(this.value)">
+                    <option value="10" ${pageSize === 10 ? "selected" : ""}>10개</option>
+                    <option value="30" ${pageSize === 30 ? "selected" : ""}>30개</option>
+                    <option value="50" ${pageSize === 50 ? "selected" : ""}>50개</option>
+                    <option value="100" ${pageSize === 100 ? "selected" : ""}>100개</option>
+                </select>
+            </div>
+        </div>
         <table class="admin-ai-logs-table">
             <thead>
                 <tr>
@@ -810,7 +830,7 @@ function renderAdminAiApiLogsList() {
                 </tr>
             </thead>
             <tbody>
-                ${adminAiApiLogs
+                ${pageItems
                     .map((log) => {
                         const title = escapeHtml(String(log.title || "(제목 없음)"));
                         const board = escapeHtml(String(log.boardType || "-"));
@@ -828,13 +848,34 @@ function renderAdminAiApiLogsList() {
                     .join("")}
             </tbody>
         </table>
+        <div class="admin-ai-logs-pagination">
+            <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(1)" ${adminAiApiLogsPage <= 1 ? "disabled" : ""}>처음</button>
+            <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${adminAiApiLogsPage - 1})" ${adminAiApiLogsPage <= 1 ? "disabled" : ""}>이전</button>
+            <span class="admin-ai-logs-page-status">${adminAiApiLogsPage} / ${totalPages}</span>
+            <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${adminAiApiLogsPage + 1})" ${adminAiApiLogsPage >= totalPages ? "disabled" : ""}>다음</button>
+            <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${totalPages})" ${adminAiApiLogsPage >= totalPages ? "disabled" : ""}>마지막</button>
+        </div>
     `;
+}
+
+function changeAdminAiApiLogPageSize(value) {
+    const next = Number(value);
+    adminAiApiLogsPageSize = [10, 30, 50, 100].includes(next) ? next : 10;
+    adminAiApiLogsPage = 1;
+    renderAdminAiApiLogsList();
+}
+
+function goAdminAiApiLogPage(page) {
+    const totalPages = Math.max(1, Math.ceil(adminAiApiLogs.length / Math.max(1, Number(adminAiApiLogsPageSize) || 10)));
+    adminAiApiLogsPage = Math.min(totalPages, Math.max(1, Number(page) || 1));
+    renderAdminAiApiLogsList();
 }
 
 async function loadAdminAiApiLogsView() {
     try {
         const data = await fetchJson("/api/db/ai-api-logs");
         adminAiApiLogs = Array.isArray(data && data.logs) ? data.logs : [];
+        adminAiApiLogsPage = 1;
         renderAdminAiApiLogsList();
     } catch (e) {
         console.error(e);
@@ -851,6 +892,7 @@ async function clearAdminAiApiLogs() {
         try {
             await fetchJson("/api/db/ai-api-logs", { method: "DELETE" });
             adminAiApiLogs = [];
+            adminAiApiLogsPage = 1;
             renderAdminAiApiLogsList();
             showAlert("AI API 로그를 삭제했습니다.", "success");
         } catch (e) {
@@ -1143,6 +1185,8 @@ window.exportAdminRagKeywordBlocklist = exportAdminRagKeywordBlocklist;
 window.importAdminRagKeywordBlocklist = importAdminRagKeywordBlocklist;
 window.handleAdminRagKeywordImport = handleAdminRagKeywordImport;
 window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
+window.changeAdminAiApiLogPageSize = changeAdminAiApiLogPageSize;
+window.goAdminAiApiLogPage = goAdminAiApiLogPage;
 window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;
 window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
 window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;
