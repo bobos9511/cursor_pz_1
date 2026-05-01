@@ -49,6 +49,7 @@ const DEFAULT_DB = {
   signupUsers: [],
   sharedBoardHelp: {},
   aiSettings: deepCloneAiSettings(),
+  aiApiLogs: [],
 };
 
 const MIME_TYPES = {
@@ -239,6 +240,7 @@ function readDb() {
       signupUsers: Array.isArray(parsed && parsed.signupUsers) ? parsed.signupUsers : [],
       sharedBoardHelp: parsed && typeof parsed.sharedBoardHelp === "object" ? parsed.sharedBoardHelp : {},
       aiSettings: mergeAiSettingsFromDb(parsed),
+      aiApiLogs: Array.isArray(parsed && parsed.aiApiLogs) ? parsed.aiApiLogs : [],
     };
   } catch (error) {
     return { ...DEFAULT_DB };
@@ -293,6 +295,32 @@ function applyRateLimit(req, res) {
   }
   entry.count += 1;
   return true;
+}
+
+function getCookieValueFromHeader(cookieHeader, key) {
+  const src = String(cookieHeader || "");
+  if (!src || !key) return "";
+  const items = src.split(";");
+  for (const item of items) {
+    const idx = item.indexOf("=");
+    if (idx <= 0) continue;
+    const k = decodeURIComponent(item.slice(0, idx).trim());
+    if (k !== key) continue;
+    return decodeURIComponent(item.slice(idx + 1).trim());
+  }
+  return "";
+}
+
+function saveAiApiLog(entry) {
+  try {
+    const db = readDb();
+    if (!Array.isArray(db.aiApiLogs)) db.aiApiLogs = [];
+    db.aiApiLogs.unshift(entry);
+    db.aiApiLogs = db.aiApiLogs.slice(0, 400);
+    writeDb(db);
+  } catch (error) {
+    // Logging must never break API behavior.
+  }
 }
 
 async function handleAiChat(req, res) {
@@ -441,9 +469,34 @@ async function handleAiChat(req, res) {
     max: postMaxOutputTokens,
     postFast: postFastMaxOutputTokens,
   });
+  const requesterScope = getCookieValueFromHeader(req.headers.cookie, "knockUserScope");
+  const aiApiLog = {
+    id: `ai_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    requesterScope: requesterScope || "guest",
+    boardType,
+    title: String(title || ""),
+    contentPreview: String(content || "").slice(0, 3000),
+    continueFromProvided: !!continueFrom,
+    model: GEMINI_MODEL,
+    useGroundingRequested: shouldUseGrounding(boardType, title, content),
+    runtime: {
+      chatMaxOutputTokens,
+      postMaxOutputTokens,
+      postFastMaxOutputTokens,
+      chatMaxContinuations,
+      postMaxContinuations,
+      chatMaxContinuationRuntimeMs,
+      postMaxContinuationRuntimeMs,
+    },
+    generationConfig,
+    promptText: String(prompt || "").slice(0, 12000),
+    attempts: [],
+    final: { ok: false, statusCode: 0, error: "", truncated: false, continuationCount: 0 },
+  };
 
   try {
-    const useGrounding = shouldUseGrounding(boardType, title, content);
+    const useGrounding = aiApiLog.useGroundingRequested;
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -453,17 +506,41 @@ async function handleAiChat(req, res) {
       requestBody.tools = [{ google_search: {} }];
     }
 
-    async function callGemini(body) {
+    async function callGemini(body, label) {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const json = await res.json();
+      const parsedReply = extractReplyFromGeminiData(json);
+      aiApiLog.attempts.push({
+        label: String(label || ""),
+        requestedAt: new Date().toISOString(),
+        request: {
+          hasTools: !!(body && body.tools),
+          generationConfig: body && body.generationConfig ? body.generationConfig : {},
+          promptChars: body && body.contents && body.contents[0] && body.contents[0].parts && body.contents[0].parts[0]
+            ? String(body.contents[0].parts[0].text || "").length
+            : 0,
+          promptText:
+            body && body.contents && body.contents[0] && body.contents[0].parts && body.contents[0].parts[0]
+              ? String(body.contents[0].parts[0].text || "").slice(0, 12000)
+              : "",
+        },
+        response: {
+          ok: !!res.ok,
+          status: Number(res.status || 0),
+          finishReason: String(parsedReply.finishReason || ""),
+          replyPreview: String(parsedReply.reply || "").slice(0, 2000),
+          errorMessage:
+            json && json.error && json.error.message ? String(json.error.message) : "",
+        },
+      });
       return { res, json };
     }
 
-    let { res: geminiRes, json: data } = await callGemini(requestBody);
+    let { res: geminiRes, json: data } = await callGemini(requestBody, "initial");
 
     // If grounding is rejected (model/permissions), retry once without tools.
     if (!geminiRes.ok && useGrounding) {
@@ -472,12 +549,20 @@ async function handleAiChat(req, res) {
         ({ res: geminiRes, json: data } = await callGemini({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig,
-        }));
+        }, "retry_without_grounding"));
       }
     }
     if (!geminiRes.ok) {
       const apiError = data && data.error && data.error.message ? data.error.message : ko.errors.geminiApiGeneric;
       if (isQuotaOrRateLimitError(apiError)) {
+        aiApiLog.final = {
+          ok: true,
+          statusCode: 200,
+          error: "quota_exceeded",
+          truncated: false,
+          continuationCount: 0,
+        };
+        saveAiApiLog(aiApiLog);
         sendJson(res, 200, {
           reply: ko.quotaDegradedReplyLines().join("\n"),
           degraded: true,
@@ -485,6 +570,14 @@ async function handleAiChat(req, res) {
         });
         return;
       }
+      aiApiLog.final = {
+        ok: false,
+        statusCode: 502,
+        error: String(apiError || ""),
+        truncated: false,
+        continuationCount: 0,
+      };
+      saveAiApiLog(aiApiLog);
       sendJson(res, 502, { error: apiError });
       return;
     }
@@ -508,7 +601,7 @@ async function handleAiChat(req, res) {
       const { res: continueRes, json: continueData } = await callGemini({
         contents: [{ parts: [{ text: continuePrompt }] }],
         generationConfig,
-      });
+      }, `continuation_${continuationCount}`);
       if (!continueRes.ok) break;
       const { reply: continuedReply, finishReason: continueFinishReason } = extractReplyFromGeminiData(continueData);
       if (!continuedReply) break;
@@ -521,8 +614,24 @@ async function handleAiChat(req, res) {
       boardType === "CHAT"
         ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
         : compressAiReply(sanitizePostReplyText(sanitizeAiReplyText(reply)));
+    aiApiLog.final = {
+      ok: true,
+      statusCode: 200,
+      error: "",
+      truncated: finishReason === "MAX_TOKENS",
+      continuationCount,
+    };
+    saveAiApiLog(aiApiLog);
     sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
   } catch (error) {
+    aiApiLog.final = {
+      ok: false,
+      statusCode: 500,
+      error: String((error && error.message) || "ai_server_error"),
+      truncated: false,
+      continuationCount: 0,
+    };
+    saveAiApiLog(aiApiLog);
     sendJson(res, 500, { error: ko.errors.aiServerError });
   }
 }
@@ -604,7 +713,30 @@ async function handleDbApi(req, res, url) {
   }
   if (req.method === "GET" && url.pathname === "/api/db/ai-settings") {
     const db = readDb();
-    sendJson(res, 200, { aiSettings: db.aiSettings, promptDefaults: loadPromptDefaults() });
+    sendJson(res, 200, {
+      aiSettings: db.aiSettings,
+      promptDefaults: loadPromptDefaults(),
+      runtimeDefaults: {
+        chatMaxOutputTokens: GEMINI_CHAT_MAX_OUTPUT_TOKENS,
+        postMaxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+        chatMaxContinuations: GEMINI_CHAT_MAX_CONTINUATIONS,
+        postMaxContinuations: GEMINI_MAX_CONTINUATIONS,
+        chatMaxContinuationRuntimeMs: GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS,
+        postMaxContinuationRuntimeMs: GEMINI_MAX_CONTINUATION_RUNTIME_MS,
+      },
+    });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/ai-api-logs") {
+    const db = readDb();
+    sendJson(res, 200, { logs: Array.isArray(db.aiApiLogs) ? db.aiApiLogs : [] });
+    return true;
+  }
+  if (req.method === "DELETE" && url.pathname === "/api/db/ai-api-logs") {
+    const db = readDb();
+    db.aiApiLogs = [];
+    writeDb(db);
+    sendJson(res, 200, { ok: true });
     return true;
   }
   if (req.method === "PUT" && url.pathname === "/api/db/ai-settings") {

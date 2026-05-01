@@ -44,6 +44,15 @@ function roundGenParam(n) {
   return Math.round(Math.min(1, Math.max(0, x)) * 10) / 10;
 }
 
+function normalizeSystemPromptText(v) {
+  if (typeof v !== "string") return "";
+  const withoutBom = v.replace(/^\uFEFF/, "");
+  const withoutInvisible = withoutBom.replace(/[\u200B-\u200D\u2060]/g, "");
+  const trimmed = withoutInvisible.trim();
+  if (!trimmed) return "";
+  return withoutInvisible.slice(0, 8000);
+}
+
 function clampIntOrNull(v, min, max) {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
@@ -55,14 +64,14 @@ function mergeAiSettingsFromDb(parsed) {
   const base = deepCloneAiSettings();
   const src = parsed && parsed.aiSettings && typeof parsed.aiSettings === "object" ? parsed.aiSettings : {};
   if (src.chat && typeof src.chat === "object") {
-    if (typeof src.chat.systemPrompt === "string") base.chat.systemPrompt = src.chat.systemPrompt.slice(0, 8000);
+    if (typeof src.chat.systemPrompt === "string") base.chat.systemPrompt = normalizeSystemPromptText(src.chat.systemPrompt);
     base.chat.temperature = roundGenParam(src.chat.temperature ?? base.chat.temperature);
     base.chat.topP = roundGenParam(src.chat.topP ?? base.chat.topP);
   }
   for (const key of POST_AI_BOARD_KEYS) {
     if (src.posts && src.posts[key] && typeof src.posts[key] === "object") {
       const p = src.posts[key];
-      if (typeof p.systemPrompt === "string") base.posts[key].systemPrompt = p.systemPrompt.slice(0, 8000);
+      if (typeof p.systemPrompt === "string") base.posts[key].systemPrompt = normalizeSystemPromptText(p.systemPrompt);
       base.posts[key].temperature = roundGenParam(p.temperature ?? base.posts[key].temperature);
       base.posts[key].topP = roundGenParam(p.topP ?? base.posts[key].topP);
     }
@@ -84,7 +93,7 @@ function mergeAiSettingsPatch(base, patch) {
   if (!patch || typeof patch !== "object") return out;
   if (patch.chat && typeof patch.chat === "object") {
     const c = patch.chat;
-    if (typeof c.systemPrompt === "string") out.chat.systemPrompt = c.systemPrompt.slice(0, 8000);
+    if (typeof c.systemPrompt === "string") out.chat.systemPrompt = normalizeSystemPromptText(c.systemPrompt);
     if (c.temperature !== undefined) out.chat.temperature = roundGenParam(c.temperature);
     if (c.topP !== undefined) out.chat.topP = roundGenParam(c.topP);
   }
@@ -92,7 +101,7 @@ function mergeAiSettingsPatch(base, patch) {
     for (const key of POST_AI_BOARD_KEYS) {
       const p = patch.posts[key];
       if (!p || typeof p !== "object") continue;
-      if (typeof p.systemPrompt === "string") out.posts[key].systemPrompt = p.systemPrompt.slice(0, 8000);
+      if (typeof p.systemPrompt === "string") out.posts[key].systemPrompt = normalizeSystemPromptText(p.systemPrompt);
       if (p.temperature !== undefined) out.posts[key].temperature = roundGenParam(p.temperature);
       if (p.topP !== undefined) out.posts[key].topP = roundGenParam(p.topP);
     }
@@ -124,8 +133,8 @@ function getPostAiSlice(aiSettings, boardType) {
 function resolveEffectiveSystemPrompt(boardType, aiSettings, defs) {
   const isChat = boardType === "CHAT";
   const saved = isChat ? aiSettings.chat.systemPrompt : getPostAiSlice(aiSettings, boardType).systemPrompt;
-  const trimmed = String(saved || "").trim();
-  if (trimmed) return trimmed;
+  const normalizedSaved = normalizeSystemPromptText(saved);
+  if (normalizedSaved) return normalizedSaved;
   if (isChat) return String(defs.chat || "").trim();
   const k = String(boardType || "").toUpperCase();
   const postDef = defs.posts && defs.posts[k];

@@ -961,6 +961,7 @@
 
                         <div class="admin-main-tab-row" id="adminSettingsMainTabs">
                             <button type="button" class="admin-main-tab-btn btn btn-primary" data-admin-tab="ai">AI 설정</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="logs">AI API 로그</button>
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="perms">권한 설정</button>
                         </div>
 
@@ -1051,31 +1052,39 @@
                                 <span class="admin-settings-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">RUNTIME</span>
                                 <h3 class="admin-settings-card-title">토큰/이어쓰기 설정</h3>
                             </div>
-                            <p class="admin-settings-hint">비워두면 서버 환경변수 기본값을 사용합니다. 저장 시 AI 응답 길이/이어쓰기 제한에 즉시 반영됩니다.</p>
+                            <p class="admin-settings-hint">AI채팅과 AI답변(게시물)을 각각 설정할 수 있습니다. 입력이 비어 있으면 기본값 수치를 자동 적용합니다.</p>
                             <div class="admin-gen-grid">
+                                <div class="admin-field-label" style="margin-bottom:2px;">AI채팅</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">채팅 최대 토큰</label>
                                     <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
-                                </div>
-                                <div class="admin-gen-row">
-                                    <label class="admin-gen-label">게시물 최대 토큰</label>
-                                    <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
                                     <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
-                                </div>
-                                <div class="admin-gen-row">
-                                    <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
-                                    <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
                                     <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-field-label" style="margin:4px 0 2px;">AI답변 (게시물)</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">게시물 최대 토큰</label>
+                                    <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                </div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
+                                    <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
                                     <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
+                                    <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
                             </div>
                         </div>
@@ -1098,6 +1107,22 @@
                                     <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
                                     <button type="button" class="btn btn-primary" onclick="saveAdminPermissionsToServer()">권한 저장</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div id="admin-settings-panel-logs" class="admin-settings-tab-panel hidden">
+                            <div class="admin-settings-card">
+                                <div class="admin-settings-card-head">
+                                    <span class="admin-settings-badge" style="background:linear-gradient(90deg,#0ea5e9,#0284c7);">LOG</span>
+                                    <h3 class="admin-settings-card-title">AI API 통신 로그</h3>
+                                </div>
+                                <p class="admin-settings-hint">AI 요청/응답 기록을 페이지별로 확인할 수 있습니다. 목록을 클릭하면 프롬프트, 설정값, 응답 결과를 상세하게 볼 수 있습니다.</p>
+                                <div class="admin-settings-actions" style="justify-content:space-between; margin-bottom:10px;">
+                                    <button type="button" class="btn btn-outline" onclick="loadAdminAiApiLogsView()">새로고침</button>
+                                    <button type="button" class="btn btn-outline" style="color:#b91c1c; border-color:#fca5a5;" onclick="clearAdminAiApiLogs()">로그 전체 삭제</button>
+                                </div>
+                                <div id="adminAiApiLogsSummary" class="admin-settings-hint" style="margin-bottom:10px;">요청 기록: 0건</div>
+                                <div id="adminAiApiLogsList" class="admin-ai-logs-list-wrap"></div>
                             </div>
                         </div>
                     </div>
@@ -1233,6 +1258,18 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">초기화</button>
                 <button type="button" class="btn btn-primary" onclick="applyNotificationFilters()">적용</button>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiApiLogModal" class="modal-overlay" style="z-index: 1014;">
+        <div class="modal-content" style="max-width: 920px; width:min(96vw,920px);">
+            <div class="modal-header" style="background:linear-gradient(130deg,#0f3f74 0%, #0b6ab3 55%, #0284c7 100%);">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> AI API 로그 상세</span>
+                <button onclick="closeAdminAiApiLogModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="adminAiApiLogModalBody" class="modal-body" style="background:#f8fafc;"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiApiLogModal()">닫기</button>
             </div>
         </div>
     </div>
