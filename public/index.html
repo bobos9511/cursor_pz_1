@@ -4,6 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>IBK 스마트 업무지식센터 - KNOCK</title>
+  <script>
+    (function () {
+      try {
+        var mode = localStorage.getItem("knock-theme-mode") || "system";
+        var resolved = mode === "dark" ? "dark" : mode === "light" ? "light" : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", resolved);
+        var applyBodyTheme = function () {
+          if (!document.body) return false;
+          document.body.setAttribute("data-theme", resolved);
+          return true;
+        };
+        if (!applyBodyTheme()) {
+          var obs = new MutationObserver(function () {
+            if (applyBodyTheme()) obs.disconnect();
+          });
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>

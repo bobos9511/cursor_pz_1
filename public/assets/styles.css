@@ -15,6 +15,7 @@
             --sidebar-bg: #212529;
             --footer-bg: #1A1F27;
         }
+        html[data-theme="dark"],
         body[data-theme="dark"] {
             --bg-color: #0b1220;
             --border-color: #334155;
@@ -32,6 +33,41 @@
         ul { list-style: none; }
         button { background: transparent; border: none; cursor: pointer; font-family: inherit; outline: none; }
         input, select, textarea { font-family: inherit; }
+        input[type="range"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #dbe7f7, #e2e8f0);
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            margin-top: -5px;
+            background: #2563eb;
+            border: 2px solid #dbeafe;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        }
+        input[type="range"]::-moz-range-track {
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #dbe7f7, #e2e8f0);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: #2563eb;
+            border: 2px solid #dbeafe;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        }
 
         /* ==========================================
            2. UTILITIES
@@ -1710,6 +1746,36 @@
             background: #101a2b;
             border-color: #4a5f7f;
             color: #e6edf8;
+        }
+        body[data-theme="dark"] input[type="range"]::-webkit-slider-runnable-track {
+            background: linear-gradient(90deg, #334a68, #475d7d);
+        }
+        body[data-theme="dark"] input[type="range"]::-webkit-slider-thumb {
+            background: #60a5fa;
+            border-color: #bfdbfe;
+            box-shadow: 0 2px 8px rgba(2, 8, 24, 0.5);
+        }
+        body[data-theme="dark"] input[type="range"]::-moz-range-track {
+            background: linear-gradient(90deg, #334a68, #475d7d);
+        }
+        body[data-theme="dark"] input[type="range"]::-moz-range-thumb {
+            background: #60a5fa;
+            border-color: #bfdbfe;
+            box-shadow: 0 2px 8px rgba(2, 8, 24, 0.5);
+        }
+        body[data-theme="dark"] select.input {
+            background-image: linear-gradient(45deg, transparent 50%, #9fb0c8 50%), linear-gradient(135deg, #9fb0c8 50%, transparent 50%);
+        }
+        body[data-theme="dark"] input[type="number"] {
+            color-scheme: dark;
+        }
+        body[data-theme="dark"] select {
+            color-scheme: dark;
+        }
+        body[data-theme="dark"] input[type="number"]::-webkit-inner-spin-button,
+        body[data-theme="dark"] input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            filter: invert(1) brightness(1.3) contrast(1.1);
         }
         body[data-theme="dark"] .btn {
             border-color: #465b79;

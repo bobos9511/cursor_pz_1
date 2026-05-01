@@ -303,7 +303,10 @@
         }
         function applyThemeMode(mode) {
             const resolved = resolveThemeFromMode(mode);
+            document.documentElement.setAttribute('data-theme', resolved);
             document.body.setAttribute('data-theme', resolved);
+            localStorage.setItem('knock-theme-mode', String(mode || 'system'));
+            localStorage.setItem('knock-theme-resolved', resolved);
             const radios = document.querySelectorAll('input[name="themeMode"]');
             radios.forEach((el) => {
                 el.checked = el.value === String(mode || 'system');
