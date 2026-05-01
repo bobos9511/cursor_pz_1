@@ -3050,23 +3050,21 @@
             const bizBtn = document.getElementById('btn-know-biz');
             [itBtn, bizBtn].forEach(btn => {
                 if (!btn) return;
-                btn.style.background = '#fff';
-                btn.style.color = '#444';
-                btn.style.borderColor = '#ccc';
+                btn.classList.remove('is-active');
             });
             const activeBtn = type === 'BIZ' ? bizBtn : itBtn;
             if (activeBtn) {
-                activeBtn.style.background = '#eef2ff';
-                activeBtn.style.color = '#3730a3';
-                activeBtn.style.borderColor = '#6366f1';
+                activeBtn.classList.add('is-active');
             }
         }
 
         function selectWriteCategory(type) {
             currentBoardType = type;
-            document.querySelectorAll('#writeCategoryButtons > div').forEach(btn => { btn.style.background = '#fff'; btn.style.color = '#444'; btn.style.borderColor = '#ccc'; });
+            document.querySelectorAll('#writeCategoryButtons > div').forEach((btn) => {
+                btn.classList.remove('is-active');
+            });
             const el = document.getElementById(`btn-cat-${type}`);
-            if(el) { el.style.background = '#ebf5ff'; el.style.color = 'var(--ibk-blue)'; el.style.borderColor = 'var(--ibk-blue)'; }
+            if (el) el.classList.add('is-active');
 
             document.getElementById('field-gid').classList.add('hidden');
             document.getElementById('field-cust').classList.add('hidden');
