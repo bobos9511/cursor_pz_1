@@ -3374,7 +3374,7 @@
             if (!rankingEl || !relatedEl) return;
             const counts = buildIntegratedKeywordCounts(appData.posts || []);
             const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            rankingEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:6px;">검색어 순위</div>${
+            rankingEl.innerHTML = `<div style="font-weight:800; color:var(--text-dark); margin-bottom:6px;">검색어 순위</div>${
                 top.length
                     ? `<div class="integrated-ranking-board">${
                           top
@@ -3388,7 +3388,7 @@
                               )
                               .join('')
                       }</div>`
-                    : '<span style="color:#94a3b8;">데이터 없음</span>'
+                    : '<span style="color:var(--text-light);">데이터 없음</span>'
             }`;
             const kw = String(keyword || '').trim().toLowerCase();
             const relatedCounts = kw && matchedPosts.length > 0 ? buildIntegratedKeywordCounts(matchedPosts) : counts;
@@ -3398,7 +3398,7 @@
                       .sort((a, b) => b[1] - a[1])
                       .slice(0, 8)
                 : top.slice(0, 8);
-            relatedEl.innerHTML = `<div style="font-weight:800; color:#1e293b; margin-bottom:4px;">연관검색어</div>${
+            relatedEl.innerHTML = `<div style="font-weight:800; color:var(--text-dark); margin-bottom:4px;">연관검색어</div>${
                 rel.length
                     ? rel
                           .map(([k, c]) => {
@@ -3406,7 +3406,7 @@
                               return `<button type="button" class="btn btn-outline integrated-search-chip" style="margin-right:6px; margin-bottom:4px;" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span style="opacity:.75;">(${c})</span></button>`;
                           })
                           .join('')
-                    : '<span style="color:#94a3b8;">연관 키워드 없음</span>'
+                    : '<span style="color:var(--text-light);">연관 키워드 없음</span>'
             }`;
         }
         function showIntegratedSearchModal() {
@@ -3461,10 +3461,10 @@
                     else badge = '<span class="badge bg-done" style="font-size:10px; padding:2px 6px;">답변완료</span>';
                 }
                 return `<li class="integrated-search-result-item" onclick="goFromIntegratedSearch(${p.id}, '${p.type}')">
-                    <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10"><span style="font-weight:bold; color:#666; font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:#999;">${p.datetime.substring(0, 10)}</span></div>
-                    <div style="font-weight:bold; color:var(--ibk-blue); font-size:15px; margin-bottom:5px;">${p.title}</div>
-                    <div style="font-size:13px; color:#666;" class="truncate">${stripped}</div>
-                    <div style="margin-top:6px; font-size:11px; color:#64748b;">관련도 점수: ${score}</div>
+                    <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10"><span style="font-weight:bold; color:var(--text-gray); font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:var(--text-light);">${p.datetime.substring(0, 10)}</span></div>
+                    <div style="font-weight:bold; color:#60a5fa; font-size:15px; margin-bottom:5px;">${p.title}</div>
+                    <div style="font-size:13px; color:var(--text-gray);" class="truncate">${stripped}</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--text-light);">관련도 점수: ${score}</div>
                 </li>`;
             }).join('') + '</ul>';
         }

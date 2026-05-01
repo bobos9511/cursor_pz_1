@@ -484,3 +484,56 @@ function openAdminAiApiLogModal(logId) {
     `;
     modal.classList.add("active");
 }
+
+function closeAdminAiHelpModal() {
+    const modal = document.getElementById("adminAiHelpModal");
+    if (modal) modal.classList.remove("active");
+}
+
+function openAdminAiHelpModal(topic) {
+    const modal = document.getElementById("adminAiHelpModal");
+    const titleEl = document.getElementById("adminAiHelpModalTitle");
+    const bodyEl = document.getElementById("adminAiHelpModalBody");
+    if (!modal || !titleEl || !bodyEl) return;
+    const key = String(topic || "runtime");
+    const helpMap = {
+        chat: {
+            title: "AI 채팅 설정 도움말",
+            html: `
+                <div style="line-height:1.65;">
+                    <p><strong>시스템 프롬프트</strong>: AI 채팅의 말투/역할/제약을 정의합니다. 비우면 기본 프롬프트를 사용합니다.</p>
+                    <p><strong>Temperature</strong>: 높을수록 창의적, 낮을수록 일관적입니다. 일반 업무 답변은 <b>0.2~0.5</b> 권장입니다.</p>
+                    <p><strong>Top-P</strong>: 응답 후보 단어 범위를 제한합니다. Temperature와 함께 조정하되, 급격한 변경은 피하세요.</p>
+                </div>
+            `,
+        },
+        post: {
+            title: "AI 답변(게시물) 설정 도움말",
+            html: `
+                <div style="line-height:1.65;">
+                    <p><strong>IT/규정 게시판별 프롬프트</strong>: 게시판 성격에 맞는 답변 기준을 분리해 설정합니다.</p>
+                    <p><strong>Temperature/Top-P</strong>: IT 문의는 보수적으로(낮게), 설명형 규정문의는 약간 높게 두면 자연스럽습니다.</p>
+                    <p>운영 중에는 한 번에 한 값만 조정하고 결과를 비교하는 방식이 안전합니다.</p>
+                </div>
+            `,
+        },
+        runtime: {
+            title: "토큰/이어쓰기 설정 도움말",
+            html: `
+                <div style="line-height:1.65;">
+                    <p><strong>최대 토큰</strong>: 1회 응답 길이 제한입니다. 너무 낮으면 답변이 잘릴 수 있고, 너무 높으면 비용/시간이 증가합니다.</p>
+                    <p><strong>이어쓰기 횟수</strong>: 잘린 답변을 자동 이어서 생성하는 시도 횟수입니다.</p>
+                    <p><strong>이어쓰기 시간(ms)</strong>: 이어쓰기 전체 실행의 타임아웃입니다. 장시간 지연 방지용 안전장치입니다.</p>
+                    <p>입력을 비우면 서버 기본값을 자동 사용합니다.</p>
+                </div>
+            `,
+        },
+    };
+    const selected = helpMap[key] || helpMap.runtime;
+    titleEl.innerText = selected.title;
+    bodyEl.innerHTML = selected.html;
+    modal.classList.add("active");
+}
+
+window.openAdminAiHelpModal = openAdminAiHelpModal;
+window.closeAdminAiHelpModal = closeAdminAiHelpModal;

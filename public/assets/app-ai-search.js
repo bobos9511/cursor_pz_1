@@ -185,6 +185,16 @@ function renderAiSearchMessages() {
     if (!logEl) return;
     logEl.innerHTML = "";
     const messages = aiSearchActive && Array.isArray(aiSearchActive.messages) ? aiSearchActive.messages : [];
+    const isPreferButtonHiddenMessage = (text, idx) => {
+        const plain = stripHtmlForRag(String(text || ""));
+        const normalized = plain.replace(/\s+/g, " ").trim();
+        if (!normalized) return true;
+        // 첫 인삿말(대화 시작 메시지)에는 선호 버튼을 표시하지 않음
+        if (idx === 0 && normalized.includes("질문을 입력하면 핵심만 간단히 정리해")) return true;
+        // 추가정보 요청 안내 성격 메시지에는 선호 버튼을 표시하지 않음
+        if (normalized.includes("추가 정보") && normalized.includes("요청")) return true;
+        return false;
+    };
     messages.forEach((msg, idx) => {
         const role = msg && msg.role === "user" ? "user" : "ai";
         const text = String(msg && msg.text ? msg.text : "");
@@ -196,7 +206,8 @@ function renderAiSearchMessages() {
             item.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
         } else {
             const preferred = !!(msg && msg.preferred);
-            const preferBtn = !isLoadingMsg
+            const hidePrefer = isPreferButtonHiddenMessage(text, idx);
+            const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "답변선호 취소" : "답변선호"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${preferred ? "선호됨" : "답변선호"}</button>`
                 : "";
             item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn}`;

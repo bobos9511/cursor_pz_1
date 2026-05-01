@@ -1017,6 +1017,7 @@
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge">CHAT</span>
                                 <h3 class="admin-settings-card-title">AI 채팅</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('chat')">도움말</button>
                             </div>
                             <p class="admin-settings-hint">저장된 값이 비어 있으면 기본 시스템 프롬프트가 그대로 사용됩니다.</p>
                             <div class="admin-default-block">
@@ -1031,11 +1032,13 @@
                                     <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
                                     <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
                                 </div>
+                                <div class="admin-settings-subhint">Temperature가 높을수록 답변이 다양해지고, 낮을수록 일관성이 높아집니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">Top-P</label>
                                     <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
                                     <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
                                 </div>
+                                <div class="admin-settings-subhint">Top-P는 선택 후보 범위를 조절합니다. Temperature와 함께 미세 조정해 주세요.</div>
                             </div>
                         </div>
 
@@ -1043,6 +1046,7 @@
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge admin-settings-badge-violet">POST</span>
                                 <h3 class="admin-settings-card-title">AI 답변 (게시물)</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('post')">도움말</button>
                             </div>
                             <p class="admin-settings-hint">게시판 유형별로 시스템 프롬프트와 Temperature·Top-P를 지정합니다.</p>
                             <div class="admin-tab-row" id="adminAi-post-tabs">
@@ -1098,6 +1102,7 @@
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">RUNTIME</span>
                                 <h3 class="admin-settings-card-title">토큰/이어쓰기 설정</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('runtime')">도움말</button>
                             </div>
                             <p class="admin-settings-hint">AI채팅과 AI답변(게시물)을 각각 설정할 수 있습니다. 입력이 비어 있으면 기본값 수치를 자동 적용합니다.</p>
                             <div class="admin-gen-grid">
@@ -1107,32 +1112,38 @@
                                     <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">한 번의 채팅 응답 길이 제한입니다. 낮으면 답변이 중간에 끊길 수 있습니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
                                     <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">응답이 잘릴 때 자동으로 이어쓰기하는 최대 횟수입니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
                                     <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">이어쓰기 전체 동작 시간 제한입니다. 초과 시 안전하게 종료됩니다.</div>
                                 <div class="admin-field-label" style="margin:4px 0 2px;">AI답변 (게시물)</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">게시물 최대 토큰</label>
                                     <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">게시판 답변(IT/규정) 1회 생성 길이 제한입니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
                                     <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">게시물 답변이 길어 잘렸을 때 자동 이어쓰기 최대 횟수입니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
                                     <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용">
                                     <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                 </div>
+                                <div class="admin-settings-subhint">게시물 이어쓰기 전체 동작 시간 제한입니다.</div>
                             </div>
                         </div>
 
@@ -1342,6 +1353,18 @@
             <div id="adminAiApiLogModalBody" class="modal-body" style="background:#f8fafc;"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeAdminAiApiLogModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiHelpModal" class="modal-overlay" style="z-index: 1015;">
+        <div class="modal-content" style="max-width: 760px; width:min(94vw,760px);">
+            <div class="modal-header">
+                <h3 id="adminAiHelpModalTitle" style="font-size:16px;">AI 설정 도움말</h3>
+                <button class="btn-icon" onclick="closeAdminAiHelpModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="adminAiHelpModalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiHelpModal()">닫기</button>
             </div>
         </div>
     </div>
