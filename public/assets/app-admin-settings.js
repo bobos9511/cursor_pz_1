@@ -20,6 +20,21 @@ function clampAdminAiInt(v, min, max, fallback) {
     return Math.min(max, Math.max(min, n));
 }
 
+function parseAdminKeywordBlocklist(raw) {
+    const source = String(raw || "")
+        .split(/[,\n]/g)
+        .map((x) => String(x || "").toLowerCase().replace(/[^\w가-힣]/g, "").trim())
+        .filter(Boolean);
+    const out = [];
+    const seen = new Set();
+    source.forEach((token) => {
+        if (token.length < 2 || seen.has(token)) return;
+        seen.add(token);
+        out.push(token);
+    });
+    return out;
+}
+
 function setAdminRuntimeInputValue(id, value, defaultValue) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -161,6 +176,9 @@ function collectAdminAiSettingsFromForm() {
                 100,
                 null,
             ),
+            ragKeywordBlocklist: parseAdminKeywordBlocklist(
+                document.getElementById("adminAi-runtime-ragKeywordBlocklist")?.value,
+            ),
         },
     };
     ADMIN_AI_POST_KEYS.forEach((k) => {
@@ -271,6 +289,14 @@ async function loadAdminAiSettingsView() {
             runtime.ragRelativeCutoffPct,
             defaults.ragRelativeCutoffPct,
         );
+        const ragKeywordInput = document.getElementById("adminAi-runtime-ragKeywordBlocklist");
+        if (ragKeywordInput) {
+            const runtimeList = Array.isArray(runtime.ragKeywordBlocklist) ? runtime.ragKeywordBlocklist : [];
+            ragKeywordInput.value = runtimeList.join(", ");
+            if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
+                window.applyRuntimeRagKeywordBlocklist(runtimeList);
+            }
+        }
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxOutputTokens-default", defaults.chatMaxOutputTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-postMaxOutputTokens-default", defaults.postMaxOutputTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxContinuations-default", defaults.chatMaxContinuations);
@@ -281,6 +307,11 @@ async function loadAdminAiSettingsView() {
         setAdminRuntimeDefaultText("adminAi-runtime-ragMinOverlapTokens-default", defaults.ragMinOverlapTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-ragMinScore-default", defaults.ragMinScore);
         setAdminRuntimeDefaultText("adminAi-runtime-ragRelativeCutoffPct-default", defaults.ragRelativeCutoffPct);
+        const ragKeywordDefaultEl = document.getElementById("adminAi-runtime-ragKeywordBlocklist-default");
+        if (ragKeywordDefaultEl) {
+            const defaultsList = Array.isArray(defaults.ragKeywordBlocklist) ? defaults.ragKeywordBlocklist : [];
+            ragKeywordDefaultEl.innerText = defaultsList.length ? `기본값: ${defaultsList.length}개` : "기본값: -";
+        }
         updateAdminRuntimeHumanHint("adminAi-runtime-chatMaxContinuationRuntimeMs");
         updateAdminRuntimeHumanHint("adminAi-runtime-postMaxContinuationRuntimeMs");
         ADMIN_AI_POST_KEYS.forEach((k) => {
@@ -319,6 +350,9 @@ async function saveAdminAiSettingsToServer() {
                 meta: { changedBy: getAdminActorName(), note: "관리자 화면에서 수동 저장" },
             }),
         });
+        if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
+            window.applyRuntimeRagKeywordBlocklist(aiSettings && aiSettings.runtime ? aiSettings.runtime.ragKeywordBlocklist : []);
+        }
         showAlert("관리자 설정을 저장했습니다.", "success");
     } catch (e) {
         console.error(e);
@@ -359,6 +393,7 @@ function summarizeAiSettingsHtml(settings) {
     const c = cfg.chat && typeof cfg.chat === "object" ? cfg.chat : {};
     const p = cfg.posts && typeof cfg.posts === "object" ? cfg.posts : {};
     const r = cfg.runtime && typeof cfg.runtime === "object" ? cfg.runtime : {};
+    const ragBlockCount = Array.isArray(r.ragKeywordBlocklist) ? r.ragKeywordBlocklist.length : 0;
     const postIT = p.IT && typeof p.IT === "object" ? p.IT : {};
     const postBIZ = p.BIZ && typeof p.BIZ === "object" ? p.BIZ : {};
     return `
@@ -367,7 +402,7 @@ function summarizeAiSettingsHtml(settings) {
             <div class="admin-ai-settings-version-card"><b>IT 답변</b><span>T ${postIT.temperature ?? "-"} / P ${postIT.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>BIZ 답변</b><span>T ${postBIZ.temperature ?? "-"} / P ${postBIZ.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>토큰/이어쓰기</b><span>chat ${r.chatMaxOutputTokens ?? "-"} / post ${r.postMaxOutputTokens ?? "-"}</span></div>
-            <div class="admin-ai-settings-version-card"><b>RAG</b><span>후보 ${r.ragMaxCandidates ?? "-"} / 최소점수 ${r.ragMinScore ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>RAG</b><span>후보 ${r.ragMaxCandidates ?? "-"} / 최소점수 ${r.ragMinScore ?? "-"} / 금칙어 ${ragBlockCount}개</span></div>
         </div>
     `;
 }
@@ -500,6 +535,7 @@ function buildAdminAiApiLogPlainText(log) {
     lines.push(`RAG 최소 토큰 일치 수: ${String(runtime.ragMinOverlapTokens ?? "-")}`);
     lines.push(`RAG 최소 점수: ${String(runtime.ragMinScore ?? "-")}`);
     lines.push(`RAG 상대 컷오프(%): ${String(runtime.ragRelativeCutoffPct ?? "-")}`);
+    lines.push(`RAG 키워드 금칙어 수: ${Array.isArray(runtime.ragKeywordBlocklist) ? runtime.ragKeywordBlocklist.length : 0}개`);
     lines.push(`요청 maxOutputTokens: ${String(generation.maxOutputTokens ?? "-")}`);
     lines.push(`요청 temperature: ${String(generation.temperature ?? "-")}`);
     lines.push(`요청 topP: ${String(generation.topP ?? "-")}`);
@@ -832,6 +868,7 @@ function buildAdminLogInfoRows(log) {
         ["RAG 최소 토큰 일치 수", String(runtime.ragMinOverlapTokens ?? "-")],
         ["RAG 최소 점수", String(runtime.ragMinScore ?? "-")],
         ["RAG 상대 컷오프(%)", String(runtime.ragRelativeCutoffPct ?? "-")],
+        ["RAG 키워드 금칙어 수", `${Array.isArray(runtime.ragKeywordBlocklist) ? runtime.ragKeywordBlocklist.length : 0}개`],
     ];
     const rows = [
         ["요청 시각", formatAdminAiApiLogTime(log.createdAt)],

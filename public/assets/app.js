@@ -668,19 +668,69 @@
             return `${text.slice(0, 140).trim()}...`;
         }
 
-        const KNOW_KEYWORD_BLOCKLIST = new Set([
+        const DEFAULT_RAG_KEYWORD_BLOCKLIST = [
             '대해',
             '대한',
+            '관련',
+            '관한',
+            '기반',
+            '통해',
+            '위해',
+            '경우',
+            '사항',
+            '부분',
+            '방식',
+            '정보',
+            '요청',
+            '처리',
+            '확인',
+            '정리',
+            '설명',
             '설명해줘',
             '설명해주세요',
             '설명해',
             '알려줘',
             '알려주세요',
+            '말해줘',
+            '말해주세요',
+            '보여줘',
+            '보여주세요',
+            '가능',
+            '부탁',
+            '참고',
+            '및',
+            '등',
+            '또는',
+            '그리고',
+            '하지만',
+            '즉',
+            '예시',
+            '예를들어',
+            '아래',
+            '위',
+            '해당',
+            '이것',
+            '저것',
+            '그것',
+            '무엇',
+            '어떻게',
+            '왜',
+            '언제',
+            '어디',
+            'please',
+            'pls',
+            'kindly',
+            'about',
+            'regarding',
+            'explain',
+            'tell',
+            'show',
             '내용',
             '문의',
             '질문',
             '답변',
-        ]);
+        ];
+        let ragKeywordBlocklist = new Set(DEFAULT_RAG_KEYWORD_BLOCKLIST);
 
         function normalizeKnowKeywordToken(rawToken) {
             return String(rawToken || '')
@@ -688,6 +738,20 @@
                 .replace(/[^\w가-힣]/g, '')
                 .trim();
         }
+
+        function applyRuntimeRagKeywordBlocklist(rawList) {
+            const list = Array.isArray(rawList)
+                ? rawList
+                : String(rawList || '').split(/[,\n]/g);
+            const next = new Set();
+            list.forEach((item) => {
+                const token = normalizeKnowKeywordToken(item);
+                if (!token || token.length < 2) return;
+                next.add(token);
+            });
+            ragKeywordBlocklist = next.size > 0 ? next : new Set(DEFAULT_RAG_KEYWORD_BLOCKLIST);
+        }
+        window.applyRuntimeRagKeywordBlocklist = applyRuntimeRagKeywordBlocklist;
 
         function splitAndSanitizeKnowKeywords(rawKeywords) {
             const parts = String(rawKeywords || '')
@@ -700,7 +764,7 @@
             parts.forEach((token) => {
                 const normalized = normalizeKnowKeywordToken(token);
                 if (!normalized) return;
-                if (normalized.length < 2 || KNOW_KEYWORD_BLOCKLIST.has(normalized)) {
+                if (normalized.length < 2 || ragKeywordBlocklist.has(normalized)) {
                     blocked.push(token);
                     return;
                 }
@@ -722,7 +786,7 @@
             const counts = new Map();
             raw.split(' ').forEach((token) => {
                 const t = token.trim();
-                if (!t || t.length < 2 || stop.has(t) || KNOW_KEYWORD_BLOCKLIST.has(t)) return;
+                if (!t || t.length < 2 || stop.has(t) || ragKeywordBlocklist.has(t)) return;
                 counts.set(t, (counts.get(t) || 0) + 1);
             });
             return Array.from(counts.entries())
@@ -1003,6 +1067,16 @@
                 console.error('initApp load failed:', error);
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
+            }
+            try {
+                const aiSettingsData = await fetchJson('/api/db/ai-settings');
+                const runtime = aiSettingsData && aiSettingsData.aiSettings && aiSettingsData.aiSettings.runtime
+                    ? aiSettingsData.aiSettings.runtime
+                    : {};
+                applyRuntimeRagKeywordBlocklist(runtime.ragKeywordBlocklist);
+            } catch (error) {
+                console.error('load rag keyword blocklist failed:', error);
+                applyRuntimeRagKeywordBlocklist([]);
             }
             normalizeKnowPostStatuses(appData.posts);
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };

@@ -5,6 +5,68 @@ const path = require("path");
 const { PROMPT_LABELS } = require("./server-ai-prompt-labels.ko.cjs");
 
 const POST_AI_BOARD_KEYS = ["IT", "BIZ", "SYS", "KNOW"];
+const DEFAULT_RAG_KEYWORD_BLOCKLIST = [
+  "대해",
+  "대한",
+  "관련",
+  "관한",
+  "기반",
+  "통해",
+  "위해",
+  "경우",
+  "사항",
+  "내용",
+  "부분",
+  "방식",
+  "정보",
+  "문의",
+  "질문",
+  "답변",
+  "요청",
+  "처리",
+  "확인",
+  "정리",
+  "설명",
+  "설명해",
+  "설명해줘",
+  "설명해주세요",
+  "알려줘",
+  "알려주세요",
+  "말해줘",
+  "말해주세요",
+  "보여줘",
+  "보여주세요",
+  "가능",
+  "부탁",
+  "참고",
+  "및",
+  "등",
+  "또는",
+  "그리고",
+  "하지만",
+  "즉",
+  "예시",
+  "예를들어",
+  "아래",
+  "위",
+  "해당",
+  "이것",
+  "저것",
+  "그것",
+  "무엇",
+  "어떻게",
+  "왜",
+  "언제",
+  "어디",
+  "please",
+  "pls",
+  "kindly",
+  "about",
+  "regarding",
+  "explain",
+  "tell",
+  "show",
+];
 
 const DEFAULT_AI_SETTINGS = {
   chat: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
@@ -25,6 +87,7 @@ const DEFAULT_AI_SETTINGS = {
     ragMinOverlapTokens: null,
     ragMinScore: null,
     ragRelativeCutoffPct: null,
+    ragKeywordBlocklist: [...DEFAULT_RAG_KEYWORD_BLOCKLIST],
   },
 };
 
@@ -64,6 +127,31 @@ function clampIntOrNull(v, min, max) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+function normalizeKeywordToken(v) {
+  return String(v || "")
+    .toLowerCase()
+    .replace(/[^\w가-힣]/g, "")
+    .trim();
+}
+
+function normalizeKeywordBlocklist(rawList, fallbackList = DEFAULT_RAG_KEYWORD_BLOCKLIST) {
+  const source = Array.isArray(rawList)
+    ? rawList
+    : typeof rawList === "string"
+      ? rawList.split(/[,\n]/g)
+      : [];
+  const out = [];
+  const seen = new Set();
+  source.forEach((item) => {
+    const token = normalizeKeywordToken(item);
+    if (!token || token.length < 2 || seen.has(token)) return;
+    seen.add(token);
+    out.push(token);
+  });
+  if (out.length > 0) return out;
+  return Array.isArray(fallbackList) ? [...fallbackList] : [...DEFAULT_RAG_KEYWORD_BLOCKLIST];
+}
+
 function mergeAiSettingsFromDb(parsed) {
   const base = deepCloneAiSettings();
   const src = parsed && parsed.aiSettings && typeof parsed.aiSettings === "object" ? parsed.aiSettings : {};
@@ -92,6 +180,7 @@ function mergeAiSettingsFromDb(parsed) {
     base.runtime.ragMinOverlapTokens = clampIntOrNull(r.ragMinOverlapTokens, 1, 10);
     base.runtime.ragMinScore = clampIntOrNull(r.ragMinScore, 0, 100);
     base.runtime.ragRelativeCutoffPct = clampIntOrNull(r.ragRelativeCutoffPct, 0, 100);
+    base.runtime.ragKeywordBlocklist = normalizeKeywordBlocklist(r.ragKeywordBlocklist, base.runtime.ragKeywordBlocklist);
   }
   return base;
 }
@@ -134,6 +223,8 @@ function mergeAiSettingsPatch(base, patch) {
     if (r.ragMinScore !== undefined) out.runtime.ragMinScore = clampIntOrNull(r.ragMinScore, 0, 100);
     if (r.ragRelativeCutoffPct !== undefined)
       out.runtime.ragRelativeCutoffPct = clampIntOrNull(r.ragRelativeCutoffPct, 0, 100);
+    if (r.ragKeywordBlocklist !== undefined)
+      out.runtime.ragKeywordBlocklist = normalizeKeywordBlocklist(r.ragKeywordBlocklist, out.runtime.ragKeywordBlocklist);
   }
   return out;
 }
@@ -207,4 +298,5 @@ module.exports = {
   loadPromptDefaults,
   buildAiPrompt,
   buildGenerationConfig,
+  DEFAULT_RAG_KEYWORD_BLOCKLIST,
 };

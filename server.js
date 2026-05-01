@@ -9,6 +9,7 @@ const {
   buildAiPrompt,
   buildGenerationConfig,
   loadPromptDefaults,
+  DEFAULT_RAG_KEYWORD_BLOCKLIST,
 } = require("./server-ai-settings");
 const ko = require("./server-messages.ko.cjs");
 
@@ -912,6 +913,7 @@ async function handleDbApi(req, res, url) {
         ragMinOverlapTokens: RAG_MIN_OVERLAP_TOKENS,
         ragMinScore: RAG_MIN_SCORE,
         ragRelativeCutoffPct: RAG_RELATIVE_CUTOFF_PCT,
+        ragKeywordBlocklist: [...DEFAULT_RAG_KEYWORD_BLOCKLIST],
       },
     });
     return true;
