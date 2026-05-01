@@ -28,6 +28,16 @@
         <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
         <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
         <symbol id="icon-list" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></symbol>
+        <symbol id="icon-admin-settings" viewBox="0 0 24 24">
+            <path fill="currentColor" opacity=".18" d="M12 2.2L20.2 6v5.2c0 4.1-2.8 8.2-8.2 9.8-5.4-1.6-8.2-5.7-8.2-9.8V6L12 2.2z"/>
+            <path fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" d="M12 3.2l7 3.2v4.8c0 3.5-2.4 7-7 8.5-4.6-1.5-7-5-7-8.5V6.4l7-3.2z"/>
+            <circle cx="9" cy="10.5" r="1.35" fill="currentColor"/>
+            <rect x="11.2" y="9.75" width="6.2" height="1.5" rx=".35" fill="currentColor"/>
+            <circle cx="9" cy="14.25" r="1.35" fill="currentColor"/>
+            <rect x="12.5" y="13.5" width="4.9" height="1.5" rx=".35" fill="currentColor"/>
+            <circle cx="9" cy="18" r="1.35" fill="currentColor"/>
+            <rect x="11.2" y="17.25" width="6.2" height="1.5" rx=".35" fill="currentColor"/>
+        </symbol>
         <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></symbol>
         <symbol id="icon-chevron-left" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></symbol>
         <symbol id="icon-bars" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></symbol>
@@ -176,6 +186,11 @@
                         <option value="it">IT</option>
                     </select>
                 </div>
+                <div class="flex items-center gap-10" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+                    <input type="checkbox" id="signupIsAdmin" style="width:18px; height:18px;">
+                    <label for="signupIsAdmin" class="font-bold" style="margin:0; color:#334155; cursor:pointer;">플랫폼 관리자 권한 부여</label>
+                </div>
+                <p style="font-size:12px; color:#64748b; margin:0;">관리자 설정(AI·권한) 메뉴 접근 및 저장에 필요합니다. 영업점·본부 계정에도 부여할 수 있습니다.</p>
                 <div class="flex items-center justify-between mt-10">
                     <span id="signupSavedCount" style="font-size:12px; color:#64748b;">저장된 회원: 0명</span>
                     <div class="flex gap-10">
@@ -321,7 +336,7 @@
             <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
             <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>개선제안</button>
             <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI지식</button>
-            <button class="top-nav-item it-admin-only hidden" id="topnav-it-ai-settings" onclick="switchView('it-ai-settings')"><svg class="icon"><use href="#icon-brain"></use></svg>IT AI</button>
+            <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#7dd3fc;"><use href="#icon-admin-settings"></use></svg>관리자</button>
             <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
         </div>
 
@@ -366,8 +381,8 @@
                 <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
                 <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
                 <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식베이스 관리</span></div>
-                <div class="nav-title mt-10 it-admin-only hidden" style="color:#93c5fd;">IT 관리</div>
-                <div class="nav-item it-admin-only hidden" id="nav-it-ai-settings" onclick="switchView('it-ai-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-brain"></use></svg> <span class="nav-text">IT AI 설정</span></div>
+                <div class="nav-title mt-10 platform-admin-only hidden" style="color:#93c5fd;">관리</div>
+                <div class="nav-item platform-admin-only hidden" id="nav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-admin-settings"></use></svg> <span class="nav-text">관리자 설정</span></div>
             </aside>
 
             <!-- 메인 콘텐츠 영역 (푸터 포함) -->
@@ -910,109 +925,162 @@
                         </div>
                     </div>
 
-                    <div id="view-it-ai-settings" class="view-section max-w-1000">
-                        <h2 class="page-title">IT 관리자 · AI 설정</h2>
-                        <p style="font-size:13px;color:#64748b;margin-bottom:16px;">AI 채팅과 게시판별 AI 답변의 시스템 프롬프트, Temperature, Top-P를 조정합니다. 값은 0.1 단위입니다.</p>
+                    <div id="view-admin-settings" class="view-section admin-settings-page">
+                        <div class="admin-settings-hero">
+                            <div class="admin-settings-hero-icon"><svg class="icon icon-xl" style="color:#e0f2fe;"><use href="#icon-admin-settings"></use></svg></div>
+                            <div>
+                                <h2 class="admin-settings-title">관리자 설정</h2>
+                                <p class="admin-settings-sub">플랫폼 관리자 전용입니다. <strong>AI 설정</strong> 탭에서 프롬프트·생성 옵션을, <strong>권한 설정</strong> 탭에서 계정별 플랫폼 관리자 권한을 지정합니다. (업무 역할 영업점·본부·IT와 별개입니다.)</p>
+                            </div>
+                        </div>
 
-                        <div class="panel p-20" style="margin-bottom:16px;">
-                            <div class="panel-header" style="border:none;padding:0 0 12px 0;">AI 채팅 (CHAT)</div>
-                            <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">추가 시스템 프롬프트</label>
-                            <textarea id="itAi-chat-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;" placeholder="기본 안내 위에 덧붙일 지침 (선택)"></textarea>
-                            <div class="flex-col gap-12" style="margin-top:14px;">
-                                <div class="flex items-center gap-12 flex-wrap">
-                                    <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
-                                    <input type="range" id="itAi-chat-temp" class="it-ai-gen-range" data-prefix="itAi-chat" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                    <input type="number" id="itAi-chat-temp-num" class="input it-ai-gen-num" data-prefix="itAi-chat" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                        <div class="admin-main-tab-row" id="adminSettingsMainTabs">
+                            <button type="button" class="admin-main-tab-btn btn btn-primary" data-admin-tab="ai">AI 설정</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="perms">권한 설정</button>
+                        </div>
+
+                        <div id="admin-settings-panel-ai" class="admin-settings-tab-panel">
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge">CHAT</span>
+                                <h3 class="admin-settings-card-title">AI 채팅</h3>
+                            </div>
+                            <p class="admin-settings-hint">저장된 값이 비어 있으면 기본 시스템 프롬프트가 그대로 사용됩니다.</p>
+                            <div class="admin-default-block">
+                                <div class="admin-default-label">기본(Default) 시스템 프롬프트</div>
+                                <pre class="admin-default-pre" id="admin-default-chat"></pre>
+                            </div>
+                            <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                            <textarea id="adminAi-chat-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                            <div class="admin-gen-grid">
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">Temperature</label>
+                                    <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
+                                    <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
                                 </div>
-                                <div class="flex items-center gap-12 flex-wrap">
-                                    <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
-                                    <input type="range" id="itAi-chat-topP" class="it-ai-gen-range" data-prefix="itAi-chat" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                    <input type="number" id="itAi-chat-topP-num" class="input it-ai-gen-num" data-prefix="itAi-chat" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">Top-P</label>
+                                    <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
+                                    <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="panel p-20">
-                            <div class="panel-header" style="border:none;padding:0 0 12px 0;">AI 게시물 답변 (게시판별)</div>
-                            <div class="flex gap-8 flex-wrap" style="margin-bottom:14px;" id="itAi-post-tabs">
-                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="IT" style="padding:6px 12px;font-size:13px;">IT</button>
-                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="BIZ" style="padding:6px 12px;font-size:13px;">BIZ</button>
-                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="SYS" style="padding:6px 12px;font-size:13px;">SYS</button>
-                                <button type="button" class="btn btn-outline it-ai-tab-btn" data-board="KNOW" style="padding:6px 12px;font-size:13px;">KNOW</button>
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge admin-settings-badge-violet">POST</span>
+                                <h3 class="admin-settings-card-title">AI 답변 (게시물)</h3>
                             </div>
-                            <div id="itAi-post-panels">
-                                <!-- IT -->
-                                <div class="it-ai-post-panel" data-board="IT">
-                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">IT 게시판 추가 프롬프트</label>
-                                    <textarea id="itAi-post-IT-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
-                                    <div class="flex-col gap-12" style="margin-top:14px;">
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
-                                            <input type="range" id="itAi-post-IT-temp" class="it-ai-gen-range" data-prefix="itAi-post-IT" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-IT-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-IT" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                            <p class="admin-settings-hint">게시판 유형별로 시스템 프롬프트와 Temperature·Top-P를 지정합니다.</p>
+                            <div class="admin-tab-row" id="adminAi-post-tabs">
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="IT">IT / 오류</button>
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="BIZ">규정·상품</button>
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="SYS">개선 제안</button>
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="KNOW">지식베이스</button>
+                            </div>
+                            <div id="adminAi-post-panels">
+                                <div class="admin-ai-post-panel" data-board="IT">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — IT</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-IT"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-IT-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
-                                            <input type="range" id="itAi-post-IT-topP" class="it-ai-gen-range" data-prefix="itAi-post-IT" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-IT-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-IT" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
                                     </div>
                                 </div>
-                                <!-- BIZ -->
-                                <div class="it-ai-post-panel hidden" data-board="BIZ">
-                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">BIZ 게시판 추가 프롬프트</label>
-                                    <textarea id="itAi-post-BIZ-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
-                                    <div class="flex-col gap-12" style="margin-top:14px;">
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
-                                            <input type="range" id="itAi-post-BIZ-temp" class="it-ai-gen-range" data-prefix="itAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-BIZ-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                <div class="admin-ai-post-panel hidden" data-board="BIZ">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — BIZ</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-BIZ"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-BIZ-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
-                                            <input type="range" id="itAi-post-BIZ-topP" class="it-ai-gen-range" data-prefix="itAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-BIZ-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
                                     </div>
                                 </div>
-                                <div class="it-ai-post-panel hidden" data-board="SYS">
-                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">SYS 게시판 추가 프롬프트</label>
-                                    <textarea id="itAi-post-SYS-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
-                                    <div class="flex-col gap-12" style="margin-top:14px;">
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
-                                            <input type="range" id="itAi-post-SYS-temp" class="it-ai-gen-range" data-prefix="itAi-post-SYS" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-SYS-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-SYS" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                <div class="admin-ai-post-panel hidden" data-board="SYS">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — SYS</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-SYS"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-SYS-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-SYS-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-SYS" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-SYS-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-SYS" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
-                                            <input type="range" id="itAi-post-SYS-topP" class="it-ai-gen-range" data-prefix="itAi-post-SYS" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-SYS-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-SYS" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-SYS-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-SYS" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-SYS-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-SYS" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
                                     </div>
                                 </div>
-                                <div class="it-ai-post-panel hidden" data-board="KNOW">
-                                    <label class="font-bold" style="display:block;margin-bottom:6px;font-size:13px;">KNOW 게시판 추가 프롬프트</label>
-                                    <textarea id="itAi-post-KNOW-prompt" class="input" rows="5" style="width:100%;resize:vertical;font-family:inherit;"></textarea>
-                                    <div class="flex-col gap-12" style="margin-top:14px;">
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Temperature</span>
-                                            <input type="range" id="itAi-post-KNOW-temp" class="it-ai-gen-range" data-prefix="itAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-KNOW-temp-num" class="input it-ai-gen-num" data-prefix="itAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1" style="width:88px;">
+                                <div class="admin-ai-post-panel hidden" data-board="KNOW">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — KNOW</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-KNOW"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-KNOW-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-KNOW-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-KNOW-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-KNOW" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
-                                        <div class="flex items-center gap-12 flex-wrap">
-                                            <span style="min-width:110px;font-size:13px;font-weight:600;">Top-P</span>
-                                            <input type="range" id="itAi-post-KNOW-topP" class="it-ai-gen-range" data-prefix="itAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1" style="flex:1;min-width:140px;">
-                                            <input type="number" id="itAi-post-KNOW-topP-num" class="input it-ai-gen-num" data-prefix="itAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1" style="width:88px;">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-KNOW-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-KNOW-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-KNOW" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="text-right mt-20" style="border-top:1px solid #eee;padding-top:16px;">
-                            <button type="button" class="btn btn-outline" style="margin-right:10px;" onclick="switchView('dashboard')">닫기</button>
-                            <button type="button" class="btn btn-primary" onclick="saveItAiSettingsToServer()">저장</button>
+                        <div class="admin-settings-actions">
+                            <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
+                            <button type="button" class="btn btn-primary" onclick="saveAdminAiSettingsToServer()">설정 저장</button>
+                        </div>
+                        </div>
+
+                        <div id="admin-settings-panel-perms" class="admin-settings-tab-panel hidden">
+                            <div class="admin-settings-card">
+                                <div class="admin-settings-card-head">
+                                    <span class="admin-settings-badge admin-settings-badge-violet">ACL</span>
+                                    <h3 class="admin-settings-card-title">플랫폼 관리자 권한</h3>
+                                </div>
+                                <p class="admin-settings-hint">테스트용 회원(직원번호)별로 이 앱의 <strong>관리자 설정</strong> 접근·저장 권한을 켜거나 끕니다. IT 업무 역할(게시판 답변 등)과는 별도입니다.</p>
+                                <div id="adminPermissionsMount"></div>
+                                <div class="admin-settings-actions">
+                                    <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveAdminPermissionsToServer()">권한 저장</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

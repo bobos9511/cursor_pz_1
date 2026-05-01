@@ -207,7 +207,7 @@
         }
         function sanitizeSignupUserRecord(user) {
             if (!user || typeof user !== 'object') return null;
-            return {
+            const out = {
                 ...user,
                 name: normalizeDisplayText(user.name, '사용자'),
                 deptName: normalizeDisplayText(user.deptName, '-'),
@@ -215,8 +215,22 @@
                 position: normalizeDisplayText(user.position, ''),
                 grade: normalizeDisplayText(user.grade, ''),
                 employeeNo: normalizeDisplayText(user.employeeNo, ''),
-                role: normalizeDisplayText(user.role, 'branch')
+                role: normalizeDisplayText(user.role, 'branch'),
             };
+            if (user.isAdmin === true) out.isAdmin = true;
+            else if (user.isAdmin === false) out.isAdmin = false;
+            else delete out.isAdmin;
+            return out;
+        }
+
+        /** 플랫폼 관리자(관리자 설정). isAdmin === true 로 명시된 계정만 허용합니다. */
+        function resolveUserIsAdmin(user) {
+            if (!user) return false;
+            return user.isAdmin === true;
+        }
+
+        function currentUserHasAdminAccess() {
+            return resolveUserIsAdmin(currentLoginUser);
         }
         function getDummyIp() { return '10.124.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255); }
         function goToAiSearchPage() {
@@ -605,30 +619,30 @@
             });
         }
 
-        const IT_AI_POST_KEYS = ['IT', 'BIZ', 'SYS', 'KNOW'];
-        let itAiPostTabsInited = false;
-        let itAiGenWired = false;
+        const ADMIN_AI_POST_KEYS = ['IT', 'BIZ', 'SYS', 'KNOW'];
+        let adminAiPostTabsInited = false;
+        let adminAiGenWired = false;
 
-        function clampItAiGen01(v) {
+        function clampAdminAiGen01(v) {
             const n = Math.round(Number(v) * 10) / 10;
             if (!Number.isFinite(n)) return 0.1;
             return Math.min(1, Math.max(0, n));
         }
 
-        function wireItAiGenControlsOnce() {
-            if (itAiGenWired) return;
-            itAiGenWired = true;
-            document.querySelectorAll('.it-ai-gen-range').forEach((range) => {
+        function wireAdminAiGenControlsOnce() {
+            if (adminAiGenWired) return;
+            adminAiGenWired = true;
+            document.querySelectorAll('.admin-ai-gen-range').forEach((range) => {
                 range.addEventListener('input', () => {
-                    const v = clampItAiGen01(range.value);
+                    const v = clampAdminAiGen01(range.value);
                     range.value = String(v);
                     const num = document.getElementById(`${range.id}-num`);
                     if (num) num.value = String(v);
                 });
             });
-            document.querySelectorAll('.it-ai-gen-num').forEach((num) => {
+            document.querySelectorAll('.admin-ai-gen-num').forEach((num) => {
                 const syncFromNum = () => {
-                    const v = clampItAiGen01(num.value);
+                    const v = clampAdminAiGen01(num.value);
                     num.value = String(v);
                     const rangeId = num.id.replace(/-num$/, '');
                     const range = document.getElementById(rangeId);
@@ -639,51 +653,63 @@
             });
         }
 
-        function initItAiPostTabsOnce() {
-            if (itAiPostTabsInited) return;
-            itAiPostTabsInited = true;
-            document.querySelectorAll('.it-ai-tab-btn').forEach((btn) => {
-                btn.addEventListener('click', () => selectItAiPostTab(btn.getAttribute('data-board')));
+        function initAdminAiPostTabsOnce() {
+            if (adminAiPostTabsInited) return;
+            adminAiPostTabsInited = true;
+            document.querySelectorAll('.admin-tab-btn').forEach((btn) => {
+                btn.addEventListener('click', () => selectAdminAiPostTab(btn.getAttribute('data-board')));
             });
-            selectItAiPostTab('IT');
+            selectAdminAiPostTab('IT');
         }
 
-        function selectItAiPostTab(board) {
-            document.querySelectorAll('.it-ai-tab-btn').forEach((b) => {
+        function selectAdminAiPostTab(board) {
+            document.querySelectorAll('.admin-tab-btn').forEach((b) => {
                 const on = b.getAttribute('data-board') === board;
                 b.classList.toggle('btn-primary', on);
                 b.classList.toggle('btn-outline', !on);
             });
-            document.querySelectorAll('.it-ai-post-panel').forEach((p) => {
+            document.querySelectorAll('.admin-ai-post-panel').forEach((p) => {
                 p.classList.toggle('hidden', p.getAttribute('data-board') !== board);
             });
         }
 
-        async function loadItAiSettingsView() {
+        function fillAdminPromptDefaultEls(promptDefaults) {
+            const defs = promptDefaults && typeof promptDefaults === 'object' ? promptDefaults : {};
+            const chatPre = document.getElementById('admin-default-chat');
+            if (chatPre) chatPre.textContent = typeof defs.chat === 'string' ? defs.chat : '';
+            ADMIN_AI_POST_KEYS.forEach((k) => {
+                const el = document.getElementById(`admin-default-post-${k}`);
+                const s = defs.posts && typeof defs.posts[k] === 'string' ? defs.posts[k] : '';
+                if (el) el.textContent = s;
+            });
+        }
+
+        async function loadAdminAiSettingsView() {
             try {
                 const data = await fetchJson('/api/db/ai-settings');
                 const cfg = data && data.aiSettings ? data.aiSettings : null;
                 if (!cfg) throw new Error('empty');
-                const chatPrompt = document.getElementById('itAi-chat-prompt');
+                fillAdminPromptDefaultEls(data.promptDefaults);
+                const chatPrompt = document.getElementById('adminAi-chat-prompt');
                 if (chatPrompt) chatPrompt.value = cfg.chat && cfg.chat.systemPrompt != null ? cfg.chat.systemPrompt : '';
-                const chatT = clampItAiGen01(cfg.chat && cfg.chat.temperature != null ? cfg.chat.temperature : 0.1);
-                const chatTp = clampItAiGen01(cfg.chat && cfg.chat.topP != null ? cfg.chat.topP : 0.8);
-                [['itAi-chat-temp', chatT], ['itAi-chat-topP', chatTp]].forEach(([id, v]) => {
+                const chatT = clampAdminAiGen01(cfg.chat && cfg.chat.temperature != null ? cfg.chat.temperature : 0.1);
+                const chatTp = clampAdminAiGen01(cfg.chat && cfg.chat.topP != null ? cfg.chat.topP : 0.8);
+                [['adminAi-chat-temp', chatT], ['adminAi-chat-topP', chatTp]].forEach(([id, v]) => {
                     const range = document.getElementById(id);
                     const num = document.getElementById(`${id}-num`);
                     if (range) range.value = String(v);
                     if (num) num.value = String(v);
                 });
-                IT_AI_POST_KEYS.forEach((k) => {
+                ADMIN_AI_POST_KEYS.forEach((k) => {
                     const p = cfg.posts && cfg.posts[k] ? cfg.posts[k] : {};
-                    const ta = document.getElementById(`itAi-post-${k}-prompt`);
+                    const ta = document.getElementById(`adminAi-post-${k}-prompt`);
                     if (ta) ta.value = p.systemPrompt != null ? p.systemPrompt : '';
-                    const t = clampItAiGen01(p.temperature != null ? p.temperature : 0.1);
-                    const tp = clampItAiGen01(p.topP != null ? p.topP : 0.8);
-                    const rt = document.getElementById(`itAi-post-${k}-temp`);
-                    const rtp = document.getElementById(`itAi-post-${k}-topP`);
-                    const ntt = document.getElementById(`itAi-post-${k}-temp-num`);
-                    const ntp = document.getElementById(`itAi-post-${k}-topP-num`);
+                    const t = clampAdminAiGen01(p.temperature != null ? p.temperature : 0.1);
+                    const tp = clampAdminAiGen01(p.topP != null ? p.topP : 0.8);
+                    const rt = document.getElementById(`adminAi-post-${k}-temp`);
+                    const rtp = document.getElementById(`adminAi-post-${k}-topP`);
+                    const ntt = document.getElementById(`adminAi-post-${k}-temp-num`);
+                    const ntp = document.getElementById(`adminAi-post-${k}-topP-num`);
                     if (rt) rt.value = String(t);
                     if (rtp) rtp.value = String(tp);
                     if (ntt) ntt.value = String(t);
@@ -691,30 +717,30 @@
                 });
             } catch (e) {
                 console.error(e);
-                showAlert('AI 설정을 불러오지 못했습니다.', 'error');
+                showAlert('관리자 설정을 불러오지 못했습니다.', 'error');
             }
         }
 
-        async function saveItAiSettingsToServer() {
-            if (currentRole !== 'it') {
-                showAlert('IT 관리자만 저장할 수 있습니다.', 'error');
+        async function saveAdminAiSettingsToServer() {
+            if (!currentUserHasAdminAccess()) {
+                showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;
             }
             const readPair = (prefix) => ({
-                temperature: clampItAiGen01(document.getElementById(`${prefix}-temp-num`)?.value ?? document.getElementById(`${prefix}-temp`)?.value),
-                topP: clampItAiGen01(document.getElementById(`${prefix}-topP-num`)?.value ?? document.getElementById(`${prefix}-topP`)?.value),
+                temperature: clampAdminAiGen01(document.getElementById(`${prefix}-temp-num`)?.value ?? document.getElementById(`${prefix}-temp`)?.value),
+                topP: clampAdminAiGen01(document.getElementById(`${prefix}-topP-num`)?.value ?? document.getElementById(`${prefix}-topP`)?.value),
             });
             const aiSettings = {
                 chat: {
-                    systemPrompt: String(document.getElementById('itAi-chat-prompt')?.value || ''),
-                    ...readPair('itAi-chat'),
+                    systemPrompt: String(document.getElementById('adminAi-chat-prompt')?.value || ''),
+                    ...readPair('adminAi-chat'),
                 },
                 posts: {},
             };
-            IT_AI_POST_KEYS.forEach((k) => {
+            ADMIN_AI_POST_KEYS.forEach((k) => {
                 aiSettings.posts[k] = {
-                    systemPrompt: String(document.getElementById(`itAi-post-${k}-prompt`)?.value || ''),
-                    ...readPair(`itAi-post-${k}`),
+                    systemPrompt: String(document.getElementById(`adminAi-post-${k}-prompt`)?.value || ''),
+                    ...readPair(`adminAi-post-${k}`),
                 };
             });
             try {
@@ -723,10 +749,102 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ aiSettings }),
                 });
-                showAlert('AI 설정을 저장했습니다.', 'success');
+                showAlert('관리자 설정을 저장했습니다.', 'success');
             } catch (e) {
                 console.error(e);
                 showAlert('저장에 실패했습니다.', 'error');
+            }
+        }
+
+        let adminSettingsMainTabsInited = false;
+
+        function initAdminSettingsMainTabsOnce() {
+            if (adminSettingsMainTabsInited) return;
+            adminSettingsMainTabsInited = true;
+            document.querySelectorAll('.admin-main-tab-btn').forEach((btn) => {
+                btn.addEventListener('click', () => selectAdminSettingsMainTab(btn.getAttribute('data-admin-tab')));
+            });
+            const permPanel = document.getElementById('admin-settings-panel-perms');
+            if (permPanel) {
+                permPanel.addEventListener('change', (e) => {
+                    const t = e.target;
+                    if (!t || !t.classList.contains('admin-perm-isadmin')) return;
+                    const emp = t.getAttribute('data-emp');
+                    if (emp != null) toggleSignupUserAdminFlag(emp, !!t.checked);
+                });
+            }
+        }
+
+        function selectAdminSettingsMainTab(tab) {
+            const key = tab === 'perms' ? 'perms' : 'ai';
+            document.querySelectorAll('.admin-main-tab-btn').forEach((b) => {
+                const on = b.getAttribute('data-admin-tab') === key;
+                b.classList.toggle('btn-primary', on);
+                b.classList.toggle('btn-outline', !on);
+            });
+            const aiPanel = document.getElementById('admin-settings-panel-ai');
+            const permPanel = document.getElementById('admin-settings-panel-perms');
+            if (aiPanel) aiPanel.classList.toggle('hidden', key !== 'ai');
+            if (permPanel) permPanel.classList.toggle('hidden', key !== 'perms');
+        }
+
+        function toggleSignupUserAdminFlag(empNo, checked) {
+            const u = signupUsers.find((x) => String(x.employeeNo) === String(empNo));
+            if (!u) return;
+            u.isAdmin = !!checked;
+        }
+
+        function renderAdminPermissionsPanel() {
+            const mount = document.getElementById('adminPermissionsMount');
+            if (!mount) return;
+            if (!signupUsers.length) {
+                mount.innerHTML = '<p class="admin-settings-hint">등록된 테스트 회원이 없습니다. 로그아웃 후 <strong>테스트용 회원가입</strong>에서 계정을 추가하세요.</p>';
+                return;
+            }
+            mount.innerHTML = `
+                <div class="admin-perms-table-wrap">
+                    <table class="admin-perms-table">
+                        <thead>
+                            <tr>
+                                <th>이름</th>
+                                <th>직원번호</th>
+                                <th>업무 역할</th>
+                                <th style="text-align:center; width:140px;">플랫폼 관리자</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${signupUsers.map((u) => {
+                                const emp = escapeHtml(String(u.employeeNo || ''));
+                                const checked = resolveUserIsAdmin(u) ? ' checked' : '';
+                                return `<tr>
+                                    <td>${escapeHtml(String(u.name || ''))}</td>
+                                    <td>${emp}</td>
+                                    <td>${escapeHtml(getRoleDisplayName(u.role))}</td>
+                                    <td style="text-align:center;">
+                                        <input type="checkbox" class="admin-perm-isadmin" data-emp="${emp}"${checked} aria-label="플랫폼 관리자">
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        }
+
+        async function saveAdminPermissionsToServer() {
+            if (!currentUserHasAdminAccess()) {
+                showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
+                return;
+            }
+            try {
+                await saveSignupUsers({ rethrow: true });
+                if (currentLoginUser && currentLoginUser.employeeNo) {
+                    const refreshed = signupUsers.find((u) => String(u.employeeNo) === String(currentLoginUser.employeeNo));
+                    if (refreshed) currentLoginUser = refreshed;
+                }
+                changeRole();
+                showAlert('권한 설정을 저장했습니다.', 'success');
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -904,14 +1022,16 @@
             }
         }
 
-        function saveSignupUsers() {
-            fetchJson('/api/db/signup-users', {
+        function saveSignupUsers(options = {}) {
+            const rethrow = !!options.rethrow;
+            return fetchJson('/api/db/signup-users', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ signupUsers })
             }).catch((error) => {
                 console.error('saveSignupUsers failed:', error);
                 showAlert('회원 데이터 저장에 실패했습니다.', 'error');
+                if (rethrow) throw error;
             });
         }
 
@@ -923,7 +1043,8 @@
         function getRoleDisplayName(role) {
             if (role === 'branch') return '영업점';
             if (role === 'hq') return '본부';
-            return 'IT관리자';
+            if (role === 'it') return 'IT';
+            return String(role || '-');
         }
 
         function normalizeSignupEmpNo(raw, doPad) {
@@ -974,6 +1095,8 @@
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             });
+            const adm = document.getElementById('signupIsAdmin');
+            if (adm) adm.checked = false;
         }
 
         function openSignupModal() {
@@ -1035,11 +1158,14 @@
                 grade,
                 position,
                 role,
+                isAdmin: !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked),
                 createdAt: getCurrentDateTime()
             };
             const existsIdx = signupUsers.findIndex(u => u.employeeNo === user.employeeNo);
-            if (existsIdx > -1) signupUsers[existsIdx] = { ...signupUsers[existsIdx], ...user };
-            else signupUsers.unshift(user);
+            if (existsIdx > -1) {
+                const prev = signupUsers[existsIdx];
+                signupUsers[existsIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+            } else signupUsers.unshift(user);
             saveSignupUsers();
             updateSignupSavedCount();
             closeSignupModal();
@@ -1076,7 +1202,8 @@
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서명</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서코드</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직급/직책</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">권한</th>
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">업무 역할</th>
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center;">플랫폼 관리</th>
                             <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:170px;">관리</th>
                         </tr>
                     </thead>
@@ -1089,6 +1216,7 @@
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.deptCode}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.grade} / ${u.position}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${getRoleDisplayName(u.role)}</td>
+                                <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
                                 <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
                                     <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
                                     <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})">삭제</button>
@@ -1667,7 +1795,8 @@
             const mbUser = document.getElementById('mobileUserName');
             if(mbUser) mbUser.innerText = userDisplay;
             
-            const rName = currentRole === 'branch' ? '영업점' : (currentRole === 'hq' ? '본부' : 'IT관리자');
+            const orgLabel = currentRole === 'branch' ? '영업점' : (currentRole === 'hq' ? '본부' : 'IT');
+            const rName = currentUserHasAdminAccess() ? `${orgLabel} · 관리` : orgLabel;
             const hoverText = document.getElementById('headerProfileHoverText');
             if (hoverText) hoverText.innerText = `${userDisplay} | ${deptDisplay}`;
             const headerRoleChip = document.getElementById('headerRoleChip');
@@ -1698,8 +1827,8 @@
                 else { el.classList.add('hidden'); el.classList.remove('flex'); }
             });
 
-            document.querySelectorAll('.it-admin-only').forEach(el => {
-                if (currentRole === 'it') {
+            document.querySelectorAll('.platform-admin-only').forEach(el => {
+                if (currentUserHasAdminAccess()) {
                     el.classList.remove('hidden');
                     if (el.classList.contains('top-nav-item')) el.classList.add('flex');
                 } else {
@@ -2055,8 +2184,8 @@
                     return;
                 }
             }
-            if (viewId === 'it-ai-settings' && currentRole !== 'it') {
-                showAlert('IT 관리자만 이용할 수 있습니다.', 'error');
+            if (viewId === 'admin-settings' && !currentUserHasAdminAccess()) {
+                showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;
             }
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -2105,10 +2234,16 @@
                 const topNavId = `topnav-${viewId}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
                 if (viewId === 'ai-search') initializeAiSearchView();
-                if (viewId === 'it-ai-settings') {
-                    wireItAiGenControlsOnce();
-                    initItAiPostTabsOnce();
-                    loadItAiSettingsView();
+                if (viewId === 'admin-settings') {
+                    wireAdminAiGenControlsOnce();
+                    initAdminAiPostTabsOnce();
+                    initAdminSettingsMainTabsOnce();
+                    void (async () => {
+                        await loadSignupUsers();
+                        await loadAdminAiSettingsView();
+                        renderAdminPermissionsPanel();
+                        selectAdminSettingsMainTab('ai');
+                    })();
                 }
             }
 
@@ -2327,7 +2462,7 @@
                     if (isRequest) requestStep += 1;
                     const title = isManager
                         ? (item.action === 'knowError'
-                            ? 'IT 관리자 상태변경'
+                            ? '지식 학습 상태 변경'
                             : (isRequest ? `담당자 ${requestStep}차 추가 요청` : '담당자 답변'))
                         : '질의자 추가 정보';
                     const icon = isManager ? '#icon-info' : '#icon-user';

@@ -5,7 +5,8 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev
 
-COPY server.js server-ai-settings.js server-messages.ko.cjs ./
+COPY server.js server-ai-settings.js server-messages.ko.cjs server-ai-prompt-labels.ko.cjs ./
+COPY config ./config
 COPY public ./public
 COPY .env.example ./.env.example
 

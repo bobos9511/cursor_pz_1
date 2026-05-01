@@ -1,5 +1,9 @@
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
+const { PROMPT_LABELS } = require("./server-ai-prompt-labels.ko.cjs");
+
 const POST_AI_BOARD_KEYS = ["IT", "BIZ", "SYS", "KNOW"];
 
 const DEFAULT_AI_SETTINGS = {
@@ -11,6 +15,16 @@ const DEFAULT_AI_SETTINGS = {
     KNOW: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
   },
 };
+
+let cachedPromptDefaults = null;
+
+function loadPromptDefaults() {
+  if (cachedPromptDefaults) return cachedPromptDefaults;
+  const filePath = path.join(__dirname, "config", "ai-prompt-defaults.json");
+  const raw = fs.readFileSync(filePath, "utf8");
+  cachedPromptDefaults = JSON.parse(raw);
+  return cachedPromptDefaults;
+}
 
 function deepCloneAiSettings() {
   return JSON.parse(JSON.stringify(DEFAULT_AI_SETTINGS));
@@ -68,113 +82,42 @@ function getPostAiSlice(aiSettings, boardType) {
   return aiSettings.posts.SYS;
 }
 
-const ANTI_HALLUC_BLOCK_CHAT = [
-  "[Grounding]",
-  "Do not invent facts, numbers, or internal policies not present in the user question.",
-  "If unsure, say verification is needed instead of guessing.",
-].join("\n");
-
-const ANTI_HALLUC_BLOCK_POST = [
-  "[Grounding — strict]",
-  "Do not invent concrete facts, rates, policy names, dates, or system names not in the post body/attachments.",
-  "Do not assert root causes absent from logs/screenshots; if unclear, say the post alone is insufficient and list what to check.",
-  "Without tool/search evidence, do not state latest regulations or market figures as fact.",
-].join("\n");
+function resolveEffectiveSystemPrompt(boardType, aiSettings, defs) {
+  const isChat = boardType === "CHAT";
+  const saved = isChat ? aiSettings.chat.systemPrompt : getPostAiSlice(aiSettings, boardType).systemPrompt;
+  const trimmed = String(saved || "").trim();
+  if (trimmed) return trimmed;
+  if (isChat) return String(defs.chat || "").trim();
+  const k = String(boardType || "").toUpperCase();
+  const postDef = defs.posts && defs.posts[k];
+  const fromBoard = typeof postDef === "string" ? postDef.trim() : "";
+  const fallbackSys =
+    defs.posts && typeof defs.posts.SYS === "string" ? defs.posts.SYS.trim() : "";
+  return fromBoard || fallbackSys || "";
+}
 
 function buildAiPrompt(boardType, title, content, continueFrom, aiSettings) {
+  const defs = loadPromptDefaults();
   const isChat = boardType === "CHAT";
-  const adminExtra = (
-    isChat ? String(aiSettings.chat.systemPrompt || "").trim() : String(getPostAiSlice(aiSettings, boardType).systemPrompt || "").trim()
-  );
+  const system = resolveEffectiveSystemPrompt(boardType, aiSettings, defs);
 
   if (continueFrom) {
-    const anti = isChat ? ANTI_HALLUC_BLOCK_CHAT : ANTI_HALLUC_BLOCK_POST;
-    const lines = [
-      "Continue naturally from the last sentence of the previous answer.",
-      "Do not repeat sentences already written; only add missing substance.",
-      "Never output chain-of-thought, English fragments, or stray code-comment debris.",
-      isChat ? "Keep bullet format; at most 3 bullets; stay concise." : "Keep the same format and tone as the partial answer.",
+    const meta = isChat ? String(defs.continueMetaChat || "").trim() : String(defs.continueMetaPost || "").trim();
+    return [
+      system,
       "",
-      anti,
-    ];
-    if (adminExtra) lines.push("", "[Admin instructions]", adminExtra);
-    lines.push(
+      meta,
       "",
-      `[Board] ${boardType}`,
-      `[Title] ${title}`,
-      `[Original question / body] ${content}`,
+      `${PROMPT_LABELS.board} ${boardType}`,
+      `${PROMPT_LABELS.title} ${title}`,
+      `${PROMPT_LABELS.contentSummary} ${content}`,
       "",
-      "[Answer so far]",
+      PROMPT_LABELS.priorAnswer,
       continueFrom,
-    );
-    return lines.join("\n");
+    ].join("\n");
   }
 
-  const blocks = [];
-  blocks.push(isChat ? ANTI_HALLUC_BLOCK_CHAT : ANTI_HALLUC_BLOCK_POST);
-  if (adminExtra) blocks.push("", "[Admin system prompt]", adminExtra);
-
-  if (isChat) {
-    blocks.push(
-      "",
-      "You assist bank/office work. Reply in Korean only.",
-      "No greetings or preamble; lead with conclusions.",
-      "Use only lines starting with '-' as bullets (max 4). One short sentence per bullet.",
-      "Keep the full reply under about 40 lines.",
-      "",
-      `[Question] ${title}`,
-      `[Detail] ${content}`,
-    );
-    return blocks.join("\n");
-  }
-
-  const type = String(boardType || "").toUpperCase();
-  if (type === "IT") {
-    blocks.push(
-      "",
-      "You assist an IT helpdesk. Follow this shape only. Reply in Korean.",
-      "No role intro or greetings.",
-      "1) Likely cause: 1-2 sentences grounded in the post only.",
-      "2) Checks/actions: 3-5 '-' bullets, imperative, short. At most one code/config block if essential.",
-      "3) If the post lacks data, ask only in bullets what is needed next.",
-      "",
-      `[Board] ${boardType}`,
-      `[Title] ${title}`,
-      `[Body] ${content}`,
-    );
-  } else if (type === "BIZ") {
-    blocks.push(
-      "",
-      "You assist regulation/product questions. Reply in Korean. No greetings.",
-      "3-5 '-' bullets, 1-2 short sentences each.",
-      "Quote rules or numbers only when grounded in the post or search/tool evidence; otherwise point to official verification paths.",
-      "",
-      `[Board] ${boardType}`,
-      `[Title] ${title}`,
-      `[Body] ${content}`,
-    );
-  } else if (type === "KNOW") {
-    blocks.push(
-      "",
-      "You help draft or structure knowledge-base entries. Reply in Korean.",
-      "Do not fill in facts missing from the post. '-' bullets, max 5.",
-      "",
-      `[Board] ${boardType}`,
-      `[Title] ${title}`,
-      `[Body] ${content}`,
-    );
-  } else {
-    blocks.push(
-      "",
-      "You assist improvement suggestions and general tickets. Reply in Korean. No role intro.",
-      "Summary, verification items, and recommended follow-up as 3-5 '-' bullets.",
-      "",
-      `[Board] ${boardType}`,
-      `[Title] ${title}`,
-      `[Body] ${content}`,
-    );
-  }
-  return blocks.join("\n");
+  return [system, "", `${PROMPT_LABELS.title} ${title}`, `${PROMPT_LABELS.content} ${content}`].join("\n");
 }
 
 function buildGenerationConfig(boardType, continueFrom, aiSettings, caps) {
@@ -199,6 +142,7 @@ module.exports = {
   mergeAiSettingsFromDb,
   mergeAiSettingsPatch,
   getPostAiSlice,
+  loadPromptDefaults,
   buildAiPrompt,
   buildGenerationConfig,
 };

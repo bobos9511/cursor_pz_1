@@ -8,6 +8,7 @@ const {
   mergeAiSettingsPatch,
   buildAiPrompt,
   buildGenerationConfig,
+  loadPromptDefaults,
 } = require("./server-ai-settings");
 const ko = require("./server-messages.ko.cjs");
 
@@ -486,7 +487,7 @@ async function handleDbApi(req, res, url) {
   }
   if (req.method === "GET" && url.pathname === "/api/db/ai-settings") {
     const db = readDb();
-    sendJson(res, 200, { aiSettings: db.aiSettings });
+    sendJson(res, 200, { aiSettings: db.aiSettings, promptDefaults: loadPromptDefaults() });
     return true;
   }
   if (req.method === "PUT" && url.pathname === "/api/db/ai-settings") {
