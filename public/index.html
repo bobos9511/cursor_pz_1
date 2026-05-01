@@ -323,6 +323,11 @@
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-cog"></use></svg>
                     <div class="header-action-hovercard">환경 설정</div>
                 </button>
+                <button id="headerNotificationBtn" class="header-action-btn" onclick="openNotificationCenter()" title="알림센터">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-history"></use></svg>
+                    <span id="headerNotificationBadge" class="header-noti-badge hidden">0</span>
+                    <div class="header-action-hovercard">알림센터</div>
+                </button>
                 <button id="headerProfileBtn" class="header-profile-btn" onclick="toggleHeaderProfileOverlay(event)" title="사용자 정보">
                     <svg class="icon" style="font-size: 18px;"><use href="#icon-user"></use></svg>
                     <div class="header-profile-hovercard" id="headerProfileHoverText">홍길동 대리 | 영업부(-)</div>
@@ -1166,6 +1171,34 @@
             </div>
         </div>
     </div>
+    <div id="notificationCenterModal" class="modal-overlay" style="z-index: 1012;">
+        <div class="modal-content notification-center-modal">
+            <div class="modal-header notification-center-head">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> 알림센터</span>
+                <button onclick="closeNotificationCenter()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="notification-center-toolbar">
+                <div class="notification-view-tabs">
+                    <button type="button" id="notiTabTime" class="btn btn-primary" onclick="setNotificationViewMode('time')">시간대별</button>
+                    <button type="button" id="notiTabTopic" class="btn btn-outline" onclick="setNotificationViewMode('topic')">주제별</button>
+                </div>
+                <div class="notification-view-tabs">
+                    <button type="button" id="notiLevelAll" class="btn btn-primary" onclick="setNotificationLevelMode('all')">전체</button>
+                    <button type="button" id="notiLevelImportant" class="btn btn-outline" onclick="setNotificationLevelMode('important')">중요알림</button>
+                    <button type="button" id="notiLevelGeneral" class="btn btn-outline" onclick="setNotificationLevelMode('general')">일반알림</button>
+                </div>
+                <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
+            </div>
+            <div id="notificationCenterBody" class="modal-body notification-center-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeNotificationCenter()">닫기</button>
+            </div>
+        </div>
+    </div>
   <script src="/assets/app.js"></script>
+  <script src="/assets/app-admin-settings.js"></script>
+  <script src="/assets/app-post-ai.js"></script>
+  <script src="/assets/app-ai-search.js"></script>
+  <script src="/assets/app-notification-center.js"></script>
 </body>
 </html>

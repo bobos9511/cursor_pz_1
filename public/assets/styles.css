@@ -225,6 +225,28 @@
             visibility: visible;
             transform: translateY(0);
         }
+        .header-noti-badge {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            padding: 0 5px;
+            background: linear-gradient(180deg, #ef4444, #dc2626);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 14px rgba(220, 38, 38, 0.35);
+            animation: notiPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes notiPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
         .header-profile-btn {
             width: 38px;
             height: 38px;
@@ -957,6 +979,53 @@
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; font-size: 14px; color: #444; line-height: 1.5; overflow-y: auto; max-height: 60vh; }
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .notification-center-modal { max-width: 860px; width: min(94vw, 860px); }
+        .notification-center-head { background: linear-gradient(130deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%); }
+        .notification-center-toolbar {
+            padding: 12px 18px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .notification-view-tabs { display: inline-flex; gap: 8px; }
+        .notification-center-body { background: #f8fafc; max-height: 62vh; }
+        .noti-group { margin-bottom: 14px; }
+        .noti-group-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: #475569;
+            margin-bottom: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+        .noti-item {
+            background: #fff;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+            animation: slideInRight 0.22s ease-out;
+        }
+        .noti-item-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .noti-item-meta { font-size: 11px; color: #64748b; }
+        .noti-topic-chip { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; }
+        .noti-topic-chip.important { background: #fee2e2; color: #b91c1c; }
+        .noti-item-msg { font-size: 13px; line-height: 1.5; color: #0f172a; }
+        .noti-item-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+        .noti-empty {
+            text-align: center;
+            color: #64748b;
+            padding: 48px 10px;
+            font-size: 13px;
+        }
         .ai-content-block {
             margin: 0;
         }
