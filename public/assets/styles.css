@@ -1834,10 +1834,81 @@
             border-color: #4a5f7f !important;
             color: #dce7f6 !important;
         }
-        body[data-theme="dark"] #view-list #boardPagination {
-            background: #121d31;
-            border-top: 1px solid #3a4a63;
+        body[data-theme="dark"] #view-list .panel > .flex.items-center.justify-between.p-20 {
+            background: #152238 !important;
+            border-bottom-color: #3f5475 !important;
         }
+        body[data-theme="dark"] #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="background:#ccc"] {
+            background: #4a5f7f !important;
+        }
+        body[data-theme="dark"] #view-list #boardPagination {
+            background: #121d31 !important;
+            border-top: 1px solid #3a4a63 !important;
+        }
+        body[data-theme="dark"] #boardPageInfo,
+        body[data-theme="dark"] #boardPageCurrent { color: #b8c7dc !important; }
+        body[data-theme="dark"] #view-list .chk-box,
+        body[data-theme="dark"] #view-list .post-chk,
+        body[data-theme="dark"] #view-list #checkAll {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid #6b86aa;
+            background: #13233a;
+            position: relative;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        body[data-theme="dark"] #view-list .chk-box:checked,
+        body[data-theme="dark"] #view-list .post-chk:checked,
+        body[data-theme="dark"] #view-list #checkAll:checked {
+            background: #2563eb;
+            border-color: #60a5fa;
+        }
+        body[data-theme="dark"] #view-list .chk-box:checked::after,
+        body[data-theme="dark"] #view-list .post-chk:checked::after,
+        body[data-theme="dark"] #view-list #checkAll:checked::after {
+            content: "";
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        body[data-theme="dark"] #view-detail #dtlInlineSimilarWrap {
+            border-color: #3f5475 !important;
+            background: #13233a;
+        }
+        body[data-theme="dark"] #view-detail #dtlInlineSimilarWrap .panel-header {
+            background: #16243a !important;
+            color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] #view-detail #addInfoBox .panel-header {
+            background: #3a2a14 !important;
+            color: #fde68a !important;
+            border-bottom-color: #a16207 !important;
+        }
+        body[data-theme="dark"] #view-detail #answerFormBox > div[style*="background: #fffbeb"] {
+            background: #3a2a14 !important;
+            border-bottom-color: #a16207 !important;
+            color: #fde68a !important;
+        }
+        body[data-theme="dark"] #view-detail #aiPanelContent {
+            background: #111c30 !important;
+            color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] #similarPostModal .modal-body > div[style*="background: #fff"],
+        body[data-theme="dark"] #similarPostModal details[style*="background: #fff"] {
+            background: #13233a !important;
+            border-color: #3f5475 !important;
+            color: #dce7f6 !important;
+        }
+        body[data-theme="dark"] #similarPostModal [id^="sim"] { color: #dce7f6; }
         body[data-theme="dark"] .profile-overlay-panel {
             background: linear-gradient(180deg, #14233a 0%, #101b2d 100%);
             border-color: #3f5475;
