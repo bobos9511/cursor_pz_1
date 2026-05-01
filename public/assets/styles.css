@@ -3543,10 +3543,21 @@
             max-width: min(92%, 760px);
             border-radius: 10px;
             padding: 9px 11px;
-            margin-bottom: 8px;
             line-height: 1.55;
             white-space: pre-wrap;
             overflow-wrap: anywhere;
+        }
+        .ai-search-msg-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .ai-search-msg-row.user {
+            justify-content: flex-end;
+        }
+        .ai-search-msg-row.ai {
+            justify-content: flex-start;
         }
         .ai-search-date-divider {
             display: flex;
@@ -3582,16 +3593,10 @@
             animation: aiSearchPulse 1.6s ease-in-out infinite;
         }
         .ai-search-msg-body { width: 100%; }
-        .ai-search-msg-foot {
+        .ai-search-msg-actions {
             margin-top: 6px;
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-        .ai-search-msg.user .ai-search-msg-foot {
-            justify-content: flex-end;
-        }
-        .ai-search-msg.ai .ai-search-msg-foot {
             justify-content: flex-start;
         }
         .ai-search-msg-time {
@@ -3599,6 +3604,8 @@
             color: #64748b;
             font-weight: 600;
             white-space: nowrap;
+            line-height: 1;
+            padding-bottom: 2px;
         }
         .ai-prefer-btn {
             display: inline-flex;

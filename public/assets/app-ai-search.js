@@ -130,6 +130,22 @@ function formatAiSearchMessageDateKey(dt) {
     return `${y}.${m}.${d}`;
 }
 
+function formatAiSearchDateDividerLabel(dt) {
+    if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "";
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+    const diffDays = Math.floor((today - target) / (24 * 60 * 60 * 1000));
+    if (diffDays === 0) return "오늘";
+    if (diffDays === 1) return "어제";
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const d = String(dt.getDate()).padStart(2, "0");
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekday = weekdays[dt.getDay()] || "-";
+    return `${y}.${m}.${d}(${weekday})`;
+}
+
 function formatAiSearchMessageTime(dt) {
     if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "--:--";
     const hh = String(dt.getHours()).padStart(2, "0");
@@ -250,25 +266,32 @@ function renderAiSearchMessages() {
         if (dateKey && dateKey !== lastDateKey) {
             const dateDivider = document.createElement("div");
             dateDivider.className = "ai-search-date-divider";
-            dateDivider.innerHTML = `<span>${escapeHtml(dateKey)}</span>`;
+            dateDivider.innerHTML = `<span>${escapeHtml(formatAiSearchDateDividerLabel(msgDate))}</span>`;
             logEl.appendChild(dateDivider);
             lastDateKey = dateKey;
         }
+        const row = document.createElement("div");
+        row.className = `ai-search-msg-row ${role}`;
         const item = document.createElement("div");
         item.className = `ai-search-msg ${role}`;
         const isLoadingMsg = role === "ai" && text.includes("ai-search-loading");
         if (isLoadingMsg) item.classList.add("loading");
+        const timeHtml = `<span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span>`;
         if (role === "user") {
-            item.innerHTML = `<div class="ai-search-msg-body">${escapeHtml(text).replace(/\n/g, "<br>")}</div><div class="ai-search-msg-foot"><span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span></div>`;
+            item.innerHTML = `<div class="ai-search-msg-body">${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+            row.innerHTML = `${timeHtml}`;
+            row.appendChild(item);
         } else {
             const preferred = !!(msg && msg.preferred);
             const hidePrefer = isPreferButtonHiddenMessage(text, idx);
             const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
-            item.innerHTML = `<div class="ai-search-msg-body">${text}</div><div class="ai-search-msg-foot"><span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span>${preferBtn}</div>`;
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn ? `<div class="ai-search-msg-actions">${preferBtn}</div>` : ""}`;
+            row.appendChild(item);
+            row.insertAdjacentHTML("beforeend", timeHtml);
         }
-        logEl.appendChild(item);
+        logEl.appendChild(row);
     });
     logEl.scrollTop = logEl.scrollHeight;
 }
