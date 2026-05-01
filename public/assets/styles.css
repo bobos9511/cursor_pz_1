@@ -1780,6 +1780,32 @@
             background: #25344f;
             border-color: #4a5f7f;
         }
+        body[data-theme="dark"] #widget-lists .panel-header {
+            background: #152238 !important;
+            border-bottom-color: transparent !important;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #widget-lists .flex.shrink-0 {
+            background: #13233a;
+            border-bottom-color: #3f5475 !important;
+        }
+        body[data-theme="dark"] #dashMyQuestions,
+        body[data-theme="dark"] #dashMyAnswers {
+            background: #111c30 !important;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #dashMyQuestions .dash-empty,
+        body[data-theme="dark"] #dashMyAnswers .dash-empty {
+            background: #16243a;
+            border-color: #3f5475;
+            color: #b8c7dc;
+        }
+        body[data-theme="dark"] #widget-lists .badge[style*="background:#e0f2fe"],
+        body[data-theme="dark"] #widget-charts .badge[style*="background:#e0f2fe"] {
+            background: #22324c !important;
+            color: #dce7f6 !important;
+            border: 1px solid #4a5f7f;
+        }
         body[data-theme="dark"] #view-settings .panel-header {
             background: transparent;
             border-bottom-color: transparent;
