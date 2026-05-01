@@ -272,6 +272,7 @@ function renderAiSearchMessages() {
         }
         const row = document.createElement("div");
         row.className = `ai-search-msg-row ${role}`;
+        row.style.animationDelay = `${Math.min(idx * 42, 260)}ms`;
         const item = document.createElement("div");
         item.className = `ai-search-msg ${role}`;
         const isLoadingMsg = role === "ai" && text.includes("ai-search-loading");
