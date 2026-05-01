@@ -2703,7 +2703,7 @@
         body[data-theme="dark"] .integrated-search-result-item:hover { background: #1f2937; }
 
         html, body { min-width: 320px; }
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             html, body, #appContainer, .body-wrapper, .main-area-wrapper, .main-area {
                 overflow-x: hidden !important;
             }
@@ -3361,7 +3361,7 @@
             color: #1d4ed8;
             font-weight: 800;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             #view-ai-search {
                 padding: 0 !important;
                 margin: 0;
