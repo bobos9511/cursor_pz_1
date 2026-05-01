@@ -140,6 +140,7 @@
                 <button class="btn-icon" onclick="closeSignupModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <form onsubmit="event.preventDefault(); submitSignup();" class="modal-body flex-col gap-10">
+                <input type="hidden" id="signupOriginalEmpNo" value="">
                 <div>
                     <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">이름</label>
                     <input type="text" id="signupName" class="input" placeholder="이름 입력">
@@ -191,6 +192,18 @@
                         <option value="hq">본부</option>
                         <option value="it">IT</option>
                     </select>
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">내선번호 <span style="color:#dc2626;">*</span></label>
+                    <input type="text" id="signupExtNo" class="input" placeholder="예: 8-0000" value="8-0000">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">FAX번호</label>
+                    <input type="text" id="signupFaxNo" class="input" placeholder="예: 02-0000-0000" value="02-0000-0000">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">휴대전화번호</label>
+                    <input type="text" id="signupMobileNo" class="input" placeholder="예: 010-0000-0000" value="010-0000-0000">
                 </div>
                 <div class="flex items-center gap-10" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
                     <input type="checkbox" id="signupIsAdmin" style="width:18px; height:18px;">
@@ -387,6 +400,11 @@
                 <div class="profile-overlay-body">
                     <div class="profile-dept-box">
                         <div class="profile-dept-value" id="overlayUserDept">영업부(-)</div>
+                    </div>
+                    <div class="profile-contact-grid">
+                        <div class="profile-contact-item"><span class="profile-contact-label">내선</span><span id="overlayExtNo">8-0000</span></div>
+                        <div class="profile-contact-item"><span class="profile-contact-label">FAX</span><span id="overlayFaxNo">02-0000-0000</span></div>
+                        <div class="profile-contact-item"><span class="profile-contact-label">휴대전화</span><span id="overlayMobileNo">010-0000-0000</span></div>
                     </div>
                 </div>
                 <div class="profile-overlay-foot">

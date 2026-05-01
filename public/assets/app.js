@@ -385,6 +385,9 @@
                 grade: normalizeDisplayText(user.grade, ''),
                 employeeNo: normalizeDisplayText(user.employeeNo, ''),
                 role: normalizeDisplayText(user.role, 'branch'),
+                extNo: normalizeDisplayText(user.extNo, '8-0000'),
+                faxNo: normalizeDisplayText(user.faxNo, '02-0000-0000'),
+                mobileNo: normalizeDisplayText(user.mobileNo, '010-0000-0000'),
             };
             if (user.isAdmin === true) out.isAdmin = true;
             else if (user.isAdmin === false) out.isAdmin = false;
@@ -451,6 +454,9 @@
                 grade: '시스템',
                 position: 'RAG 엔진',
                 role: 'it',
+                extNo: '8-0000',
+                faxNo: '02-0000-0000',
+                mobileNo: '010-0000-0000',
                 isAdmin: true,
                 createdAt: getCurrentDateTime()
             });
@@ -860,10 +866,16 @@
         async function loadSignupUsers() {
             try {
                 const data = await fetchJson('/api/db/signup-users');
-                signupUsers = Array.isArray(data && data.signupUsers)
-                    ? data.signupUsers.map(sanitizeSignupUserRecord).filter(Boolean)
-                    : [];
-                const changed = ensureAiSystemUserInSignupUsers();
+                const sourceUsers = Array.isArray(data && data.signupUsers) ? data.signupUsers : [];
+                const hadLegacyContactGap = sourceUsers.some((u) => {
+                    if (!u || typeof u !== 'object') return false;
+                    const extNo = String(u.extNo || '').trim();
+                    const faxNo = String(u.faxNo || '').trim();
+                    const mobileNo = String(u.mobileNo || '').trim();
+                    return !extNo || !faxNo || !mobileNo;
+                });
+                signupUsers = sourceUsers.map(sanitizeSignupUserRecord).filter(Boolean);
+                const changed = ensureAiSystemUserInSignupUsers() || hadLegacyContactGap;
                 if (changed) saveSignupUsers();
             } catch (error) {
                 console.error('loadSignupUsers failed:', error);
@@ -934,13 +946,17 @@
 
         function resetSignupForm() {
             const formDefaults = {
+                signupOriginalEmpNo: '',
                 signupName: '',
                 signupEmpNo: '',
                 signupDeptName: '',
                 signupDeptCode: '',
                 signupGrade: '3급',
                 signupPosition: '대리',
-                signupRole: 'branch'
+                signupRole: 'branch',
+                signupExtNo: '8-0000',
+                signupFaxNo: '02-0000-0000',
+                signupMobileNo: '010-0000-0000'
             };
             Object.entries(formDefaults).forEach(([id, value]) => {
                 const el = document.getElementById(id);
@@ -994,9 +1010,17 @@
             const grade = document.getElementById('signupGrade').value;
             const position = document.getElementById('signupPosition').value;
             const role = document.getElementById('signupRole').value;
+            const extNo = (document.getElementById('signupExtNo').value || '').trim() || '8-0000';
+            const faxNo = (document.getElementById('signupFaxNo').value || '').trim() || '02-0000-0000';
+            const mobileNo = (document.getElementById('signupMobileNo').value || '').trim() || '010-0000-0000';
+            const originalEmpNo = (document.getElementById('signupOriginalEmpNo').value || '').trim();
 
             if (!name || !empNo || !deptName || !deptCode) {
                 showAlert('필수 항목(이름, 직원번호, 부서명, 부서코드)을 입력해주세요.', 'error');
+                return;
+            }
+            if (!extNo) {
+                showAlert('내선번호는 필수 항목입니다.', 'error');
                 return;
             }
 
@@ -1009,6 +1033,9 @@
                 grade,
                 position,
                 role,
+                extNo,
+                faxNo,
+                mobileNo,
                 isAdmin: !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked),
                 createdAt: getCurrentDateTime()
             };
@@ -1016,16 +1043,58 @@
                 showAlert('직원번호 000000은 AI 시스템 계정으로 예약되어 있습니다.', 'error');
                 return;
             }
-            const existsIdx = signupUsers.findIndex(u => u.employeeNo === user.employeeNo);
-            if (existsIdx > -1) {
-                const prev = signupUsers[existsIdx];
-                signupUsers[existsIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
-            } else signupUsers.unshift(user);
+            const duplicateIdx = signupUsers.findIndex((u) => u.employeeNo === user.employeeNo && u.employeeNo !== originalEmpNo);
+            if (duplicateIdx > -1) {
+                showAlert('이미 등록된 직원번호입니다.', 'error');
+                return;
+            }
+            const editingIdx = signupUsers.findIndex((u) => u.employeeNo === originalEmpNo);
+            if (editingIdx > -1) {
+                const prev = signupUsers[editingIdx];
+                signupUsers[editingIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+            } else {
+                const sameEmpIdx = signupUsers.findIndex((u) => u.employeeNo === user.employeeNo);
+                if (sameEmpIdx > -1) {
+                    const prev = signupUsers[sameEmpIdx];
+                    signupUsers[sameEmpIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+                } else signupUsers.unshift(user);
+            }
             saveSignupUsers();
             updateSignupSavedCount();
+            renderMemberList();
+            if (typeof renderAdminPermissionsPanel === 'function') {
+                renderAdminPermissionsPanel();
+            }
             closeSignupModal();
             showAlert('회원가입 정보가 서버에 저장되었습니다.', 'success');
         }
+
+        function openSignupModalForEdit(employeeNo) {
+            const target = signupUsers.find((u) => String(u.employeeNo) === String(employeeNo));
+            if (!target || isAiSystemUser(target)) return;
+            resetSignupForm();
+            const formValues = {
+                signupOriginalEmpNo: target.employeeNo || '',
+                signupName: target.name || '',
+                signupEmpNo: target.employeeNo || '',
+                signupDeptName: target.deptName || '',
+                signupDeptCode: target.deptCode || '',
+                signupGrade: target.grade || '기타',
+                signupPosition: target.position || '대리',
+                signupRole: target.role || 'branch',
+                signupExtNo: target.extNo || '8-0000',
+                signupFaxNo: target.faxNo || '02-0000-0000',
+                signupMobileNo: target.mobileNo || '010-0000-0000',
+            };
+            Object.entries(formValues).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            });
+            const adm = document.getElementById('signupIsAdmin');
+            if (adm) adm.checked = !!resolveUserIsAdmin(target);
+            document.getElementById('signupModal').classList.add('active');
+        }
+        window.openSignupModalForEdit = openSignupModalForEdit;
 
         function openMemberListModal() {
             loadSignupUsers();
@@ -1729,6 +1798,12 @@
             }
             const overlayEmployeeNo = document.getElementById('overlayEmployeeNo');
             if (overlayEmployeeNo) overlayEmployeeNo.innerText = activeUser.employeeNo || '-';
+            const overlayExtNo = document.getElementById('overlayExtNo');
+            if (overlayExtNo) overlayExtNo.innerText = normalizeDisplayText(activeUser.extNo, '8-0000');
+            const overlayFaxNo = document.getElementById('overlayFaxNo');
+            if (overlayFaxNo) overlayFaxNo.innerText = normalizeDisplayText(activeUser.faxNo, '02-0000-0000');
+            const overlayMobileNo = document.getElementById('overlayMobileNo');
+            if (overlayMobileNo) overlayMobileNo.innerText = normalizeDisplayText(activeUser.mobileNo, '010-0000-0000');
             const overlaySessionInfo = document.getElementById('overlaySessionInfo');
             if (overlaySessionInfo) overlaySessionInfo.innerText = `IP ${currentSessionIp || '-'}`;
             const overlayGreetingText = document.getElementById('overlayGreetingText');

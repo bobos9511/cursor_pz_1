@@ -270,10 +270,14 @@ function renderAdminPermissionsPanel() {
     const visibleUsers = signupUsers.filter((u) => !isAiSystemUser(u));
     if (!visibleUsers.length) {
         mount.innerHTML =
-            '<p class="admin-settings-hint">등록된 테스트 회원이 없습니다. 로그아웃 후 <strong>테스트용 회원가입</strong>에서 계정을 추가하세요.</p>';
+            '<div class="admin-user-tools"><button type="button" class="btn btn-primary" onclick="openSignupModal()">사용자 등록</button><span class="admin-settings-hint" style="margin:0;">등록된 사용자가 없습니다. 관리자 화면에서 바로 추가할 수 있습니다.</span></div>';
         return;
     }
     mount.innerHTML = `
+        <div class="admin-user-tools">
+            <button type="button" class="btn btn-primary" onclick="openSignupModal()">사용자 등록</button>
+            <span class="admin-settings-hint" style="margin:0;">권한/사용자 정보 수정 후 <strong>권한 저장</strong> 버튼으로 최종 저장하세요.</span>
+        </div>
         <div class="admin-perms-table-wrap">
             <table class="admin-perms-table">
                 <thead>
@@ -281,7 +285,11 @@ function renderAdminPermissionsPanel() {
                         <th>이름</th>
                         <th>직원번호</th>
                         <th>업무 역할</th>
+                        <th>내선번호</th>
+                        <th>FAX</th>
+                        <th>휴대전화</th>
                         <th style="text-align:center; width:140px;">플랫폼 관리자</th>
+                        <th style="text-align:center; width:170px;">관리</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -293,8 +301,15 @@ function renderAdminPermissionsPanel() {
                                     <td>${escapeHtml(String(u.name || ""))}</td>
                                     <td>${emp}</td>
                                     <td>${escapeHtml(getRoleDisplayName(u.role))}</td>
+                                    <td>${escapeHtml(String(u.extNo || "8-0000"))}</td>
+                                    <td>${escapeHtml(String(u.faxNo || "02-0000-0000"))}</td>
+                                    <td>${escapeHtml(String(u.mobileNo || "010-0000-0000"))}</td>
                                     <td style="text-align:center;">
                                         <input type="checkbox" class="admin-perm-isadmin" data-emp="${emp}"${checked} aria-label="플랫폼 관리자">
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <button type="button" class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="openSignupModalForEdit('${emp}')">수정</button>
+                                        <button type="button" class="btn btn-danger" style="padding:5px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUserFromAdmin('${emp}')">삭제</button>
                                     </td>
                                 </tr>`;
                         })
@@ -302,6 +317,27 @@ function renderAdminPermissionsPanel() {
                 </tbody>
             </table>
         </div>`;
+}
+
+function deleteSignupUserFromAdmin(employeeNo) {
+    const empNo = String(employeeNo || "");
+    const user = signupUsers.find((u) => String(u.employeeNo) === empNo);
+    if (!user) return;
+    if (isAiSystemUser(user)) {
+        showAlert("AI 시스템 계정은 삭제할 수 없습니다.", "error");
+        return;
+    }
+    showConfirm(`[${user.name}] 사용자를 삭제하시겠습니까?`, async () => {
+        signupUsers = signupUsers.filter((u) => String(u.employeeNo) !== empNo);
+        try {
+            await saveSignupUsers({ rethrow: true });
+            renderAdminPermissionsPanel();
+            showAlert("사용자를 삭제했습니다.", "success");
+        } catch (e) {
+            console.error(e);
+            showAlert("사용자 삭제에 실패했습니다.", "error");
+        }
+    });
 }
 
 async function saveAdminPermissionsToServer() {
@@ -501,9 +537,15 @@ function openAdminAiHelpModal(topic) {
             title: "AI 채팅 설정 도움말",
             html: `
                 <div style="line-height:1.65;">
-                    <p><strong>시스템 프롬프트</strong>: AI 채팅의 말투/역할/제약을 정의합니다. 비우면 기본 프롬프트를 사용합니다.</p>
-                    <p><strong>Temperature</strong>: 높을수록 창의적, 낮을수록 일관적입니다. 일반 업무 답변은 <b>0.2~0.5</b> 권장입니다.</p>
-                    <p><strong>Top-P</strong>: 응답 후보 단어 범위를 제한합니다. Temperature와 함께 조정하되, 급격한 변경은 피하세요.</p>
+                    <p><strong>시스템 프롬프트</strong>: AI 채팅의 말투/역할/금지사항을 정합니다. 비워두면 기본 프롬프트가 적용됩니다.</p>
+                    <p><strong>Temperature</strong>: 0에 가까울수록 안정적, 1에 가까울수록 창의적입니다.</p>
+                    <p><strong>Top-P</strong>: 후보 단어 범위를 제한해 답변의 다양성을 조절합니다.</p>
+                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
+                    <p><strong>운영 가이드(권장값)</strong></p>
+                    <p>- 일반 업무 Q&A: Temperature <b>0.2~0.4</b>, Top-P <b>0.7~0.9</b></p>
+                    <p>- 아이디어/초안 작성: Temperature <b>0.5~0.7</b>, Top-P <b>0.8~1.0</b></p>
+                    <p>- 오답이 잦으면 Temperature를 먼저 낮추고, 그 다음 Top-P를 낮춰 보세요.</p>
+                    <p><strong>운영 예시</strong>: "내부 규정 질의 답변이 들쭉날쭉"할 때 Temperature를 0.3으로 고정하고 Top-P를 0.8로 두면 일관성이 올라갑니다.</p>
                 </div>
             `,
         },
@@ -513,7 +555,12 @@ function openAdminAiHelpModal(topic) {
                 <div style="line-height:1.65;">
                     <p><strong>IT/규정 게시판별 프롬프트</strong>: 게시판 성격에 맞는 답변 기준을 분리해 설정합니다.</p>
                     <p><strong>Temperature/Top-P</strong>: IT 문의는 보수적으로(낮게), 설명형 규정문의는 약간 높게 두면 자연스럽습니다.</p>
-                    <p>운영 중에는 한 번에 한 값만 조정하고 결과를 비교하는 방식이 안전합니다.</p>
+                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
+                    <p><strong>운영 가이드(권장값)</strong></p>
+                    <p>- IT 문의 자동답변: Temperature <b>0.1~0.3</b>, Top-P <b>0.7~0.85</b></p>
+                    <p>- 규정/상품 안내: Temperature <b>0.2~0.5</b>, Top-P <b>0.8~0.95</b></p>
+                    <p>- 답변이 너무 딱딱하면 Temperature를 0.1씩 올리고, 사실 오류가 생기면 0.1씩 내리세요.</p>
+                    <p><strong>운영 예시</strong>: "규정 설명은 이해하기 쉽게, IT 오류는 정확하게"가 목표라면 게시판별로 다른 프롬프트와 온도를 분리 운영하세요.</p>
                 </div>
             `,
         },
@@ -525,6 +572,13 @@ function openAdminAiHelpModal(topic) {
                     <p><strong>이어쓰기 횟수</strong>: 잘린 답변을 자동 이어서 생성하는 시도 횟수입니다.</p>
                     <p><strong>이어쓰기 시간(ms)</strong>: 이어쓰기 전체 실행의 타임아웃입니다. 장시간 지연 방지용 안전장치입니다.</p>
                     <p>입력을 비우면 서버 기본값을 자동 사용합니다.</p>
+                    <hr style="border:none; border-top:1px solid #cbd5e1; margin:10px 0;">
+                    <p><strong>운영 가이드(초기 권장값)</strong></p>
+                    <p>- 채팅 최대 토큰: <b>1024~2048</b></p>
+                    <p>- 게시물 최대 토큰: <b>1536~3072</b></p>
+                    <p>- 이어쓰기 횟수: <b>1~3</b></p>
+                    <p>- 이어쓰기 시간: <b>15000~45000ms</b></p>
+                    <p><strong>운영 예시</strong>: 답변이 자주 중간에 끊기면 최대 토큰을 먼저 늘리고, 그래도 끊기면 이어쓰기 횟수를 1씩 늘리세요. 지연이 길면 이어쓰기 시간 제한을 낮춰 응답 체감을 개선할 수 있습니다.</p>
                 </div>
             `,
         },
@@ -537,3 +591,4 @@ function openAdminAiHelpModal(topic) {
 
 window.openAdminAiHelpModal = openAdminAiHelpModal;
 window.closeAdminAiHelpModal = closeAdminAiHelpModal;
+window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;

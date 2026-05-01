@@ -446,6 +446,26 @@
             box-shadow: inset 0 1px 0 rgba(148,163,184,0.22), 0 2px 6px rgba(2,6,23,0.22);
         }
         .profile-overlay-body { padding: 14px 16px 12px; }
+        .profile-contact-grid {
+            margin-top: 10px;
+            display: grid;
+            gap: 6px;
+        }
+        .profile-contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #dbe7f5;
+            border-radius: 8px;
+            background: #f8fbff;
+            color: #334155;
+            font-size: 12px;
+            padding: 7px 10px;
+        }
+        .profile-contact-label {
+            font-weight: 700;
+            color: #64748b;
+        }
         .profile-dept-box {
             background: linear-gradient(180deg, #ffffff, #f8fafc);
             border: 1px solid #dbeafe;
@@ -1956,6 +1976,14 @@
             background: transparent;
             border-color: #3f5475;
         }
+        body[data-theme="dark"] .profile-contact-item {
+            background: #172841;
+            border-color: #3f5475;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .profile-contact-label {
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .admin-settings-card-title,
         body[data-theme="dark"] .admin-field-label,
         body[data-theme="dark"] .admin-gen-label,
@@ -1970,6 +1998,10 @@
             background: linear-gradient(180deg, #182840 0%, #13233a 100%);
             border-color: #4a5f7f;
         }
+        body[data-theme="dark"] .admin-user-tools {
+            background: #13233a;
+            border-color: #3f5475;
+        }
         body[data-theme="dark"] .admin-settings-textarea,
         body[data-theme="dark"] .admin-ai-gen-num,
         body[data-theme="dark"] .admin-runtime-input {
@@ -1982,6 +2014,52 @@
         body[data-theme="dark"] .admin-ai-log-detail-card,
         body[data-theme="dark"] .admin-ai-log-pre {
             background: #13233a;
+            border-color: #3f5475;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .admin-perms-table thead th {
+            background: #1c2f4c;
+            color: #e6edf8;
+            border-bottom-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-perms-table td {
+            color: #dce7f6;
+            border-bottom-color: #2c3f5d;
+        }
+        body[data-theme="dark"] #adminAiHelpModal hr {
+            border-top-color: #3f5475 !important;
+        }
+        body[data-theme="dark"] #loginPage {
+            background: radial-gradient(circle at 15% 10%, #13243f 0%, #0e1a2d 45%, #0a1424 100%);
+        }
+        body[data-theme="dark"] #loginPage::before {
+            background: radial-gradient(circle, rgba(56,189,248,0.18) 0%, rgba(56,189,248,0) 70%);
+        }
+        body[data-theme="dark"] #loginPage::after {
+            background: radial-gradient(circle, rgba(96,165,250,0.16) 0%, rgba(96,165,250,0) 68%);
+        }
+        body[data-theme="dark"] #loginPage .login-bg {
+            background: linear-gradient(140deg, #103363 0%, #154379 55%, #1a5a93 100%);
+        }
+        body[data-theme="dark"] #loginPage .login-box {
+            background: rgba(17, 28, 45, 0.95);
+            border-color: #3f5475;
+            box-shadow: 0 20px 44px rgba(2, 8, 24, 0.55);
+        }
+        body[data-theme="dark"] #loginPage .login-brand-subtitle {
+            color: #dce7f6;
+            background: linear-gradient(180deg, #203554, #1a2b45);
+            border-color: #496281;
+            box-shadow: none;
+        }
+        body[data-theme="dark"] #loginPage label {
+            color: #c8d7eb !important;
+        }
+        body[data-theme="dark"] #signupModal .modal-content,
+        body[data-theme="dark"] #memberListModal .modal-content,
+        body[data-theme="dark"] #loginTestToolsModal .modal-content,
+        body[data-theme="dark"] #veinModal .modal-content {
+            background: #121b2d;
             border-color: #3f5475;
             color: #dce7f6;
         }
@@ -3128,6 +3206,17 @@
         }
         .admin-settings-tab-panel {
             margin-bottom: 8px;
+        }
+        .admin-user-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border: 1px solid #dbe7f5;
+            border-radius: 10px;
+            background: #f8fbff;
         }
         .admin-perms-table-wrap {
             border: 1px solid #e2e8f0;
