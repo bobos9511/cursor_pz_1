@@ -68,10 +68,24 @@ async function recordAiApiClientErrorLog(payload = {}) {
 function sanitizePostAiRawReply(rawReply) {
     let out = String(rawReply || "").replace(/\r/g, "").trim();
     if (!out) return out;
+    const PARA_MARK = "__AI_PARA_BREAK__";
+    const LIST_MARK = "__AI_LIST_BREAK__";
     out = out
         .replace(/\(응답이 길어 핵심만 우선 제공되었습니다\.[^)]+\)/g, "")
         .replace(/\(End of[^)\n]*\)?/gi, "")
         .replace(/Point\s*\d+\s*\([^)\n]*\):\*/gi, "")
+        .trim();
+    // 모델 응답이 폭 기준으로 강제 줄바꿈된 경우(예: "근\n거", "정리\n해")를 자연스럽게 복원
+    // 단, 목록/번호 라인(1., -, *)과 문단 구분은 최대한 보존한다.
+    out = out
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/\n{2,}/g, PARA_MARK)
+        .replace(/\n(?=\s*(?:[-*•]|[0-9]+[.)]))/g, LIST_MARK)
+        .replace(/([가-힣A-Za-z]{1,3})\n([가-힣A-Za-z]{1,3})/g, "$1$2")
+        .replace(/\n/g, " ")
+        .replace(new RegExp(LIST_MARK, "g"), "\n")
+        .replace(new RegExp(PARA_MARK, "g"), "\n\n")
+        .replace(/[ \t]{2,}/g, " ")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
     return out;
