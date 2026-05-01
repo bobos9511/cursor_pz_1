@@ -2262,6 +2262,14 @@
             background: linear-gradient(90deg, #152238, #21324d, #152238);
             color: #cfdbec;
         }
+        body[data-theme="dark"] .ai-search-date-divider span {
+            background: #22324b;
+            color: #c9d8ec;
+            border: 1px solid #3f5475;
+        }
+        body[data-theme="dark"] .ai-search-msg-time {
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .ai-search-input-help,
         body[data-theme="dark"] .ai-search-history-meta,
         body[data-theme="dark"] .ai-search-history-empty {
@@ -3510,6 +3518,11 @@
             padding: 6px 10px;
             font-size: 12px;
             cursor: pointer;
+            max-width: min(100%, 210px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
         }
         .ai-search-suggest-chip:hover {
             border-color: #93c5fd;
@@ -3535,6 +3548,23 @@
             white-space: pre-wrap;
             overflow-wrap: anywhere;
         }
+        .ai-search-date-divider {
+            display: flex;
+            justify-content: center;
+            margin: 8px 0 10px;
+        }
+        .ai-search-date-divider span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            letter-spacing: 0.2px;
+        }
         .ai-search-msg.user {
             margin-left: auto;
             background: #dbeafe;
@@ -3552,8 +3582,25 @@
             animation: aiSearchPulse 1.6s ease-in-out infinite;
         }
         .ai-search-msg-body { width: 100%; }
+        .ai-search-msg-foot {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-search-msg.user .ai-search-msg-foot {
+            justify-content: flex-end;
+        }
+        .ai-search-msg.ai .ai-search-msg-foot {
+            justify-content: flex-start;
+        }
+        .ai-search-msg-time {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            white-space: nowrap;
+        }
         .ai-prefer-btn {
-            margin-top: 8px;
             display: inline-flex;
             align-items: center;
             gap: 5px;

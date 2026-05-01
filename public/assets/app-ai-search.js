@@ -101,8 +101,40 @@ function normalizeQuestionKey(text) {
 
 function summarizeQuestionText(text) {
     const plain = String(text || "").replace(/\s+/g, " ").trim();
-    if (plain.length <= 18) return plain;
-    return `${plain.slice(0, 18).trim()}...`;
+    if (plain.length <= 16) return plain;
+    return `${plain.slice(0, 16).trim()}...`;
+}
+
+function parseAiSearchDateTime(rawValue) {
+    const raw = String(rawValue || "").trim();
+    if (!raw) return null;
+    const m = raw.match(/^(\d{4})[.\-/](\d{2})[.\-/](\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+    if (!m) return null;
+    const dt = new Date(
+        Number(m[1]),
+        Number(m[2]) - 1,
+        Number(m[3]),
+        Number(m[4] || 0),
+        Number(m[5] || 0),
+        0,
+        0,
+    );
+    return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function formatAiSearchMessageDateKey(dt) {
+    if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "";
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const d = String(dt.getDate()).padStart(2, "0");
+    return `${y}.${m}.${d}`;
+}
+
+function formatAiSearchMessageTime(dt) {
+    if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "--:--";
+    const hh = String(dt.getHours()).padStart(2, "0");
+    const mm = String(dt.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
 }
 
 function getAiSearchPopularSuggestions(limit = 5) {
@@ -164,7 +196,7 @@ function makeDefaultAiSearchState() {
         boardType: "IT",
         draft: "",
         updatedAt: nowDateTimeLabel(),
-        messages: [{ role: "ai", text: buildAiSearchGreeting() }],
+        messages: [{ role: "ai", text: buildAiSearchGreeting(), createdAt: nowDateTimeLabel() }],
         loadedFromHistoryId: null,
         dirty: false,
     };
@@ -207,22 +239,34 @@ function renderAiSearchMessages() {
         if (isErrorAiMessage(text)) return true;
         return false;
     };
+    let lastDateKey = "";
+    const fallbackDate = parseAiSearchDateTime(aiSearchActive && aiSearchActive.updatedAt) || new Date();
     messages.forEach((msg, idx) => {
         const role = msg && msg.role === "user" ? "user" : "ai";
         const text = String(msg && msg.text ? msg.text : "");
+        const msgDate = parseAiSearchDateTime(msg && msg.createdAt) || fallbackDate;
+        const dateKey = formatAiSearchMessageDateKey(msgDate);
+        const timeLabel = formatAiSearchMessageTime(msgDate);
+        if (dateKey && dateKey !== lastDateKey) {
+            const dateDivider = document.createElement("div");
+            dateDivider.className = "ai-search-date-divider";
+            dateDivider.innerHTML = `<span>${escapeHtml(dateKey)}</span>`;
+            logEl.appendChild(dateDivider);
+            lastDateKey = dateKey;
+        }
         const item = document.createElement("div");
         item.className = `ai-search-msg ${role}`;
         const isLoadingMsg = role === "ai" && text.includes("ai-search-loading");
         if (isLoadingMsg) item.classList.add("loading");
         if (role === "user") {
-            item.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
+            item.innerHTML = `<div class="ai-search-msg-body">${escapeHtml(text).replace(/\n/g, "<br>")}</div><div class="ai-search-msg-foot"><span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span></div>`;
         } else {
             const preferred = !!(msg && msg.preferred);
             const hidePrefer = isPreferButtonHiddenMessage(text, idx);
             const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
-            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${preferBtn}`;
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div><div class="ai-search-msg-foot"><span class="ai-search-msg-time">${escapeHtml(timeLabel)}</span>${preferBtn}</div>`;
         }
         logEl.appendChild(item);
     });
@@ -542,11 +586,13 @@ async function submitAiSearchQuestion() {
     if (!aiSearchActive) aiSearchActive = makeDefaultAiSearchState();
     aiSearchActive.boardType = "CHAT";
     aiSearchActive.dirty = true;
-    aiSearchActive.messages.push({ role: "user", text: question });
+    const sentAt = nowDateTimeLabel();
+    aiSearchActive.messages.push({ role: "user", text: question, createdAt: sentAt });
     if (!aiSearchActive.title || aiSearchActive.title === "새 대화") aiSearchActive.title = question.slice(0, 28);
     aiSearchActive.messages.push({
         role: "ai",
         text: '<span class="ai-search-loading">AI 답변 생성 중입니다<span class="ai-search-loading-dots"><i>.</i><i>.</i><i>.</i></span></span>',
+        createdAt: sentAt,
     });
     inputEl.value = "";
     saveAiSearchActiveState();
@@ -571,7 +617,7 @@ async function submitAiSearchQuestion() {
         const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || "AI 요청 실패")}</span>`;
         const lastIdx = aiSearchActive.messages.length - 1;
         if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") aiSearchActive.messages[lastIdx].text = replyHtml;
-        else aiSearchActive.messages.push({ role: "ai", text: replyHtml });
+        else aiSearchActive.messages.push({ role: "ai", text: replyHtml, createdAt: nowDateTimeLabel() });
         saveAiSearchActiveState();
         upsertAiSearchHistoryFromActive();
         renderAiSearchMessages();
@@ -584,7 +630,7 @@ async function submitAiSearchQuestion() {
         const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(error && error.message ? error.message : "AI 요청 실패")}</span>`;
         const lastIdx = aiSearchActive.messages.length - 1;
         if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") aiSearchActive.messages[lastIdx].text = failHtml;
-        else aiSearchActive.messages.push({ role: "ai", text: failHtml });
+        else aiSearchActive.messages.push({ role: "ai", text: failHtml, createdAt: nowDateTimeLabel() });
         saveAiSearchActiveState();
         upsertAiSearchHistoryFromActive();
         renderAiSearchMessages();
