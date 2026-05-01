@@ -1513,6 +1513,66 @@
         body[data-theme="dark"] .main-area-wrapper { background: #0b1220; }
         body[data-theme="dark"] .main-area { background: #0d1526; }
         body[data-theme="dark"] .page-title { color: #e6edf8; border-left-color: #60a5fa; }
+        body[data-theme="dark"] .header {
+            background: linear-gradient(180deg, #121d31 0%, #0f1a2c 100%);
+            border-bottom: 1px solid #33465f;
+            color: #eaf2ff;
+        }
+        body[data-theme="dark"] .logo { color: #eaf2ff; }
+        body[data-theme="dark"] .logo .logo-point { color: #60a5fa; }
+        body[data-theme="dark"] .header-title { color: #b7c7dc; opacity: 0.9; }
+        body[data-theme="dark"] .header-role-chip {
+            color: #dbeafe;
+            background: rgba(37, 99, 235, 0.24);
+            border-color: rgba(96, 165, 250, 0.65);
+        }
+        body[data-theme="dark"] .header-search-shell {
+            background: #162741;
+            border-color: #415474;
+        }
+        body[data-theme="dark"] #headerSearchInput { color: #e6edf8; }
+        body[data-theme="dark"] #headerSearchInput::placeholder { color: #9fb0c8; }
+        body[data-theme="dark"] .header-action-btn,
+        body[data-theme="dark"] .header-profile-btn,
+        body[data-theme="dark"] .header-search-mobile-btn,
+        body[data-theme="dark"] .sidebar-toggle-btn {
+            color: #dce7f6;
+            background: rgba(30, 41, 59, 0.55);
+            border-color: rgba(100, 116, 139, 0.55);
+        }
+        body[data-theme="dark"] .header-action-btn:hover,
+        body[data-theme="dark"] .header-profile-btn:hover,
+        body[data-theme="dark"] .header-search-mobile-btn:hover,
+        body[data-theme="dark"] .sidebar-toggle-btn:hover {
+            background: rgba(51, 65, 85, 0.85);
+            color: #f8fbff;
+            border-color: rgba(125, 211, 252, 0.55);
+        }
+        body[data-theme="dark"] .header-action-btn .header-action-hovercard,
+        body[data-theme="dark"] .header-profile-hovercard {
+            background: #0f1a2d;
+            border-color: #3f5475;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .header-noti-badge {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 0 2px #0f1a2c;
+        }
+        body[data-theme="dark"] .header-actions-layer {
+            background: rgba(13, 23, 39, 0.96);
+            border-color: #3f5475;
+            box-shadow: 0 12px 28px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .header-actions-layer-item {
+            background: #16243a;
+            border-color: #4a5f7f;
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .header-actions-layer-item:hover {
+            background: #22324c;
+            border-color: #6b8ab3;
+        }
         body[data-theme="dark"] p,
         body[data-theme="dark"] span,
         body[data-theme="dark"] label,
