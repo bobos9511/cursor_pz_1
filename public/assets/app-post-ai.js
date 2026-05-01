@@ -303,16 +303,25 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
     if (result.ok) {
         showAlert(`${postRef} AI 답변이 등록되었습니다.`, "success", {
             noticeLevel: "important",
+            asyncOnly: true,
+            osTitle: "KNOCK AI 답변 완료",
+            osTag: `ai-reply-${boardType}-${postId}-done`,
             actionText: "해당 게시물 보기",
             onClick: () => moveToPostDetail(postId, boardType),
         });
     } else if (result && result.isTimeout) {
         showAlert(`${postRef} AI 응답 시간이 초과되었습니다.`, "error", {
+            asyncOnly: true,
+            osTitle: "KNOCK AI 응답 지연",
+            osTag: `ai-reply-${boardType}-${postId}-timeout`,
             actionText: "다시요청",
             onClick: () => retryAiAnswerForPost(postId),
         });
     } else {
         showAlert(`${postRef} AI 답변 생성에 실패했습니다. AI 패널의 실패 사유를 확인해주세요.`, "error", {
+            asyncOnly: true,
+            osTitle: "KNOCK AI 답변 실패",
+            osTag: `ai-reply-${boardType}-${postId}-error`,
             actionText: "해당 게시물 보기",
             onClick: () => moveToPostDetail(postId, boardType),
         });

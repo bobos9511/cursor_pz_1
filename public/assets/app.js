@@ -3,6 +3,66 @@
         // ==========================================
         let appDialogConfirmHandler = null;
         let appDialogCancelHandler = null;
+        let systemNotificationPermissionRequested = false;
+
+        function isMobileOsClient() {
+            const ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+            return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+        }
+
+        function isPageInBackground() {
+            if (typeof document === 'undefined') return false;
+            if (document.visibilityState && document.visibilityState !== 'visible') return true;
+            if (typeof document.hasFocus === 'function' && !document.hasFocus()) return true;
+            return false;
+        }
+
+        function canUseSystemNotificationApi() {
+            return typeof window !== 'undefined' && typeof window.Notification !== 'undefined';
+        }
+
+        function shouldPreferSystemNotification(options = {}) {
+            if (!canUseSystemNotificationApi()) return false;
+            const isMobile = isMobileOsClient();
+            if (!isMobile) return true;
+            const isAsyncOnly = options && options.asyncOnly === true;
+            if (!isAsyncOnly) return false;
+            const loggedOut = !currentLoginUser;
+            const away = isPageInBackground();
+            return loggedOut || away;
+        }
+
+        function maybeRequestSystemNotificationPermission() {
+            if (!canUseSystemNotificationApi()) return;
+            if (Notification.permission !== 'default') return;
+            if (systemNotificationPermissionRequested) return;
+            systemNotificationPermissionRequested = true;
+            Notification.requestPermission().catch(() => {});
+        }
+
+        function showSystemNotification(message, type = 'success', options = {}) {
+            if (!canUseSystemNotificationApi()) return false;
+            if (Notification.permission !== 'granted') return false;
+            const title = options.osTitle || (type === 'error' ? 'KNOCK 오류 알림' : 'KNOCK 알림');
+            const body = String(message || '').replace(/\s+/g, ' ').trim();
+            try {
+                const n = new Notification(title, {
+                    body: body || '새 알림이 도착했습니다.',
+                    tag: options.osTag || `knock-${Date.now()}`,
+                    renotify: false,
+                    requireInteraction: options.requireInteraction === true,
+                });
+                if (typeof options.onClick === 'function') {
+                    n.onclick = () => {
+                        try { window.focus(); } catch (_) {}
+                        options.onClick();
+                    };
+                }
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
 
         function openAppDialog({ title = '알림', message = '', confirmText = '확인', cancelText = '취소', showCancel = false, onConfirm = null, onCancel = null }) {
             const modal = document.getElementById('appDialogModal');
@@ -46,10 +106,16 @@
 
         function showAlert(message, type = 'success', options = {}) {
             const container = document.getElementById('toastContainer');
-            if (!container) return;
             if (typeof window.recordNotificationEntry === 'function') {
                 window.recordNotificationEntry(message, type, options);
             }
+            const wantsSystem = shouldPreferSystemNotification(options);
+            if (wantsSystem && Notification.permission === 'default') {
+                maybeRequestSystemNotificationPermission();
+            }
+            const systemShown = wantsSystem ? showSystemNotification(message, type, options) : false;
+            const skipPageToast = wantsSystem && systemShown;
+            if (!container || skipPageToast) return;
 
             const toast = document.createElement('div');
             toast.className = `toast-item ${type}`;
