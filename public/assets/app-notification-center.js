@@ -243,11 +243,26 @@ function formatNotificationGroupTitle(label) {
     return `${base} 관련 알림`;
 }
 
+function resolveNotificationSourceLabel(it) {
+    const pageLabel = String((it && it.pageLabel) || "").trim();
+    const pageKey = String((it && it.pageKey) || "").toLowerCase();
+    if (pageLabel.includes("AI Chat") || pageLabel.includes("AI채팅") || pageKey.includes("ai-search")) return "AI채팅";
+    if (pageLabel.includes("AI 지식") || pageKey.includes("know")) return "AI지식베이스";
+    if (pageLabel.includes("대시보드") || pageKey.includes("dashboard")) return "대시보드";
+    if (pageLabel.includes("설정") || pageKey.includes("settings")) return "설정";
+    if (pageLabel.includes("게시판") || pageKey.includes("list")) return "게시판";
+    if (pageLabel) return pageLabel;
+    return "일반";
+}
+
 function renderNotificationItemCard(it, options = {}) {
     const compact = !!options.compact;
+    const sourceLabel = resolveNotificationSourceLabel(it);
     const readChip = it.isRead
-        ? '<span class="noti-topic-chip" style="background:#f1f5f9; color:#475569; border-color:#cbd5e1;">확인됨</span>'
-        : '<span class="noti-topic-chip important" style="background:#fee2e2; color:#b91c1c; border-color:#fecaca;">신규</span>';
+        ? '<span class="noti-topic-chip noti-status-chip">[확인됨]</span>'
+        : '<span class="noti-topic-chip important noti-status-chip">[신규]</span>';
+    const sourceChip = `<span class="noti-topic-chip noti-source-chip">[${escapeHtml(sourceLabel)}]</span>`;
+    const levelTopicChip = `<span class="noti-topic-chip ${it.level === "important" ? "important" : ""}">[${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}]</span>`;
     const actionBtn = it.hasAction
         ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
         : "";
@@ -255,9 +270,10 @@ function renderNotificationItemCard(it, options = {}) {
         <div class="noti-item${compact ? " noti-item-compact" : ""}">
             <div class="noti-item-top">
                 <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
-                <div style="display:flex; align-items:center; gap:6px;">
+                <div class="noti-item-source-row">
+                    ${sourceChip}
                     ${readChip}
-                    <div class="noti-topic-chip ${it.level === "important" ? "important" : ""}">${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}</div>
+                    ${levelTopicChip}
                 </div>
             </div>
             <div class="noti-item-msg">${escapeHtml(it.message).replace(/\n/g, "<br>")}</div>

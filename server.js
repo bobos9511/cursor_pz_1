@@ -497,6 +497,12 @@ async function handleAiChat(req, res) {
   }
 
   function buildRagContext(queryText, boardTypeForRag, ragConfig = {}) {
+    const getKnowDomainLabel = (rawDomain) => {
+      const d = String(rawDomain || "").toUpperCase();
+      if (d === "IT") return "IT 매뉴얼";
+      if (d === "BIZ") return "업무 매뉴얼";
+      return "기타";
+    };
     const db = readDb();
     const shared = db.appDataByScope && db.appDataByScope.shared ? db.appDataByScope.shared : null;
     const posts = shared && Array.isArray(shared.posts) ? shared.posts : [];
@@ -572,7 +578,7 @@ async function handleAiChat(req, res) {
     for (const { p } of gated) {
       const meta = p.meta && typeof p.meta === "object" ? p.meta : {};
       lines.push("");
-      lines.push(`- id: ${p.id} / domain: ${p.knowCategory || "-"}`);
+      lines.push(`- id: ${p.id} / domain: ${getKnowDomainLabel(p.knowCategory)}`);
       if (meta.knowSummary) lines.push(`  summary: ${stripHtmlToText(meta.knowSummary)}`);
       if (meta.knowQuestion) lines.push(`  Q: ${stripHtmlToText(meta.knowQuestion)}`);
       if (meta.knowAnswer) lines.push(`  A: ${stripHtmlToText(meta.knowAnswer).slice(0, 700)}`);

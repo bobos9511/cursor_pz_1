@@ -1520,8 +1520,12 @@
         }
         .noti-item-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
         .noti-item-meta { font-size: 11px; color: #64748b; }
+        .noti-item-source-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
         .noti-topic-chip { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
         .noti-topic-chip.important { background: #fee2e2; color: #b91c1c; }
+        .noti-source-chip { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+        .noti-status-chip { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+        .noti-topic-chip.important.noti-status-chip { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
         .noti-item-msg { font-size: 13px; line-height: 1.5; color: #0f172a; }
         .noti-item-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
         .noti-item-compact { margin-top: 8px; margin-bottom: 0; }
@@ -2388,6 +2392,27 @@
         body[data-theme="dark"] .noti-empty {
             color: #a7b6cc;
         }
+        body[data-theme="dark"] .noti-topic-chip {
+            background: #22324c;
+            border-color: #4a5f7f;
+            color: #dbe7f8;
+        }
+        body[data-theme="dark"] .noti-source-chip {
+            background: #123447;
+            border-color: #1f5f80;
+            color: #a5ecff;
+        }
+        body[data-theme="dark"] .noti-status-chip {
+            background: #2a374d;
+            border-color: #4a5f7f;
+            color: #c9d8ec;
+        }
+        body[data-theme="dark"] .noti-topic-chip.important,
+        body[data-theme="dark"] .noti-topic-chip.important.noti-status-chip {
+            background: #4a202b;
+            border-color: #7f2d3a;
+            color: #fecdd3;
+        }
         body[data-theme="dark"] .noti-stack-toggle {
             background: #1a2b45;
             border-color: #41597b;
@@ -2905,6 +2930,12 @@
         body[data-theme="dark"] .know-detail-banner {
             border-color: #3f5475;
             background: #15263d;
+        }
+        body[data-theme="dark"] .rag-chip,
+        body[data-theme="dark"] .know-detail-rag-chip {
+            background: #103248;
+            border-color: #1f5f80;
+            color: #9ee8ff;
         }
         body[data-theme="dark"] .know-detail-card,
         body[data-theme="dark"] .know-detail-attach-item {

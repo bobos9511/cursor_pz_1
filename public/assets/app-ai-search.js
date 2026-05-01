@@ -331,8 +331,8 @@ function renderAiSearchMessages() {
             item.innerHTML = `<div class="ai-search-msg-body">${text}</div>`;
             row.insertAdjacentHTML("beforeend", avatarHtml);
             row.appendChild(item);
-            if (preferBtn) row.insertAdjacentHTML("beforeend", `<span class="ai-search-msg-prefer-outside">${preferBtn}</span>`);
             row.insertAdjacentHTML("beforeend", timeHtml);
+            if (preferBtn) row.insertAdjacentHTML("beforeend", `<span class="ai-search-msg-prefer-outside">${preferBtn}</span>`);
         }
         logEl.appendChild(row);
     });
