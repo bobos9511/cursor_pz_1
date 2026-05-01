@@ -2782,7 +2782,7 @@
             }
             .ai-search-history-list { max-height: 220px; }
         }
-        @media (max-width: 1120px) {
+        @media (max-width: 1280px) {
             #view-list .panel > .flex.items-center.justify-between.p-20 {
                 align-items: flex-start !important;
                 gap: 10px !important;
@@ -2790,18 +2790,25 @@
             #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
                 width: 100%;
                 justify-content: flex-start !important;
-                display: flex;
-                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: minmax(120px, 150px) minmax(130px, 170px) minmax(180px, 1fr) auto;
                 gap: 8px;
                 align-items: center;
             }
-            #view-list #boardStatusFilter { width: clamp(120px, 22%, 160px) !important; }
-            #view-list #boardKnowCategoryFilter { width: clamp(130px, 24%, 180px) !important; }
-            #view-list #boardKeywordInput { width: min(100%, 420px) !important; min-width: 180px; }
+            #view-list #boardStatusFilter,
+            #view-list #boardKnowCategoryFilter,
+            #view-list #boardKeywordInput {
+                width: 100% !important;
+                min-width: 0;
+            }
             #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="width:1px"] {
                 display: none !important;
             }
-            #view-list #listWriteBtn { white-space: nowrap; }
+            #view-list #listWriteBtn {
+                grid-column: 1 / -1;
+                justify-self: start;
+                white-space: nowrap;
+            }
         }
         @media (max-width: 980px) {
             #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
