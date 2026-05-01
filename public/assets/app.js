@@ -47,7 +47,7 @@
             const out = { ...base, ...src };
             out.master = out.master === 'block' ? 'block' : 'allow';
             out.level = out.level === 'important' ? 'important' : 'all';
-            out.timeMode = out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'work';
+            out.timeMode = out.timeMode === 'all' || out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'work';
             out.customStart = /^\d{2}:\d{2}$/.test(String(out.customStart || '')) ? String(out.customStart) : '09:00';
             out.customEnd = /^\d{2}:\d{2}$/.test(String(out.customEnd || '')) ? String(out.customEnd) : '18:00';
             out.excludeKeywords = Array.isArray(out.excludeKeywords) ? normalizeKeywordList(out.excludeKeywords.join(',')) : normalizeKeywordList(out.excludeKeywords);
@@ -82,6 +82,7 @@
             const cur = now.getHours() * 60 + now.getMinutes();
             const workStart = 9 * 60;
             const workEnd = 18 * 60;
+            if (policy.timeMode === 'all') return true;
             if (policy.timeMode === 'night') return cur >= workEnd || cur < workStart;
             if (policy.timeMode !== 'custom') return cur >= workStart && cur < workEnd;
             const s = toMinutes(policy.customStart);
