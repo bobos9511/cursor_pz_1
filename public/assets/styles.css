@@ -4794,10 +4794,24 @@
             .writer-avatar {
                 display: none;
             }
+            #view-ai-search .ai-search-main {
+                border-color: #d2deef;
+            }
+            #view-ai-search .ai-search-main-head {
+                border-bottom-color: #d2deef;
+            }
             .admin-ai-log-detail-grid {
                 grid-template-columns: 1fr;
             }
             .admin-ai-settings-version-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            body[data-theme="dark"] #view-ai-search .ai-search-main {
+                border-color: #2c3f5d;
+            }
+            body[data-theme="dark"] #view-ai-search .ai-search-main-head {
+                border-bottom-color: #2b3f5d;
             }
         }
