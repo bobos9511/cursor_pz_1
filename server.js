@@ -61,6 +61,8 @@ function createDefaultDb() {
     aiSettings: deepCloneAiSettings(),
     aiApiLogs: [],
     aiSettingsHistory: [],
+    /** 직원번호(스코프)별 AI채팅 지난 대화 — 브라우저와 무관하게 동기화 */
+    aiChatHistoryByScope: {},
   };
 }
 const DEFAULT_DB = createDefaultDb();
@@ -427,6 +429,8 @@ function readDb() {
       aiSettings: mergeAiSettingsFromDb(parsed),
       aiApiLogs: Array.isArray(parsed && parsed.aiApiLogs) ? parsed.aiApiLogs : [],
       aiSettingsHistory: Array.isArray(parsed && parsed.aiSettingsHistory) ? parsed.aiSettingsHistory : [],
+      aiChatHistoryByScope:
+        parsed && typeof parsed.aiChatHistoryByScope === "object" ? parsed.aiChatHistoryByScope : {},
     };
   } catch (error) {
     return createDefaultDb();
@@ -1052,6 +1056,44 @@ async function handleAiChat(req, res) {
   }
 }
 
+function normalizeAiChatHistoryScope(raw) {
+  const s = String(raw || "").trim();
+  if (!s || s === "guest") return "guest";
+  const digits = s.replace(/\D/g, "").slice(0, 6);
+  if (!digits) return "guest";
+  return digits.padStart(6, "0");
+}
+
+function sanitizeAiChatHistoryArray(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (let i = 0; i < raw.length && out.length < 30; i++) {
+    const item = raw[i];
+    if (!item || typeof item !== "object") continue;
+    const id = String(item.id || "").trim().slice(0, 120);
+    if (!id) continue;
+    const title = String(item.title || "지난 대화").slice(0, 500);
+    const boardType = String(item.boardType || "IT").slice(0, 32);
+    const updatedAt = String(item.updatedAt || "").slice(0, 64);
+    const msgArr = Array.isArray(item.messages) ? item.messages : [];
+    const messages = [];
+    for (let j = 0; j < msgArr.length && messages.length < 120; j++) {
+      const m = msgArr[j];
+      if (!m || typeof m !== "object") continue;
+      const role = m.role === "ai" || m.role === "user" ? m.role : "user";
+      const entry = {
+        role,
+        text: String(m.text == null ? "" : m.text).slice(0, 400_000),
+        createdAt: String(m.createdAt || "").slice(0, 64),
+      };
+      if (m.preferred === true) entry.preferred = true;
+      messages.push(entry);
+    }
+    out.push({ id, title, boardType, updatedAt, messages });
+  }
+  return out;
+}
+
 async function handleDbApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/db/app-data") {
     const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
@@ -1076,6 +1118,41 @@ async function handleDbApi(req, res, url) {
     }
     const db = readDb();
     db.appDataByScope[scope] = appData;
+    writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/ai-chat-history") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 200, { history: [] });
+      return true;
+    }
+    const db = readDb();
+    const byScope = db.aiChatHistoryByScope && typeof db.aiChatHistoryByScope === "object" ? db.aiChatHistoryByScope : {};
+    const history = Array.isArray(byScope[scope]) ? byScope[scope] : [];
+    sendJson(res, 200, { history });
+    return true;
+  }
+  if (req.method === "PUT" && url.pathname === "/api/db/ai-chat-history") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 400, { error: "Invalid scope." });
+      return true;
+    }
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const history = sanitizeAiChatHistoryArray(body && body.history);
+    const db = readDb();
+    if (!db.aiChatHistoryByScope || typeof db.aiChatHistoryByScope !== "object") {
+      db.aiChatHistoryByScope = {};
+    }
+    db.aiChatHistoryByScope[scope] = history;
     writeDb(db);
     sendJson(res, 200, { ok: true });
     return true;

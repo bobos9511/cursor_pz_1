@@ -68,6 +68,66 @@ function bindAiSearchHistoryCrossTabSyncOnce() {
     });
 }
 
+function mergeAiChatHistoriesByUpdatedAt(local, remote) {
+    const map = new Map();
+    function newer(a, b) {
+        return String(a.updatedAt || "") >= String(b.updatedAt || "") ? a : b;
+    }
+    (Array.isArray(local) ? local : []).forEach((h) => {
+        if (h && h.id) map.set(String(h.id), h);
+    });
+    (Array.isArray(remote) ? remote : []).forEach((h) => {
+        if (!h || !h.id) return;
+        const id = String(h.id);
+        const prev = map.get(id);
+        map.set(id, prev ? newer(prev, h) : h);
+    });
+    return Array.from(map.values()).sort((x, y) =>
+        String(y.updatedAt || "").localeCompare(String(x.updatedAt || ""), "ko"),
+    );
+}
+
+async function mergeAiChatHistoryFromServer() {
+    const raw = typeof getCookie === "function" ? getCookie(USER_SCOPE_COOKIE) || "" : "";
+    const scope = normalizeAiSearchScopeKey(raw);
+    if (scope === "guest") return;
+    try {
+        const res = await fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`);
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        const remote = Array.isArray(data && data.history) ? data.history : [];
+        if (!remote.length) return;
+        const local = Array.isArray(aiSearchHistory) ? aiSearchHistory : [];
+        aiSearchHistory = mergeAiChatHistoriesByUpdatedAt(local, remote).slice(0, 30);
+        const keys = getAiSearchStorageKeyBase();
+        saveJsonToStorage(keys.historyKey, aiSearchHistory);
+        renderAiSearchHistory();
+        renderAiSearchHistoryMobile();
+        updateAiSearchDeleteAllButtonState();
+    } catch (_) {
+        /* 서버 미가동·오프라인 등 — 로컬만 사용 */
+    }
+}
+
+function persistAiSearchHistoryToServer() {
+    const raw = typeof getCookie === "function" ? getCookie(USER_SCOPE_COOKIE) || "" : "";
+    const scope = normalizeAiSearchScopeKey(raw);
+    if (scope === "guest") return;
+    if (persistAiSearchHistoryToServer._debounce) clearTimeout(persistAiSearchHistoryToServer._debounce);
+    persistAiSearchHistoryToServer._debounce = setTimeout(() => {
+        persistAiSearchHistoryToServer._debounce = null;
+        try {
+            fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ history: aiSearchHistory }),
+            }).catch(() => {});
+        } catch (_) {
+            // no-op
+        }
+    }, 400);
+}
+
 function getAiSearchStorageKeyBase() {
     const raw = typeof getCookie === "function" ? getCookie(USER_SCOPE_COOKIE) || "" : "";
     const scope = normalizeAiSearchScopeKey(raw);
@@ -541,6 +601,8 @@ function upsertAiSearchHistoryFromActive() {
     const keys = getAiSearchStorageKeyBase();
     saveJsonToStorage(keys.historyKey, aiSearchHistory);
     renderAiSearchHistory();
+    updateAiSearchDeleteAllButtonState();
+    persistAiSearchHistoryToServer();
 }
 
 function deleteAiSearchConversation(conversationId) {
@@ -550,6 +612,8 @@ function deleteAiSearchConversation(conversationId) {
     const keys = getAiSearchStorageKeyBase();
     saveJsonToStorage(keys.historyKey, aiSearchHistory);
     renderAiSearchHistory();
+    updateAiSearchDeleteAllButtonState();
+    persistAiSearchHistoryToServer();
     showAlert("지난 대화를 삭제했습니다.", "success");
 }
 
@@ -560,6 +624,8 @@ function deleteAllAiSearchHistory() {
         const keys = getAiSearchStorageKeyBase();
         saveJsonToStorage(keys.historyKey, aiSearchHistory);
         renderAiSearchHistory();
+        updateAiSearchDeleteAllButtonState();
+        persistAiSearchHistoryToServer();
         closeAiSearchHistoryMobileModal();
         showAlert("지난 대화를 모두 삭제했습니다.", "success");
     });
@@ -590,6 +656,7 @@ function initializeAiSearchView() {
     const inputEl = document.getElementById("aiSearchInput");
     bindAiSearchHistoryCrossTabSyncOnce();
     aiSearchHistory = loadAiSearchHistoryWithMigration();
+    const keys = getAiSearchStorageKeyBase();
     aiSearchActive = loadJsonFromStorage(keys.activeKey, null) || makeDefaultAiSearchState();
     if (inputEl) inputEl.value = aiSearchActive.draft || "";
     if (aiSearchActive && Array.isArray(aiSearchActive.messages) && aiSearchActive.messages.length === 1 && aiSearchActive.messages[0].role === "ai") {
@@ -609,7 +676,11 @@ function initializeAiSearchView() {
     }
     if (logEl) logEl.addEventListener("click", () => setAiSearchStateBadge());
     setAiSearchStateBadge();
+    updateAiSearchDeleteAllButtonState();
     aiSearchInitialized = true;
+    void mergeAiChatHistoryFromServer().then(() => {
+        persistAiSearchHistoryToServer();
+    });
 }
 
 function startNewAiSearchChat() {
