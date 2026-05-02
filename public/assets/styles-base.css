@@ -2093,10 +2093,22 @@
         body.admin-pin-gate-open {
             overflow: hidden;
         }
+        .admin-pin-gate-overlay {
+            backdrop-filter: blur(3px);
+        }
         .admin-pin-gate-overlay.admin-pin-gate--fullscreen {
             align-items: stretch;
             padding: 0;
             z-index: 12100;
+            background: linear-gradient(180deg, rgba(9, 23, 44, 0.86), rgba(3, 10, 24, 0.96));
+        }
+        .admin-pin-gate-panel {
+            max-width: 420px;
+            border-radius: 18px;
+            border: 1px solid #dbe7f5;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 24px 40px rgba(15, 23, 42, 0.28);
+            overflow: hidden;
         }
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen {
             max-width: none;
@@ -2105,6 +2117,12 @@
             max-height: none;
             border-radius: 0;
             margin: 0;
+            border: 0;
+            box-shadow: none;
+        }
+        .admin-pin-gate-head {
+            background: linear-gradient(130deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%);
+            border-bottom: 0;
         }
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen .admin-pin-gate-body {
             flex: 1;
@@ -2112,33 +2130,88 @@
             flex-direction: column;
             justify-content: center;
             max-height: none;
+            padding-bottom: 20px;
         }
         #adminPinGateModal .admin-pin-gate-body {
             max-height: none;
         }
         .admin-pin-gate-body {
-            padding-top: 12px;
+            padding-top: 14px;
+        }
+        .admin-pin-gate-chip {
+            display: inline-flex;
+            align-self: center;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #1d4ed8;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            margin-bottom: 8px;
         }
         .admin-pin-gate-msg {
-            margin-bottom: 14px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .admin-pin-input-label {
+            display: block;
+            margin: 0 auto 8px;
+            width: min(92%, 280px);
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .admin-pin-direct-input {
+            width: min(92%, 280px);
+            margin: 0 auto 14px;
+            text-align: center;
+            letter-spacing: 0.22em;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 10px 12px;
+            border: 1px solid #bfdbfe;
+            background: #f8fbff;
+        }
+        .admin-pin-direct-input:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
         .admin-pin-slots {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            width: min(92%, 280px);
+            margin: 0 auto 14px;
         }
         .admin-pin-slot {
-            width: 14px;
-            height: 14px;
+            height: 46px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            position: relative;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .admin-pin-slot::after {
+            content: "";
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            border: 2px solid #cbd5e1;
-            background: #fff;
-            transition: background 0.15s, border-color 0.15s;
+            background: transparent;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: background 0.15s;
         }
         .admin-pin-slot--filled {
-            background: var(--ibk-blue);
-            border-color: var(--ibk-blue);
+            border-color: #60a5fa;
+            background: #eff6ff;
+        }
+        .admin-pin-slot--filled::after {
+            background: #1d4ed8;
         }
         .admin-pin-keypad {
             display: grid;
@@ -2148,34 +2221,38 @@
             margin: 0 auto;
         }
         .admin-pin-gate-panel--fullscreen .admin-pin-keypad {
-            max-width: min(92vw, 320px);
+            max-width: min(92vw, 340px);
             gap: 12px;
             margin-top: auto;
             margin-bottom: 8px;
         }
         .admin-pin-key {
-            min-height: 48px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 20px;
-            font-weight: 600;
-            color: #334155;
+            min-height: 52px;
+            border-radius: 14px;
+            border: 1px solid #dbe7f5;
+            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+            font-size: 21px;
+            font-weight: 700;
+            color: #0f172a;
             cursor: pointer;
-            transition: background 0.15s, border-color 0.15s;
+            transition: transform 0.08s, background 0.15s, border-color 0.15s;
         }
         .admin-pin-key:hover {
-            background: #eff6ff;
+            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
             border-color: #93c5fd;
         }
         .admin-pin-key:active {
-            transform: scale(0.97);
+            transform: translateY(1px) scale(0.98);
         }
         .admin-pin-key--wide {
-            font-size: 18px;
+            font-size: 17px;
         }
         .admin-pin-key-spacer {
             pointer-events: none;
+        }
+        .admin-pin-gate-foot {
+            background: #f8fafc;
+            border-top-color: #e2e8f0;
         }
         .admin-pin-gate-panel--shake {
             animation: adminPinShake 0.42s ease;

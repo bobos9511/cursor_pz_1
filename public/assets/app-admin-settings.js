@@ -26,6 +26,8 @@ const adminPinGateContext = {
 };
 
 let adminPinGateKeypadWired = false;
+let adminPinGateInputWired = false;
+let adminPinGateKeydownWired = false;
 
 function wireAdminPinGateKeypadOnce() {
     if (adminPinGateKeypadWired) return;
@@ -40,7 +42,74 @@ function wireAdminPinGateKeypadOnce() {
         } else if (btn.getAttribute("data-action") === "backspace") {
             adminPinGateBackspace();
         }
+        focusAdminPinGateInput();
     });
+}
+
+function wireAdminPinGateInputOnce() {
+    if (adminPinGateInputWired) return;
+    const inp = document.getElementById("adminPinGateInput");
+    if (!inp) return;
+    adminPinGateInputWired = true;
+    inp.addEventListener("input", () => {
+        if (adminPinGateContext.verifyBusy) return;
+        adminPinGateContext.digits = normalizeAdminPinDigits(inp.value).slice(0, 6);
+        syncAdminPinGateHiddenInput();
+        renderAdminPinGateSlots();
+        if (adminPinGateContext.digits.length === 6) void tryFinishAdminPinGate();
+    });
+    inp.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            void tryFinishAdminPinGate();
+            return;
+        }
+        if (ev.key === "Escape") {
+            ev.preventDefault();
+            closeAdminPinGateModal();
+        }
+    });
+}
+
+function wireAdminPinGateKeyboardOnce() {
+    if (adminPinGateKeydownWired || typeof window === "undefined") return;
+    adminPinGateKeydownWired = true;
+    window.addEventListener("keydown", (ev) => {
+        const modal = document.getElementById("adminPinGateModal");
+        if (!modal || !modal.classList.contains("active")) return;
+        const key = String(ev.key || "");
+        if (/^\d$/.test(key)) {
+            ev.preventDefault();
+            adminPinGateAppendDigit(key);
+            return;
+        }
+        if (key === "Backspace") {
+            ev.preventDefault();
+            adminPinGateBackspace();
+            return;
+        }
+        if (key === "Enter") {
+            ev.preventDefault();
+            void tryFinishAdminPinGate();
+            return;
+        }
+        if (key === "Escape") {
+            ev.preventDefault();
+            closeAdminPinGateModal();
+        }
+    });
+}
+
+function focusAdminPinGateInput() {
+    const inp = document.getElementById("adminPinGateInput");
+    if (!inp) return;
+    try {
+        inp.focus({ preventScroll: true });
+        const len = inp.value.length;
+        inp.setSelectionRange(len, len);
+    } catch (_) {
+        // no-op
+    }
 }
 
 function applyAdminPinGateResponsive() {
@@ -76,6 +145,11 @@ function resetAdminPinGateDigits() {
     renderAdminPinGateSlots();
     const panel = document.getElementById("adminPinGatePanel");
     if (panel) panel.classList.remove("admin-pin-gate-panel--shake");
+}
+
+function clearAdminPinGateInput() {
+    resetAdminPinGateDigits();
+    focusAdminPinGateInput();
 }
 
 function adminPinGateAppendDigit(d) {
@@ -172,6 +246,8 @@ function openAdminPinGateModal(opts) {
     }
 
     wireAdminPinGateKeypadOnce();
+    wireAdminPinGateInputOnce();
+    wireAdminPinGateKeyboardOnce();
 
     const modal = document.getElementById("adminPinGateModal");
     const tEl = document.getElementById("adminPinGateTitle");
@@ -185,6 +261,9 @@ function openAdminPinGateModal(opts) {
         modal.classList.add("active");
         document.body.classList.add("admin-pin-gate-open");
     }
+    setTimeout(() => {
+        focusAdminPinGateInput();
+    }, 40);
     if (adminPinGateContext.digits.length === 6 && isValidAdminPinFormatClient(adminPinGateContext.digits)) {
         void tryFinishAdminPinGate();
     }
@@ -218,6 +297,7 @@ function confirmAdminPinGateModal() {
 
 window.closeAdminPinGateModal = closeAdminPinGateModal;
 window.confirmAdminPinGateModal = confirmAdminPinGateModal;
+window.clearAdminPinGateInput = clearAdminPinGateInput;
 
 if (typeof window !== "undefined" && !window.__adminPinGateResizeWired) {
     window.__adminPinGateResizeWired = true;
