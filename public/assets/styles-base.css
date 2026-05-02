@@ -2081,6 +2081,35 @@
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 20px; font-size: 14px; color: #444; line-height: 1.5; overflow-y: auto; max-height: 60vh; }
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* 회원 목록 관리 모달 */
+        .member-list-summary { font-size: 13px; color: #64748b; }
+        .member-list-table-wrap {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .member-list-help {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-size: 12px;
+            line-height: 1.55;
+            color: #64748b;
+        }
+        .member-list-help-title {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .member-list-help p { margin: 0 0 8px 0; }
+        .member-list-help p:last-of-type { margin-bottom: 0; }
+        .member-list-help strong { color: #334155; }
         .notification-center-modal {
             max-width: 760px;
             width: min(94vw, 760px);

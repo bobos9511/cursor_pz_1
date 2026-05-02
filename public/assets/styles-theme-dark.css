@@ -1153,6 +1153,24 @@
             border-color: #3f5475;
             color: #dce7f6;
         }
+        body[data-theme="dark"] #memberListModal .member-list-summary {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] #memberListModal .member-list-table-wrap {
+            border-color: #3f5475;
+            background: rgba(15, 23, 42, 0.4);
+        }
+        body[data-theme="dark"] #memberListModal .member-list-help {
+            background: rgba(22, 34, 54, 0.92);
+            border-color: rgba(96, 165, 250, 0.22);
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] #memberListModal .member-list-help-title {
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] #memberListModal .member-list-help strong {
+            color: #e2e8f0;
+        }
         body[data-theme="dark"] #signupModal .signup-modal-shell {
             background: linear-gradient(180deg, #152238 0%, #111c2e 100%);
             border-color: #3f5475;
