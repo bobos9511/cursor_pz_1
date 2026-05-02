@@ -714,55 +714,55 @@
             border-bottom-color: #a16207 !important;
             color: #fde68a !important;
         }
-        /* 게시물 상세: AI 어시스턴트 레포트 카드 — 라이트 블루 톤 완화 */
+        /* 게시물 상세: AI 어시스턴트 레포트 카드 — 다크 보라 계열 */
         body[data-theme="dark"] #view-detail #dtlAiWrap {
-            border-color: #3f5475 !important;
-            background: linear-gradient(180deg, #141d2e 0%, #101b2d 100%);
-            box-shadow: 0 8px 24px rgba(2, 8, 24, 0.35);
+            border-color: #4b3a6b !important;
+            background: linear-gradient(180deg, #1c1528 0%, #120e1a 100%);
+            box-shadow: 0 8px 28px rgba(12, 6, 28, 0.45);
             overflow: hidden;
         }
         body[data-theme="dark"] #view-detail #dtlAiWrap > .panel-header.ai-panel-head-row {
-            background: linear-gradient(135deg, #1b3250 0%, #142a45 48%, #122038 100%) !important;
-            color: #e8f0ff !important;
-            border-bottom: 1px solid #3f5475 !important;
-            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+            background: linear-gradient(135deg, #2d2145 0%, #241835 48%, #1a1426 100%) !important;
+            color: #f3e8ff !important;
+            border-bottom: 1px solid #4b3a6b !important;
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
         body[data-theme="dark"] #view-detail #dtlAiWrap > .panel-header .icon {
-            color: #93c5fd;
+            color: #c4b5fd;
             opacity: 0.95;
         }
         body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory {
-            border-color: rgba(148, 163, 184, 0.45) !important;
-            color: #e8f0ff !important;
-            background: rgba(15, 23, 42, 0.35) !important;
+            border-color: rgba(167, 139, 250, 0.45) !important;
+            color: #f3e8ff !important;
+            background: rgba(36, 26, 56, 0.55) !important;
         }
         body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory:hover {
-            background: rgba(30, 58, 95, 0.55) !important;
-            border-color: rgba(147, 197, 253, 0.45) !important;
+            background: rgba(58, 42, 86, 0.65) !important;
+            border-color: rgba(196, 181, 253, 0.55) !important;
         }
         body[data-theme="dark"] #view-detail #aiPanelContent {
-            background: linear-gradient(180deg, #0f172a 0%, #0c1422 100%) !important;
-            color: #dce7f6 !important;
-            border-top: 1px solid rgba(63, 84, 117, 0.35);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            background: linear-gradient(180deg, #140f1c 0%, #0e0a14 100%) !important;
+            color: #e9e0f5 !important;
+            border-top: 1px solid rgba(91, 73, 130, 0.45);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text,
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text p,
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text li {
-            color: #dce7f6;
+            color: #e9e0f5;
         }
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text b {
-            color: #bfdbfe;
+            color: #d8b4fe;
         }
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-toggle-btn {
-            border-color: #4a5f7f;
-            background: #172338;
-            color: #bfdbfe;
+            border-color: #5b4a7a;
+            background: #22182f;
+            color: #ddd6fe;
         }
         body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-toggle-btn:hover {
-            background: #1f3555;
-            border-color: #6488b8;
-            color: #e8f4ff;
+            background: #2e2145;
+            border-color: #7c6aa3;
+            color: #f5f3ff;
         }
         body[data-theme="dark"] #similarPostModal .modal-body > div[style*="background: #fff"],
         body[data-theme="dark"] #similarPostModal details[style*="background: #fff"] {
