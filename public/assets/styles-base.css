@@ -1025,6 +1025,49 @@
 
         .page-title { font-size: 22px; font-weight: bold; color: #111; border-left: 5px solid var(--ibk-blue); padding-left: 15px; margin-bottom: 30px; display: flex; align-items: center; }
 
+        #answerFormBox .answer-form-panel-header {
+            color: var(--ibk-blue);
+        }
+        .answer-form-template-strip {
+            padding: 15px 20px;
+            background: #fffbeb;
+            border-bottom: 1px solid #fef3c7;
+            font-size: 13px;
+            color: #92400e;
+        }
+        .answer-form-template-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .answer-template-chip {
+            font: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid #d4d4d8;
+            background: #fff;
+            color: #334155;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+            max-width: 100%;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+        .answer-template-chip:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .answer-template-chip:focus-visible {
+            outline: 2px solid var(--ibk-blue);
+            outline-offset: 2px;
+        }
+
         .panel { background: #fff; border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; flex-direction: column; margin-bottom: 24px; overflow: hidden;}
         .panel-header { background: #F8FAFC; border-bottom: 1px solid var(--border-color); padding: 15px 20px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
         .panel-body { padding: 20px; flex: 1; }

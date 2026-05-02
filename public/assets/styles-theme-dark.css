@@ -733,10 +733,26 @@
             color: #fde68a !important;
             border-bottom-color: #a16207 !important;
         }
-        body[data-theme="dark"] #view-detail #answerFormBox > div[style*="background: #fffbeb"] {
+        body[data-theme="dark"] #view-detail #answerFormBox .answer-form-panel-header {
+            color: #93c5fd !important;
+        }
+        body[data-theme="dark"] #view-detail #answerFormBox .answer-form-template-strip {
             background: #3a2a14 !important;
-            border-bottom-color: #a16207 !important;
+            border-bottom: 1px solid #a16207 !important;
             color: #fde68a !important;
+        }
+        body[data-theme="dark"] #view-detail .answer-template-chip {
+            background: #1e2a3d !important;
+            border: 1px solid #4a5f7f !important;
+            color: #e2e8f0 !important;
+        }
+        body[data-theme="dark"] #view-detail .answer-template-chip:hover {
+            background: #24344e !important;
+            border-color: #5d79a1 !important;
+            color: #f8fafc !important;
+        }
+        body[data-theme="dark"] #view-detail .answer-template-chip:focus-visible {
+            outline-color: #93c5fd;
         }
         /* 게시물 상세: AI 어시스턴트 레포트 카드 — 다크 보라 계열 */
         body[data-theme="dark"] #view-detail #dtlAiWrap {

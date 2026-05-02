@@ -3315,7 +3315,12 @@
                 if (roleMatrix[currentRole].answer.includes(post.type)) {
                     formBox.classList.remove('hidden'); document.getElementById('answerInput').innerHTML = '<p><br></p>';
                     const replies = post.type === 'IT' ? ['KCB망 점검 중입니다.', '재기동 조치 완료.'] : ['추가 증빙 서류를 첨부해 주세요.', '해당 건은 처리가 불가합니다.'];
-                    document.getElementById('quickReplyChips').innerHTML = replies.map(r => `<span class="badge" style="border:1px solid #ccc; background:#fff; color:#444; cursor:pointer;" onclick="insertTemplate('${r}')">${r}</span>`).join('');
+                    document.getElementById("quickReplyChips").innerHTML = replies
+                        .map(
+                            (r) =>
+                                `<button type="button" class="answer-template-chip" onclick="insertTemplate(${JSON.stringify(r)})">${escapeHtml(r)}</button>`
+                        )
+                        .join("");
                 }
             }
 
