@@ -41,6 +41,7 @@ const rateLimitMap = new Map();
 /** 테스트 세션 유효 시간(기본 1시간, 마지막 활동 기준). 환경변수 SESSION_TTL_MS 로 조정 가능. */
 const SESSION_TTL_MS = Math.max(60_000, Number(process.env.SESSION_TTL_MS || 60 * 60 * 1000));
 const ADMIN_PIN_PEPPER = String(process.env.ADMIN_PIN_PEPPER || "knock-admin-pin-v1");
+const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
@@ -67,6 +68,8 @@ function createDefaultDb() {
     aiSettingsHistory: [],
     /** 직원번호(스코프)별 AI채팅 지난 대화 — 브라우저와 무관하게 동기화 */
     aiChatHistoryByScope: {},
+    /** 직원번호(스코프)별 알림센터 기록 */
+    notificationsByScope: {},
     /** 테스트 계정 단일 접속 세션: 직원번호 → { tokenHash, createdAt, lastSeenAt } (구형 sessionId는 무시) */
     testSessionsByEmpNo: {},
   };
@@ -437,6 +440,8 @@ function readDb() {
       aiSettingsHistory: Array.isArray(parsed && parsed.aiSettingsHistory) ? parsed.aiSettingsHistory : [],
       aiChatHistoryByScope:
         parsed && typeof parsed.aiChatHistoryByScope === "object" ? parsed.aiChatHistoryByScope : {},
+      notificationsByScope:
+        parsed && typeof parsed.notificationsByScope === "object" ? parsed.notificationsByScope : {},
       testSessionsByEmpNo:
         parsed && typeof parsed.testSessionsByEmpNo === "object" ? parsed.testSessionsByEmpNo : {},
     };
@@ -1356,6 +1361,59 @@ function sanitizeAiChatHistoryArray(raw) {
   return out;
 }
 
+function sanitizeNotificationCenterItems(raw, nowMs = Date.now()) {
+  if (!Array.isArray(raw)) return [];
+  const minAt = nowMs - NOTIFICATION_RETENTION_MS;
+  const out = [];
+  for (let i = 0; i < raw.length && out.length < 300; i++) {
+    const it = raw[i];
+    if (!it || typeof it !== "object") continue;
+    const at = Number(it.at || 0);
+    if (!Number.isFinite(at) || at < minAt) continue;
+    out.push({
+      id: String(it.id || `noti_${at}_${i}`).slice(0, 160),
+      message: String(it.message || "").slice(0, 2000),
+      type: String(it.type || "success").slice(0, 40),
+      topic: String(it.topic || "일반").slice(0, 120),
+      level: it.level === "important" ? "important" : "general",
+      at,
+      atLabel: String(it.atLabel || "").slice(0, 80),
+      dateLabel: String(it.dateLabel || "").slice(0, 40),
+      timeBand: String(it.timeBand || "").slice(0, 40),
+      pageKey: String(it.pageKey || "page:unknown").slice(0, 120),
+      pageLabel: String(it.pageLabel || "기타").slice(0, 120),
+      isRead: !!it.isRead,
+      actionText: String(it.actionText || "바로가기").slice(0, 80),
+    });
+  }
+  out.sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+  return out.slice(0, 300);
+}
+
+function pruneNotificationsByScope(db, nowMs = Date.now()) {
+  if (!db || typeof db !== "object") return false;
+  if (!db.notificationsByScope || typeof db.notificationsByScope !== "object") {
+    db.notificationsByScope = {};
+    return true;
+  }
+  let changed = false;
+  const scopes = Object.keys(db.notificationsByScope);
+  for (const scope of scopes) {
+    const before = Array.isArray(db.notificationsByScope[scope]) ? db.notificationsByScope[scope] : [];
+    const after = sanitizeNotificationCenterItems(before, nowMs);
+    if (!after.length) {
+      if (before.length || db.notificationsByScope[scope] != null) {
+        delete db.notificationsByScope[scope];
+        changed = true;
+      }
+      continue;
+    }
+    if (after.length !== before.length) changed = true;
+    db.notificationsByScope[scope] = after;
+  }
+  return changed;
+}
+
 async function handleDbApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/db/app-data") {
     const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
@@ -1421,6 +1479,43 @@ async function handleDbApi(req, res, url) {
     db.aiChatHistoryByScope[scope] = history;
     writeDb(db);
     sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/notifications") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 200, { items: [] });
+      return true;
+    }
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    const pruned = pruneNotificationsByScope(db);
+    const byScope = db.notificationsByScope && typeof db.notificationsByScope === "object" ? db.notificationsByScope : {};
+    const items = sanitizeNotificationCenterItems(byScope[scope]);
+    if (pruned) writeDb(db);
+    sendJson(res, 200, { items });
+    return true;
+  }
+  if (req.method === "PUT" && url.pathname === "/api/db/notifications") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 400, { error: "Invalid scope." });
+      return true;
+    }
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    if (!db.notificationsByScope || typeof db.notificationsByScope !== "object") db.notificationsByScope = {};
+    db.notificationsByScope[scope] = sanitizeNotificationCenterItems(body && body.items);
+    pruneNotificationsByScope(db);
+    writeDb(db);
+    sendJson(res, 200, { ok: true, count: db.notificationsByScope[scope].length });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/claim") {

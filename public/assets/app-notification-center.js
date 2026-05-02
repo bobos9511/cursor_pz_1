@@ -11,10 +11,34 @@ const notificationCenterState = {
     seq: 1,
 };
 const NOTIFICATION_CENTER_STORAGE_KEY = "knock-notification-center-v1";
+const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
+let notificationSyncTimer = null;
+let notificationServerLoaded = false;
 
-function persistNotificationCenterState() {
-    try {
-        const safeItems = notificationCenterState.items.slice(0, 300).map((it) => ({
+function pruneNotificationRetention(items, now = Date.now()) {
+    const minAt = now - NOTIFICATION_RETENTION_MS;
+    return (Array.isArray(items) ? items : []).filter((it) => Number(it && it.at) >= minAt);
+}
+
+function getNotificationScopeFromCookie() {
+    const src = String((typeof document !== "undefined" && document.cookie) || "");
+    if (!src) return "guest";
+    const parts = src.split(";");
+    for (const part of parts) {
+        const idx = part.indexOf("=");
+        if (idx <= 0) continue;
+        const key = decodeURIComponent(part.slice(0, idx).trim());
+        if (key !== "knockUserScope") continue;
+        const value = decodeURIComponent(part.slice(idx + 1).trim());
+        return value || "guest";
+    }
+    return "guest";
+}
+
+function sanitizeNotificationItemsForTransport(items) {
+    return pruneNotificationRetention(items)
+        .slice(0, 300)
+        .map((it) => ({
             id: String(it.id || ""),
             message: String(it.message || ""),
             type: String(it.type || "success"),
@@ -27,10 +51,62 @@ function persistNotificationCenterState() {
             pageKey: String(it.pageKey || "page:unknown"),
             pageLabel: String(it.pageLabel || "기타"),
             isRead: !!it.isRead,
-            hasAction: false,
-            onClick: null,
             actionText: String(it.actionText || "바로가기"),
         }));
+}
+
+async function loadNotificationCenterStateFromServer() {
+    const scope = getNotificationScopeFromCookie();
+    if (!scope || scope === "guest") return;
+    try {
+        const res = await fetch(`/api/db/notifications?scope=${encodeURIComponent(scope)}`);
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        const loaded = sanitizeNotificationItemsForTransport(data && data.items);
+        if (!loaded.length) {
+            notificationServerLoaded = true;
+            return;
+        }
+        notificationCenterState.items = loaded
+            .map((it) => ({
+                ...it,
+                hasAction: false,
+                onClick: null,
+            }))
+            .sort((a, b) => Number(b.at || 0) - Number(a.at || 0))
+            .slice(0, 300);
+        recalcNotificationUnreadCount();
+        updateNotificationBadge();
+        renderNotificationCenterBody();
+        notificationServerLoaded = true;
+    } catch (_) {}
+}
+
+async function flushNotificationCenterStateToServer() {
+    const scope = getNotificationScopeFromCookie();
+    if (!scope || scope === "guest") return;
+    try {
+        await fetch(`/api/db/notifications?scope=${encodeURIComponent(scope)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: sanitizeNotificationItemsForTransport(notificationCenterState.items) }),
+        });
+    } catch (_) {}
+}
+
+function scheduleNotificationCenterSync() {
+    if (notificationSyncTimer) clearTimeout(notificationSyncTimer);
+    notificationSyncTimer = setTimeout(() => {
+        notificationSyncTimer = null;
+        void flushNotificationCenterStateToServer();
+    }, 250);
+}
+
+function persistNotificationCenterState() {
+    try {
+        notificationCenterState.items = sanitizeNotificationItemsForTransport(notificationCenterState.items)
+            .map((it) => ({ ...it, hasAction: false, onClick: null }));
+        const safeItems = notificationCenterState.items.slice(0, 300);
         localStorage.setItem(
             NOTIFICATION_CENTER_STORAGE_KEY,
             JSON.stringify({
@@ -46,6 +122,7 @@ function persistNotificationCenterState() {
             })
         );
     } catch (_) {}
+    if (notificationServerLoaded) scheduleNotificationCenterSync();
 }
 
 function restoreNotificationCenterState() {
@@ -55,7 +132,7 @@ function restoreNotificationCenterState() {
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return;
         const loaded = Array.isArray(parsed.items) ? parsed.items : [];
-        notificationCenterState.items = loaded
+        notificationCenterState.items = pruneNotificationRetention(loaded)
             .map((it) => ({
                 id: String((it && it.id) || `noti_${Date.now()}_${Math.random().toString(16).slice(2)}`),
                 message: String((it && it.message) || ""),
@@ -548,13 +625,14 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
         actionText: options.actionText || "바로가기",
     };
     notificationCenterState.items.unshift(item); // 최근 알림 상단
-    notificationCenterState.items = notificationCenterState.items.slice(0, 300);
+    notificationCenterState.items = pruneNotificationRetention(notificationCenterState.items).slice(0, 300);
     recalcNotificationUnreadCount();
     updateNotificationBadge();
     persistNotificationCenterState();
 };
 
 restoreNotificationCenterState();
+void loadNotificationCenterStateFromServer();
 updateNotificationBadge();
 
 document.addEventListener("keydown", (e) => {
