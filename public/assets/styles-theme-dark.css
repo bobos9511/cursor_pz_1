@@ -1145,13 +1145,12 @@
             background: linear-gradient(180deg, #243c5f, #1b3150) !important;
             border-color: #6a97cf !important;
         }
-        body[data-theme="dark"] .login-test-hint {
-            background: linear-gradient(180deg, #1a2840 0%, #152238 100%);
-            border-color: #3f5475;
-            color: #9fb0c8;
-        }
-        body[data-theme="dark"] .login-test-hint strong {
+        body[data-theme="dark"] .login-brand-callout {
             color: #93c5fd;
+        }
+        body[data-theme="dark"] .login-brand-callout:hover {
+            color: #bfdbfe;
+            background: rgba(37, 99, 235, 0.18);
         }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,

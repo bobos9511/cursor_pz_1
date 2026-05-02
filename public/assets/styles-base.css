@@ -146,19 +146,41 @@
         #loginPage::after { content: ''; position: absolute; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(circle, rgba(0,75,155,0.18) 0%, rgba(0,75,155,0) 68%); bottom: -180px; left: -120px; z-index: 0; }
         .login-bg { position: absolute; top: 0; left: 0; width: 100%; height: 52vh; background: linear-gradient(140deg, #003f85 0%, #005bac 50%, #00a4e3 100%); z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
         .login-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 28px 28px; opacity: 0.18; }
-        .login-test-hint {
-            margin: 0 0 18px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 12px;
-            line-height: 1.55;
-            color: #475569;
-            background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
-            border: 1px solid #e2e8f0;
-        }
-        .login-test-hint strong {
+        .login-brand-callout {
+            margin-top: 8px;
+            border: 0;
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
             color: #1e40af;
+            cursor: pointer;
+            transition: transform 0.15s ease, color 0.15s ease, background 0.15s ease;
+        }
+        .login-brand-callout:hover {
+            color: #1d4ed8;
+            background: rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+        .login-brand-callout-arrow {
+            font-size: 14px;
+            font-weight: 900;
+            line-height: 1;
+            animation: loginBrandPointerBounce 1.15s ease-in-out infinite;
+        }
+        .login-brand-callout-text {
+            font-size: 11px;
             font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        @keyframes loginBrandPointerBounce {
+            0%, 100% { transform: translateY(0); }
+            35% { transform: translateY(-4px); }
+            70% { transform: translateY(-1px); }
         }
         .login-box { background: rgba(255,255,255,0.97); backdrop-filter: blur(2px); padding: 40px; border-radius: 14px; box-shadow: 0 22px 48px rgba(15,23,42,0.24); width: 100%; max-width: 430px; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.8); animation: loginCardIn 0.55s cubic-bezier(.2,.8,.2,1) both; }
         .server-error-page {
