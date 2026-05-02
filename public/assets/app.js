@@ -6,6 +6,7 @@
         let systemNotificationPermissionRequested = false;
         let serverRecoveryTimer = null;
         let serverErrorPageActive = false;
+        let serverErrorGameCleanup = null;
         const SERVER_ERROR_RETRY_MS = 5000;
 
         function shouldOpenServerErrorPage(status) {
@@ -14,7 +15,172 @@
             return code === 403 || code === 502 || code === 503 || code === 504 || code >= 500;
         }
 
+        function stopServerErrorMiniGame() {
+            if (typeof serverErrorGameCleanup === 'function') {
+                serverErrorGameCleanup();
+                serverErrorGameCleanup = null;
+            }
+        }
+
+        function startServerErrorMiniGame() {
+            stopServerErrorMiniGame();
+            const canvas = document.getElementById('serverErrorGameCanvas');
+            const scoreEl = document.getElementById('serverErrorGameScore');
+            if (!canvas || !canvas.getContext || !serverErrorPageActive) return;
+            if (scoreEl) scoreEl.textContent = '0';
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+            const groundY = H - 28;
+            const player = { x: 52, y: groundY - 36, w: 32, h: 36, vy: 0 };
+            let obstacles = [];
+            let frame = 0;
+            let running = true;
+            let gameScore = 0;
+            let speed = 5.2;
+            let tickSpawn = 0;
+            let rafId = 0;
+
+            function spawnObstacle() {
+                const h = 34 + Math.random() * 52;
+                obstacles.push({ x: W + 18, w: 28, h });
+            }
+
+            function jump() {
+                if (!running || !serverErrorPageActive) return;
+                if (player.y + player.h >= groundY - 1) player.vy = -12.8;
+            }
+
+            function crash() {
+                gameScore = Math.floor(gameScore * 0.45);
+                obstacles = [];
+                speed = Math.max(4.8, speed - 0.85);
+                tickSpawn = 0;
+            }
+
+            function drawPlayer(px, py) {
+                ctx.fillStyle = '#1d4ed8';
+                ctx.strokeStyle = 'rgba(147,197,253,0.85)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') {
+                    ctx.roundRect(px, py, player.w, player.h, 9);
+                } else {
+                    ctx.rect(px, py, player.w, player.h);
+                }
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#e0f2fe';
+                ctx.font = 'bold 13px system-ui,sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('K', px + player.w / 2, py + player.h / 2 + 1);
+            }
+
+            function loop() {
+                if (!running || !serverErrorPageActive) return;
+                frame++;
+                gameScore += 0.2;
+                const scoreDisp = Math.floor(gameScore);
+                if (scoreEl) scoreEl.textContent = String(scoreDisp);
+
+                speed = Math.min(11.5, 5.1 + Math.min(5, Math.floor(scoreDisp / 280)) * 0.55);
+
+                tickSpawn++;
+                const spawnEvery = Math.max(52, 105 - Math.min(48, Math.floor(scoreDisp / 120)));
+                if (tickSpawn >= spawnEvery) {
+                    spawnObstacle();
+                    tickSpawn = 0;
+                }
+
+                player.vy += 0.74;
+                player.y += player.vy;
+                if (player.y + player.h >= groundY) {
+                    player.y = groundY - player.h;
+                    player.vy = 0;
+                }
+
+                for (let i = 0; i < obstacles.length; i++) obstacles[i].x -= speed;
+                obstacles = obstacles.filter((o) => o.x + o.w > -30);
+
+                const px = player.x;
+                const py = player.y;
+                for (let i = 0; i < obstacles.length; i++) {
+                    const o = obstacles[i];
+                    const oy = groundY - o.h;
+                    if (
+                        px < o.x + o.w - 3 &&
+                        px + player.w > o.x + 3 &&
+                        py < oy + o.h &&
+                        py + player.h > oy + 4
+                    ) {
+                        crash();
+                        break;
+                    }
+                }
+
+                const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+                sky.addColorStop(0, '#0c1a2e');
+                sky.addColorStop(1, '#020617');
+                ctx.fillStyle = sky;
+                ctx.fillRect(0, 0, W, groundY);
+
+                ctx.fillStyle = 'rgba(148,163,184,0.25)';
+                for (let s = 0; s < 20; s++) {
+                    const sx = (s * 73 + frame * 0.35) % W;
+                    const sy = ((s * 47) % (groundY - 24)) + 8;
+                    ctx.fillRect(sx, sy, 2, 2);
+                }
+
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, groundY, W, H - groundY);
+                ctx.strokeStyle = 'rgba(56,189,248,0.4)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, groundY + 0.5);
+                ctx.lineTo(W, groundY + 0.5);
+                ctx.stroke();
+
+                for (let i = 0; i < obstacles.length; i++) {
+                    const o = obstacles[i];
+                    const oy = groundY - o.h;
+                    const og = ctx.createLinearGradient(o.x, oy, o.x, oy + o.h);
+                    og.addColorStop(0, '#64748b');
+                    og.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = og;
+                    ctx.fillRect(o.x, oy, o.w, o.h);
+                }
+
+                drawPlayer(px, py);
+
+                rafId = requestAnimationFrame(loop);
+            }
+
+            function onKey(e) {
+                if (!serverErrorPageActive) return;
+                if (e.code === 'Space' || e.key === ' ') {
+                    e.preventDefault();
+                    jump();
+                }
+            }
+            function onPointer(e) {
+                jump();
+            }
+
+            serverErrorGameCleanup = function () {
+                running = false;
+                if (rafId) cancelAnimationFrame(rafId);
+                window.removeEventListener('keydown', onKey, false);
+                canvas.removeEventListener('pointerdown', onPointer);
+            };
+
+            window.addEventListener('keydown', onKey, false);
+            canvas.addEventListener('pointerdown', onPointer);
+            rafId = requestAnimationFrame(loop);
+        }
+
         function hideServerErrorPage() {
+            stopServerErrorMiniGame();
             const page = document.getElementById('serverErrorPage');
             if (page) page.classList.add('hidden');
             serverErrorPageActive = false;
@@ -97,6 +263,7 @@
             page.classList.remove('hidden');
             serverErrorPageActive = true;
             startServerRecoveryPolling();
+            requestAnimationFrame(() => startServerErrorMiniGame());
         }
 
         function isMobileOsClient() {

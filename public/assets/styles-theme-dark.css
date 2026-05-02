@@ -2,13 +2,18 @@
         body[data-theme="dark"] .main-area { background: #0d1526; }
         body[data-theme="dark"] .page-title { color: #e6edf8; border-left-color: #60a5fa; }
         body[data-theme="dark"] .server-error-card {
-            border-color: #3f5475;
-            background: linear-gradient(180deg, rgba(16, 33, 56, 0.96), rgba(10, 20, 36, 0.98));
+            border-color: rgba(96, 165, 250, 0.28);
+            background:
+                linear-gradient(145deg, rgba(18, 34, 58, 0.94) 0%, rgba(10, 20, 38, 0.97) 55%, rgba(6, 14, 28, 0.99) 100%);
         }
         body[data-theme="dark"] .server-error-status {
-            border-color: #4a5f7f;
-            background: #15243b;
-            color: #dbeafe;
+            border-color: rgba(248, 113, 113, 0.45);
+            background: linear-gradient(180deg, rgba(127, 29, 29, 0.35), rgba(24, 24, 27, 0.65));
+            color: #fecaca;
+        }
+        body[data-theme="dark"] .server-error-game-panel {
+            border-color: rgba(56, 189, 248, 0.22);
+            background: linear-gradient(180deg, rgba(12, 22, 42, 0.75), rgba(6, 12, 26, 0.9));
         }
         body[data-theme="dark"] .header {
             background: linear-gradient(180deg, #121d31 0%, #0f1a2c 100%);

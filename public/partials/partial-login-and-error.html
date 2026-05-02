@@ -58,13 +58,48 @@
         </div>
     </div>
     <div id="serverErrorPage" class="server-error-page hidden" aria-live="polite">
-        <div class="server-error-card">
-            <div class="server-error-title">서버 연결 오류</div>
-            <div id="serverErrorMessage" class="server-error-message">일시적인 서버 오류가 발생했습니다.</div>
-            <div id="serverErrorStatus" class="server-error-status">오류 코드: -</div>
-            <div class="server-error-actions">
-                <button type="button" class="btn btn-primary" onclick="retryServerRecovery()">지금 다시 확인</button>
+        <div class="server-error-bg-decor" aria-hidden="true">
+            <span class="server-error-orb server-error-orb--a"></span>
+            <span class="server-error-orb server-error-orb--b"></span>
+            <span class="server-error-grid"></span>
+        </div>
+        <div class="server-error-inner">
+            <div class="server-error-hero" aria-hidden="true">
+                <svg class="server-error-hero-svg" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="seGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#38bdf8"/>
+                            <stop offset="100%" style="stop-color:#2563eb"/>
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="100" cy="108" rx="72" ry="8" fill="rgba(56,189,248,0.15)"/>
+                    <path d="M52 78 L100 38 L148 78 Z" fill="none" stroke="url(#seGrad)" stroke-width="3" stroke-linejoin="round"/>
+                    <circle cx="100" cy="62" r="8" fill="url(#seGrad)"/>
+                    <path d="M100 46 L100 28" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="100" cy="22" r="4" fill="#94a3b8"/>
+                    <path class="server-error-pulse" d="M130 22 Q155 22 170 40" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="4 6" opacity="0.85"/>
+                    <path class="server-error-pulse server-error-pulse--delay" d="M70 22 Q45 22 30 40" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="4 6" opacity="0.85"/>
+                </svg>
+                <p class="server-error-hero-tag">연결 복구 중</p>
             </div>
-            <div class="server-error-hint">서버 상태를 주기적으로 확인 중이며, 정상화되면 자동 새로고침됩니다.</div>
+            <div class="server-error-card">
+                <div class="server-error-title">서버 연결 오류</div>
+                <div id="serverErrorMessage" class="server-error-message">일시적인 서버 오류가 발생했습니다.</div>
+                <div id="serverErrorStatus" class="server-error-status">오류 코드: -</div>
+                <div class="server-error-actions">
+                    <button type="button" class="btn btn-primary server-error-retry-btn" onclick="retryServerRecovery()">지금 다시 확인</button>
+                </div>
+                <div class="server-error-game-panel">
+                    <div class="server-error-game-head">
+                        <span class="server-error-game-label">기다리는 동안 · KNOCK 점프</span>
+                        <span id="serverErrorGameScore" class="server-error-game-score" aria-live="polite">0</span>
+                    </div>
+                    <div class="server-error-canvas-wrap">
+                        <canvas id="serverErrorGameCanvas" width="400" height="200" role="img" aria-label="미니 점프 게임: 스페이스바 또는 탭으로 점프"></canvas>
+                    </div>
+                    <p class="server-error-game-hint"><kbd>스페이스</kbd> 또는 화면 탭으로 점프 · 장애물을 피해 보세요</p>
+                </div>
+                <div class="server-error-hint">서버 상태를 주기적으로 확인 중이며, 정상화되면 자동 새로고침됩니다.</div>
+            </div>
         </div>
     </div>
