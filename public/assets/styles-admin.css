@@ -533,6 +533,13 @@
             background: #fff;
             overflow: hidden;
         }
+        .admin-ai-logs-table-scroll {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+        }
         .admin-ai-logs-toolbar {
             padding: 12px 14px;
             border-bottom: 1px solid #e2e8f0;
@@ -648,8 +655,10 @@
         .admin-ai-settings-version-card b { font-weight: 800; color: #1e3a8a; }
         .admin-ai-logs-table {
             width: 100%;
+            min-width: 620px;
             border-collapse: collapse;
             font-size: 13px;
+            table-layout: fixed;
         }
         .admin-ai-logs-table thead th {
             background: #f8fafc;
@@ -659,6 +668,34 @@
             border-bottom: 1px solid #e2e8f0;
             padding: 10px 12px;
         }
+        .admin-ai-logs-col-time {
+            width: 158px;
+            min-width: 158px;
+            white-space: nowrap;
+        }
+        .admin-ai-logs-col-board {
+            width: 108px;
+            min-width: 108px;
+            white-space: nowrap;
+        }
+        .admin-ai-logs-col-title {
+            min-width: 200px;
+        }
+        .admin-ai-logs-col-result {
+            width: 92px;
+            min-width: 92px;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .admin-ai-logs-table thead th.admin-ai-logs-col-result {
+            text-align: center;
+        }
+        .admin-ai-logs-title-clip {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
         .admin-ai-logs-table tbody tr {
             border-bottom: 1px solid #eef2f7;
             cursor: pointer;
@@ -667,7 +704,7 @@
         .admin-ai-logs-table tbody td {
             padding: 10px 12px;
             color: #1e293b;
-            vertical-align: top;
+            vertical-align: middle;
         }
         .admin-ai-log-pill {
             display: inline-flex;

@@ -42,6 +42,14 @@ function clampAdminContinuationRuntimeMsOrNull(raw) {
     );
 }
 
+function escapeHtmlAttr(s) {
+    return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/\n/g, " ");
+}
+
 function parseAdminKeywordBlocklist(raw) {
     const source = String(raw || "")
         .split(/[,\n]/g)
@@ -1169,34 +1177,38 @@ function renderAdminAiApiLogsList() {
     summary.innerText = `${summaryPrefix} (표시 ${total > 0 ? startIndex + 1 : 0}~${endIndex}, 페이지 ${adminAiApiLogsPage}/${totalPages})`;
     const tableBlock =
         total > 0
-            ? `<table class="admin-ai-logs-table">
+            ? `<div class="admin-ai-logs-table-scroll">
+        <table class="admin-ai-logs-table">
             <thead>
                 <tr>
-                    <th style="width:170px;">요청시각</th>
-                    <th style="width:120px;">구분</th>
-                    <th>요청 제목</th>
-                    <th style="width:110px;">결과</th>
+                    <th class="admin-ai-logs-col-time" scope="col">요청시각</th>
+                    <th class="admin-ai-logs-col-board" scope="col">구분</th>
+                    <th class="admin-ai-logs-col-title" scope="col">요청 제목</th>
+                    <th class="admin-ai-logs-col-result" scope="col">결과</th>
                 </tr>
             </thead>
             <tbody>
                 ${pageItems
                     .map((log) => {
-                        const title = escapeHtml(String(log.title || "(제목 없음)"));
+                        const titleRaw = String(log.title || "(제목 없음)");
+                        const title = escapeHtml(titleRaw);
+                        const titleTip = escapeHtmlAttr(titleRaw);
                         const board = escapeHtml(resolveAiApiLogDisplayLabel(log.boardType));
                         const ok = !!(log.final && log.final.ok);
                         const pill = ok
                             ? '<span class="admin-ai-log-pill">성공</span>'
                             : '<span class="admin-ai-log-pill error">실패</span>';
                         return `<tr onclick="openAdminAiApiLogModal('${escapeHtml(String(log.id || ""))}')">
-                            <td>${escapeHtml(formatAdminAiApiLogTime(log.createdAt))}</td>
-                            <td>${board}</td>
-                            <td>${title}</td>
-                            <td>${pill}</td>
+                            <td class="admin-ai-logs-col-time">${escapeHtml(formatAdminAiApiLogTime(log.createdAt))}</td>
+                            <td class="admin-ai-logs-col-board">${board}</td>
+                            <td class="admin-ai-logs-col-title"><div class="admin-ai-logs-title-clip" title="${titleTip}">${title}</div></td>
+                            <td class="admin-ai-logs-col-result">${pill}</td>
                         </tr>`;
                     })
                     .join("")}
             </tbody>
-        </table>`
+        </table>
+        </div>`
             : '<div class="text-center p-20" style="color:#94a3b8;">조건에 맞는 로그가 없습니다.</div>';
     const paginationBlock =
         total > 0
