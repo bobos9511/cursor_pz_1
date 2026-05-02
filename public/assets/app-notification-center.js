@@ -371,22 +371,30 @@ function renderNotificationCenterBody() {
     if (unreadList.length) {
         sections.push(
             `<div class="noti-section noti-section-unread" role="region" aria-label="미확인 알림">
-                <div class="noti-section-head">
-                    <span class="noti-section-label">미확인 알림</span>
-                    <span class="noti-section-count">${unreadList.length}</span>
+                <div class="noti-section-bundled">
+                    <div class="noti-section-head">
+                        <span class="noti-section-label">미확인 알림</span>
+                        <span class="noti-section-count">${unreadList.length}</span>
+                    </div>
+                    <div class="noti-section-content">
+                        ${buildNotificationGroupedRows(unreadList)}
+                    </div>
                 </div>
-                ${buildNotificationGroupedRows(unreadList)}
             </div>`
         );
     }
     if (readList.length) {
         sections.push(
             `<div class="noti-section noti-section-read" role="region" aria-label="확인한 알림">
-                <div class="noti-section-head">
-                    <span class="noti-section-label">확인한 알림</span>
-                    <span class="noti-section-count">${readList.length}</span>
+                <div class="noti-section-bundled">
+                    <div class="noti-section-head">
+                        <span class="noti-section-label">확인한 알림</span>
+                        <span class="noti-section-count">${readList.length}</span>
+                    </div>
+                    <div class="noti-section-content">
+                        ${buildNotificationGroupedRows(readList)}
+                    </div>
                 </div>
-                ${buildNotificationGroupedRows(readList)}
             </div>`
         );
     }
