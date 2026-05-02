@@ -1395,6 +1395,18 @@
             justify-content: flex-end;
             padding: 18px 18px 18px 84px;
         }
+        .ai-chat-layer-overlay:not(.hidden) {
+            animation: aiChatLayerBackdropIn 0.2s ease-out both;
+        }
+        .ai-chat-layer-overlay:not(.hidden) .ai-chat-layer-panel {
+            animation: aiChatLayerPanelIn 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+        .ai-chat-layer-overlay.closing {
+            animation: aiChatLayerBackdropOut 0.16s ease-in both;
+        }
+        .ai-chat-layer-overlay.closing .ai-chat-layer-panel {
+            animation: aiChatLayerPanelOut 0.16s ease-in both;
+        }
         .ai-chat-layer-panel {
             width: min(560px, calc(100vw - 24px));
             height: min(78vh, 760px);
@@ -1405,6 +1417,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transform-origin: calc(100% - 30px) calc(100% - 30px);
         }
         .ai-chat-layer-head {
             display: flex;
@@ -1475,6 +1488,42 @@
             position: sticky;
             bottom: 0;
             background: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 7px;
+        }
+        .ai-layer-new-chat-btn {
+            display: none;
+            align-self: flex-end;
+            min-width: 110px;
+            padding: 7px 10px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .ai-chat-layer-host .ai-layer-new-chat-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-chat-layer-host #aiSearchSendBtn {
+            align-self: flex-end;
+        }
+        @keyframes aiChatLayerBackdropIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes aiChatLayerBackdropOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes aiChatLayerPanelIn {
+            from { opacity: 0; transform: translate(18px, 22px) scale(0.32); }
+            to { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes aiChatLayerPanelOut {
+            from { opacity: 1; transform: translate(0, 0) scale(1); }
+            to { opacity: 0; transform: translate(18px, 22px) scale(0.32); }
         }
         
         /* 사이드바 애니메이션 및 접기 기능 */

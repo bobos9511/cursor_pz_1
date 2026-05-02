@@ -1215,6 +1215,16 @@
         body[data-theme="dark"] .ai-chat-layer-host {
             background: #0f172a;
         }
+        body[data-theme="dark"] .ai-layer-new-chat-btn {
+            color: #bfdbfe;
+            border-color: #4a5f7f;
+            background: linear-gradient(180deg, #1e2d45, #17243a);
+        }
+        body[data-theme="dark"] .ai-layer-new-chat-btn:hover {
+            color: #dbeafe;
+            border-color: #60a5fa;
+            background: linear-gradient(180deg, #263b5d, #1d314e);
+        }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,

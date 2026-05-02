@@ -566,6 +566,7 @@
         let aiSearchPendingContinuation = null;
         let aiChatLayerPrevParent = null;
         let aiChatLayerPrevNextSibling = null;
+        let aiChatLayerCloseTimer = null;
         let pullToRefreshStartY = null;
         let pullToRefreshTriggered = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
@@ -2805,12 +2806,17 @@
             const host = document.getElementById('aiChatLayerHost');
             const aiView = document.getElementById('view-ai-search');
             if (!overlay || !host || !aiView) return;
+            if (aiChatLayerCloseTimer) {
+                clearTimeout(aiChatLayerCloseTimer);
+                aiChatLayerCloseTimer = null;
+            }
             if (typeof initializeAiSearchView === 'function') initializeAiSearchView();
             if (aiView.parentElement !== host) {
                 aiChatLayerPrevParent = aiView.parentElement;
                 aiChatLayerPrevNextSibling = aiView.nextSibling;
                 host.appendChild(aiView);
             }
+            overlay.classList.remove('closing');
             overlay.classList.remove('hidden');
             document.body.classList.add('ai-chat-layer-open');
             updateAiChatFloatingButton();
@@ -2820,16 +2826,22 @@
             const overlay = document.getElementById('aiChatLayerOverlay');
             const host = document.getElementById('aiChatLayerHost');
             const aiView = document.getElementById('view-ai-search');
-            if (overlay) overlay.classList.add('hidden');
+            if (!overlay || overlay.classList.contains('hidden') || overlay.classList.contains('closing')) return;
+            overlay.classList.add('closing');
             document.body.classList.remove('ai-chat-layer-open');
-            if (host && aiView && aiView.parentElement === host && aiChatLayerPrevParent) {
-                if (aiChatLayerPrevNextSibling && aiChatLayerPrevNextSibling.parentNode === aiChatLayerPrevParent) {
-                    aiChatLayerPrevParent.insertBefore(aiView, aiChatLayerPrevNextSibling);
-                } else {
-                    aiChatLayerPrevParent.appendChild(aiView);
+            aiChatLayerCloseTimer = setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('closing');
+                if (host && aiView && aiView.parentElement === host && aiChatLayerPrevParent) {
+                    if (aiChatLayerPrevNextSibling && aiChatLayerPrevNextSibling.parentNode === aiChatLayerPrevParent) {
+                        aiChatLayerPrevParent.insertBefore(aiView, aiChatLayerPrevNextSibling);
+                    } else {
+                        aiChatLayerPrevParent.appendChild(aiView);
+                    }
                 }
-            }
-            updateAiChatFloatingButton();
+                aiChatLayerCloseTimer = null;
+                updateAiChatFloatingButton();
+            }, 170);
         }
 
         // --- Dashboard Widgets / Charts ---
