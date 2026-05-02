@@ -1907,6 +1907,91 @@
             empInput.value = normalizeEmployeeNo(empInput.value, true);
         }
 
+        const KNOCK_TEST_SESSION_ID_KEY = 'knockTestSessionId';
+        let testSessionHeartbeatTimer = null;
+
+        function getOrCreateTestSessionId() {
+            try {
+                let id = sessionStorage.getItem(KNOCK_TEST_SESSION_ID_KEY);
+                if (!id) {
+                    id = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 14)}`;
+                    sessionStorage.setItem(KNOCK_TEST_SESSION_ID_KEY, id);
+                }
+                return id;
+            } catch (_) {
+                return `sess_fb_${Date.now()}`;
+            }
+        }
+
+        function clearStoredTestSessionId() {
+            try {
+                sessionStorage.removeItem(KNOCK_TEST_SESSION_ID_KEY);
+            } catch (_) {
+                // no-op
+            }
+        }
+
+        async function claimTestSessionForLogin(empNoRaw, forceTakeover) {
+            const emp = normalizeEmployeeNo(empNoRaw, true);
+            const sessionId = getOrCreateTestSessionId();
+            try {
+                const res = await fetch('/api/db/test-session/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeNo: emp, sessionId, forceTakeover: !!forceTakeover }),
+                });
+                const data = await res.json().catch(() => ({}));
+                return { ok: res.ok, status: res.status, data, sessionId };
+            } catch (error) {
+                return { ok: false, status: 0, data: {}, error, sessionId };
+            }
+        }
+
+        function stopTestSessionHeartbeat() {
+            if (testSessionHeartbeatTimer) {
+                clearInterval(testSessionHeartbeatTimer);
+                testSessionHeartbeatTimer = null;
+            }
+        }
+
+        function startTestSessionHeartbeat() {
+            stopTestSessionHeartbeat();
+            testSessionHeartbeatTimer = setInterval(async () => {
+                if (!currentLoginUser || !currentLoginUser.employeeNo) return;
+                const emp = normalizeEmployeeNo(currentLoginUser.employeeNo, true);
+                const sessionId = getOrCreateTestSessionId();
+                try {
+                    const res = await fetch('/api/db/test-session/ping', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employeeNo: emp, sessionId }),
+                    });
+                    if (res.status === 403) {
+                        stopTestSessionHeartbeat();
+                        showAlert('다른 기기(또는 브라우저)에서 로그인하여 이 세션은 종료되었습니다.', 'error');
+                        doLogout();
+                    }
+                } catch (_) {
+                    /* 네트워크 일시 오류는 무시 */
+                }
+            }, 45000);
+        }
+
+        async function notifyTestSessionLogout() {
+            if (!currentLoginUser || !currentLoginUser.employeeNo) return;
+            const emp = normalizeEmployeeNo(currentLoginUser.employeeNo, true);
+            const sessionId = getOrCreateTestSessionId();
+            try {
+                await fetch('/api/db/test-session/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employeeNo: emp, sessionId }),
+                });
+            } catch (_) {
+                // no-op
+            }
+        }
+
         async function doLogin(options = {}) { 
             hideServerErrorPage();
             padEmployeeNo();
@@ -1916,6 +2001,7 @@
             const authType = authTypeEl ? authTypeEl.value : 'pwd';
             const authInput = (document.getElementById('authInput').value || '').trim();
             const skipAuthValidation = !!options.skipAuthValidation;
+            const forceTakeover = !!options.forceTakeover;
 
             if (!empNo) {
                 showAlert('직원번호를 입력하거나 회원목록에서 선택해주세요.', 'error');
@@ -1945,6 +2031,21 @@
                 showAlert('저장된 회원이 아닙니다. 회원가입 후 이용해주세요.', 'error');
                 return;
             }
+
+            const sessionClaim = await claimTestSessionForLogin(empNo, forceTakeover);
+            if (sessionClaim.status === 409 && !forceTakeover) {
+                showConfirm(
+                    '같은 테스트 계정으로 다른 브라우저 또는 기기에서 이미 접속 중입니다.\n기존 세션을 종료하고 여기서 연결할까요?',
+                    () => {
+                        void doLogin(Object.assign({}, options, { forceTakeover: true }));
+                    },
+                );
+                return;
+            }
+            if (!sessionClaim.ok && sessionClaim.status !== 409 && sessionClaim.status !== 0) {
+                console.warn('test-session claim:', sessionClaim.status, sessionClaim.data);
+            }
+
             await markSignupUserLoginState(currentLoginUser.employeeNo, true);
             currentLoginUser = signupUsers.find(u => u.employeeNo === empNo) || currentLoginUser;
 
@@ -1976,10 +2077,13 @@
                 syncHistoryRoute('ai-search', null, null, true);
             }
             requestAnimationFrame(() => { appContainer.style.visibility = 'visible'; });
+            startTestSessionHeartbeat();
         }
         function doLogout() {
             hideServerErrorPage();
+            stopTestSessionHeartbeat();
             const logoutEmpNo = currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '';
+            void notifyTestSessionLogout();
             if (logoutEmpNo) {
                 markSignupUserLoginState(logoutEmpNo, false).catch((error) => {
                     console.error('markSignupUserLoginState(logout) failed:', error);
@@ -1995,6 +2099,7 @@
             appContainer.style.display = 'none';
             appContainer.style.visibility = 'visible';
             closeHeaderProfileOverlay();
+            clearStoredTestSessionId();
             currentLoginUser = null;
         }
         function saveSettings() {

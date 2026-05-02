@@ -63,6 +63,8 @@ function createDefaultDb() {
     aiSettingsHistory: [],
     /** 직원번호(스코프)별 AI채팅 지난 대화 — 브라우저와 무관하게 동기화 */
     aiChatHistoryByScope: {},
+    /** 테스트 계정 단일 접속 세션: 직원번호 → { sessionId, createdAt, lastSeenAt } */
+    testSessionsByEmpNo: {},
   };
 }
 const DEFAULT_DB = createDefaultDb();
@@ -431,6 +433,8 @@ function readDb() {
       aiSettingsHistory: Array.isArray(parsed && parsed.aiSettingsHistory) ? parsed.aiSettingsHistory : [],
       aiChatHistoryByScope:
         parsed && typeof parsed.aiChatHistoryByScope === "object" ? parsed.aiChatHistoryByScope : {},
+      testSessionsByEmpNo:
+        parsed && typeof parsed.testSessionsByEmpNo === "object" ? parsed.testSessionsByEmpNo : {},
     };
   } catch (error) {
     return createDefaultDb();
@@ -1154,6 +1158,110 @@ async function handleDbApi(req, res, url) {
     }
     db.aiChatHistoryByScope[scope] = history;
     writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/test-session/claim") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
+    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
+    const force = !!(body && body.forceTakeover);
+    if (!emp || emp === "guest" || !sid) {
+      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+      return true;
+    }
+    const db = readDb();
+    if (!db.testSessionsByEmpNo || typeof db.testSessionsByEmpNo !== "object") {
+      db.testSessionsByEmpNo = {};
+    }
+    const existing = db.testSessionsByEmpNo[emp];
+    const now = Date.now();
+
+    if (!existing || !existing.sessionId) {
+      db.testSessionsByEmpNo[emp] = { sessionId: sid, createdAt: now, lastSeenAt: now };
+      writeDb(db);
+      sendJson(res, 200, { ok: true });
+      return true;
+    }
+
+    if (existing.sessionId === sid) {
+      existing.lastSeenAt = now;
+      db.testSessionsByEmpNo[emp] = existing;
+      writeDb(db);
+      sendJson(res, 200, { ok: true, renewed: true });
+      return true;
+    }
+
+    if (!force) {
+      sendJson(res, 409, {
+        conflict: true,
+        message: "다른 세션에서 접속 중입니다.",
+        existingSessionSince: existing.createdAt || null,
+      });
+      return true;
+    }
+
+    db.testSessionsByEmpNo[emp] = { sessionId: sid, createdAt: now, lastSeenAt: now };
+    writeDb(db);
+    sendJson(res, 200, { ok: true, takeover: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/test-session/ping") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
+    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
+    if (!emp || emp === "guest" || !sid) {
+      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+      return true;
+    }
+    const db = readDb();
+    const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+    const cur = by[emp];
+    if (!cur || cur.sessionId !== sid) {
+      sendJson(res, 403, { valid: false, reason: "session_revoked_or_replaced" });
+      return true;
+    }
+    cur.lastSeenAt = Date.now();
+    by[emp] = cur;
+    db.testSessionsByEmpNo = by;
+    writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/test-session/logout") {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
+    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
+    if (!emp || emp === "guest" || !sid) {
+      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+      return true;
+    }
+    const db = readDb();
+    const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+    const cur = by[emp];
+    if (cur && cur.sessionId === sid) {
+      delete by[emp];
+      db.testSessionsByEmpNo = by;
+      writeDb(db);
+    }
     sendJson(res, 200, { ok: true });
     return true;
   }
