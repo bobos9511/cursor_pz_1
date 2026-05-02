@@ -97,6 +97,19 @@
             .ai-chat-floating-btn::after {
                 display: none;
             }
+            .ai-chat-layer-overlay {
+                padding: 10px;
+                align-items: flex-end;
+                justify-content: center;
+            }
+            .ai-chat-layer-panel {
+                width: 100%;
+                height: min(82vh, 760px);
+                border-radius: 14px;
+            }
+            .ai-chat-layer-host {
+                padding: 8px;
+            }
             #loginPage { padding: 12px; }
             .login-box { padding: 24px 16px; max-width: 100%; }
             .main-area { padding: 14px; }
@@ -195,6 +208,12 @@
                 grid-column: auto;
                 justify-self: end;
                 white-space: nowrap;
+            }
+            #view-list #boardKeywordInput {
+                min-width: 260px;
+            }
+            #view-list #boardSearchBtn {
+                min-width: 96px;
             }
         }
         @media (max-width: 980px) {

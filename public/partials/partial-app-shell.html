@@ -90,9 +90,20 @@
                 </div>
             </div>
         </div>
-        <button id="aiChatFloatingBtn" class="ai-chat-floating-btn hidden" type="button" onclick="switchView('ai-search')" title="AI Chat 열기" aria-label="AI에게 물어보기" data-tooltip="AI에게 물어보기">
+        <button id="aiChatFloatingBtn" class="ai-chat-floating-btn hidden" type="button" onclick="openAiChatLayerFromFloating()" title="AI Chat 열기" aria-label="AI에게 물어보기" data-tooltip="AI에게 물어보기">
             <svg class="icon"><use href="#icon-magic"></use></svg>
         </button>
+        <div id="aiChatLayerOverlay" class="ai-chat-layer-overlay hidden" onclick="closeAiChatLayer(event)">
+            <div class="ai-chat-layer-panel" onclick="event.stopPropagation()">
+                <div class="ai-chat-layer-head">
+                    <div class="ai-chat-layer-title"><svg class="icon"><use href="#icon-magic"></use></svg> AI에게 물어보기</div>
+                    <button type="button" class="ai-chat-layer-close" onclick="closeAiChatLayer()">
+                        <svg class="icon"><use href="#icon-close"></use></svg>
+                    </button>
+                </div>
+                <div id="aiChatLayerHost" class="ai-chat-layer-host"></div>
+            </div>
+        </div>
 
         <div id="headerProfileOverlay" class="profile-overlay" onclick="closeHeaderProfileOverlay()">
             <div class="profile-overlay-panel" onclick="event.stopPropagation()">
@@ -326,7 +337,7 @@
                                         <option value="BIZ">업무 매뉴얼</option>
                                     </select>
                                     <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input" style="width: 250px;" onkeyup="if(event.key==='Enter') filterBoardList()">
-                                    <button class="btn btn-primary" onclick="filterBoardList()"><svg class="icon"><use href="#icon-search"></use></svg> 조회</button>
+                                    <button id="boardSearchBtn" class="btn btn-primary" onclick="filterBoardList()"><svg class="icon"><use href="#icon-search"></use></svg> 조회</button>
                                     
                                     <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
                                     

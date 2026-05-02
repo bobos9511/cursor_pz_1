@@ -564,6 +564,8 @@
         let aiSearchInitialized = false;
         let aiSearchIsLoading = false;
         let aiSearchPendingContinuation = null;
+        let aiChatLayerPrevParent = null;
+        let aiChatLayerPrevNextSibling = null;
         let pullToRefreshStartY = null;
         let pullToRefreshTriggered = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
@@ -2606,6 +2608,7 @@
             appContainer.style.display = 'none';
             appContainer.style.visibility = 'visible';
             closeHeaderProfileOverlay();
+            closeAiChatLayer();
             setStoredSessionToken('');
             navigateToLoginUrl();
             currentLoginUser = null;
@@ -2793,7 +2796,40 @@
             const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
             const aiSearchActive = !!aiView && aiView.classList.contains('active');
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
-            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
+            const layerOpen = document.body.classList.contains('ai-chat-layer-open');
+            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu || layerOpen);
+        }
+        function openAiChatLayerFromFloating() {
+            if (!currentLoginUser) return;
+            const overlay = document.getElementById('aiChatLayerOverlay');
+            const host = document.getElementById('aiChatLayerHost');
+            const aiView = document.getElementById('view-ai-search');
+            if (!overlay || !host || !aiView) return;
+            if (typeof initializeAiSearchView === 'function') initializeAiSearchView();
+            if (aiView.parentElement !== host) {
+                aiChatLayerPrevParent = aiView.parentElement;
+                aiChatLayerPrevNextSibling = aiView.nextSibling;
+                host.appendChild(aiView);
+            }
+            overlay.classList.remove('hidden');
+            document.body.classList.add('ai-chat-layer-open');
+            updateAiChatFloatingButton();
+        }
+        function closeAiChatLayer(event) {
+            if (event && event.target && event.target.id !== 'aiChatLayerOverlay') return;
+            const overlay = document.getElementById('aiChatLayerOverlay');
+            const host = document.getElementById('aiChatLayerHost');
+            const aiView = document.getElementById('view-ai-search');
+            if (overlay) overlay.classList.add('hidden');
+            document.body.classList.remove('ai-chat-layer-open');
+            if (host && aiView && aiView.parentElement === host && aiChatLayerPrevParent) {
+                if (aiChatLayerPrevNextSibling && aiChatLayerPrevNextSibling.parentNode === aiChatLayerPrevParent) {
+                    aiChatLayerPrevParent.insertBefore(aiView, aiChatLayerPrevNextSibling);
+                } else {
+                    aiChatLayerPrevParent.appendChild(aiView);
+                }
+            }
+            updateAiChatFloatingButton();
         }
 
         // --- Dashboard Widgets / Charts ---
@@ -4845,6 +4881,10 @@
         });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
+            if (document.body.classList.contains('ai-chat-layer-open')) {
+                closeAiChatLayer();
+                return;
+            }
             closeTopMostActiveModal();
         });
         document.addEventListener('click', (event) => {
