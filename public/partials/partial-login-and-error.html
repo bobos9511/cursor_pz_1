@@ -7,11 +7,6 @@
             <div class="text-center mb-20">
                 <div class="font-bold login-brand-title">IBK KN<span class="login-brand-point">O</span>CK</div>
                 <p class="login-brand-subtitle">IBK 스마트 업무지식센터</p>
-                <button type="button" class="login-brand-callout" onclick="openLoginTestToolsModal()" aria-label="테스트용 계정 접속 안내">
-                    <span class="login-brand-callout-badge" aria-hidden="true">TEST</span>
-                    <span class="login-brand-callout-text">테스트용 접속 계정</span>
-                    <span class="login-brand-callout-dot" aria-hidden="true"></span>
-                </button>
             </div>
             <form onsubmit="event.preventDefault(); doLogin();" class="flex-col gap-20">
                 <div>
@@ -58,6 +53,10 @@
                 </div>
 
                 <button type="button" id="loginSsoBtn" onclick="doLogin()" class="btn w-full" style="border: 2px solid var(--ibk-blue); color: var(--ibk-blue); background: #fff; padding: 14px; font-size: 15px;">통합인증 (SSO) 자동 로그인</button>
+                <button type="button" class="login-test-access-btn" onclick="openLoginTestToolsModal()" aria-label="테스트용 계정 접속">
+                    <span class="login-test-access-badge" aria-hidden="true">TEST</span>
+                    <span class="login-test-access-caption">테스트용 접속 계정</span>
+                </button>
             </form>
         </div>
         <button type="button" id="loginThemeFab" class="login-theme-fab" onclick="toggleLoginThemeMode()" aria-label="로그인 테마 전환">

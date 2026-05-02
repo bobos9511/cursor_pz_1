@@ -1158,21 +1158,21 @@
             background: linear-gradient(180deg, #243c5f, #1b3150) !important;
             border-color: #6a97cf !important;
         }
-        body[data-theme="dark"] .login-brand-callout {
+        body[data-theme="dark"] .login-test-access-btn {
             color: #dbeafe;
             border-color: #3f5f86;
             background: linear-gradient(180deg, #1b2f4c, #162841);
             box-shadow: 0 8px 18px rgba(2, 8, 24, 0.45);
         }
-        body[data-theme="dark"] .login-brand-callout:hover {
+        body[data-theme="dark"] .login-test-access-btn:hover {
             color: #bfdbfe;
             background: linear-gradient(180deg, #233b5e, #1b3150);
         }
-        body[data-theme="dark"] .login-brand-callout-badge {
+        body[data-theme="dark"] .login-test-access-badge {
             background: linear-gradient(135deg, #2563eb, #0284c7);
         }
-        body[data-theme="dark"] .login-brand-callout-dot {
-            background: #7dd3fc;
+        body[data-theme="dark"] .login-test-access-caption::after {
+            background: linear-gradient(110deg, rgba(255,255,255,0) 35%, rgba(147,197,253,0.4) 50%, rgba(255,255,255,0) 65%);
         }
         body[data-theme="dark"] .login-theme-fab {
             color: #dbeafe;
