@@ -759,14 +759,14 @@
             max-width: 100%;
             min-width: 0;
             --history-title-fade: #f8fafc;
-            --history-title-fade-mid: rgba(248, 250, 252, 0.72);
+            --history-title-fade-mid: rgba(248, 250, 252, 0.88);
         }
         .ai-search-history-card:hover {
             border-color: #93c5fd;
             background: #eff6ff;
             box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
             --history-title-fade: #eff6ff;
-            --history-title-fade-mid: rgba(239, 246, 255, 0.72);
+            --history-title-fade-mid: rgba(239, 246, 255, 0.88);
         }
         .ai-search-history-card:focus-visible {
             outline: 2px solid #60a5fa;
@@ -799,16 +799,17 @@
             width: 72px;
             pointer-events: none;
             border-radius: 0 4px 4px 0;
+            /* 라이트 모드: blur는 배경 대비가 어색해지므로 그라데이션만 사용 (다크 테마와 동일 정책) */
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
             background: linear-gradient(
                 270deg,
                 var(--history-title-fade) 0%,
-                var(--history-title-fade-mid) 42%,
+                var(--history-title-fade-mid) 38%,
                 transparent 100%
             );
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            mask-image: linear-gradient(270deg, #000 0%, #000 55%, transparent 100%);
-            -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 55%, transparent 100%);
+            mask-image: linear-gradient(270deg, #000 0%, #000 50%, transparent 100%);
+            -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 50%, transparent 100%);
         }
         .ai-search-history-title {
             font-size: 13px;
@@ -877,14 +878,14 @@
             cursor: pointer;
             transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
             --history-title-fade: #ffffff;
-            --history-title-fade-mid: rgba(255, 255, 255, 0.75);
+            --history-title-fade-mid: rgba(255, 255, 255, 0.9);
         }
         .ai-history-mobile-item:hover {
             transform: translateY(-1px);
             border-color: #9bb7df;
             box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
             --history-title-fade: #ffffff;
-            --history-title-fade-mid: rgba(255, 255, 255, 0.78);
+            --history-title-fade-mid: rgba(255, 255, 255, 0.92);
         }
         .ai-history-mobile-item-head {
             display: flex;
@@ -908,16 +909,16 @@
             width: 72px;
             pointer-events: none;
             border-radius: 0 4px 4px 0;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
             background: linear-gradient(
                 270deg,
                 var(--history-title-fade) 0%,
-                var(--history-title-fade-mid) 42%,
+                var(--history-title-fade-mid) 38%,
                 transparent 100%
             );
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            mask-image: linear-gradient(270deg, #000 0%, #000 55%, transparent 100%);
-            -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 55%, transparent 100%);
+            mask-image: linear-gradient(270deg, #000 0%, #000 50%, transparent 100%);
+            -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 50%, transparent 100%);
         }
         .ai-history-mobile-title {
             font-size: 14px;

@@ -407,11 +407,7 @@
                 });
                 n.onclick = () => {
                     try { window.focus(); } catch (_) {}
-                    if (typeof options.onClick === 'function') {
-                        options.onClick();
-                    } else if (typeof window.openNotificationCenter === 'function') {
-                        window.openNotificationCenter();
-                    }
+                    // OS 알림 클릭: 창 포커스만 (알림센터·onClick 내비게이션 없음). 인앱 토스트·알림센터에서만 이동/액션.
                     try { n.close(); } catch (_) {}
                 };
                 return true;
