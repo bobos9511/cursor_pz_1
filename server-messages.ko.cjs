@@ -88,6 +88,7 @@ function internalContinuationPrompt(reply) {
   return [
     "아래는 직전에 작성한 답변의 앞부분입니다. 끊긴 지점부터 자연스럽게 이어서 작성하세요.",
     "이미 쓴 문장을 반복하지 말고, 남은 내용만 이어서 작성하세요.",
+    "반드시 한국어 문장만 이어서 작성하세요. 영어 단어·문장, 편집 메모(Refining, Mention, section, Summary, of the sentence 등), 내부 라벨(*, :, 영문 괄호 메모)은 한 글자도 출력하지 마세요.",
     "",
     "[앞부분]",
     reply,

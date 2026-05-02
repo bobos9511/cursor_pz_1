@@ -137,13 +137,13 @@ function sanitizeAiReplyText(text) {
 }
 
 function sanitizeChatReplyText(text) {
-  let out = String(text || "").replace(/\r/g, "").trim();
+  let out = stripGeminiEditorialLeakage(String(text || "").replace(/\r/g, "")).trim();
   out = out.replace(/([0-9])\n([0-9])/g, "$1$2");
   out = out.replace(ko.re.chatNumUnitSplit, "$1$2");
   out = out.replace(ko.re.chatWordSplit, "$1$2");
 
   const blocked =
-    /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt)/i;
+    /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt|refining\s+for|of\s+the\s+sentence)/i;
   const normalized = out
     .split("\n")
     .map((v) => v.trim())
@@ -176,12 +176,65 @@ function compressAiReply(text) {
     .trim();
 }
 
+/**
+ * 모델이 본문에 섞어 출력하는 영문 편집 메모·섹션 라벨·내부 코멘트 제거
+ */
+function stripGeminiEditorialLeakage(text) {
+  let out = String(text || "");
+  const junkPhrases = [
+    /\bLTVRefining\s+for\s+flow\s+and\s+style\s*\(\s*/gi,
+    /\bRefining\s+for\s+flow\s+and\s+style\s*\(\s*/gi,
+    /\bRefining\s+for\s+flow\s+and\s+style\b/gi,
+    /\s*Stress\s+DSR:\s*\*?\s*Mention\s*/gi,
+    /\s*DSR:\s*\*?\s*Mention\s*/gi,
+    /\s+Mention\s+(?=스트레스|[가-힣])/gi,
+    /\s*of\s+the\s+sentence:\s*\*/gi,
+    /\s*of\s+Policy\s+Loans\s+section:\s*\*\s*/gi,
+    /\s*of\s+Policy\s+[A-Za-z]+\s+section:\s*\*\s*/gi,
+    /\s*Conclusion\/Summary:\s*\*\s*General\s*/gi,
+    /\s*Policy\s+Loans\s+section:\s*\*\s*/gi,
+    /\s*\*+\s*Mention\s+/gi,
+    /\s*\(\s*General\s*\)\s*/gi,
+  ];
+  junkPhrases.forEach((re) => {
+    out = out.replace(re, "");
+  });
+
+  out = out.replace(/of\s+the\s+sentence:\s*\*[^가-힣]*(?:\.{2,3})?[^가-힣]{0,120}?/gi, "");
+  out = out.replace(/([가-힣])(of\s+Policy[^\n가-힣]{0,80})(?=[가-힣])/gi, "$1");
+  out = out.replace(/([가-힣])(Conclusion\/[^\n가-힣]{0,60})(?=[가-힣])/gi, "$1");
+
+  out = out.replace(/\(\s*[A-Za-z][A-Za-z\s,:.'\-\/\*]{3,100}\)/g, (block) => {
+    if (/[가-힣]/.test(block)) return block;
+    if (/refining|sentence|policy|summary|mention|section|flow|style|general|conclusion|stress|loans|analysis/i.test(block))
+      return "";
+    return block;
+  });
+
+  out = out.replace(/([가-힣])([A-Z][a-z]+)\s+for\s+flow\s+and\s+style/gi, "$1");
+
+  out = out.replace(
+    /([가-힣])([A-Z][a-z]{3,18})(?=\s*[(\.]|[가-힣])/g,
+    (full, hangul, word) => {
+      const w = word.toLowerCase();
+      if (
+        /^(refining|mention|general|summary|conclusion|policy|sentence|section|stress|flow|style|analysis)$/i.test(w)
+      )
+        return hangul;
+      return full;
+    },
+  );
+
+  out = out.replace(/\*{3,}/g, "").replace(/[ \t]{2,}/g, " ").replace(/\s*\n\s*/g, "\n");
+  return out;
+}
+
 function sanitizePostReplyText(text) {
-  let out = String(text || "").replace(/\r/g, "").trim();
+  let out = stripGeminiEditorialLeakage(String(text || "").replace(/\r/g, "")).trim();
   if (!out) return out;
 
   const blockedLine =
-    /^(\*+\s*)?(refining the flow|point\s*\d+|policy\/regulations|analysis|reasoning|thought process|system prompt)\b/i;
+    /^(\*+\s*)?(refining the flow|refining\s+for|point\s*\d+|policy\/regulations|analysis|reasoning|thought process|system prompt|mention\s*[:\*]|of\s+the\s+sentence)\b/i;
   out = out
     .split("\n")
     .map((line) => line.trim())
