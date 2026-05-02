@@ -36,6 +36,41 @@
         }
         window.retryServerRecovery = retryServerRecovery;
 
+        /**
+         * 개발자 도구(F12 등) 및 페이지 소스 보기 단축키를 억제합니다.
+         * 우클릭은 막지 않습니다(접근성·맞춤법 등).
+         * 브라우저 메뉴나 원격 디버깅 등으로는 우회 가능하므로 보안 장치가 아닙니다.
+         */
+        function installClientUiGuard() {
+            if (typeof document === 'undefined') return;
+            document.addEventListener(
+                'keydown',
+                function (e) {
+                    if (!e) return;
+                    if (e.key === 'F12') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    const mod = e.ctrlKey || e.metaKey;
+                    if (mod && e.shiftKey) {
+                        const k = e.key;
+                        if (k === 'I' || k === 'i' || k === 'J' || k === 'j' || k === 'C' || k === 'c') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                        }
+                    }
+                    if (mod && !e.shiftKey && (e.key === 'u' || e.key === 'U')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                },
+                true,
+            );
+        }
+        installClientUiGuard();
+
         function startServerRecoveryPolling() {
             if (serverRecoveryTimer) return;
             serverRecoveryTimer = setInterval(() => {
