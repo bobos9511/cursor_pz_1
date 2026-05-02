@@ -1334,7 +1334,7 @@
         .ai-chat-floating-btn {
             position: fixed;
             right: 22px;
-            bottom: 26px;
+            bottom: 96px;
             z-index: 980;
             height: 52px;
             padding: 0 16px;

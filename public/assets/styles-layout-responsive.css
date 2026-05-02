@@ -86,7 +86,7 @@
             }
             .ai-chat-floating-btn {
                 right: 14px;
-                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(84px + env(safe-area-inset-bottom, 0px));
                 height: 48px;
                 padding: 0 14px;
                 font-size: 13px;
@@ -176,7 +176,7 @@
                 width: 100%;
                 justify-content: flex-start !important;
                 display: grid;
-                grid-template-columns: minmax(120px, 150px) minmax(130px, 170px) minmax(180px, 1fr) auto;
+                grid-template-columns: minmax(112px, 140px) minmax(120px, 156px) minmax(180px, 1fr) auto auto;
                 gap: 8px;
                 align-items: center;
             }
@@ -190,8 +190,8 @@
                 display: none !important;
             }
             #view-list #listWriteBtn {
-                grid-column: 1 / -1;
-                justify-self: start;
+                grid-column: auto;
+                justify-self: end;
                 white-space: nowrap;
             }
         }
