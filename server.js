@@ -814,11 +814,18 @@ async function handleAiChat(req, res) {
   });
   const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
   const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
-  const generationConfig = buildGenerationConfig(boardType, continueFrom, aiSettings, {
+  const genCaps = {
     chatMax: chatMaxOutputTokens,
     max: postMaxOutputTokens,
     postFast: postFastMaxOutputTokens,
+  };
+  const useGroundingRequested = shouldUseGrounding(boardType, title, content);
+  /* 초기 생성: 클라 이어쓰기(continueFrom)면 전체 max, 아니면 빠른생성·그라운딩 하한 반영 */
+  const generationConfigInitial = buildGenerationConfig(boardType, continueFrom, aiSettings, genCaps, {
+    groundingFirstShot: useGroundingRequested,
   });
+  /* 서버 내부 MAX_TOKENS 이어쓰기: 반드시 게시물 전체 예산(max). 예전에는 postFast(예:220)를 재사용해 조각만 반복 생성됨 */
+  const generationConfigContinuation = buildGenerationConfig(boardType, "internal_max_tokens_continuation", aiSettings, genCaps);
   const requesterScope = getCookieValueFromHeader(req.headers.cookie, "knockUserScope");
   const aiApiLog = {
     id: `ai_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -829,7 +836,7 @@ async function handleAiChat(req, res) {
     contentPreview: String(content || "").slice(0, 3000),
     continueFromProvided: !!continueFrom,
     model: GEMINI_MODEL,
-    useGroundingRequested: shouldUseGrounding(boardType, title, content),
+    useGroundingRequested,
     runtime: {
       chatMaxOutputTokens,
       postMaxOutputTokens,
@@ -843,7 +850,8 @@ async function handleAiChat(req, res) {
       ragMinScore,
       ragRelativeCutoffPct,
     },
-    generationConfig,
+    generationConfig: generationConfigInitial,
+    generationConfigContinuation,
     promptText: String(prompt || "").slice(0, 12000),
     attempts: [],
     final: { ok: false, statusCode: 0, error: "", truncated: false, continuationCount: 0 },
@@ -854,7 +862,7 @@ async function handleAiChat(req, res) {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig,
+      generationConfig: generationConfigInitial,
     };
     if (useGrounding) {
       requestBody.tools = [{ google_search: {} }];
@@ -902,7 +910,7 @@ async function handleAiChat(req, res) {
       if (msg.toLowerCase().includes("tool") || msg.toLowerCase().includes("google_search")) {
         ({ res: geminiRes, json: data } = await callGemini({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig,
+          generationConfig: generationConfigInitial,
         }, "retry_without_grounding"));
       }
     }
@@ -942,7 +950,7 @@ async function handleAiChat(req, res) {
       ({ res: geminiRes, json: data } = await callGemini(
         {
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig,
+          generationConfig: generationConfigInitial,
         },
         "retry_empty_without_grounding",
       ));
@@ -1008,7 +1016,7 @@ async function handleAiChat(req, res) {
       const continuePrompt = ko.internalContinuationPrompt(reply);
       const { res: continueRes, json: continueData } = await callGemini({
         contents: [{ parts: [{ text: continuePrompt }] }],
-        generationConfig,
+        generationConfig: generationConfigContinuation,
       }, `continuation_${continuationCount}`);
       if (!continueRes.ok) break;
       const { reply: continuedReply, finishReason: continueFinishReason } = extractReplyFromGeminiData(continueData);

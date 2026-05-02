@@ -285,17 +285,25 @@ function buildAiPrompt(boardType, title, content, continueFrom, aiSettings) {
   return [system, "", `${PROMPT_LABELS.title} ${title}`, `${PROMPT_LABELS.content} ${content}`].join("\n");
 }
 
-function buildGenerationConfig(boardType, continueFrom, aiSettings, caps) {
+/** 구글 검색 그라운딩 첫 응답: 도구·메타에 출력 예산을 쓰므로 postFast만으로 본문이 끊기기 쉬움 → 하한 적용 */
+const GROUNDING_FIRST_SHOT_MIN_OUTPUT_TOKENS = 768;
+
+function buildGenerationConfig(boardType, continueFrom, aiSettings, caps, options = {}) {
   const { chatMax, max, postFast } = caps;
+  const { groundingFirstShot } = options;
   const isChat = boardType === "CHAT";
   const slice = isChat ? aiSettings.chat : getPostAiSlice(aiSettings, boardType);
   const temperature = roundGenParam(slice.temperature);
   const topP = roundGenParam(slice.topP);
+  let effectivePostFast = Math.min(postFast, max);
+  if (!isChat && groundingFirstShot && !continueFrom) {
+    effectivePostFast = Math.min(max, Math.max(effectivePostFast, GROUNDING_FIRST_SHOT_MIN_OUTPUT_TOKENS));
+  }
   const maxOutputTokens = isChat
     ? Math.min(chatMax, max)
     : continueFrom
       ? max
-      : Math.min(postFast, max);
+      : effectivePostFast;
   return { temperature, topP, maxOutputTokens };
 }
 
