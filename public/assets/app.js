@@ -519,7 +519,7 @@
         }
 
         function isValidAdminPinFormatClient(digits) {
-            return /^\d{1,6}$/.test(String(digits || ''));
+            return /^\d{6}$/.test(String(digits || ''));
         }
 
         // ==========================================
@@ -1668,7 +1668,7 @@
             } else {
                 sec.classList.remove('hidden');
                 if (hint) {
-                    hint.textContent = '숫자 1~6자리. 관리자로 저장할 때 반드시 입력합니다.';
+                    hint.textContent = '숫자 6자리. 관리자로 저장할 때 반드시 입력합니다.';
                 }
             }
         }
@@ -1748,7 +1748,7 @@
                             document.getElementById('signupAdminPinConfirm').value,
                     );
                     if (!isValidAdminPinFormatClient(pA) || pA !== pB) {
-                        showAlert('관리자 PIN은 숫자 1~6자리로 두 번 동일하게 입력해주세요.', 'error');
+                        showAlert('관리자 PIN은 숫자 6자리로 두 번 동일하게 입력해주세요.', 'error');
                         return;
                     }
                     adminPinPlain = pA;
@@ -2012,6 +2012,21 @@
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = user.employeeNo;
             closeMemberListModal();
+            if (typeof openAdminPinGateModal === 'function' && resolveUserIsAdmin(user) && user.hasAdminPin) {
+                const pwdRadio = document.querySelector('input[name="auth"][value="pwd"]');
+                if (pwdRadio) pwdRadio.checked = true;
+                openAdminPinGateModal({
+                    title: '관리자 PIN',
+                    message: `${user.name || ''} (${user.employeeNo}) 계정 로그인을 위해 6자리 PIN을 입력하세요.`,
+                    onResult: (pin) => {
+                        if (pin == null) return;
+                        const authIn = document.getElementById('authInput');
+                        if (authIn) authIn.value = pin;
+                        void doLogin();
+                    },
+                });
+                return;
+            }
             doLogin({ skipAuthValidation: true });
         }
 
@@ -2322,7 +2337,7 @@
                 }
                 const pin = normalizeAdminPinDigits(authInput);
                 if (!isValidAdminPinFormatClient(pin)) {
-                    showAlert('관리자 PIN은 숫자 1~6자리로 입력해주세요.', 'error');
+                    showAlert('관리자 PIN은 숫자 6자리로 입력해주세요.', 'error');
                     return;
                 }
                 try {

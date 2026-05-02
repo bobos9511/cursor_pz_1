@@ -31,6 +31,7 @@ function openAdminPinGateModal({ title, message, onResult }) {
         if (inp) inp.focus();
     }, 80);
 }
+window.openAdminPinGateModal = openAdminPinGateModal;
 
 function closeAdminPinGateModal(isCancel) {
     const modal = document.getElementById("adminPinGateModal");
@@ -46,7 +47,7 @@ function confirmAdminPinGateModal() {
     const inp = document.getElementById("adminPinGateInput");
     const pin = normalizeAdminPinDigits(inp && inp.value);
     if (!isValidAdminPinFormatClient(pin)) {
-        showAlert("숫자 1~6자리 PIN을 입력해주세요.", "error");
+        showAlert("숫자 6자리 PIN을 입력해주세요.", "error");
         return;
     }
     const modal = document.getElementById("adminPinGateModal");
@@ -75,7 +76,7 @@ async function submitAdminSelfPinChange() {
     const n1 = normalizeAdminPinDigits(n1El && n1El.value);
     const n2 = normalizeAdminPinDigits(n2El && n2El.value);
     if (!isValidAdminPinFormatClient(n1)) {
-        showAlert("새 PIN은 숫자 1~6자리로 입력해주세요.", "error");
+        showAlert("새 PIN은 숫자 6자리로 입력해주세요.", "error");
         return;
     }
     if (n1 !== n2) {
@@ -1018,7 +1019,7 @@ function toggleSignupUserAdminFlag(empNo, checked) {
         if (!resolveUserIsAdmin(u) && !u.hasAdminPin) {
             openAdminPinGateModal({
                 title: "관리자 PIN 설정",
-                message: `${u.name || ""} 직원에게 부여할 관리자 PIN(숫자 1~6자리)을 입력하세요. 권한 저장 시 서버에 반영됩니다.`,
+                message: `${u.name || ""} 직원에게 부여할 관리자 PIN(숫자 6자리)을 입력하세요. 권한 저장 시 서버에 반영됩니다.`,
                 onResult: (pin) => {
                     if (pin == null) {
                         const cb = document.querySelector(`.admin-perm-isadmin[data-emp="${empStr}"]`);

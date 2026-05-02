@@ -1175,7 +1175,7 @@ function normalizeAdminPinDigitsServer(raw) {
 
 function isValidAdminPinFormatServer(digits) {
   const s = String(digits || "");
-  return /^\d{1,6}$/.test(s);
+  return /^\d{6}$/.test(s);
 }
 
 function hashAdminPin(empKey, pinDigits) {
@@ -1251,7 +1251,7 @@ async function handleAdminPinVerify(req, res) {
     return;
   }
   if (!isValidAdminPinFormatServer(pin)) {
-    sendJson(res, 400, { error: "PIN은 숫자 1~6자리만 가능합니다." });
+    sendJson(res, 400, { error: "PIN은 숫자 6자리만 가능합니다." });
     return;
   }
   const db = readDb();
@@ -1310,7 +1310,7 @@ async function handleAdminPinChange(req, res) {
   const newPin = normalizeAdminPinDigitsServer(body && body.newPin);
   const currentPin = normalizeAdminPinDigitsServer(body && body.currentPin);
   if (!isValidAdminPinFormatServer(newPin)) {
-    sendJson(res, 400, { error: "새 PIN은 숫자 1~6자리만 가능합니다." });
+    sendJson(res, 400, { error: "새 PIN은 숫자 6자리만 가능합니다." });
     return;
   }
   if (user.adminPinHash) {
