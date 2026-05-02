@@ -275,14 +275,16 @@
                                     <div id="aiSearchLog" class="ai-search-log"></div>
                                     <div class="ai-search-input-row">
                                         <textarea id="aiSearchInput" class="input ai-search-input" placeholder="질문을 입력하세요. (Shift+Enter로 줄바꿈)"></textarea>
-                                        <div class="ai-search-input-actions">
-                                            <button id="aiLayerNewChatBtn" class="btn btn-outline ai-layer-new-chat-btn" type="button" onclick="startNewAiSearchChat()">
-                                                <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
-                                            </button>
-                                            <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
+                                        <div class="ai-search-input-footer">
+                                            <div class="ai-search-input-help"><b>Enter</b> 전송 / <b>Shift+Enter</b> 줄바꿈</div>
+                                            <div class="ai-search-input-actions">
+                                                <button id="aiLayerNewChatBtn" class="btn btn-outline ai-layer-new-chat-btn" type="button" onclick="startNewAiSearchChat()">
+                                                    <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
+                                                </button>
+                                                <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="ai-search-input-help"><b>Enter</b> 전송 / <b>Shift+Enter</b> 줄바꿈</div>
                                 </div>
                             </div>
                         </section>
