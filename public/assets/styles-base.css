@@ -2326,30 +2326,17 @@
 
         /* 회원 목록 관리 모달 */
         .member-list-modal-overlay {
-            align-items: flex-end;
-            padding: 0;
-        }
-        @media (min-width: 640px) {
-            .member-list-modal-overlay {
-                align-items: center;
-                padding: 16px;
-            }
+            align-items: center;
+            padding: 12px;
         }
         .member-list-modal-shell {
             max-width: 920px;
-            width: 100%;
-            border-radius: 16px 16px 0 0;
-            max-height: min(92vh, 900px);
+            width: min(94vw, 920px);
+            border-radius: 16px;
+            max-height: min(88vh, 900px);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-        @media (min-width: 640px) {
-            .member-list-modal-shell {
-                width: min(92vw, 920px);
-                border-radius: 16px;
-                max-height: min(88vh, 900px);
-            }
         }
         .member-list-modal-header .member-list-modal-title {
             font-size: 17px;
@@ -2373,11 +2360,6 @@
             flex-wrap: wrap;
         }
         .member-list-summary { font-size: 13px; color: #64748b; font-weight: 600; }
-        .member-list-clear-all {
-            padding: 8px 14px;
-            font-size: 12px;
-            font-weight: 600;
-        }
         .member-list-scroll {
             flex: 1 1 auto;
             min-height: 120px;
@@ -2512,8 +2494,8 @@
         .member-list-card-actions {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-top: 14px;
+                gap: 6px;
+                margin-top: 10px;
         }
         @media (min-width: 480px) {
             .member-list-card-actions {
@@ -2524,24 +2506,14 @@
         }
         .member-list-primary-btn {
             width: 100%;
-            padding: 12px 16px;
-            font-size: 15px;
+            padding: 10px 14px;
+            font-size: 14px;
             font-weight: 700;
         }
         @media (min-width: 480px) {
             .member-list-primary-btn {
                 width: auto;
                 min-width: 140px;
-            }
-        }
-        .member-list-secondary-btn {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 13px;
-        }
-        @media (min-width: 480px) {
-            .member-list-secondary-btn {
-                width: auto;
             }
         }
         .member-list-empty {
@@ -2578,92 +2550,79 @@
         .member-list-help strong { color: #334155; }
         @media (max-width: 768px) {
             .member-list-modal-body {
-                padding: 12px 12px 14px;
+                padding: 10px 10px 12px;
             }
             .member-list-toolbar {
-                margin-bottom: 10px;
+                margin-bottom: 8px;
                 gap: 8px;
-            }
-            .member-list-clear-all {
-                padding: 6px 10px;
-                font-size: 11px;
             }
             .member-list-scroll {
-                max-height: min(50vh, 430px);
-                padding-bottom: 4px;
+                max-height: min(48vh, 400px);
+                padding-bottom: 2px;
             }
             .member-list-cards {
-                gap: 8px;
+                gap: 6px;
             }
             .member-list-card {
-                border-radius: 12px;
-                padding: 10px 10px 9px;
-                box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+                border-radius: 10px;
+                padding: 8px 8px 7px;
+                box-shadow: 0 1px 8px rgba(15, 23, 42, 0.05);
             }
             .member-list-card-top {
-                gap: 9px;
+                gap: 7px;
             }
             .member-list-avatar {
-                width: 34px;
-                height: 34px;
-                border-radius: 10px;
-                font-size: 14px;
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                font-size: 12px;
             }
             .member-list-name {
-                font-size: 14px;
+                font-size: 13px;
             }
             .member-list-emp-pill {
-                font-size: 11px;
-                padding: 2px 8px;
+                font-size: 10px;
+                padding: 2px 7px;
             }
             .member-list-dept-line {
-                margin-bottom: 6px;
-                font-size: 12px;
+                margin-bottom: 4px;
+                font-size: 11px;
             }
             .member-list-chip {
                 font-size: 10px;
-                padding: 3px 8px;
+                padding: 2px 7px;
             }
             .member-list-dl {
-                margin-top: 9px;
-                padding-top: 8px;
+                margin-top: 7px;
+                padding-top: 6px;
             }
             .member-list-dl-row {
-                grid-template-columns: 78px 1fr;
-                gap: 6px 8px;
-                font-size: 11px;
-                margin-bottom: 4px;
+                grid-template-columns: 70px 1fr;
+                gap: 4px 6px;
+                font-size: 10px;
+                margin-bottom: 3px;
             }
             .member-list-card-actions {
-                margin-top: 10px;
-                display: grid;
-                grid-template-columns: 1fr auto;
-                gap: 6px;
-                align-items: center;
+                margin-top: 8px;
+                display: block;
             }
             .member-list-primary-btn {
                 width: 100%;
                 min-width: 0;
-                padding: 9px 10px;
-                font-size: 13px;
-                border-radius: 10px;
-            }
-            .member-list-secondary-btn {
-                width: auto;
                 padding: 8px 10px;
                 font-size: 12px;
-                border-radius: 10px;
+                border-radius: 8px;
             }
             .member-list-help {
-                margin-top: 10px;
-                padding: 10px 11px;
-                border-radius: 9px;
+                margin-top: 8px;
+                padding: 9px 10px;
+                border-radius: 8px;
                 font-size: 11px;
-                line-height: 1.5;
+                line-height: 1.45;
             }
             .member-list-help-title {
-                margin-bottom: 6px;
-                font-size: 12px;
+                margin-bottom: 5px;
+                font-size: 11px;
             }
         }
         .notification-center-modal {

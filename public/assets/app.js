@@ -1979,7 +1979,7 @@
                                 <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">업무 역할</th>
                                 <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">최근 접속</th>
                                 <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center;">플랫폼 관리</th>
-                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:170px;">관리</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:120px;">로그인</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1995,7 +1995,6 @@
                                     <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
                                     <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
                                         <button type="button" class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
-                                        <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})" ${isAiSystemUser(u) ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -2009,7 +2008,6 @@
                 ${visibleUsers
                     .map((u) => {
                         const initial = escapeHtml(getUserInitial(u.name || u.employeeNo || '?'));
-                        const delDisabled = isAiSystemUser(u);
                         return `
                 <article class="member-list-card" role="listitem">
                     <div class="member-list-card-top">
@@ -2036,7 +2034,6 @@
                     </dl>
                     <div class="member-list-card-actions">
                         <button type="button" class="btn btn-primary member-list-primary-btn" onclick="loginByMemberId(${u.id})">선택 로그인</button>
-                        <button type="button" class="btn btn-outline member-list-secondary-btn" onclick="deleteSignupUser(${u.id})" ${delDisabled ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
                     </div>
                 </article>`;
                     })
