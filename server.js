@@ -13,6 +13,7 @@ const {
   RUNTIME_CONTINUATION_MS_MIN,
   RUNTIME_CONTINUATION_MS_MAX,
 } = require("./server-ai-settings");
+const { POST_REPLY_HANGUL_GLUE_RULES } = require("./server-post-reply-hangul-glue.cjs");
 const ko = require("./server-messages.ko.cjs");
 
 loadEnv(path.join(__dirname, ".env"));
@@ -321,35 +322,14 @@ function stripGeminiEditorialLeakage(text) {
   return out;
 }
 
-/** 모델·토큰 경계로 생긴 불필요 공백 정리(전역 음절 병합은 올바른 띄어쓰기까지 손상시킬 수 있어 구문 단위만 처리) */
+/** 모델·토큰 경계로 생긴 불필요 공백 정리 — 패턴 목록은 server-post-reply-hangul-glue.cjs 상수 참고 */
 function normalizeHangulArtifactSpaces(text) {
   let out = String(text || "");
   out = out.replace(/\u200b/g, "");
   out = out.replace(/\s+([.,!?;:])/g, "$1");
   out = out.replace(/\s+([」』】〉])/g, "$1");
   out = out.replace(/([「『【〈])\s+/g, "$1");
-  // 금융·규정 답변에서 흔한 복합어/구가 음절 사이에만 잘린 경우
-  const glue = [
-    [/규\s+제\s*지\s*역/g, "규제지역"],
-    [/규\s+제지역/g, "규제지역"],
-    [/규\s+제(?=지역|완화|완화책)/g, "규제"],
-    [/금\s+지(?=되|된)/g, "금지"],
-    [/담\s+보\s*대\s*출/g, "담보대출"],
-    [/주\s*택\s*담\s*보/g, "주택담보"],
-    [/담\s+보(?=대출|인정|가치)/g, "담보"],
-    [/대\s+출(?=한도|금리|실행|신청|비율|을|이|은|로)/g, "대출"],
-    [/주\s+택(?=담보|구입|매입|소유|시세)/g, "주택"],
-    [/다\s+주\s*택/g, "다주택"],
-    [/구\s+입(?=하|한)/g, "구입"],
-    [/대\s+환(?=하|하는)/g, "대환"],
-    [/기\s+간\s*연\s*장/g, "기간연장"],
-    [/비\s+대\s*면/g, "비대면"],
-    [/담\s*보\s*인\s*정/g, "담보인정"],
-    [/스\s*트\s*레\s*스\s*D\s*S\s*R/g, "스트레스DSR"],
-    [/유\s+의\s+해/g, "유의해"],
-    [/유\s+의\s+해야/g, "유의해야"],
-  ];
-  glue.forEach(([re, rep]) => {
+  POST_REPLY_HANGUL_GLUE_RULES.forEach(([re, rep]) => {
     out = out.replace(re, rep);
   });
   out = out.replace(/[ \t]{2,}/g, " ");
