@@ -147,34 +147,51 @@
         .login-bg { position: absolute; top: 0; left: 0; width: 100%; height: 52vh; background: linear-gradient(140deg, #003f85 0%, #005bac 50%, #00a4e3 100%); z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
         .login-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 28px 28px; opacity: 0.18; }
         .login-brand-callout {
-            margin-top: 8px;
-            border: 0;
-            background: transparent;
+            margin-top: 10px;
+            border: 1px solid #cfe1f7;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,246,255,0.95));
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
+            gap: 8px;
+            padding: 6px 12px;
             border-radius: 999px;
-            color: #1e40af;
+            color: #1e3a8a;
             cursor: pointer;
-            transition: transform 0.15s ease, color 0.15s ease, background 0.15s ease;
+            box-shadow: 0 8px 18px rgba(14, 116, 214, 0.15);
+            transition: transform 0.15s ease, color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            position: relative;
         }
         .login-brand-callout:hover {
             color: #1d4ed8;
-            background: rgba(37, 99, 235, 0.08);
+            background: linear-gradient(180deg, #ffffff, #eaf4ff);
             transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+        }
+        .login-brand-callout-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: #ffffff;
+            padding: 4px 7px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
         }
         .login-brand-callout-arrow {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 900;
             line-height: 1;
-            animation: loginBrandPointerBounce 1.15s ease-in-out infinite;
+            color: #2563eb;
+            animation: loginBrandPointerBounce 1.2s ease-in-out infinite;
         }
         .login-brand-callout-text {
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.01em;
-            line-height: 1.2;
+            line-height: 1.1;
             white-space: nowrap;
         }
         @keyframes loginBrandPointerBounce {

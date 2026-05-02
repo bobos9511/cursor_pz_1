@@ -1159,11 +1159,20 @@
             border-color: #6a97cf !important;
         }
         body[data-theme="dark"] .login-brand-callout {
-            color: #93c5fd;
+            color: #dbeafe;
+            border-color: #3f5f86;
+            background: linear-gradient(180deg, #1b2f4c, #162841);
+            box-shadow: 0 8px 18px rgba(2, 8, 24, 0.45);
         }
         body[data-theme="dark"] .login-brand-callout:hover {
             color: #bfdbfe;
-            background: rgba(37, 99, 235, 0.18);
+            background: linear-gradient(180deg, #233b5e, #1b3150);
+        }
+        body[data-theme="dark"] .login-brand-callout-badge {
+            background: linear-gradient(135deg, #2563eb, #0284c7);
+        }
+        body[data-theme="dark"] .login-brand-callout-arrow {
+            color: #93c5fd;
         }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
