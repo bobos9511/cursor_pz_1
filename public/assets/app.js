@@ -2162,8 +2162,14 @@
         function updateOverlaySessionRemaining() {
             const el = document.getElementById('overlaySessionRemaining');
             if (!el) return;
-            el.textContent = `세션 남은 시간: ${formatSessionRemainingText()}`;
+            el.textContent = `자동 로그아웃까지: ${formatSessionRemainingText()}`;
         }
+
+        async function extendSessionFromOverlay() {
+            await extendSessionOnceFromModal();
+            updateOverlaySessionRemaining();
+        }
+        window.extendSessionFromOverlay = extendSessionFromOverlay;
 
         function clearSessionExpiryWatch() {
             if (sessionWarnTimerId) {

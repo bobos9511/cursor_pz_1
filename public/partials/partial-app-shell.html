@@ -94,9 +94,14 @@
                     </div>
                 </div>
                 <div class="profile-overlay-foot">
-                    <span class="profile-overlay-foot-note" id="overlaySessionInfo">IP 10.124.0.1</span>
-                    <span class="profile-overlay-foot-note" id="overlaySessionRemaining" style="display:block;margin-top:6px;font-size:12px;color:#64748b;">세션 남은 시간: —</span>
-                    <div class="flex items-center gap-10">
+                    <div class="profile-session-block">
+                        <span class="profile-overlay-foot-note" id="overlaySessionInfo">IP 10.124.0.1</span>
+                        <span class="profile-overlay-foot-note profile-session-time" id="overlaySessionRemaining">자동 로그아웃까지: —</span>
+                    </div>
+                    <div class="profile-foot-actions">
+                        <button onclick="extendSessionFromOverlay()" class="logout-btn profile-extend-btn" type="button">
+                            <span>세션 연장</span>
+                        </button>
                         <button onclick="openProfileImageModal()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
                             <span>프로필 사진</span>
                         </button>
