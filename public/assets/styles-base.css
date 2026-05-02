@@ -855,17 +855,21 @@
             line-height: 1.2;
             border: 1px solid rgba(253, 224, 71, 0.72);
             background: linear-gradient(135deg, #fde68a 0%, #fbbf24 42%, #d97706 100%);
-            color: #422006;
+            color: #1a0e02;
             box-shadow:
                 0 4px 14px rgba(180, 83, 9, 0.38),
                 inset 0 1px 0 rgba(255, 255, 255, 0.45);
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+        .profile-admin-badge span {
+            color: inherit;
         }
         .profile-admin-badge-icon {
             width: 13px;
             height: 13px;
             flex-shrink: 0;
             opacity: 0.92;
+            color: inherit;
         }
         .profile-empno-pill {
             display: inline-flex;
