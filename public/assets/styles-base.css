@@ -1336,30 +1336,52 @@
             right: 22px;
             bottom: 96px;
             z-index: 980;
-            height: 52px;
-            padding: 0 16px;
-            border-radius: 999px;
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            border-radius: 50%;
             border: 1px solid #7dd3fc;
             background: linear-gradient(135deg, #0369a1, #0ea5e9);
             color: #ecfeff;
-            font-weight: 800;
-            font-size: 14px;
-            letter-spacing: 0.15px;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
             box-shadow: 0 14px 30px rgba(2, 132, 199, 0.36);
             transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
         }
         .ai-chat-floating-btn .icon {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             color: #f0f9ff;
         }
         .ai-chat-floating-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 18px 34px rgba(2, 132, 199, 0.44);
             filter: saturate(1.08);
+        }
+        .ai-chat-floating-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            right: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%) translateX(4px);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
+            border: 1px solid rgba(125, 211, 252, 0.52);
+            color: #e0f2fe;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.1px;
+            padding: 7px 11px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        .ai-chat-floating-btn:hover::after {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
         }
         
         /* 사이드바 애니메이션 및 접기 기능 */

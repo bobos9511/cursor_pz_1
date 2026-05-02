@@ -1192,6 +1192,11 @@
         body[data-theme="dark"] .ai-chat-floating-btn:hover {
             filter: brightness(1.06);
         }
+        body[data-theme="dark"] .ai-chat-floating-btn::after {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+            border-color: rgba(56, 189, 248, 0.62);
+            color: #dbeafe;
+        }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,
