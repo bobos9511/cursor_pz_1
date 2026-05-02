@@ -147,10 +147,10 @@
         .login-bg { position: absolute; top: 0; left: 0; width: 100%; height: 52vh; background: linear-gradient(140deg, #003f85 0%, #005bac 50%, #00a4e3 100%); z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
         .login-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 28px 28px; opacity: 0.18; }
         .login-brand-callout {
-            margin-top: 10px;
+            margin-top: 6px;
             border: 1px solid #cfe1f7;
             background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,246,255,0.95));
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 7px;
             padding: 5px 10px;
@@ -162,6 +162,7 @@
             position: relative;
             margin-left: auto;
             margin-right: auto;
+            width: fit-content;
         }
         .login-brand-callout:hover {
             color: #1d4ed8;
@@ -204,15 +205,15 @@
         }
         .login-theme-fab {
             position: fixed;
-            right: 18px;
-            bottom: 18px;
-            width: 44px;
-            height: 44px;
+            right: 22px;
+            bottom: 32px;
+            width: 52px;
+            height: 52px;
             border-radius: 999px;
             border: 1px solid rgba(148, 163, 184, 0.45);
             background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,245,249,0.94));
             color: #0f172a;
-            font-size: 19px;
+            font-size: 23px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -227,11 +228,11 @@
         }
         @media (max-width: 520px) {
             .login-theme-fab {
-                right: 12px;
-                bottom: 12px;
-                width: 40px;
-                height: 40px;
-                font-size: 17px;
+                right: 14px;
+                bottom: 22px;
+                width: 46px;
+                height: 46px;
+                font-size: 20px;
             }
         }
         .login-box { background: rgba(255,255,255,0.97); backdrop-filter: blur(2px); padding: 40px; border-radius: 14px; box-shadow: 0 22px 48px rgba(15,23,42,0.24); width: 100%; max-width: 430px; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.8); animation: loginCardIn 0.55s cubic-bezier(.2,.8,.2,1) both; }
