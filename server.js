@@ -1033,6 +1033,23 @@ async function handleDbApi(req, res, url) {
   return false;
 }
 
+const HTML_INCLUDE_RE = /<!--\s*@include:([\w.-]+)\s*-->/g;
+
+function expandHtmlIncludes(html) {
+  return html.replace(HTML_INCLUDE_RE, (_, name) => {
+    const rel = path.join("partials", name);
+    const full = path.join(PUBLIC_DIR, rel);
+    if (!full.startsWith(PUBLIC_DIR)) {
+      return `<!-- include denied: ${name} -->`;
+    }
+    try {
+      return fs.readFileSync(full, "utf8");
+    } catch {
+      return `<!-- include missing: ${name} -->`;
+    }
+  });
+}
+
 function serveStatic(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   let pathname = decodeURIComponent(url.pathname);
@@ -1043,13 +1060,26 @@ function serveStatic(req, res) {
     res.end("Forbidden");
     return;
   }
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === ".html" && path.basename(filePath) === "index.html") {
+    fs.readFile(filePath, "utf8", (err, data) => {
+      if (err) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not found");
+        return;
+      }
+      const out = expandHtmlIncludes(data);
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(out);
+    });
+    return;
+  }
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Not found");
       return;
     }
-    const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
     res.end(data);
   });

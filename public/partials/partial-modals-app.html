@@ -1,0 +1,231 @@
+    <!-- 통합검색 모달 -->
+    <div id="integratedSearchModal" class="modal-overlay" style="align-items: flex-start; padding-top: 80px;">
+        <div class="modal-content integrated-search-modal">
+            <div class="modal-header integrated-search-modal-header">
+                <h3 style="font-size:16px;">통합검색</h3>
+                <button class="btn-icon" onclick="closeIntegratedSearchModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="integrated-search-head">
+                <div class="integrated-search-input-wrap">
+                    <svg class="icon icon-lg integrated-search-icon"><use href="#icon-search"></use></svg>
+                    <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch('enter')">
+                    <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
+            </div>
+            <div class="integrated-search-controls">
+                <div class="integrated-search-chips">
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">AI답변</button>
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">오류코드</button>
+                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">규정문의</button>
+                </div>
+                <div class="integrated-search-sort-wrap">
+                    <label for="integratedSearchSort" style="font-size:12px; color:#64748b; font-weight:700;">정렬</label>
+                    <select id="integratedSearchSort" class="input integrated-search-sort" onchange="performModalSearch('sort')">
+                        <option value="latest">최신순</option>
+                        <option value="views">조회수순</option>
+                        <option value="relevance">관련도순</option>
+                    </select>
+                </div>
+            </div>
+            <div class="integrated-search-insight">
+                <div id="integratedKeywordRanking" class="integrated-search-insight-block"></div>
+                <div id="integratedRelatedKeywords" class="integrated-search-insight-block"></div>
+            </div>
+            <div class="modal-body integrated-search-results-body" id="integratedSearchResults">
+                <div class="text-center" style="color:#999; padding: 60px;">검색어를 입력하고 Enter를 누르세요.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 과거 유사 문의 상세 팝업 모달 (이중 모달) -->
+    <div id="similarPostModal" class="modal-overlay" style="z-index: 1010;">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-header" style="background: #333;">
+                <span>유사 문의 상세 확인</span>
+                <button onclick="closeSimilarPostModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="background: #f9f9f9; padding: 20px; gap: 15px; display: flex; flex-direction: column;">
+                <div style="background: #fff; padding: 20px; border-radius: 4px; border: 1px solid #eee;">
+                    <h4 id="simTitle" style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: var(--ibk-blue);"></h4>
+                    <div class="flex flex-wrap items-center text-xs text-gray-500 gap-10 mb-10">
+                        <span><svg class="icon"><use href="#icon-user"></use></svg> <span id="simWriter"></span></span>
+                        <span><svg class="icon"><use href="#icon-clock"></use></svg> <span id="simDatetime"></span></span>
+                    </div>
+                    <div id="simContent" style="font-size: 14px; line-height: 1.6; color: #444; border-top:1px solid #eee; padding-top:10px;"></div>
+                </div>
+                <details style="background: #fff; border-radius: 4px; border: 1px solid #bae6fd;" open id="simAiWrap">
+                    <summary style="padding: 15px; background: #f0f9ff; color: var(--ibk-blue); font-weight: bold; font-size: 14px; border-bottom: 1px solid #e0f2fe; display: flex; justify-content: space-between; align-items: center;">
+                        <span><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 분석</span>
+                        <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
+                    </summary>
+                    <div id="simAiContent" style="padding: 15px; font-size: 13px; line-height: 1.6;"></div>
+                </details>
+                <details style="background: #fff; border-radius: 4px; border: 1px solid #a7f3d0;" open id="simAdminWrap">
+                    <summary style="padding: 15px; background: #ecfdf5; color: var(--success); font-weight: bold; font-size: 14px; border-bottom: 1px solid #d1fae5; display: flex; justify-content: space-between; align-items: center;">
+                        <span><svg class="icon"><use href="#icon-check"></use></svg> 담당자 공식 답변</span>
+                        <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
+                    </summary>
+                    <div id="simAdminAnswer" style="padding: 15px; font-size: 13px; line-height: 1.6;"></div>
+                </details>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeSimilarPostModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 답변 이력 모달 -->
+    <div id="aiReplyHistoryModal" class="modal-overlay" style="z-index: 1011;">
+        <div class="modal-content" style="max-width: 760px; width: min(92vw, 760px);">
+            <div class="modal-header" style="background: linear-gradient(to right, var(--ibk-blue), var(--ibk-light));">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> AI 답변 이력</span>
+                <button onclick="closeAiReplyHistoryModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body ai-reply-history-body" id="aiReplyHistoryBody">
+                <div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAiReplyHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="notificationCenterModal" class="modal-overlay" style="z-index: 1012;">
+        <div class="modal-content notification-center-modal">
+            <div class="modal-header notification-center-head">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> 알림센터</span>
+                <button onclick="closeNotificationCenter()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="notification-center-toolbar">
+                <div class="notification-toolbar-left">
+                    <span class="notification-toolbar-caption">카드형 알림 보기</span>
+                </div>
+                <div class="notification-toolbar-right">
+                    <button type="button" id="notiFilterBtn" class="btn btn-outline" onclick="openNotificationFilterModal()">
+                        <svg class="icon"><use href="#icon-cog"></use></svg> 필터
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>
+                    <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
+                </div>
+            </div>
+            <div id="notificationCenterBody" class="modal-body notification-center-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeNotificationCenter()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="notificationFilterModal" class="modal-overlay" style="z-index: 1013;">
+        <div class="modal-content notification-filter-modal">
+            <div class="modal-header notification-center-head">
+                <span><svg class="icon"><use href="#icon-cog"></use></svg> 알림 필터</span>
+                <button onclick="closeNotificationFilterModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="background:#f8fafc;">
+                <div class="notification-filter-group">
+                    <div class="notification-filter-label">보기 방식</div>
+                    <div class="notification-view-tabs">
+                        <button type="button" id="notiFilterViewTime" class="btn btn-outline" onclick="setNotificationFilterViewMode('time')">시간대별</button>
+                        <button type="button" id="notiFilterViewTopic" class="btn btn-outline" onclick="setNotificationFilterViewMode('topic')">주제별</button>
+                    </div>
+                </div>
+                <div class="notification-filter-group" style="margin-top:14px;">
+                    <div class="notification-filter-label">알림 유형</div>
+                    <div class="notification-view-tabs" style="flex-wrap:wrap;">
+                        <button type="button" id="notiFilterLevelAll" class="btn btn-outline" onclick="setNotificationFilterLevelMode('all')">전체</button>
+                        <button type="button" id="notiFilterLevelImportant" class="btn btn-outline" onclick="setNotificationFilterLevelMode('important')">중요알림</button>
+                        <button type="button" id="notiFilterLevelGeneral" class="btn btn-outline" onclick="setNotificationFilterLevelMode('general')">일반알림</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">초기화</button>
+                <button type="button" class="btn btn-primary" onclick="applyNotificationFilters()">적용</button>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiApiLogModal" class="modal-overlay" style="z-index: 1014;">
+        <div class="modal-content" style="max-width: 920px; width:min(96vw,920px);">
+            <div class="modal-header" style="background:linear-gradient(130deg,#0f3f74 0%, #0b6ab3 55%, #0284c7 100%);">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> AI API 로그 상세</span>
+                <button onclick="closeAdminAiApiLogModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="adminAiApiLogModalBody" class="modal-body admin-ai-log-modal-body"></div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button type="button" id="adminAiApiLogCopyBtn" class="btn btn-outline admin-ai-log-copy-btn hidden" onclick="copyAdminAiApiLogDetail(this.dataset.logId || '')">
+                    <svg class="icon"><use href="#icon-edit"></use></svg> 상세 텍스트 복사
+                </button>
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiApiLogModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="profileImageModal" class="modal-overlay" style="z-index: 1019;">
+        <div class="modal-content" style="max-width: 420px; width:min(92vw,420px);">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">프로필 사진 등록</h3>
+                <button class="btn-icon" onclick="closeProfileImageModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body flex-col gap-10">
+                <div id="profileImagePreview" class="profile-image-preview"></div>
+                <div class="profile-image-help">이미지를 등록하지 않으면 이름 첫 글자 아바타가 표시됩니다.</div>
+                <input id="profileImageInput" type="file" class="input" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleProfileImageFileChange(event)">
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button type="button" class="btn btn-danger" onclick="removeProfileImage()">이미지 제거</button>
+                <div class="flex items-center gap-10">
+                    <button type="button" class="btn btn-outline" onclick="closeProfileImageModal()">취소</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfileImage()">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiHelpModal" class="modal-overlay" style="z-index: 1015;">
+        <div class="modal-content" style="max-width: 760px; width:min(94vw,760px);">
+            <div class="modal-header">
+                <h3 id="adminAiHelpModalTitle" style="font-size:16px;">AI 설정 도움말</h3>
+                <button class="btn-icon" onclick="closeAdminAiHelpModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="adminAiHelpModalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiHelpModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="adminAiSettingsHistoryModal" class="modal-overlay" style="z-index: 1017;">
+        <div class="modal-content" style="max-width: 960px; width:min(96vw,960px);">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">AI 설정 변경 이력</h3>
+                <button class="btn-icon" onclick="closeAdminAiSettingsHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body">
+                <div id="adminAiSettingsHistorySummary" class="admin-settings-hint" style="margin-bottom:10px;">기록: 0건</div>
+                <div id="adminAiSettingsHistoryList" class="admin-ai-settings-history-wrap"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeAdminAiSettingsHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editHistoryModal" class="modal-overlay" style="z-index: 1016;">
+        <div class="modal-content" style="max-width: 640px; width:min(94vw,640px);">
+            <div class="modal-header">
+                <h3 style="font-size:16px;">수정 이력</h3>
+                <button class="btn-icon" onclick="closeEditHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="editHistoryModalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeEditHistoryModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="aiSearchHistoryMobileModal" class="modal-overlay" style="z-index: 1018;" onclick="if(event.target===this) closeAiSearchHistoryMobileModal();">
+        <div class="modal-content ai-history-mobile-modal">
+            <div class="modal-header ai-history-mobile-head">
+                <span><svg class="icon"><use href="#icon-history"></use></svg> 지난대화기록</span>
+                <button type="button" class="btn-icon" onclick="closeAiSearchHistoryMobileModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div id="aiSearchHistoryMobileBody" class="modal-body ai-history-mobile-body"></div>
+            <div class="modal-footer" style="justify-content:flex-start;">
+                <button type="button" class="btn btn-danger" onclick="deleteAllAiSearchHistory()">전체삭제</button>
+            </div>
+        </div>
+    </div>

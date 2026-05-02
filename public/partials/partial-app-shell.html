@@ -1,0 +1,1035 @@
+    <!-- ==========================================
+         [메인 애플리케이션 컨테이너] 
+         ========================================== -->
+    <div id="appContainer">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="flex items-center">
+                <button id="sidebarToggleBtn" class="sidebar-toggle-btn" onclick="toggleSidebarPC()" title="메뉴 접기/펼치기">
+                    <svg id="sidebarToggleIcon" class="icon sidebar-toggle-icon"><use href="#icon-chevron-left"></use></svg>
+                </button>
+                <div class="logo font-bold" onclick="switchView('ai-search')">IBK KN<span class="logo-point">O</span>CK</div>
+                <div class="header-title">IBK 스마트 업무지식센터</div>
+                <span class="header-role-chip" id="headerRoleChip">영업점</span>
+            </div>
+            
+            <!-- 통합 검색창 -->
+            <div class="header-search-wrap">
+                <div class="header-search-shell">
+                    <svg class="icon" style="color: #8bb4e3; margin-right: 10px;"><use href="#icon-search"></use></svg>
+                    <input type="text" id="headerSearchInput" placeholder="전체 게시판 통합 검색" style="background: transparent; border: none; outline: none; color: white; width: 100%; font-size: 13px;" onkeyup="if(event.key === 'Enter') executeIntegratedSearch()">
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="header-action-btn header-search-mobile-btn" data-overflow-target="true" data-overflow-priority="40" onclick="showIntegratedSearchModal()" title="통합검색">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-search"></use></svg>
+                </button>
+                <button class="header-action-btn" data-overflow-target="true" data-overflow-priority="10" onclick="switchView('settings')" title="설정">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-cog"></use></svg>
+                    <div class="header-action-hovercard">환경 설정</div>
+                </button>
+                <button id="headerNotificationBtn" class="header-action-btn" data-overflow-target="true" data-overflow-priority="20" onclick="openNotificationCenter()" title="알림센터">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-bell"></use></svg>
+                    <span id="headerNotificationBadge" class="header-noti-badge hidden">0</span>
+                    <div class="header-action-hovercard">알림센터</div>
+                </button>
+                <button id="headerProfileBtn" class="header-profile-btn" data-overflow-target="true" data-overflow-priority="30" onclick="toggleHeaderProfileOverlay(event)" title="사용자 정보">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-user"></use></svg>
+                    <div class="header-profile-hovercard" id="headerProfileHoverText">홍길동 대리 | 영업부(-)</div>
+                </button>
+                <button id="headerActionsMoreBtn" class="header-action-btn hidden" onclick="toggleHeaderActionsLayer(event)" title="더보기">
+                    <svg class="icon" style="font-size: 18px;"><use href="#icon-bars"></use></svg>
+                </button>
+                <div id="headerActionsLayer" class="header-actions-layer" onclick="event.stopPropagation()">
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); showIntegratedSearchModal();">
+                        <svg class="icon"><use href="#icon-search"></use></svg>
+                        <span class="header-actions-layer-caption">통합검색</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); switchView('settings');">
+                        <svg class="icon"><use href="#icon-cog"></use></svg>
+                        <span class="header-actions-layer-caption">설정</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); openNotificationCenter();">
+                        <svg class="icon"><use href="#icon-bell"></use></svg>
+                        <span class="header-actions-layer-caption">알림센터</span>
+                    </button>
+                    <button type="button" class="header-actions-layer-item" onclick="closeHeaderActionsLayer(); toggleHeaderProfileOverlay();">
+                        <svg class="icon"><use href="#icon-user"></use></svg>
+                        <span class="header-actions-layer-caption">사용자정보</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        <div id="topNavMobile" class="top-nav-mobile">
+            <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI Chat</button>
+            <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
+            <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
+            <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
+            <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>KNOCK 개선</button>
+            <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI 지식 베이스</button>
+            <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#7dd3fc;"><use href="#icon-admin-settings"></use></svg>관리자</button>
+            <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
+        </div>
+
+        <div id="headerProfileOverlay" class="profile-overlay" onclick="closeHeaderProfileOverlay()">
+            <div class="profile-overlay-panel" onclick="event.stopPropagation()">
+                <div class="profile-overlay-head">
+                    <div class="profile-cover-deco" id="overlayGreetingText">좋은 하루 되세요</div>
+                    <div class="profile-main">
+                        <div class="profile-photo-main" id="overlayProfileInitial">홍길</div>
+                        <div>
+                            <div class="profile-overlay-title" id="overlayUserDisplay">홍길동 대리</div>
+                            <div class="profile-overlay-sub"><span class="profile-empno-pill" id="overlayEmployeeNo">000000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-overlay-body">
+                    <div class="profile-dept-box">
+                        <div class="profile-dept-value" id="overlayUserDept">영업부(-)</div>
+                    </div>
+                    <div class="profile-contact-grid">
+                        <div class="profile-contact-item"><span class="profile-contact-label">내선</span><span id="overlayExtNo">8-0000</span></div>
+                        <div class="profile-contact-item"><span class="profile-contact-label">FAX</span><span id="overlayFaxNo">02-0000-0000</span></div>
+                        <div class="profile-contact-item"><span class="profile-contact-label">휴대전화</span><span id="overlayMobileNo">010-0000-0000</span></div>
+                    </div>
+                </div>
+                <div class="profile-overlay-foot">
+                    <span class="profile-overlay-foot-note" id="overlaySessionInfo">IP 10.124.0.1</span>
+                    <div class="flex items-center gap-10">
+                        <button onclick="openProfileImageModal()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
+                            <span>프로필 사진</span>
+                        </button>
+                        <button onclick="doLogout()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
+                            <span>로그아웃</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="body-wrapper">
+            <!-- 사이드바 -->
+            <aside class="sidebar" id="sidebar">
+                <div class="nav-title mt-10">메인메뉴</div>
+                <div class="nav-item" id="nav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg> <span class="nav-text">AI Chat</span></div>
+                <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
+                
+                <div class="nav-title mt-10">통합 문의 게시판</div>
+                <div class="nav-item" id="nav-list-it" onclick="switchView('list', 'IT')"><svg class="icon" style="color: #60a5fa;"><use href="#icon-info"></use></svg> <span class="nav-text">IT/오류 문의</span></div>
+                <div class="nav-item" id="nav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon" style="color: #c084fc;"><use href="#icon-book"></use></svg> <span class="nav-text">규정/상품 문의</span></div>
+                <div class="nav-item" id="nav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon" style="color: #2dd4bf;"><use href="#icon-lightbulb"></use></svg> <span class="nav-text">KNOCK 개선 제안</span></div>
+                
+                <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
+                <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
+                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식 베이스</span></div>
+                <div class="nav-title mt-10 platform-admin-only hidden" style="color:#93c5fd;">관리</div>
+                <div class="nav-item platform-admin-only hidden" id="nav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-admin-settings"></use></svg> <span class="nav-text">관리자 설정</span></div>
+            </aside>
+
+            <!-- 메인 콘텐츠 영역 (푸터 포함) -->
+            <div class="main-area-wrapper">
+                <main class="main-area" id="mainScrollArea">
+                    
+                    <!-- ==========================================
+                         [뷰 1] 대시보드
+                         ========================================== -->
+                    <div id="view-dashboard" class="view-section active">
+                        <div class="flex justify-between items-center mb-20">
+                            <h2 class="page-title" style="margin-bottom: 0;" id="dashTitle">나의 현황판</h2>
+                            <button class="btn btn-outline" style="padding: 6px 12px; font-size:13px;" onclick="toggleDashboardEditMode()">위젯 편집</button>
+                        </div>
+                        
+                        <div id="dashboardWidgetContainer" class="flex-col gap-20">
+                            <!-- 통계 위젯 -->
+                            <div class="draggable-widget" draggable="false" id="widget-stats">
+                                <div class="flex justify-between items-center mb-10 drag-handle hidden"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">요약 통계 이동</span></div>
+                                <div id="dashDataBranch" class="grid-4 mb-0">
+                                    <div class="panel" style="margin-bottom: 0;"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">접수/대기 문의</p><p style="font-size:32px; font-weight:900; color:var(--danger); cursor:pointer;" id="statWait" onclick="openDashCountModal('branchWait')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0;"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">조치/해결 완료</p><p style="font-size:32px; font-weight:900; color:var(--text-dark); cursor:pointer;" id="statDone" onclick="openDashCountModal('branchDone')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0; background: #ebf5ff;"><div class="panel-body text-center"><p style="color:var(--ibk-blue); font-weight:bold; margin-bottom:10px;">나의 문의 누적</p><p style="font-size:32px; font-weight:900; color:var(--ibk-blue); cursor:pointer;" id="statTotal" onclick="openDashCountModal('branchTotal')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0; background: #ebf5ff;"><div class="panel-body text-center"><p style="color:var(--ibk-blue); font-weight:bold; margin-bottom:10px;">AI답변채택율</p><p style="font-size:32px; font-weight:900; color:var(--ibk-blue);" id="statAiAdoptRate">0%</p></div></div>
+                                </div>
+                                <div id="dashDataHQ" class="hidden grid-4 mb-0">
+                                    <div class="panel" style="margin-bottom: 0; border-top:3px solid var(--danger);"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">전행 미결/접수</p><p style="font-size:32px; font-weight:900; color:var(--danger); cursor:pointer;" id="hqStatWait" onclick="openDashCountModal('hqWait')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0; border-top:3px solid var(--warning);"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">추가정보 요청(대기)</p><p style="font-size:32px; font-weight:900; color:var(--warning); cursor:pointer;" id="hqStatMoreInfo" onclick="openDashCountModal('hqMoreInfo')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0; border-top:3px solid #ccc;"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">금일 조치 완료</p><p style="font-size:32px; font-weight:900; color:var(--ibk-blue); cursor:pointer;" id="hqStatDoneToday" onclick="openDashCountModal('hqDoneToday')" title="목록 보기">0</p></div></div>
+                                    <div class="panel" style="margin-bottom: 0; background: linear-gradient(135deg, var(--ibk-blue), #003166); border:none;"><div class="panel-body text-center"><p style="color:#bfdbfe; font-weight:bold; margin-bottom:10px;">AI답변채택율</p><p style="font-size:32px; font-weight:900; color:#fff;" id="hqStatAiRate">0%</p></div></div>
+                                </div>
+                            </div>
+
+                            <!-- 리스트 위젯 -->
+                            <div class="draggable-widget grid-2" draggable="false" id="widget-lists">
+                                <div class="flex justify-between items-center mb-2 drag-handle hidden" style="grid-column: span 2;"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">목록 영역 이동</span></div>
+                                <div class="panel flex-col mb-0" style="height: 350px;">
+                                    <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-blue); margin-right:8px;">●</span> 나의 질의 내역</div></div>
+                                    <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
+                                        <div class="dash-tab active" onclick="changeDashTab('q', 'wait', this)">접수/처리중</div><div class="dash-tab" onclick="changeDashTab('q', 'done', this)">조치/AI완료</div>
+                                    </div>
+                                    <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyQuestions"></div>
+                                </div>
+                                <div class="panel flex-col mb-0" style="height: 350px;">
+                                    <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-light); margin-right:8px;">●</span> <span id="dashSecondaryTitle">나의 조치 할 일 (담당자용)</span></div></div>
+                                    <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
+                                        <div class="dash-tab active" id="dashATabWait" onclick="changeDashTab('a', 'wait', this)">미결/진행중</div><div class="dash-tab" id="dashATabDone" onclick="changeDashTab('a', 'done', this)">조치완료</div>
+                                    </div>
+                                    <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyAnswers"></div>
+                                </div>
+                            </div>
+
+                            <!-- 차트 위젯 -->
+                            <div class="draggable-widget grid-2" draggable="false" id="widget-charts">
+                                <div class="flex justify-between items-center mb-2 drag-handle hidden" style="grid-column: span 2;"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">차트 영역 이동</span></div>
+                                <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
+                                    <div class="panel-header"><div>주간 문의 통계</div></div>
+                                    <div class="p-20 flex-1 relative w-full h-full"><div id="mainTrendChart"></div></div>
+                                </div>
+                                <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
+                                    <div class="panel-header"><div>시스템 점유 비중</div></div>
+                                    <div class="p-20 flex-1 relative w-full h-full"><div id="mainPieChart"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 1.5] AI 검색
+                         ========================================== -->
+                    <div id="view-ai-search" class="view-section">
+                        <h2 class="page-title" style="margin-bottom: 14px;">AI Chat</h2>
+                        <div class="ai-search-shell">
+                            <aside class="ai-search-sidebar">
+                                <div class="ai-search-side-head">
+                                    <button type="button" class="btn btn-primary ai-search-side-action-btn" onclick="startNewAiSearchChat()">
+                                        <svg class="icon"><use href="#icon-edit"></use></svg> 새로운 대화
+                                    </button>
+                                    <button id="aiSearchDeleteAllBtn" type="button" class="btn btn-outline ai-search-history-clear ai-search-side-action-btn" onclick="deleteAllAiSearchHistory()">
+                                        <svg class="icon"><use href="#icon-trash"></use></svg> 모든대화 삭제
+                                    </button>
+                                    <button id="aiSearchHistoryMobileBtn" type="button" class="btn btn-outline ai-search-side-action-btn hidden" onclick="openAiSearchHistoryMobileModal()">
+                                        <svg class="icon"><use href="#icon-history"></use></svg> 지난대화기록
+                                    </button>
+                                </div>
+                                <div class="ai-search-side-title">지난 대화</div>
+                                <div id="aiSearchHistoryList" class="ai-search-history-list"></div>
+                            </aside>
+
+                            <section class="ai-search-main panel">
+                                <div class="panel-header ai-search-main-head">
+                                    <div class="flex items-center gap-10">
+                                        <svg class="icon"><use href="#icon-magic"></use></svg> AI Chat
+                                    </div>
+                                    <span id="aiSearchStateBadge" class="badge bg-ready">대기중</span>
+                                </div>
+                                <div class="panel-body ai-search-main-body">
+                                    <div id="aiSearchSuggestRow" class="ai-search-suggest-row">
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('대량이체 오류 발생 시 점검 순서를 단계별로 알려줘')" title="많이 물어본 질문 (1건)">대량이체 오류 점검</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('담보대출 만기연장 심사 시 필수 확인 항목 3가지를 알려줘')" title="많이 물어본 질문 (1건)">담보대출 만기연장</button>
+                                        <button class="ai-search-suggest-chip" onclick="setAiSearchPrompt('권한 신청 반려 사유를 줄이는 제출 기준을 알려줘')" title="많이 물어본 질문 (1건)">권한 신청 반려 줄이기</button>
+                                    </div>
+                                    <div id="aiSearchLog" class="ai-search-log"></div>
+                                    <div class="ai-search-input-row">
+                                        <textarea id="aiSearchInput" class="input ai-search-input" placeholder="질문을 입력하세요. (Shift+Enter로 줄바꿈)"></textarea>
+                                        <button id="aiSearchSendBtn" class="btn btn-primary" style="min-width: 110px;" onclick="submitAiSearchQuestion()">질문하기</button>
+                                    </div>
+                                    <div class="ai-search-input-help"><b>Enter</b> 전송 / <b>Shift+Enter</b> 줄바꿈</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 2] 통합 게시판 리스트
+                         ========================================== -->
+                    <div id="view-list" class="view-section">
+                        <h2 class="page-title" id="boardMainTitle" style="margin-bottom: 30px;">게시판</h2>
+                        <div id="boardHelpCard" class="board-help-card hidden">
+                            <div class="board-help-head">
+                                <div class="board-help-title">도움말 <span id="boardHelpNewBadge" class="board-help-new-badge hidden">NEW</span></div>
+                                <div class="board-help-actions">
+                                    <button id="boardHelpEditBtn" class="btn btn-outline board-help-edit-btn hidden" onclick="openBoardHelpEditor()">편집</button>
+                                    <button id="boardHelpToggleBtn" class="btn btn-outline board-help-toggle-arrow" onclick="toggleBoardHelpCard()"><svg class="icon"><use href="#icon-chevron-down"></use></svg></button>
+                                </div>
+                            </div>
+                            <div class="board-help-body" id="boardHelpBody">
+                                <div id="boardHelpText" class="board-help-text"></div>
+                                <div id="boardHelpEmpty" class="board-help-empty hidden">등록된 도움말이 없습니다. IT관리자가 안내 문구를 입력할 수 있습니다.</div>
+                                <div id="boardHelpEditorWrap" class="hidden">
+                                    <div class="board-help-editor-tools">
+                                        <label class="board-help-tool">글자색 <input type="color" id="boardHelpTextColor" value="#334155" oninput="applyBoardHelpSelectionStyle('color', this.value)"></label>
+                                        <label class="board-help-tool">배경색 <input type="color" id="boardHelpBgColor" value="#f1f6ff" oninput="applyBoardHelpSelectionStyle('backgroundColor', this.value)"></label>
+                                        <div class="board-help-tool">굵기
+                                            <button type="button" id="boardHelpWeightBold" class="board-help-weight-btn" onclick="toggleBoardHelpFontWeight()">굵게</button>
+                                        </div>
+                                    </div>
+                                    <div id="boardHelpEditor" class="board-help-editor" contenteditable="true" data-placeholder="해당 게시판 이용 시 참고할 도움말을 입력하세요."></div>
+                                    <div class="board-help-editor-actions">
+                                        <span class="board-help-editor-hints">
+                                            <span class="board-help-editor-hint"><kbd>Shift+Enter</kbd> 같은 문장 이어쓰기</span>
+                                            <span class="board-help-editor-hint"><kbd>[$상태값]</kbd> 상태 배지로 표시</span>
+                                        </span>
+                                        <div class="board-help-btn-group">
+                                            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="cancelBoardHelpEditor()">취소</button>
+                                            <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="saveBoardHelpEditor()">저장</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="panel flex-1" style="min-height: 500px;">
+                            <!-- 컨트롤 패널 -->
+                            <div class="flex items-center justify-between p-20" style="background: #F8FAFC; border-bottom: 1px solid var(--border-color); gap: 20px;">
+                                <!-- 왼쪽: 관리자 삭제 버튼 -->
+                                <div id="adminListTools" class="hidden">
+                                    <button id="btnDeleteSelected" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger); padding:8px 15px; opacity: 0.5; cursor: not-allowed;" onclick="deleteSelectedPosts()" disabled>
+                                        <svg class="icon"><use href="#icon-trash"></use></svg> 선택 삭제
+                                    </button>
+                                </div>
+
+                                <!-- 우측: 검색 및 신규작성 -->
+                                <div class="flex items-center gap-10 flex-1 justify-end">
+                                    <select id="boardStatusFilter" class="input" style="width: 130px;"></select>
+                                    <select id="boardKnowCategoryFilter" class="input hidden" style="width: 140px;">
+                                        <option value="all">도메인 전체</option>
+                                        <option value="IT">IT 매뉴얼</option>
+                                        <option value="BIZ">업무 매뉴얼</option>
+                                    </select>
+                                    <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input" style="width: 250px;" onkeyup="if(event.key==='Enter') filterBoardList()">
+                                    <button class="btn btn-primary" onclick="filterBoardList()"><svg class="icon"><use href="#icon-search"></use></svg> 조회</button>
+                                    
+                                    <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+                                    
+                                    <button id="listWriteBtn" onclick="switchView('write', currentBoardType)" class="btn btn-outline" style="border-color: var(--ibk-blue); color: var(--ibk-blue);">
+                                        <svg class="icon"><use href="#icon-edit"></use></svg> <span id="listWriteBtnText">신규 접수</span>
+                                    </button>
+                                    <button id="boardToolsMoreBtn" class="btn btn-outline hidden" type="button" onclick="toggleBoardToolsLayer(event)">
+                                        <svg class="icon"><use href="#icon-bars"></use></svg> 도구
+                                    </button>
+                                    <div id="boardToolsLayer" class="board-tools-layer hidden" onclick="event.stopPropagation();">
+                                        <button type="button" class="btn btn-primary" onclick="closeBoardToolsLayer(); filterBoardList();">
+                                            <svg class="icon"><use href="#icon-search"></use></svg> 조회
+                                        </button>
+                                        <button id="boardToolsLayerWriteBtn" type="button" class="btn btn-outline" onclick="closeBoardToolsLayer(); switchView('write', currentBoardType);">
+                                            <svg class="icon"><use href="#icon-edit"></use></svg> <span id="boardToolsLayerWriteText">신규 접수</span>
+                                        </button>
+                                        <button id="boardToolsLayerDeleteBtn" type="button" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="closeBoardToolsLayer(); deleteSelectedPosts();">
+                                            <svg class="icon"><use href="#icon-trash"></use></svg> 선택 삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-wrap">
+                                <table class="table">
+                                    <colgroup>
+                                        <col style="width: 90px;">
+                                        <col style="width: 60px;" id="colCheck" class="hidden">
+                                        <col style="width: 100px;">
+                                        <col style="width: auto;">
+                                        <col style="width: 150px;">
+                                        <col style="width: 180px;">
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>번호</th>
+                                            <th id="thCheck" class="hidden"><input type="checkbox" id="checkAll" class="chk-box" onclick="toggleAllChecks()"></th>
+                                            <th>상태</th><th>제목</th><th>등록자</th><th>등록일시</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="boardGridBody"></tbody>
+                                </table>
+                            </div>
+                            <div id="boardPagination" class="flex items-center justify-between p-20" style="border-top: 1px solid var(--border-color); background:#fff;">
+                                <div class="flex items-center gap-10">
+                                    <select id="boardPageSizeSelect" class="input" style="width: 90px;" onchange="changeBoardPageSize()">
+                                        <option value="10">10개</option>
+                                        <option value="30">30개</option>
+                                        <option value="50">50개</option>
+                                        <option value="100">100개</option>
+                                    </select>
+                                    <div id="boardPageInfo" style="font-size: 13px; color: #64748b;">총 0건</div>
+                                </div>
+                                <div class="flex items-center gap-10">
+                                    <button id="boardPrevBtn" class="btn btn-outline" style="padding:6px 10px;" onclick="changeBoardPage(-1)">이전</button>
+                                    <div id="boardPageNumbers" class="flex items-center gap-5"></div>
+                                    <span id="boardPageCurrent" class="hidden" style="font-size:13px; color:#334155;">1 / 1</span>
+                                    <button id="boardNextBtn" class="btn btn-outline" style="padding:6px 10px;" onclick="changeBoardPage(1)">다음</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 3] 상세보기
+                         ========================================== -->
+                    <div id="view-detail" class="view-section">
+                        <div class="flex justify-between items-center mb-20 border-b border-[var(--border-color)] pb-10">
+                            <h2 class="page-title" style="margin-bottom: 0;">상세 확인</h2>
+                            <button onclick="switchView('list')" class="btn btn-outline" style="padding: 8px 16px;"><svg class="icon"><use href="#icon-chevron-left"></use></svg> 목록으로 돌아가기</button>
+                        </div>
+                        
+                        <div class="flex" style="gap: 24px; align-items: flex-start;">
+                            
+                            <!-- 좌측 영역 -->
+                            <div class="flex-col flex-1" style="gap: 24px; min-width: 0;">
+                                
+                                <!-- 1. 본문 박스 -->
+                                <div class="panel" style="border-top: 4px solid var(--ibk-blue); margin-bottom: 0;" id="dtlTopBorder">
+                                    <div style="padding: 24px; border-bottom: 1px solid #eee;">
+                                        <div class="flex justify-between items-center mb-10">
+                                            <div class="flex items-center gap-10">
+                                                <span id="dtlStatus" class="badge"></span>
+                                                <span id="dtlBoardTypeLabel" class="badge bg-ready"></span>
+                                            </div>
+                                            <!-- 수정/삭제 버튼 -->
+                                            <div id="crudBtns" class="flex gap-10 hidden">
+                                                <button class="btn btn-outline" style="padding: 6px 12px; font-size:12px; border-color:var(--ibk-blue); color:var(--ibk-blue);" onclick="editPost()"><svg class="icon"><use href="#icon-edit"></use></svg> 수정</button>
+                                                <button class="btn btn-outline" style="padding: 6px 12px; font-size:12px; color: var(--danger); border-color: var(--danger);" onclick="deletePost()"><svg class="icon"><use href="#icon-trash"></use></svg> 삭제</button>
+                                            </div>
+                                        </div>
+                                        <h3 id="dtlTitle" style="font-size: 24px; margin-bottom: 10px;"></h3>
+                                        <div style="font-size:12px; color:#64748b; margin-bottom:10px;">게시물 번호: <b id="dtlPostId" style="color:#334155;"></b></div>
+                                        <div class="flex items-center gap-20 text-gray" style="font-size: 13px;">
+                                            <span><svg class="icon"><use href="#icon-user"></use></svg> <span id="dtlWriter"></span></span>
+                                            <span><svg class="icon"><use href="#icon-clock"></use></svg> <span id="dtlTime"></span></span>
+                                            <button type="button" id="dtlEditHistoryBtn" class="btn btn-outline hidden" style="padding:4px 10px; font-size:12px;" onclick="openEditHistoryModal()">
+                                                <svg class="icon"><use href="#icon-history"></use></svg> 수정이력
+                                                <span id="dtlEditHistoryBadge" class="badge bg-error hidden" style="margin-left:6px; padding:1px 6px; font-size:10px;"></span>
+                                            </button>
+                                            <span class="hidden sm:inline-block"><i class="fas fa-network-wired mr-1 text-gray-400"></i><span id="dtlIp"></span></span>
+                                        </div>
+                                    </div>
+                                    <div style="padding: 30px; font-size: 15px; line-height: 1.8;">
+                                        <!-- 메타 정보 영역 -->
+                                        <div id="dtlMetaBox" class="meta-field-group hidden"></div>
+                                        <!-- 본문 내용 출력 -->
+                                        <div id="dtlContent" style="min-height: 100px;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="panel hidden" id="dtlInlineSimilarWrap" style="margin-bottom: 0; border: 1px solid #e2e8f0;">
+                                    <div class="panel-header" style="background:#f8fafc; color:#334155;">
+                                        <span><svg class="icon"><use href="#icon-history"></use></svg> 나와 유사한 질문</span>
+                                    </div>
+                                    <div class="panel-body" id="dtlInlineSimilarList" style="padding: 14px;"></div>
+                                </div>
+
+                                <!-- 1.5 추가정보 입력 폼 -->
+                                <div class="panel hidden" id="addInfoBox" style="border-color: var(--warning); margin-bottom: 0;">
+                                    <div class="panel-header" style="background: #fffbeb; color: #b45309;"><svg class="icon"><use href="#icon-info"></use></svg> 담당자가 추가 정보를 요청했습니다.</div>
+                                    <div class="panel-body">
+                                        <textarea id="addInfoInput" class="input" style="height: 100px; resize: none; margin-bottom: 10px;" placeholder="요청받은 추가 내용을 이곳에 기입해 주세요. (본문 아래에 덧붙여집니다)"></textarea>
+                                        <div class="text-right">
+                                            <button class="btn btn-primary" style="background: var(--warning); border-color: var(--warning);" onclick="submitAddInfo()">추가 정보 등록</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. AI 분석 창 -->
+                                <div class="panel hidden" id="dtlAiWrap" style="border: 1px solid var(--ibk-light); margin-bottom: 0;">
+                                    <div class="panel-header ai-panel-head-row" style="background: var(--ibk-light); color: #fff;">
+                                        <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
+                                        <div class="ai-header-right">
+                                        <button id="btnAiReplyHistory" type="button" class="btn btn-outline" style="padding:5px 10px; border-color: rgba(255,255,255,0.7); color:#fff; background: rgba(255,255,255,0.08);" onclick="openAiReplyHistoryModal();">
+                                            <svg class="icon"><use href="#icon-history"></use></svg> 이력보기
+                                        </button>
+                                            <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
+                                                <button id="btnRefreshAiReply" type="button" class="btn btn-outline" onclick="refreshCurrentPostAiReply();"><svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성</button>
+                                                <button id="btnConvertAiSolved" type="button" class="btn btn-outline" onclick="convertPostToAiSolved();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="aiPanelContent" style="padding: 24px; background: #f0f9ff; font-size: 14px; line-height: 1.6;"></div>
+                                </div>
+
+                                <!-- 3. 담당자 답변 폼 -->
+                                <div class="panel hidden" id="answerFormBox" style="border-top: 2px solid var(--ibk-blue); margin-bottom: 0;">
+                                    <div class="panel-header" style="color: var(--ibk-blue);">담당자 공식 답변 등록</div>
+                                    <div style="padding: 15px 20px; background: #fffbeb; border-bottom: 1px solid #fef3c7; font-size: 13px; color: #92400e;">
+                                        템플릿 (클릭 시 자동 삽입): 
+                                        <div id="quickReplyChips" class="flex" style="gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
+                                    </div>
+                                    <div style="padding: 20px;">
+                                        <div class="editor-shell">
+                                        <div class="editor-toolbar">
+                                            <select onchange="changeFontSize(this.value, 'answerInput')" class="editor-select">
+                                                <option value="">크기</option>
+                                                <option value="10pt">10pt</option><option value="12pt">12pt</option><option value="14pt">14pt</option>
+                                                <option value="18pt">18pt</option><option value="24pt">24pt</option><option value="36pt">36pt</option>
+                                            </select>
+                                            <select onchange="formatDoc('fontName', this.value, 'answerInput')" class="editor-select">
+                                                <option value="">글꼴</option>
+                                                <option value="'Malgun Gothic'">맑은 고딕</option><option value="'Dotum'">돋움</option><option value="'Batang'">바탕</option>
+                                            </select>
+                                            <span class="editor-divider"></span>
+                                            <button type="button" class="editor-btn font-bold" data-cmd="bold" onmousedown="event.preventDefault(); formatDoc('bold', null, 'answerInput');">B</button>
+                                            <button type="button" class="editor-btn italic" data-cmd="italic" onmousedown="event.preventDefault(); formatDoc('italic', null, 'answerInput');">I</button>
+                                            <button type="button" class="editor-btn underline" data-cmd="underline" onmousedown="event.preventDefault(); formatDoc('underline', null, 'answerInput');">U</button>
+                                            <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('insertUnorderedList', null, 'answerInput');">• 목록</button>
+                                            <button type="button" class="editor-btn" onmousedown="event.preventDefault(); insertLink('answerInput');">링크</button>
+                                            <span class="editor-divider"></span>
+                                            <span style="font-size: 12px; margin-right: 2px; font-weight: bold; color: #666;">글자색</span>
+                                            <div class="color-picker-wrap">
+                                                <div style="width:16px; height:16px; background:#000; border-radius:2px;"></div>
+                                                <input type="color" onchange="formatDoc('foreColor', this.value, 'answerInput'); this.previousElementSibling.style.background=this.value;">
+                                            </div>
+                                            <span style="font-size: 12px; margin-left: 5px; margin-right: 2px; font-weight: bold; color: #666;">배경색</span>
+                                            <div class="color-picker-wrap">
+                                                <div style="width:16px; height:16px; background:#ff0; border-radius:2px; border:1px solid #ccc;"></div>
+                                                <input type="color" value="#ffff00" onchange="formatDoc('hiliteColor', this.value, 'answerInput'); this.previousElementSibling.style.background=this.value;">
+                                            </div>
+                                            <span class="editor-divider"></span>
+                                            <button type="button" class="editor-btn" style="color: var(--ibk-blue);" onmousedown="event.preventDefault(); insertOfflineMedia('image', 'answerInput')"><svg class="icon"><use href="#icon-image"></use></svg> 이미지</button>
+                                            <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('undo', null, 'answerInput')">되돌리기</button>
+                                            <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('redo', null, 'answerInput')">다시하기</button>
+                                            <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('removeFormat', null, 'answerInput')">서식초기화</button>
+                                        </div>
+                                        <div id="answerInput" class="editor-content" contenteditable="true" style="min-height:150px;"><p><br></p></div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center mt-20">
+                                            <div class="flex items-center gap-10">
+                                                <span style="font-weight: bold; color: #444;">상태 변경:</span>
+                                                <label><input type="radio" name="ansStatus" value="done" checked> 답변 완료</label>
+                                                <label><input type="radio" name="ansStatus" value="moreInfo"> 추가정보 요청</label>
+                                            </div>
+                                            <button class="btn btn-primary" onclick="submitAnswer()">답변 등록</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3.5 AI 지식베이스 상태 변경(IT 관리자 전용) -->
+                                <div class="panel hidden know-status-box" id="knowStatusBox" style="margin-bottom: 0;">
+                                    <div class="panel-header" style="color:#4338ca;">AI 지식베이스 상태 관리 (IT 관리자)</div>
+                                    <div class="panel-body">
+                                        <div class="flex items-center gap-10 mb-20">
+                                            <span style="font-weight:bold; color:#334155;">상태</span>
+                                            <select id="knowStatusSelect" class="input" style="max-width: 180px;" onchange="toggleKnowErrorMemo()">
+                                                <option value="approved">승인</option>
+                                                <option value="pending">미승인</option>
+                                                <option value="rejected">불승인</option>
+                                            </select>
+                                        </div>
+                                        <div id="knowErrorMemoWrap" class="hidden">
+                                            <label class="font-bold mb-10" style="display:block;">불승인 관리자 의견</label>
+                                            <textarea id="knowErrorMemoInput" class="input" style="height: 100px; resize: none;" placeholder="불승인 사유 또는 검토 의견을 입력하세요."></textarea>
+                                        </div>
+                                        <div class="text-right mt-20">
+                                            <button class="btn btn-primary" style="background:#4f46e5; border-color:#4f46e5;" onclick="saveKnowStatus()">상태 저장</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. 완료된 담당자 답변 / 추가 요청 내역 -->
+                                <details class="panel hidden" id="completedAnswerWrap" open style="border-top: 4px solid var(--success); margin-bottom: 0;">
+                                    <summary style="padding: 20px; background: #ecfdf5; color: var(--success); font-weight: bold; font-size: 16px; border-bottom: 1px solid #d1fae5;" class="flex justify-between items-center">
+                                        <span><svg class="icon"><use href="#icon-check"></use></svg> 공식 답변 및 조치 결과</span>
+                                        <svg class="icon rotate-icon"><use href="#icon-chevron-down"></use></svg>
+                                    </summary>
+                                    <div id="dtlAnswerText" style="padding: 30px; font-size: 15px; line-height: 1.6;"></div>
+                                </details>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 4] 글쓰기 / 수정 
+                         ========================================== -->
+                    <div id="view-write" class="view-section max-w-[1200px]">
+                        <h2 class="page-title" id="writePageTitle">문의 접수</h2>
+                        
+                        <div class="panel p-20" style="padding: 40px;">
+                            <input type="hidden" id="editPostId">
+                            
+                            <div style="margin-bottom: 30px;" id="writeCategoryArea">
+                                <label style="font-weight: bold; margin-bottom: 15px; display: block;" id="writeCategoryLabel">게시판 선택</label>
+                                <div class="write-category-grid" id="writeCategoryButtons"></div>
+                            </div>
+
+                            <div style="margin-bottom: 30px;" class="write-section-card">
+                                <label style="font-weight: bold; margin-bottom: 10px; display: block;" id="lblWriteTitle">제목 <span style="color:var(--danger)">*</span></label>
+                                <input type="text" id="writeTitle" class="input" placeholder="제목을 입력하세요.">
+                            </div>
+
+                            <div id="writeDynamicFields" class="flex-col gap-20" style="margin-bottom: 30px;">
+                                <div id="field-know-qa" class="hidden flex-col gap-10 know-form-shell">
+                                    <div class="know-rag-banner">
+                                        <div class="know-rag-title"><svg class="icon"><use href="#icon-brain"></use></svg> AI 지식 베이스</div>
+                                        <div class="know-rag-sub">RAG 학습 데이터로 사용됩니다. 요약·키워드·출처를 함께 입력하면 검색 정확도가 높아집니다.</div>
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">학습분류 도메인 <span style="color:var(--danger)">*</span></label>
+                                        <select id="writeKnowDomain" class="input">
+                                            <option value="">도메인 선택</option>
+                                            <option value="IT">IT 매뉴얼</option>
+                                            <option value="BIZ">업무 매뉴얼</option>
+                                        </select>
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">검색 키워드 (쉼표로 구분)</label>
+                                        <input type="text" id="writeKnowKeywords" class="input" placeholder="예: 오류코드, 메뉴명, 업무용어, 약어">
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">출처 / 근거 링크</label>
+                                        <input type="text" id="writeKnowSource" class="input" placeholder="예: 매뉴얼 문서명, URL, 공지 번호">
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">질문 (Q) <span style="color:var(--danger)">*</span></label>
+                                        <input type="text" id="writeKnowQuestion" class="input" placeholder="질문 내용을 입력하세요.">
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">요약 (1~3문장)</label>
+                                        <textarea id="writeKnowSummary" class="input" style="height: 70px; resize: vertical;" placeholder="RAG 검색/학습에 유리하도록 핵심만 요약해 주세요."></textarea>
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">답변 (A) <span style="color:var(--danger)">*</span></label>
+                                        <textarea id="writeKnowAnswer" class="input" style="height: 120px; resize: vertical;" placeholder="지식 답변 내용을 입력하세요."></textarea>
+                                    </div>
+                                    <div class="know-form-item">
+                                        <label class="font-bold mb-10" style="display:block;">추가 의견 / 별첨 내용</label>
+                                        <textarea id="writeKnowMemo" class="input" style="height: 90px; resize: vertical;" placeholder="의견 또는 별첨 설명을 입력하세요."></textarea>
+                                    </div>
+                                </div>
+                                <div id="field-gid" class="hidden flex-col">
+                                    <label class="font-bold mb-10">표준글로벌ID</label>
+                                    <input type="text" id="writeGid" class="input" placeholder="예: GID2026ABC123" oninput="this.value = normalizeGlobalId(this.value)">
+                                </div>
+                                <div id="field-cust" class="hidden flex-col">
+                                    <label class="font-bold mb-10">고객정보유형</label>
+                                    <div class="flex gap-10">
+                                        <select id="writeCustType" class="input" style="width: 150px;" onchange="changeCustType()">
+                                            <option value="">선택안함</option>
+                                            <option value="CUST">고객번호</option>
+                                            <option value="ACCT">계좌번호</option>
+                                            <option value="APPR">품의번호</option>
+                                        </select>
+                                        <input type="text" id="writeCustVal1" class="input flex-1" placeholder="유형을 선택하세요" disabled>
+                                        <input type="text" id="writeCustVal2" class="input flex-1 hidden" placeholder="품의일련번호 (7자리)">
+                                    </div>
+                                </div>
+                                <div id="field-err" class="hidden flex-col">
+                                    <label class="font-bold mb-10">오류 정보</label>
+                                    <input type="text" id="writeErrCode" class="input mb-10" style="width: 200px;" placeholder="오류코드 (최대 12자리)" maxlength="12">
+                                    <textarea id="writeErrMsg" class="input" style="height: 80px; resize: none;" placeholder="오류내용 (최대 1000자리)" maxlength="1000"></textarea>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 30px;" class="write-section-card">
+                                <div class="write-section-title">첨부파일</div>
+                                <input type="file" id="writeAttachments" class="input" multiple onchange="handleWriteAttachments(this.files)">
+                                <div id="writeAttachmentList" style="margin-top: 10px; font-size: 12px; color: #475569;">첨부된 파일이 없습니다.</div>
+                            </div>
+
+                            <div style="margin-bottom: 40px;">
+                                <label style="font-weight: bold; margin-bottom: 10px; display: block;" id="lblWriteContent">상세 내용 (이미지 임베딩 지원) <span style="color:var(--danger)">*</span></label>
+                                <div class="editor-shell">
+                                <div class="editor-toolbar" id="mainEditorToolbar">
+                                    <select onchange="changeFontSize(this.value, 'writeContent')" class="editor-select">
+                                        <option value="">크기</option>
+                                        <option value="10pt">10pt</option><option value="12pt">12pt</option><option value="14pt">14pt</option>
+                                        <option value="18pt">18pt</option><option value="24pt">24pt</option><option value="36pt">36pt</option>
+                                    </select>
+                                    <select onchange="formatDoc('fontName', this.value, 'writeContent')" class="editor-select">
+                                        <option value="">글꼴</option>
+                                        <option value="'Malgun Gothic'">맑은 고딕</option><option value="'Dotum'">돋움</option><option value="'Batang'">바탕</option>
+                                    </select>
+                                    <span class="editor-divider"></span>
+                                    <button type="button" class="editor-btn font-bold" data-cmd="bold" onmousedown="event.preventDefault(); formatDoc('bold', null, 'writeContent');">B</button>
+                                    <button type="button" class="editor-btn italic" data-cmd="italic" onmousedown="event.preventDefault(); formatDoc('italic', null, 'writeContent');">I</button>
+                                    <button type="button" class="editor-btn underline" data-cmd="underline" onmousedown="event.preventDefault(); formatDoc('underline', null, 'writeContent');">U</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('insertUnorderedList', null, 'writeContent')">• 목록</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('insertOrderedList', null, 'writeContent')">1. 목록</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); insertLink('writeContent');">링크</button>
+                                    <span class="editor-divider"></span>
+                                    
+                                    <span style="font-size: 12px; margin-right: 2px; font-weight: bold; color: #666;">글자색</span>
+                                    <div class="color-picker-wrap">
+                                        <div style="width:16px; height:16px; background:#000; border-radius:2px;"></div>
+                                        <input type="color" onchange="formatDoc('foreColor', this.value, 'writeContent'); this.previousElementSibling.style.background=this.value;">
+                                    </div>
+                                    <span style="font-size: 12px; margin-left: 5px; margin-right: 2px; font-weight: bold; color: #666;">배경색</span>
+                                    <div class="color-picker-wrap">
+                                        <div style="width:16px; height:16px; background:#ff0; border-radius:2px; border:1px solid #ccc;"></div>
+                                        <input type="color" value="#ffff00" onchange="formatDoc('hiliteColor', this.value, 'writeContent'); this.previousElementSibling.style.background=this.value;">
+                                    </div>
+                                    <span class="editor-divider"></span>
+                                    <button type="button" class="editor-btn" style="color: var(--ibk-blue);" onmousedown="event.preventDefault(); insertOfflineMedia('image', 'writeContent')"><svg class="icon"><use href="#icon-image"></use></svg> 이미지 첨부</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('undo', null, 'writeContent')">되돌리기</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('redo', null, 'writeContent')">다시하기</button>
+                                    <button type="button" class="editor-btn" onmousedown="event.preventDefault(); formatDoc('removeFormat', null, 'writeContent')">서식초기화</button>
+                                </div>
+                                <div class="editor-content" id="writeContent" contenteditable="true"><p><br></p></div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center gap-20" style="border-top: 1px solid #eee; padding-top: 30px;">
+                                <button class="btn btn-outline" style="width: 150px;" onclick="switchView('list')">작성 취소</button>
+                                <button class="btn btn-primary" style="width: 150px;" onclick="triggerSubmit()" id="btnSubmitForm">등록 완료</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         [뷰 5] 설정
+                         ========================================== -->
+                    <div id="view-settings" class="view-section max-w-1000">
+                        <h2 class="page-title">환경 설정</h2>
+                        <div class="panel p-20">
+                            <div class="panel-header" style="border:none; padding:0 0 20px 0;">알림 수신 설정</div>
+                            <div class="flex-col gap-15">
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">1) 알림 설정 여부</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyMasterMode" value="allow">
+                                        <span>전체 알림 허용 (기본값)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyMasterMode" value="block">
+                                        <span>전체 알림 차단 (알림센터에는 기록)</span>
+                                    </label>
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">2) 중요도 선택 수신</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyLevelMode" value="all">
+                                        <span>모든 알림 받기</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyLevelMode" value="important">
+                                        <span>중요 알림만 받기</span>
+                                    </label>
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">3) 알림 수신 시간대</div>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="all">
+                                        <span>24시간 (전체)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="work">
+                                        <span>업무시간 (09:00 ~ 18:00)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="night">
+                                        <span>야간시간 (18:00 ~ 09:00)</span>
+                                    </label>
+                                    <label class="theme-mode-item">
+                                        <input type="radio" name="notifyTimeMode" value="custom">
+                                        <span>시작시간 ~ 종료시간 (수기입력)</span>
+                                    </label>
+                                    <div class="flex items-center gap-10 notification-time-range">
+                                        <input id="setNotifyTimeStart" type="time" class="input" value="09:00">
+                                        <span>~</span>
+                                        <input id="setNotifyTimeEnd" type="time" class="input" value="18:00">
+                                    </div>
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">4) 특정 키워드 알림 제외 목록</div>
+                                    <input id="setNotifyExcludeKeywords" type="text" class="input" placeholder="예: 점검, 테스트, 홍보 (쉼표로 구분)">
+                                </div>
+                                <div class="notification-policy-box">
+                                    <div class="notification-policy-title">5) 특정 키워드 알림 허용 목록</div>
+                                    <input id="setNotifyIncludeKeywords" type="text" class="input" placeholder="예: 장애, 오류, 긴급 (쉼표로 구분)">
+                                </div>
+                            </div>
+                            <p style="font-size:12px; color:#64748b; margin:8px 0 0 0;">
+                                알림센터에는 모든 알림이 기록됩니다. 위 설정은 사용자에게 표시되는 알림(토스트/OS 알림)만 제어합니다.
+                            </p>
+                            <div class="panel-header" style="border:none; padding:20px 0 12px 0;">테마 모드</div>
+                            <div class="flex-col gap-10">
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="themeMode" value="light">
+                                    <span>라이트 모드</span>
+                                </label>
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="themeMode" value="dark">
+                                    <span>다크 모드</span>
+                                </label>
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="themeMode" value="system">
+                                    <span>시스템 모드 (운영체제 설정 따름)</span>
+                                </label>
+                            </div>
+                            <div class="panel-header" style="border:none; padding:20px 0 12px 0;">초기 화면 설정</div>
+                            <div class="flex-col gap-10">
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="initialView" value="ai-search">
+                                    <span>AI채팅 (기본)</span>
+                                </label>
+                                <label class="theme-mode-item">
+                                    <input type="radio" name="initialView" value="dashboard">
+                                    <span>대시보드</span>
+                                </label>
+                            </div>
+                            <div class="text-right mt-20" style="border-top: 1px solid #eee; padding-top: 20px;">
+                                <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
+                            </div>
+                        </div>
+                        <div class="panel p-20" style="margin-top: 4px; border-color: #fecaca; background: linear-gradient(180deg, #fff, #fff7f7);">
+                            <div class="panel-header" style="border:none; padding:0 0 14px 0; color:#b91c1c;">DB초기화(테스트 전용 설정)</div>
+                            <p style="font-size: 13px; color: #7f1d1d; line-height: 1.5; margin-bottom: 14px;">
+                                서버 테스트 DB(게시물/설정/회원/도움말)를 초기화합니다. 실행 후 로그인 화면으로 이동합니다.
+                            </p>
+                            <div class="text-right">
+                                <button class="btn btn-outline" style="color:#b91c1c; border-color:#fca5a5; background:#fff;" onclick="confirmResetTestDatabase()">
+                                    테스트 DB 초기화
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="view-admin-settings" class="view-section admin-settings-page">
+                        <div class="admin-settings-hero">
+                            <div class="admin-settings-hero-icon"><svg class="icon icon-xl" style="color:#e0f2fe;"><use href="#icon-admin-settings"></use></svg></div>
+                            <div>
+                                <h2 class="admin-settings-title">관리자 설정</h2>
+                                <p class="admin-settings-sub">플랫폼 관리자 전용입니다. <strong>AI 설정</strong> 탭에서 프롬프트·생성 옵션을, <strong>권한 설정</strong> 탭에서 계정별 플랫폼 관리자 권한을 지정합니다. (업무 역할 영업점·본부·IT와 별개입니다.)</p>
+                            </div>
+                        </div>
+
+                        <div class="admin-main-tab-row" id="adminSettingsMainTabs">
+                            <button type="button" class="admin-main-tab-btn btn btn-primary" data-admin-tab="ai">AI 설정</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="logs">AI API 로그</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="perms">권한 설정</button>
+                        </div>
+
+                        <div id="admin-settings-panel-ai" class="admin-settings-tab-panel">
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge">CHAT</span>
+                                <h3 class="admin-settings-card-title">AI 채팅</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('chat')">도움말</button>
+                            </div>
+                            <p class="admin-settings-hint">저장된 값이 비어 있으면 기본 시스템 프롬프트가 그대로 사용됩니다.</p>
+                            <div class="admin-default-block">
+                                <div class="admin-default-label">기본(Default) 시스템 프롬프트</div>
+                                <pre class="admin-default-pre" id="admin-default-chat"></pre>
+                            </div>
+                            <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                            <textarea id="adminAi-chat-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                            <div class="admin-gen-grid">
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">Temperature</label>
+                                    <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
+                                    <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
+                                </div>
+                                <div class="admin-settings-subhint">Temperature가 높을수록 답변이 다양해지고, 낮을수록 일관성이 높아집니다.</div>
+                                <div class="admin-gen-row">
+                                    <label class="admin-gen-label">Top-P</label>
+                                    <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
+                                    <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
+                                </div>
+                                <div class="admin-settings-subhint">Top-P는 선택 후보 범위를 조절합니다. Temperature와 함께 미세 조정해 주세요.</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge admin-settings-badge-violet">POST</span>
+                                <h3 class="admin-settings-card-title">AI 답변 (게시물)</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('post')">도움말</button>
+                            </div>
+                            <p class="admin-settings-hint">게시판 유형별로 시스템 프롬프트와 Temperature·Top-P를 지정합니다.</p>
+                            <div class="admin-tab-row" id="adminAi-post-tabs">
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="IT">IT / 오류</button>
+                                <button type="button" class="admin-tab-btn btn btn-outline" data-board="BIZ">규정·상품</button>
+                            </div>
+                            <div id="adminAi-post-panels">
+                                <div class="admin-ai-post-panel" data-board="IT">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — IT</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-IT"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-IT-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
+                                        </div>
+                                        <div class="admin-settings-subhint">Temperature가 높을수록 문장 다양성이 올라가고, 낮을수록 사실 중심의 답변이 안정적입니다.</div>
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
+                                        </div>
+                                        <div class="admin-settings-subhint">Top-P는 답변 후보 폭을 조절합니다. 낮추면 보수적, 높이면 표현 범위가 넓어집니다.</div>
+                                    </div>
+                                </div>
+                                <div class="admin-ai-post-panel hidden" data-board="BIZ">
+                                    <div class="admin-default-block">
+                                        <div class="admin-default-label">기본(Default) — BIZ</div>
+                                        <pre class="admin-default-pre" id="admin-default-post-BIZ"></pre>
+                                    </div>
+                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-post-BIZ-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                    <div class="admin-gen-grid">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Temperature</label>
+                                            <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
+                                        </div>
+                                        <div class="admin-settings-subhint">Temperature가 높으면 설명형 문장이 자연스러워지고, 낮으면 규정형 답변의 일관성이 높아집니다.</div>
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label">Top-P</label>
+                                            <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
+                                            <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
+                                        </div>
+                                        <div class="admin-settings-subhint">Top-P는 단어 선택 폭 제어값입니다. 규정/상품 안내는 0.8~0.95 범위에서 시작하는 것을 권장합니다.</div>
+                                    </div>
+                                </div>
+                                <!-- SYS/KNOW는 AI 답변 기능을 사용하지 않으므로 설정에서 제외 -->
+                            </div>
+                        </div>
+
+                        <div class="admin-settings-card">
+                            <div class="admin-settings-card-head">
+                                <span class="admin-settings-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">RUNTIME</span>
+                                <h3 class="admin-settings-card-title">토큰/이어쓰기 설정</h3>
+                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('runtime')">도움말</button>
+                            </div>
+                            <p class="admin-settings-hint">AI채팅과 AI답변(게시물)을 각각 설정할 수 있습니다. 입력이 비어 있으면 기본값 수치를 자동 적용합니다.</p>
+                            <div class="admin-runtime-grid">
+                                <div class="admin-runtime-card">
+                                    <div class="admin-runtime-card-title">AI채팅</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">채팅 최대 토큰</label>
+                                        <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">한 번의 채팅 응답 길이 제한입니다. 낮으면 답변이 중간에 끊길 수 있습니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
+                                        <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">응답이 잘릴 때 자동으로 이어쓰기하는 최대 횟수입니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
+                                        <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용" data-ms-human-target="adminAi-runtime-chatMaxContinuationRuntimeMs-human">
+                                        <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">이어쓰기 전체 동작 시간 제한입니다. 초과 시 안전하게 종료됩니다.</div>
+                                    <div id="adminAi-runtime-chatMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
+                                </div>
+
+                                <div class="admin-runtime-card">
+                                    <div class="admin-runtime-card-title">AI답변 (게시물)</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">게시물 최대 토큰</label>
+                                        <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">게시판 답변(IT/규정) 1회 생성 길이 제한입니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
+                                        <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">게시물 답변이 길어 잘렸을 때 자동 이어쓰기 최대 횟수입니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
+                                        <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용" data-ms-human-target="adminAi-runtime-postMaxContinuationRuntimeMs-human">
+                                        <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">게시물 이어쓰기 전체 동작 시간 제한입니다.</div>
+                                    <div id="adminAi-runtime-postMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
+                                </div>
+
+                                <div class="admin-runtime-card">
+                                    <div class="admin-runtime-card-title">RAG 관련 설정</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">RAG 최대 후보 수</label>
+                                        <input type="number" id="adminAi-runtime-ragMaxCandidates" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-ragMaxCandidates-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">프롬프트에 포함할 RAG 지식 최대 개수입니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">RAG 최소 토큰 일치 수</label>
+                                        <input type="number" id="adminAi-runtime-ragMinOverlapTokens" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-ragMinOverlapTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">질문과 겹치는 토큰 수가 이 값 이상일 때만 후보로 인정합니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">RAG 최소 점수</label>
+                                        <input type="number" id="adminAi-runtime-ragMinScore" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-ragMinScore-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">RAG 상대 컷오프(%)</label>
+                                        <input type="number" id="adminAi-runtime-ragRelativeCutoffPct" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                        <span id="adminAi-runtime-ragRelativeCutoffPct-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">최고 점수 대비 낮은 꼬리 후보를 제거하는 비율입니다.</div>
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label">RAG 키워드 금칙어 목록</label>
+                                        <textarea id="adminAi-runtime-ragKeywordBlocklist" class="input" style="min-height:84px; resize:vertical;" placeholder="쉼표 또는 줄바꿈으로 구분해 입력"></textarea>
+                                        <span id="adminAi-runtime-ragKeywordBlocklist-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    </div>
+                                    <div class="admin-settings-subhint">RAG 학습 키워드에서 제외할 의미 없는 표현/꾸밈말 목록입니다. (예: 대해, 설명해줘)</div>
+                                    <div class="admin-settings-actions" style="justify-content:flex-start; gap:8px; margin-top:8px;">
+                                        <button type="button" class="btn btn-outline" onclick="exportAdminRagKeywordBlocklist()">금칙어 내보내기</button>
+                                        <button type="button" class="btn btn-outline" onclick="importAdminRagKeywordBlocklist()">금칙어 가져오기</button>
+                                        <input id="adminAi-ragKeywordImportInput" type="file" accept=".txt,.csv,.json" style="display:none;" onchange="handleAdminRagKeywordImport(event)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-settings-actions">
+                            <button type="button" class="btn btn-outline" onclick="resetAdminAiSettingsToDefault()">초기설정으로 되돌리기</button>
+                            <button type="button" class="btn btn-outline" onclick="openAdminAiSettingsHistoryModal()">설정 변경 이력</button>
+                            <button type="button" class="btn btn-primary" onclick="saveAdminAiSettingsToServer()">설정 저장</button>
+                        </div>
+                        </div>
+
+                        <div id="admin-settings-panel-perms" class="admin-settings-tab-panel hidden">
+                            <div class="admin-settings-card">
+                                <div class="admin-settings-card-head">
+                                    <span class="admin-settings-badge admin-settings-badge-violet">ACL</span>
+                                    <h3 class="admin-settings-card-title">플랫폼 관리자 권한</h3>
+                                </div>
+                                <p class="admin-settings-hint">테스트용 회원(직원번호)별로 이 앱의 <strong>관리자 설정</strong> 접근·저장 권한을 켜거나 끕니다. IT 업무 역할(게시판 답변 등)과는 별도입니다.</p>
+                                <div id="adminPermissionsMount"></div>
+                                <div class="admin-settings-actions">
+                                    <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveAdminPermissionsToServer()">권한 저장</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="admin-settings-panel-logs" class="admin-settings-tab-panel hidden">
+                            <div class="admin-settings-card">
+                                <div class="admin-settings-card-head">
+                                    <span class="admin-settings-badge" style="background:linear-gradient(90deg,#0ea5e9,#0284c7);">LOG</span>
+                                    <h3 class="admin-settings-card-title">AI API 통신 로그</h3>
+                                </div>
+                                <p class="admin-settings-hint">AI 요청/응답 기록을 페이지별로 확인할 수 있습니다. 목록을 클릭하면 프롬프트, 설정값, 응답 결과를 상세하게 볼 수 있습니다.</p>
+                                <div class="admin-settings-actions" style="justify-content:space-between; margin-bottom:10px;">
+                                    <button type="button" class="btn btn-outline" onclick="loadAdminAiApiLogsView()">새로고침</button>
+                                    <button type="button" class="btn btn-outline" style="color:#b91c1c; border-color:#fca5a5;" onclick="clearAdminAiApiLogs()">로그 전체 삭제</button>
+                                </div>
+                                <div id="adminAiApiLogsSummary" class="admin-settings-hint" style="margin-bottom:10px;">요청 기록: 0건</div>
+                                <div id="adminAiApiLogsList" class="admin-ai-logs-list-wrap"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </main> <!-- main-area 끝 -->
+
+                <!-- 푸터 (메인 스크롤 영역 하단 고정) -->
+                <footer class="footer-dark">
+                    <div class="engraved-logo">IBK KNOCK</div>
+                    <div>
+                        <p class="font-bold text-gray-400 mb-1">IBK 스마트 업무지식센터</p>
+                        <p>Copyright © Industrial Bank of Korea. All rights reserved.</p>
+                    </div>
+                </footer>
+
+            </div> <!-- main-area-wrapper 끝 -->
+        </div>
+    </div>

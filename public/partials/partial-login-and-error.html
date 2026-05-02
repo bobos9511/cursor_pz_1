@@ -1,0 +1,70 @@
+    <!-- ==========================================
+         [로그인 페이지]
+         ========================================== -->
+    <div id="loginPage">
+        <div class="login-bg"></div>
+        <div class="login-box">
+            <div class="text-center mb-20">
+                <div class="font-bold login-brand-title" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기">IBK KN<span class="login-brand-point">O</span>CK</div>
+                <p class="login-brand-subtitle">IBK 스마트 업무지식센터</p>
+            </div>
+            
+            <form onsubmit="event.preventDefault(); doLogin();" class="flex-col gap-20">
+                <div>
+                    <label class="font-bold" style="display: block; margin-bottom: 8px; color:#666;">직원번호</label>
+                    <div class="relative flex items-center">
+                        <svg class="icon absolute" style="left: 12px; color: #999;"><use href="#icon-user"></use></svg>
+                        <input type="text" id="loginEmpNo" class="input" style="padding-left: 36px; padding-top: 12px; padding-bottom: 12px;" placeholder="직원번호 6자리 입력" value="123456" maxlength="6" inputmode="numeric" oninput="formatEmployeeNoInput()" onblur="padEmployeeNo()">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-bold" style="display: block; margin-bottom: 8px; color:#666;">인증 수단</label>
+                    <div class="flex gap-10">
+                        <label class="flex-1 relative">
+                            <input type="radio" name="auth" value="pwd" class="auth-radio" checked onchange="changeAuthType('pwd')">
+                            <span class="auth-label">비밀번호</span>
+                        </label>
+                        <label class="flex-1 relative">
+                            <input type="radio" name="auth" value="motp" class="auth-radio" onchange="changeAuthType('motp')">
+                            <span class="auth-label">MOTP</span>
+                        </label>
+                        <label class="flex-1 relative">
+                            <input type="radio" name="auth" value="vein" class="auth-radio" onchange="changeAuthType('vein')">
+                            <span class="auth-label">지정맥</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="relative flex items-center">
+                        <svg class="icon absolute" id="authIcon" style="left: 12px; color: #999;"><use href="#icon-lock"></use></svg>
+                        <input type="password" id="authInput" class="input" style="padding-left: 36px; padding-top: 12px; padding-bottom: 12px;" placeholder="비밀번호 입력">
+                    </div>
+                </div>
+
+                <div class="mt-20">
+                    <button type="submit" class="btn btn-primary w-full" style="padding: 14px; font-size: 15px;">로그인</button>
+                </div>
+                
+                <div class="flex items-center" style="margin: 5px 0;">
+                    <div class="flex-1" style="border-top: 1px solid #eee;"></div>
+                    <span style="padding: 0 15px; color: #999; font-size: 12px;">또는</span>
+                    <div class="flex-1" style="border-top: 1px solid #eee;"></div>
+                </div>
+
+                <button type="button" id="loginSsoBtn" onclick="doLogin()" class="btn w-full" style="border: 2px solid var(--ibk-blue); color: var(--ibk-blue); background: #fff; padding: 14px; font-size: 15px;">통합인증 (SSO) 자동 로그인</button>
+            </form>
+        </div>
+    </div>
+    <div id="serverErrorPage" class="server-error-page hidden" aria-live="polite">
+        <div class="server-error-card">
+            <div class="server-error-title">서버 연결 오류</div>
+            <div id="serverErrorMessage" class="server-error-message">일시적인 서버 오류가 발생했습니다.</div>
+            <div id="serverErrorStatus" class="server-error-status">오류 코드: -</div>
+            <div class="server-error-actions">
+                <button type="button" class="btn btn-primary" onclick="retryServerRecovery()">지금 다시 확인</button>
+            </div>
+            <div class="server-error-hint">서버 상태를 주기적으로 확인 중이며, 정상화되면 자동 새로고침됩니다.</div>
+        </div>
+    </div>

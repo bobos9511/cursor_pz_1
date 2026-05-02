@@ -1,0 +1,199 @@
+    <!-- 지정맥 모달 -->
+    <div id="veinModal" class="modal-overlay" style="z-index: 110;">
+        <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <div class="modal-header">
+                <h3 style="font-size:17px;">안내</h3>
+                <button class="btn-icon" onclick="cancelVein()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <h3 class="vein-title" style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">지정맥 인증</h3>
+                <p class="vein-guide-text" style="margin-bottom: 25px;">단말기에 손가락을 올려주세요.</p>
+                <div class="vein-fingerprint-btn" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기" style="padding: 30px; border-radius: 50%; width: 120px; height: 120px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <svg class="icon icon-xl"><use href="#icon-fingerprint"></use></svg>
+                </div>
+                <div class="flex">
+                    <button class="btn btn-outline w-full" onclick="cancelVein()">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 테스트용 회원가입 모달 -->
+    <div id="signupModal" class="modal-overlay" style="z-index: 120;">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="signup-modal-title" style="font-size:18px;">테스트용 회원가입</h3>
+                <button class="btn-icon" onclick="closeSignupModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitSignup();" class="modal-body flex-col gap-10">
+                <input type="hidden" id="signupOriginalEmpNo" value="">
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">이름</label>
+                    <input type="text" id="signupName" class="input" placeholder="이름 입력">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직원번호</label>
+                    <input type="text" id="signupEmpNo" class="input" placeholder="직원번호 6자리" maxlength="6" inputmode="numeric" oninput="formatSignupEmpNoInput()" onblur="padSignupEmpNo()">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">부서명</label>
+                    <input type="text" id="signupDeptName" class="input" placeholder="부서명 입력">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">부서코드</label>
+                    <input type="text" id="signupDeptCode" class="input" placeholder="부서코드 4자리" maxlength="4" inputmode="numeric" oninput="formatDeptCodeInput()" onblur="padDeptCodeInput()">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직급</label>
+                    <select id="signupGrade" class="input">
+                        <option value="1급">1급</option>
+                        <option value="2급">2급</option>
+                        <option value="3급">3급</option>
+                        <option value="4급">4급</option>
+                        <option value="5급">5급</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직책</label>
+                    <select id="signupPosition" class="input">
+                        <option value="은행장">은행장</option>
+                        <option value="전무이사">전무이사</option>
+                        <option value="부행장">부행장</option>
+                        <option value="센터장">센터장</option>
+                        <option value="부장">부장</option>
+                        <option value="팀장">팀장</option>
+                        <option value="차장">차장</option>
+                        <option value="과장">과장</option>
+                        <option value="대리">대리</option>
+                        <option value="계장">계장</option>
+                        <option value="수습행원">수습행원</option>
+                        <option value="인턴">인턴</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">권한</label>
+                    <select id="signupRole" class="input">
+                        <option value="branch">영업점</option>
+                        <option value="hq">본부</option>
+                        <option value="it">IT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">내선번호 <span style="color:#dc2626;">*</span></label>
+                    <input type="text" id="signupExtNo" class="input" placeholder="예: 8-0000" value="8-0000">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">FAX번호</label>
+                    <input type="text" id="signupFaxNo" class="input" placeholder="예: 02-0000-0000" value="02-0000-0000">
+                </div>
+                <div>
+                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">휴대전화번호</label>
+                    <input type="text" id="signupMobileNo" class="input" placeholder="예: 010-0000-0000" value="010-0000-0000">
+                </div>
+                <div class="flex items-center gap-10 signup-admin-grant" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+                    <input type="checkbox" id="signupIsAdmin" style="width:18px; height:18px;">
+                    <label for="signupIsAdmin" class="font-bold" style="margin:0; color:#334155; cursor:pointer;">플랫폼 관리자 권한 부여</label>
+                </div>
+                <p style="font-size:12px; color:#64748b; margin:0;">관리자 설정(AI·권한) 메뉴 접근 및 저장에 필요합니다. 영업점·본부 계정에도 부여할 수 있습니다.</p>
+                <div class="flex items-center justify-between mt-10">
+                    <span id="signupSavedCount" style="font-size:12px; color:#64748b;">저장된 회원: 0명</span>
+                    <div class="flex gap-10">
+                        <button type="button" class="btn btn-outline" onclick="closeSignupModal()">취소</button>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 테스트용 회원목록 관리 모달 -->
+    <div id="memberListModal" class="modal-overlay" style="z-index: 121;">
+        <div class="modal-content" style="max-width: 920px; width: min(92vw, 920px);">
+            <div class="modal-header">
+                <h3 class="member-list-modal-title" style="font-size:18px;">저장된 회원 목록 관리 (테스트용)</h3>
+                <button class="btn-icon" onclick="closeMemberListModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="flex items-center justify-between mb-10">
+                    <div id="memberListSummary" style="font-size: 13px; color:#64748b;">저장된 회원: 0명</div>
+                    <button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;" onclick="clearAllSignupUsers()">전체 삭제</button>
+                </div>
+                <div id="memberListContainer" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; max-height: 420px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인 테스트 도구 모달 -->
+    <div id="loginTestToolsModal" class="modal-overlay" style="z-index: 122;">
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-header">
+                <h3 class="login-test-tools-modal-title" style="font-size:18px;">테스트 도구</h3>
+                <button class="btn-icon" onclick="closeLoginTestToolsModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body flex-col gap-10">
+                <button type="button" onclick="openMemberListFromTestTools()" class="btn w-full" style="border: 1px solid #93c5fd; color: #1e40af; background: #eff6ff;">테스트회원 관리</button>
+                <button type="button" onclick="openSignupFromTestTools()" class="btn w-full" style="border: 1px solid #cbd5e1; color: #334155; background: #f8fafc;">테스트용 회원가입</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 공통 알림/확인 모달 -->
+    <div id="appDialogModal" class="modal-overlay" style="z-index: 12050;">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-header">
+                <h3 id="appDialogTitle" style="font-size:17px; color: var(--ibk-blue);">알림</h3>
+                <button class="btn-icon" onclick="onAppDialogCancel()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="padding-top: 20px; padding-bottom: 20px;">
+                <p id="appDialogMessage" style="white-space: pre-line; color: #334155; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="appDialogCancelBtn" class="btn btn-outline" onclick="onAppDialogCancel()">취소</button>
+                <button id="appDialogConfirmBtn" class="btn btn-primary" onclick="onAppDialogConfirm()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대시보드 카운팅 목록 모달 -->
+    <div id="dashCountModal" class="modal-overlay" style="z-index: 125;">
+        <div class="modal-content" style="max-width: 980px; width: min(94vw, 980px); max-height: 82vh;">
+            <div class="modal-header">
+                <h3 id="dashCountModalTitle" style="font-size:18px; color: var(--ibk-blue);">게시물 목록</h3>
+                <button class="btn-icon" onclick="closeDashCountModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="table-wrap" style="border:1px solid #e5e7eb; border-radius:8px; max-height: 470px;">
+                    <table class="table" style="min-width: 860px;">
+                        <thead>
+                            <tr>
+                                <th style="width:80px;">번호</th>
+                                <th style="width:120px;">게시판</th>
+                                <th>제목</th>
+                                <th style="width:130px;">작성자</th>
+                                <th style="width:160px;">상태</th>
+                                <th style="width:130px;">등록일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashCountModalTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div class="flex items-center gap-10">
+                    <span style="font-size:12px; color:#64748b;">페이지</span>
+                    <select id="dashCountPageSize" class="input" style="width: 90px;" onchange="changeDashCountPageSize()">
+                        <option value="10">10개</option>
+                        <option value="30">30개</option>
+                        <option value="50">50개</option>
+                        <option value="100">100개</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-10">
+                    <button id="dashCountPrevBtn" class="btn btn-outline" style="padding:6px 10px;" onclick="changeDashCountPage(-1)">이전</button>
+                    <span id="dashCountPageCurrent" style="font-size:12px; color:#64748b; min-width:72px; text-align:center;">1 / 1</span>
+                    <button id="dashCountNextBtn" class="btn btn-outline" style="padding:6px 10px;" onclick="changeDashCountPage(1)">다음</button>
+                </div>
+            </div>
+        </div>
+    </div>
