@@ -922,6 +922,12 @@
         body[data-theme="dark"] .profile-contact-label {
             color: #9fb0c8;
         }
+        body[data-theme="dark"] .admin-self-pin-card {
+            background: #121b2d;
+            border-color: #3a4a63;
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .admin-self-pin-title,
         body[data-theme="dark"] .admin-settings-card-title,
         body[data-theme="dark"] .admin-field-label,
         body[data-theme="dark"] .admin-runtime-card-title,
