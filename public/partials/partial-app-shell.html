@@ -120,16 +120,18 @@
                 <div class="profile-overlay-foot">
                     <div class="profile-session-block">
                         <span class="profile-overlay-foot-note" id="overlaySessionInfo">IP 10.124.0.1</span>
-                        <span class="profile-overlay-foot-note profile-session-time" id="overlaySessionRemaining">자동 로그아웃까지: —</span>
+                        <div class="profile-session-row">
+                            <span class="profile-overlay-foot-note profile-session-time" id="overlaySessionRemaining">자동 로그아웃까지: —</span>
+                            <button onclick="extendSessionFromOverlay()" class="logout-btn profile-extend-btn profile-mini-btn" type="button">
+                                <span>세션 연장</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="profile-foot-actions">
-                        <button onclick="extendSessionFromOverlay()" class="logout-btn profile-extend-btn" type="button">
-                            <span>세션 연장</span>
-                        </button>
-                        <button onclick="openProfileImageModal()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
+                        <button onclick="openProfileImageModal()" class="logout-btn profile-mini-btn profile-side-btn" type="button">
                             <span>프로필 사진</span>
                         </button>
-                        <button onclick="doLogout()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
+                        <button onclick="doLogout()" class="logout-btn profile-mini-btn profile-side-btn" type="button">
                             <span>로그아웃</span>
                         </button>
                     </div>

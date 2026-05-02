@@ -1159,18 +1159,36 @@
             font-size: 12px;
             color: #334155;
         }
+        .profile-session-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .profile-foot-actions {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
             justify-content: flex-end;
+            margin-left: auto;
+        }
+        .profile-mini-btn {
+            padding: 5px 9px !important;
+            font-size: 11px !important;
+            border-radius: 7px;
+            color: #334155;
+            border-color: #cbd5e1;
         }
         .profile-extend-btn {
             color: #0f4c81 !important;
             border-color: #93c5fd !important;
             background: linear-gradient(180deg, #eff6ff, #dbeafe);
             font-weight: 800;
+        }
+        .profile-side-btn {
+            min-width: 84px;
+            justify-content: center;
         }
         .profile-extend-btn:hover {
             color: #0b3b66 !important;
@@ -1185,16 +1203,20 @@
             .profile-session-block {
                 flex-basis: 100%;
             }
+            .profile-session-row {
+                justify-content: space-between;
+                width: 100%;
+                gap: 6px;
+            }
             .profile-foot-actions {
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-end;
                 gap: 6px;
             }
             .profile-foot-actions .logout-btn {
-                flex: 1 1 0;
                 justify-content: center;
-                padding: 8px 8px !important;
-                font-size: 12px !important;
+                padding: 5px 8px !important;
+                font-size: 11px !important;
             }
         }
         @keyframes profileOverlayIn {
