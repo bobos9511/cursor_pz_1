@@ -567,8 +567,6 @@
         let aiChatLayerPrevParent = null;
         let aiChatLayerPrevNextSibling = null;
         let aiChatLayerCloseTimer = null;
-        let pullToRefreshStartY = null;
-        let pullToRefreshTriggered = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -4937,38 +4935,6 @@
             }
         }
 
-        function setupMobilePullToRefresh() {
-            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
-            const mainArea = document.getElementById('mainScrollArea');
-            if (!mainArea) return;
-
-            mainArea.addEventListener('touchstart', (event) => {
-                if (!event.touches || !event.touches.length) return;
-                if (mainArea.scrollTop > 0) {
-                    pullToRefreshStartY = null;
-                    return;
-                }
-                pullToRefreshStartY = event.touches[0].clientY;
-                pullToRefreshTriggered = false;
-            }, { passive: true });
-
-            mainArea.addEventListener('touchmove', (event) => {
-                if (pullToRefreshStartY == null || pullToRefreshTriggered) return;
-                if (!event.touches || !event.touches.length) return;
-                if (mainArea.scrollTop > 0) return;
-                const deltaY = event.touches[0].clientY - pullToRefreshStartY;
-                if (deltaY < 96) return;
-                pullToRefreshTriggered = true;
-                showAlert('새로고침 중입니다...', 'info');
-                window.location.reload();
-            }, { passive: true });
-
-            mainArea.addEventListener('touchend', () => {
-                pullToRefreshStartY = null;
-                pullToRefreshTriggered = false;
-            }, { passive: true });
-        }
-
         const loginPageEl = document.getElementById('loginPage');
         const appContainerEl = document.getElementById('appContainer');
         if (loginPageEl) loginPageEl.style.visibility = 'hidden';
@@ -4978,7 +4944,6 @@
         }
 
         initializeLoginThemeControls();
-        setupMobilePullToRefresh();
         bootstrapSession().finally(() => {
             if (!currentLoginUser && loginPageEl) {
                 loginPageEl.style.display = 'flex';
