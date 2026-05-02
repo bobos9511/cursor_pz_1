@@ -1216,16 +1216,6 @@
                 filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
             }
         }
-        body[data-theme="dark"] .ai-chat-layer-head {
-            border-bottom-color: #3f5475;
-            background: linear-gradient(180deg, #0b3a66, #0c5a90);
-            color: #dbeafe;
-        }
-        body[data-theme="dark"] .ai-chat-layer-close {
-            border-color: rgba(147, 197, 253, 0.5);
-            background: rgba(2, 6, 23, 0.32);
-            color: #dbeafe;
-        }
         body[data-theme="dark"] .ai-chat-layer-host {
             background: transparent;
         }

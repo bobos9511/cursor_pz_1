@@ -1452,39 +1452,13 @@
             overflow: hidden;
             transform-origin: calc(100% - 30px) calc(100% - 30px);
         }
-        .ai-chat-layer-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 11px 12px 10px 14px;
-            border-bottom: 1px solid #dbe7f5;
-            background: linear-gradient(180deg, #0f3f74, #0a6cae);
-            color: #e0f2fe;
-        }
-        .ai-chat-layer-title {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 14px;
-            font-weight: 800;
-        }
-        .ai-chat-layer-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 9px;
-            border: 1px solid rgba(191, 219, 254, 0.5);
-            background: rgba(15, 23, 42, 0.2);
-            color: #e0f2fe;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
         .ai-chat-layer-host {
             flex: 1;
             min-height: 0;
             overflow: hidden;
             padding: 6px 8px 8px;
             background: transparent;
+            border-radius: 15px;
         }
         .ai-chat-layer-host #view-ai-search {
             display: flex !important;
