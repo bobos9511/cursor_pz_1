@@ -115,9 +115,10 @@
                 right: 10px;
                 bottom: calc(238px + env(safe-area-inset-bottom, 0px));
                 width: auto;
+                /* 말풍선 대화 영역: 최소 3개 메시지 분량 확보 (패널 높이 상향) */
                 max-height: min(
-                    62dvh,
-                    calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 292px)
+                    78dvh,
+                    calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 200px)
                 );
                 height: auto;
                 min-height: 0;
@@ -158,8 +159,13 @@
             }
             .ai-chat-layer-host #view-ai-search .ai-search-log {
                 max-height: none;
-                min-height: 0 !important;
+                min-height: 280px !important;
                 flex: 1 1 auto;
+            }
+            .ai-chat-layer-host #view-ai-search .ai-search-input {
+                height: 68px !important;
+                min-height: 68px !important;
+                max-height: 140px !important;
             }
             #loginPage { padding: 12px; }
             .login-box { padding: 24px 16px; max-width: 100%; }
