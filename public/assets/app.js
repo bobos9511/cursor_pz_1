@@ -1182,6 +1182,36 @@
             }
         }
 
+        function navigateToLoginUrl() {
+            try {
+                const u = new URL(window.location.href);
+                u.searchParams.set('page', 'login');
+                const q = u.searchParams.toString();
+                history.replaceState({ page: 'login' }, '', q ? `${u.pathname}?${q}` : u.pathname);
+            } catch (_) {
+                history.replaceState({ page: 'login' }, '', '/index.html?page=login');
+            }
+        }
+
+        let knockSessionForcedLogout = false;
+
+        function knockOnSessionUnauthorized(payload) {
+            if (!currentLoginUser) return;
+            const code = payload && payload.code;
+            const reason = payload && payload.reason;
+            let msg;
+            if (code === 'session_expired' || reason === 'session_expired') {
+                msg = '세션이 만료되었습니다. 다시 로그인해주세요.';
+            } else if (reason === 'session_revoked_or_replaced') {
+                msg = '다른 기기(또는 브라우저)에서 로그인하여 이 세션은 종료되었습니다.';
+            } else {
+                msg = (payload && payload.error) || '로그인 세션이 종료되었습니다.';
+            }
+            showAlert(msg, 'error');
+            doLogout();
+        }
+        window.knockOnSessionUnauthorized = knockOnSessionUnauthorized;
+
         async function fetchJson(url, options = {}) {
             try {
                 let authHeaders = {};
@@ -1195,6 +1225,29 @@
                 const response = await fetch(url, merged);
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
+                    if (
+                        response.status === 401 &&
+                        currentLoginUser &&
+                        !knockSessionForcedLogout
+                    ) {
+                        const code = data && data.code;
+                        if (
+                            code === 'session_expired' ||
+                            code === 'invalid_session' ||
+                            code === 'session_required'
+                        ) {
+                            knockSessionForcedLogout = true;
+                            try {
+                                knockOnSessionUnauthorized(data);
+                            } finally {
+                                knockSessionForcedLogout = false;
+                            }
+                            const sessionErr = new Error((data && data.error) || '세션이 종료되었습니다.');
+                            sessionErr.statusCode = 401;
+                            sessionErr.knockSessionHandled = true;
+                            throw sessionErr;
+                        }
+                    }
                     const errorMessage = (data && data.error) || '서버 요청에 실패했습니다.';
                     if (shouldOpenServerErrorPage(response.status)) {
                         openServerErrorPage(response.status, errorMessage);
@@ -1206,6 +1259,7 @@
                 if (serverErrorPageActive) hideServerErrorPage();
                 return data;
             } catch (error) {
+                if (error && error.knockSessionHandled) throw error;
                 if (error && shouldOpenServerErrorPage(error.statusCode)) throw error;
                 // Network-level failure (offline, DNS, reset)
                 if (error && String(error.name || '') === 'TypeError') {
@@ -1350,6 +1404,7 @@
             try {
                 appData = await loadAppDataFromServer();
             } catch (error) {
+                if (error && error.knockSessionHandled) throw error;
                 console.error('initApp load failed:', error);
                 appData.posts = [...MOCK_INITIAL_DATA];
                 showAlert('서버 데이터 로드에 실패해 기본 데이터로 시작합니다.', 'error');
@@ -1361,6 +1416,7 @@
                     : {};
                 applyRuntimeRagKeywordBlocklist(runtime.ragKeywordBlocklist);
             } catch (error) {
+                if (error && error.knockSessionHandled) throw error;
                 console.error('load rag keyword blocklist failed:', error);
                 applyRuntimeRagKeywordBlocklist([]);
             }
@@ -1981,10 +2037,10 @@
                         },
                         body: JSON.stringify({}),
                     });
+                    const pingData = await res.json().catch(() => ({}));
                     if (res.status === 403 || res.status === 401) {
                         stopTestSessionHeartbeat();
-                        showAlert('다른 기기(또는 브라우저)에서 로그인하여 이 세션은 종료되었습니다.', 'error');
-                        doLogout();
+                        knockOnSessionUnauthorized(pingData);
                     }
                 } catch (_) {
                     /* 네트워크 일시 오류는 무시 */
@@ -2090,7 +2146,12 @@
             appContainer.classList.remove('page-intro');
             void appContainer.offsetWidth;
             appContainer.classList.add('page-intro');
-            await initApp();
+            try {
+                await initApp();
+            } catch (e) {
+                if (e && e.knockSessionHandled) return;
+                throw e;
+            }
             const preferredInitialView = getPreferredInitialView();
             if (preferredInitialView === 'dashboard') {
                 switchView('dashboard');
@@ -2127,6 +2188,7 @@
             appContainer.style.visibility = 'visible';
             closeHeaderProfileOverlay();
             setStoredSessionToken('');
+            navigateToLoginUrl();
             currentLoginUser = null;
         }
         function saveSettings() {
@@ -4333,6 +4395,7 @@
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
             await doLogin({ skipAuthValidation: true });
+            if (!currentLoginUser) return;
             if (history && history.state && history.state.page === 'app') {
                 applyHistoryRoute(history.state);
             } else {

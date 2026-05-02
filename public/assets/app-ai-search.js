@@ -105,6 +105,11 @@ async function mergeAiChatHistoryFromServer() {
         const res = await fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`, {
             headers: { ...knockSessionAuthHeaders() },
         });
+        if (res.status === 401 && typeof window.knockOnSessionUnauthorized === "function") {
+            const payload = await res.json().catch(() => ({}));
+            window.knockOnSessionUnauthorized(payload);
+            return;
+        }
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         const remote = Array.isArray(data && data.history) ? data.history : [];
@@ -133,7 +138,14 @@ function persistAiSearchHistoryToServer() {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", ...knockSessionAuthHeaders() },
                 body: JSON.stringify({ history: aiSearchHistory }),
-            }).catch(() => {});
+            })
+                .then(async (res) => {
+                    if (res.status === 401 && typeof window.knockOnSessionUnauthorized === "function") {
+                        const payload = await res.json().catch(() => ({}));
+                        window.knockOnSessionUnauthorized(payload);
+                    }
+                })
+                .catch(() => {});
         } catch (_) {
             // no-op
         }

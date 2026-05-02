@@ -38,6 +38,8 @@ const MAX_BODY_SIZE = 1_000_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 20;
 const rateLimitMap = new Map();
+/** 테스트 세션 유효 시간(기본 1시간, 마지막 활동 기준). 환경변수 SESSION_TTL_MS 로 조정 가능. */
+const SESSION_TTL_MS = Math.max(60_000, Number(process.env.SESSION_TTL_MS || 60 * 60 * 1000));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
@@ -1080,15 +1082,50 @@ function extractBearerToken(req) {
   return m ? String(m[1]).trim().slice(0, 200) : "";
 }
 
-function findEmpBySessionToken(db, rawToken) {
-  if (!rawToken) return "";
+function isSessionRecordExpired(rec) {
+  if (!rec || typeof rec !== "object") return true;
+  const last =
+    typeof rec.lastSeenAt === "number"
+      ? rec.lastSeenAt
+      : typeof rec.createdAt === "number"
+        ? rec.createdAt
+        : 0;
+  if (!last) return true;
+  return Date.now() - last > SESSION_TTL_MS;
+}
+
+/**
+ * resolveSessionToken 은 만료된 세션 레코드를 DB에서 제거할 수 있음.
+ * @returns {{ kind: "missing" } | { kind: "expired" } | { kind: "invalid" } | { kind: "ok", emp: string, rec: object }}
+ */
+function resolveSessionToken(db, rawToken) {
+  if (!rawToken) return { kind: "missing" };
   const want = hashSessionToken(rawToken);
   const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
   for (const emp of Object.keys(by)) {
     const rec = by[emp];
-    if (rec && rec.tokenHash && rec.tokenHash === want) return emp;
+    if (rec && rec.tokenHash === want) {
+      if (isSessionRecordExpired(rec)) {
+        delete by[emp];
+        db.testSessionsByEmpNo = by;
+        writeDb(db);
+        return { kind: "expired" };
+      }
+      return { kind: "ok", emp, rec };
+    }
   }
-  return "";
+  return { kind: "invalid" };
+}
+
+function touchEmployeeSession(db, emp) {
+  if (!emp) return;
+  const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+  const cur = by[emp];
+  if (!cur) return;
+  cur.lastSeenAt = Date.now();
+  by[emp] = cur;
+  db.testSessionsByEmpNo = by;
+  writeDb(db);
 }
 
 function hasActiveTestSessionRecord(rec) {
@@ -1112,15 +1149,20 @@ function ensureEmployeeScopeSession(req, res, db, scopeRaw) {
     sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
     return false;
   }
-  const emp = findEmpBySessionToken(db, token);
-  if (!emp) {
+  const r = resolveSessionToken(db, token);
+  if (r.kind === "expired") {
+    sendJson(res, 401, { error: "세션이 만료되었습니다.", code: "session_expired" });
+    return false;
+  }
+  if (r.kind !== "ok") {
     sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
     return false;
   }
-  if (emp !== wantEmp) {
+  if (r.emp !== wantEmp) {
     sendJson(res, 403, { error: "이 데이터에 접근할 수 없습니다.", code: "scope_mismatch" });
     return false;
   }
+  touchEmployeeSession(db, r.emp);
   return true;
 }
 
@@ -1240,19 +1282,21 @@ async function handleDbApi(req, res, url) {
     if (!db.testSessionsByEmpNo || typeof db.testSessionsByEmpNo !== "object") {
       db.testSessionsByEmpNo = {};
     }
+    const stale = db.testSessionsByEmpNo[emp];
+    if (stale && isSessionRecordExpired(stale)) {
+      delete db.testSessionsByEmpNo[emp];
+      writeDb(db);
+    }
     const now = Date.now();
 
     if (clientRenewToken) {
-      const tokenEmp = findEmpBySessionToken(db, clientRenewToken);
-      if (tokenEmp === emp) {
-        const rec = db.testSessionsByEmpNo[emp];
-        if (rec && rec.tokenHash === hashSessionToken(clientRenewToken)) {
-          rec.lastSeenAt = now;
-          db.testSessionsByEmpNo[emp] = rec;
-          writeDb(db);
-          sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken });
-          return true;
-        }
+      const r = resolveSessionToken(db, clientRenewToken);
+      if (r.kind === "ok" && r.emp === emp) {
+        r.rec.lastSeenAt = now;
+        db.testSessionsByEmpNo[emp] = r.rec;
+        writeDb(db);
+        sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken });
+        return true;
       }
     }
 
@@ -1294,20 +1338,15 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const db = readDb();
-    const emp = findEmpBySessionToken(db, token);
-    if (!emp) {
-      sendJson(res, 401, { valid: false, reason: "session_revoked_or_replaced" });
+    const r = resolveSessionToken(db, token);
+    if (r.kind !== "ok") {
+      const code = r.kind === "expired" ? "session_expired" : "invalid_session";
+      const reason = r.kind === "expired" ? "session_expired" : "session_revoked_or_replaced";
+      sendJson(res, 401, { valid: false, reason, code });
       return true;
     }
-    const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
-    const cur = by[emp];
-    if (!cur || cur.tokenHash !== hashSessionToken(token)) {
-      sendJson(res, 401, { valid: false, reason: "session_revoked_or_replaced" });
-      return true;
-    }
-    cur.lastSeenAt = Date.now();
-    by[emp] = cur;
-    db.testSessionsByEmpNo = by;
+    r.rec.lastSeenAt = Date.now();
+    db.testSessionsByEmpNo[r.emp] = r.rec;
     writeDb(db);
     sendJson(res, 200, { ok: true });
     return true;
@@ -1326,15 +1365,14 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const db = readDb();
-    const emp = findEmpBySessionToken(db, token);
-    if (!emp) {
+    const r = resolveSessionToken(db, token);
+    if (r.kind !== "ok") {
       sendJson(res, 200, { ok: true });
       return true;
     }
     const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
-    const cur = by[emp];
-    if (cur && cur.tokenHash === hashSessionToken(token)) {
-      delete by[emp];
+    if (by[r.emp] && by[r.emp].tokenHash === hashSessionToken(token)) {
+      delete by[r.emp];
       db.testSessionsByEmpNo = by;
       writeDb(db);
     }
