@@ -146,6 +146,20 @@
         #loginPage::after { content: ''; position: absolute; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(circle, rgba(0,75,155,0.18) 0%, rgba(0,75,155,0) 68%); bottom: -180px; left: -120px; z-index: 0; }
         .login-bg { position: absolute; top: 0; left: 0; width: 100%; height: 52vh; background: linear-gradient(140deg, #003f85 0%, #005bac 50%, #00a4e3 100%); z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
         .login-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 28px 28px; opacity: 0.18; }
+        .login-test-hint {
+            margin: 0 0 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            line-height: 1.55;
+            color: #475569;
+            background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
+            border: 1px solid #e2e8f0;
+        }
+        .login-test-hint strong {
+            color: #1e40af;
+            font-weight: 700;
+        }
         .login-box { background: rgba(255,255,255,0.97); backdrop-filter: blur(2px); padding: 40px; border-radius: 14px; box-shadow: 0 22px 48px rgba(15,23,42,0.24); width: 100%; max-width: 430px; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.8); animation: loginCardIn 0.55s cubic-bezier(.2,.8,.2,1) both; }
         .server-error-page {
             --se-accent: #38bdf8;
@@ -2116,24 +2130,31 @@
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen {
             max-width: none;
             width: 100%;
+            min-height: 100%;
             height: 100%;
             max-height: none;
             border-radius: 0;
             margin: 0;
             border: 0;
             box-shadow: none;
+            display: flex;
+            flex-direction: column;
         }
         .admin-pin-gate-head {
             background: linear-gradient(135deg, #0f3f74 0%, #0b6ab3 52%, #2563eb 100%);
             border-bottom: 0;
+            flex-shrink: 0;
         }
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen .admin-pin-gate-body {
-            flex: 1;
+            flex: 1 1 auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
+            align-items: stretch;
+            min-height: 0;
             max-height: none;
-            padding-bottom: 20px;
+            padding: 12px 16px 0;
+            overflow: hidden;
         }
         #adminPinGateModal .admin-pin-gate-body {
             max-height: none;
@@ -2173,6 +2194,11 @@
             width: min(92%, 300px);
             margin: 0 auto 10px;
         }
+        .admin-pin-gate-panel--fullscreen .admin-pin-slots {
+            width: min(96vw, 380px);
+            gap: clamp(6px, 2vw, 10px);
+            margin-bottom: 12px;
+        }
         .admin-pin-slot {
             height: 48px;
             border-radius: 14px;
@@ -2202,6 +2228,10 @@
         .admin-pin-slot--filled::after {
             background: #1e40af;
         }
+        .admin-pin-gate-panel--fullscreen .admin-pin-slot {
+            height: clamp(48px, 12vw, 58px);
+            border-radius: 16px;
+        }
         .admin-pin-keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -2210,10 +2240,12 @@
             margin: 0 auto;
         }
         .admin-pin-gate-panel--fullscreen .admin-pin-keypad {
-            max-width: min(92vw, 360px);
-            gap: 12px;
+            max-width: min(96vw, 400px);
+            width: 100%;
+            gap: clamp(10px, 2.5vw, 14px);
             margin-top: auto;
-            margin-bottom: 10px;
+            margin-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+            flex-shrink: 0;
         }
         .admin-pin-key {
             min-height: 54px;
@@ -2245,9 +2277,39 @@
         .admin-pin-key-spacer {
             pointer-events: none;
         }
+        .admin-pin-gate-panel--fullscreen .admin-pin-key {
+            min-height: clamp(52px, 13vw, 60px);
+            font-size: clamp(22px, 5.5vw, 26px);
+            border-radius: 18px;
+        }
         .admin-pin-gate-foot {
             background: linear-gradient(180deg, #f4f8ff 0%, #ecf3ff 100%);
             border-top-color: #d7e3f7;
+        }
+        .admin-pin-gate-panel--fullscreen .admin-pin-gate-foot {
+            flex-shrink: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: stretch;
+            gap: 10px;
+            padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
+        }
+        .admin-pin-gate-panel--fullscreen .admin-pin-gate-foot .btn {
+            flex: 1 1 calc(50% - 6px);
+            min-width: 0;
+            justify-content: center;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+        .admin-pin-gate-panel--fullscreen .admin-pin-gate-msg {
+            font-size: 14px;
+            line-height: 1.45;
+            max-width: 36rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .admin-pin-gate-panel--fullscreen .admin-pin-gate-help {
+            margin-bottom: 8px;
         }
         .admin-pin-gate-panel--shake {
             animation: adminPinShake 0.42s ease;
@@ -2263,13 +2325,230 @@
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
 
         /* 회원 목록 관리 모달 */
-        .member-list-summary { font-size: 13px; color: #64748b; }
-        .member-list-table-wrap {
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+        .member-list-modal-overlay {
+            align-items: flex-end;
+            padding: 0;
+        }
+        @media (min-width: 640px) {
+            .member-list-modal-overlay {
+                align-items: center;
+                padding: 16px;
+            }
+        }
+        .member-list-modal-shell {
+            max-width: 920px;
+            width: 100%;
+            border-radius: 16px 16px 0 0;
+            max-height: min(92vh, 900px);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            max-height: 420px;
+        }
+        @media (min-width: 640px) {
+            .member-list-modal-shell {
+                width: min(92vw, 920px);
+                border-radius: 16px;
+                max-height: min(88vh, 900px);
+            }
+        }
+        .member-list-modal-header .member-list-modal-title {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .member-list-modal-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 16px 16px 18px;
+            max-height: none;
+        }
+        .member-list-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .member-list-summary { font-size: 13px; color: #64748b; font-weight: 600; }
+        .member-list-clear-all {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .member-list-scroll {
+            flex: 1 1 auto;
+            min-height: 120px;
+            max-height: min(52vh, 480px);
             overflow-y: auto;
+            overflow-x: hidden;
+            padding: 2px 2px 6px;
+            margin: 0 -2px;
+        }
+        @media (min-width: 640px) {
+            .member-list-scroll {
+                max-height: min(58vh, 520px);
+            }
+        }
+        .member-list-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .member-list-card {
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+            padding: 14px 14px 12px;
+        }
+        .member-list-card-top {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .member-list-avatar {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+        .member-list-card-head {
+            flex: 1;
+            min-width: 0;
+        }
+        .member-list-name-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .member-list-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+        .member-list-emp-pill {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e40af;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            padding: 3px 10px;
+        }
+        .member-list-dept-line {
+            margin: 0 0 8px;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .member-list-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .member-list-chip {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            border-radius: 999px;
+            padding: 4px 10px;
+            border: 1px solid #e2e8f0;
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .member-list-chip--admin {
+            border-color: #c7d2fe;
+            background: #eef2ff;
+            color: #4338ca;
+        }
+        .member-list-dl {
+            margin: 12px 0 0;
+            padding: 10px 0 0;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .member-list-dl-row {
+            display: grid;
+            grid-template-columns: 92px 1fr;
+            gap: 8px 12px;
+            font-size: 12px;
+            line-height: 1.45;
+            margin-bottom: 6px;
+        }
+        .member-list-dl-row:last-child {
+            margin-bottom: 0;
+        }
+        .member-list-dl-row dt {
+            margin: 0;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        .member-list-dl-row dd {
+            margin: 0;
+            color: #334155;
+            word-break: break-word;
+        }
+        .member-list-card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        @media (min-width: 480px) {
+            .member-list-card-actions {
+                flex-direction: row;
+                justify-content: flex-end;
+                align-items: center;
+            }
+        }
+        .member-list-primary-btn {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        @media (min-width: 480px) {
+            .member-list-primary-btn {
+                width: auto;
+                min-width: 140px;
+            }
+        }
+        .member-list-secondary-btn {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+        @media (min-width: 480px) {
+            .member-list-secondary-btn {
+                width: auto;
+            }
+        }
+        .member-list-empty {
+            text-align: center;
+            padding: 36px 16px;
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .member-list-empty-sub {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #cbd5e1;
         }
         .member-list-help {
             margin-top: 14px;

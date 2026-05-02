@@ -553,7 +553,6 @@
         const AI_SYSTEM_USER_EMP_NO = '000000';
         const AI_SYSTEM_USER_NAME = 'AI';
         let signupUsers = [];
-        let adminPinAutoLoginBusy = false;
         let currentLoginUser = null;
         let pendingProfileImageData = '';
         let aiSearchActive = null;
@@ -1962,45 +1961,47 @@
             summary.innerText = `저장된 회원: ${visibleUsers.length}명`;
 
             if (visibleUsers.length === 0) {
-                wrap.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">저장된 회원이 없습니다. 먼저 회원가입을 진행해주세요.</div>';
+                wrap.innerHTML = '<div class="member-list-empty">저장된 회원이 없습니다.<br><span class="member-list-empty-sub">테스트용 회원가입으로 계정을 추가한 뒤 다시 열어 주세요.</span></div>';
                 return;
             }
 
-            wrap.innerHTML = `
-                <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                    <thead style="position:sticky; top:0; background:#f8fafc; z-index:1;">
-                        <tr>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">이름</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직원번호</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서명</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서코드</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직급/직책</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">업무 역할</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">최근 접속</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center;">플랫폼 관리</th>
-                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:170px;">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${visibleUsers.map(u => `
-                            <tr>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.name}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.employeeNo}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.deptName}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.deptCode}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${u.grade} / ${u.position}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${getRoleDisplayName(u.role)}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${formatSignupUserLastAccess(u)}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
-                                <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
-                                    <button class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
-                                    <button class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})" ${isAiSystemUser(u) ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            wrap.innerHTML = `<div class="member-list-cards" role="list">
+                ${visibleUsers
+                    .map((u) => {
+                        const initial = escapeHtml(getUserInitial(u.name || u.employeeNo || '?'));
+                        const delDisabled = isAiSystemUser(u);
+                        return `
+                <article class="member-list-card" role="listitem">
+                    <div class="member-list-card-top">
+                        <div class="member-list-avatar" aria-hidden="true">${initial}</div>
+                        <div class="member-list-card-head">
+                            <div class="member-list-name-row">
+                                <span class="member-list-name">${escapeHtml(u.name || '—')}</span>
+                                <span class="member-list-emp-pill">${escapeHtml(String(u.employeeNo || ''))}</span>
+                            </div>
+                            <p class="member-list-dept-line">${escapeHtml(u.deptName || '—')} · ${escapeHtml(String(u.deptCode || ''))}</p>
+                            <div class="member-list-badges">
+                                <span class="member-list-chip member-list-chip--role">${escapeHtml(getRoleDisplayName(u.role))}</span>
+                                ${
+                                    resolveUserIsAdmin(u)
+                                        ? '<span class="member-list-chip member-list-chip--admin">플랫폼 관리</span>'
+                                        : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <dl class="member-list-dl">
+                        <div class="member-list-dl-row"><dt>직급·직책</dt><dd>${escapeHtml(u.grade || '')} / ${escapeHtml(u.position || '')}</dd></div>
+                        <div class="member-list-dl-row"><dt>최근 접속</dt><dd>${escapeHtml(formatSignupUserLastAccess(u))}</dd></div>
+                    </dl>
+                    <div class="member-list-card-actions">
+                        <button type="button" class="btn btn-primary member-list-primary-btn" onclick="loginByMemberId(${u.id})">선택 로그인</button>
+                        <button type="button" class="btn btn-outline member-list-secondary-btn" onclick="deleteSignupUser(${u.id})" ${delDisabled ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
+                    </div>
+                </article>`;
+                    })
+                    .join('')}
+            </div>`;
         }
 
         function loginByMemberId(memberId) {
@@ -2023,14 +2024,12 @@
                     message: `${user.name || ''} (${user.employeeNo}) 계정 로그인을 위해 6자리 PIN을 입력하세요.`,
                     onResult: (pin) => {
                         if (pin == null) return;
-                        const authIn = document.getElementById('authInput');
-                        if (authIn) authIn.value = pin;
-                        void doLogin({ pinPreVerified: true, adminPin: pin });
+                        void doLogin({ pinPreVerified: true, adminPin: pin, fromMemberListLogin: true });
                     },
                 });
                 return;
             }
-            doLogin({ skipAuthValidation: true });
+            doLogin({ skipAuthValidation: true, fromMemberListLogin: true });
         }
 
         function deleteSignupUser(memberId) {
@@ -2295,36 +2294,6 @@
             }
         }
 
-        function setupAdminPinAuthInputAutoLogin() {
-            const input = document.getElementById('authInput');
-            if (!input || input.dataset.knockAdminPinAuto) return;
-            input.dataset.knockAdminPinAuto = '1';
-            input.addEventListener('input', () => {
-                if (adminPinAutoLoginBusy) return;
-                const empNo = (document.getElementById('loginEmpNo') && document.getElementById('loginEmpNo').value || '').trim();
-                if (!empNo) return;
-                const u = signupUsers.find((x) => String(x.employeeNo) === String(empNo));
-                if (!resolveUserIsAdmin(u) || !u.hasAdminPin) return;
-                const pin = normalizeAdminPinDigits(input.value);
-                if (!isValidAdminPinFormatClient(pin)) return;
-                adminPinAutoLoginBusy = true;
-                void (async () => {
-                    try {
-                        const vr = await fetch('/api/auth/admin-pin/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
-                        });
-                        if (vr.ok) {
-                            await doLogin({ pinPreVerified: true, adminPin: pin });
-                        }
-                    } finally {
-                        adminPinAutoLoginBusy = false;
-                    }
-                })();
-            });
-        }
-
         async function doLogin(options = {}) { 
             hideServerErrorPage();
             padEmployeeNo();
@@ -2351,6 +2320,16 @@
                 return;
             }
 
+            const sessionRestoreLogin = !!options.sessionRestoreLogin;
+            const fromMemberListLogin = !!options.fromMemberListLogin;
+            if (!sessionRestoreLogin && !fromMemberListLogin) {
+                showAlert(
+                    '테스트 계정은 로그인 화면의 비밀번호·MOTP란으로 접속할 수 없습니다. 상단 「IBK KNOCK」을 눌러 테스트 도구를 연 뒤,「테스트회원 관리」에서 「선택 로그인」을 눌러 주세요. (관리자 PIN은 이 경로의 PIN 전용 화면에서만 입력됩니다.)',
+                    'error',
+                );
+                return;
+            }
+
             if (skipAuthValidation) {
                 if (resolveUserIsAdmin(currentLoginUser) && currentLoginUser.hasAdminPin) {
                     showAlert('관리자 계정은 비밀번호(PIN) 입력 후 로그인해야 합니다.', 'error');
@@ -2365,7 +2344,7 @@
                     return;
                 }
                 if (authType === 'vein') {
-                    showAlert('관리자 계정은 PIN(비밀번호) 입력란·PIN 화면에서 6자리 숫자로 로그인하세요.', 'error');
+                    showAlert('관리자 계정은 「테스트회원 관리」→「선택 로그인」 뒤 PIN 화면에서 6자리 숫자로 로그인하세요.', 'error');
                     return;
                 }
                 if (
@@ -2373,43 +2352,13 @@
                     options.adminPin &&
                     isValidAdminPinFormatClient(normalizeAdminPinDigits(String(options.adminPin)))
                 ) {
-                    /* PIN은 모달·자동 입력에서 이미 확인됨 */
+                    /* PIN은 회원 목록 → PIN 전용 화면에서만 확인됨 (로그인 비밀번호란과 별도) */
                 } else {
-                    const pin = normalizeAdminPinDigits(authInput);
-                    if (isValidAdminPinFormatClient(pin)) {
-                        try {
-                            const vr = await fetch('/api/auth/admin-pin/verify', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
-                            });
-                            const vd = await vr.json().catch(() => ({}));
-                            if (!vr.ok) {
-                                showAlert((vd && vd.error) || 'PIN이 올바르지 않습니다.', 'error');
-                                return;
-                            }
-                        } catch (_) {
-                            showAlert('PIN 확인에 실패했습니다.', 'error');
-                            return;
-                        }
-                    } else {
-                        if (typeof openAdminPinGateModal === 'function') {
-                            openAdminPinGateModal({
-                                mode: 'verify',
-                                employeeNo: normalizeEmployeeNo(empNo, true),
-                                title: '관리자 PIN',
-                                message: `${currentLoginUser.name || ''} — 6자리 PIN을 입력하세요.`,
-                                seedFromAuthField: true,
-                                onResult: (p) => {
-                                    if (p == null) return;
-                                    void doLogin(Object.assign({}, options, { pinPreVerified: true, adminPin: p }));
-                                },
-                            });
-                        } else {
-                            showAlert('관리자 PIN은 숫자 6자리로 입력해주세요.', 'error');
-                        }
-                        return;
-                    }
+                    showAlert(
+                        '관리자 PIN은 로그인 비밀번호란에 넣을 수 없습니다. 「테스트회원 관리」에서 「선택 로그인」을 누르면 열리는 PIN 화면에서 입력해 주세요.',
+                        'error',
+                    );
+                    return;
                 }
             } else {
                 if (authType === 'pwd' && !authInput) {
@@ -4731,7 +4680,7 @@
             if (resolveUserIsAdmin(matched) && matched.hasAdminPin) {
                 return;
             }
-            await doLogin({ skipAuthValidation: true });
+            await doLogin({ skipAuthValidation: true, sessionRestoreLogin: true });
             if (!currentLoginUser) return;
             if (history && history.state && history.state.page === 'app') {
                 applyHistoryRoute(history.state);
@@ -4741,5 +4690,4 @@
             }
         }
 
-        setupAdminPinAuthInputAutoLogin();
         bootstrapSession();

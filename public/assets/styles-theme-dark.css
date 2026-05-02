@@ -1145,6 +1145,14 @@
             background: linear-gradient(180deg, #243c5f, #1b3150) !important;
             border-color: #6a97cf !important;
         }
+        body[data-theme="dark"] .login-test-hint {
+            background: linear-gradient(180deg, #1a2840 0%, #152238 100%);
+            border-color: #3f5475;
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .login-test-hint strong {
+            color: #93c5fd;
+        }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,
@@ -1156,9 +1164,40 @@
         body[data-theme="dark"] #memberListModal .member-list-summary {
             color: #94a3b8;
         }
-        body[data-theme="dark"] #memberListModal .member-list-table-wrap {
+        body[data-theme="dark"] #memberListModal .member-list-scroll {
+            scrollbar-color: #475569 transparent;
+        }
+        body[data-theme="dark"] .member-list-card {
             border-color: #3f5475;
-            background: rgba(15, 23, 42, 0.4);
+            background: linear-gradient(180deg, #172941 0%, #142338 100%);
+            box-shadow: 0 6px 22px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .member-list-name {
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .member-list-dept-line {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .member-list-chip {
+            border-color: #3f5475;
+            background: rgba(30, 41, 59, 0.85);
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .member-list-chip--admin {
+            border-color: rgba(129, 140, 248, 0.45);
+            background: rgba(67, 56, 202, 0.25);
+            color: #c7d2fe;
+        }
+        body[data-theme="dark"] .member-list-dl {
+            border-top-color: rgba(148, 163, 184, 0.35);
+        }
+        body[data-theme="dark"] .member-list-dl-row dd {
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .member-list-emp-pill {
+            background: rgba(30, 64, 175, 0.35);
+            border-color: rgba(96, 165, 250, 0.45);
+            color: #bfdbfe;
         }
         body[data-theme="dark"] #memberListModal .member-list-help {
             background: rgba(22, 34, 54, 0.92);

@@ -144,22 +144,23 @@
     </div>
 
     <!-- 테스트용 회원목록 관리 모달 -->
-    <div id="memberListModal" class="modal-overlay" style="z-index: 121;">
-        <div class="modal-content" style="max-width: 920px; width: min(92vw, 920px);">
-            <div class="modal-header">
-                <h3 class="member-list-modal-title" style="font-size:18px;">저장된 회원 목록 관리 (테스트용)</h3>
-                <button class="btn-icon" onclick="closeMemberListModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+    <div id="memberListModal" class="modal-overlay member-list-modal-overlay" style="z-index: 121;">
+        <div class="modal-content member-list-modal-shell">
+            <div class="modal-header member-list-modal-header">
+                <h3 class="member-list-modal-title">저장된 회원 · 테스트</h3>
+                <button type="button" class="btn-icon" onclick="closeMemberListModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
-            <div class="modal-body">
-                <div class="flex items-center justify-between mb-10">
+            <div class="modal-body member-list-modal-body">
+                <div class="member-list-toolbar">
                     <div id="memberListSummary" class="member-list-summary">저장된 회원: 0명</div>
-                    <button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;" onclick="clearAllSignupUsers()">전체 삭제</button>
+                    <button type="button" class="btn btn-outline member-list-clear-all" onclick="clearAllSignupUsers()">전체 삭제</button>
                 </div>
-                <div id="memberListContainer" class="member-list-table-wrap"></div>
+                <div id="memberListContainer" class="member-list-scroll"></div>
                 <div class="member-list-help" role="note" aria-label="도움말">
                     <div class="member-list-help-title">도움말</div>
-                    <p>테스트 계정은 <strong>한 곳에서만</strong> 접속됩니다. 다른 기기·브라우저에서 먼저 켜 둔 경우, 로그인 시 기존 연결을 끊을지 묻습니다. 세션은 <strong>마지막 활동 기준 1시간</strong> 후 만료되며, 만료 시 로그인 화면으로 돌아갑니다.</p>
-                    <p>플랫폼 관리자 계정은 사번·성명 입력 후 <strong>관리자 PIN(숫자 6자리)</strong>을 입력합니다. PIN은 관리자 설정에서 변경할 수 있습니다.</p>
+                    <p><strong>테스트 계정 로그인</strong>은 이 목록의 「선택 로그인」으로만 가능합니다. 로그인 화면의 비밀번호란은 PIN과 다르며, 테스트 접속에 사용되지 않습니다.</p>
+                    <p>한 계정은 <strong>한 곳에서만</strong> 접속됩니다. 다른 기기에서 이미 켜 둔 경우 연결 전환을 묻습니다. 세션은 <strong>마지막 활동 기준 1시간</strong> 후 만료됩니다.</p>
+                    <p>플랫폼 관리자는 「선택 로그인」 후 나타나는 <strong>PIN 전용 화면</strong>에서 6자리를 입력합니다. PIN은 관리자 설정에서 변경할 수 있습니다.</p>
                 </div>
             </div>
         </div>
@@ -189,7 +190,7 @@
                 <div class="admin-pin-gate-chip">SECURE PIN</div>
                 <p id="adminPinGateMessage" class="signup-modal-hint admin-pin-gate-msg"></p>
                 <div id="adminPinGateSlots" class="admin-pin-slots" aria-hidden="true"></div>
-                <p class="admin-pin-gate-help">숫자 키패드 또는 키보드 숫자키로 입력하세요.</p>
+                <p class="admin-pin-gate-help">관리자 전용 PIN입니다. 로그인 화면 비밀번호와 다릅니다. 숫자 키패드 또는 숫자 키로 입력하세요.</p>
                 <input type="password" id="adminPinGateInput" class="sr-only" tabindex="-1" maxlength="6" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN 6자리">
                 <div id="adminPinGateKeypad" class="admin-pin-keypad">
                     <button type="button" class="admin-pin-key" data-digit="1">1</button>
