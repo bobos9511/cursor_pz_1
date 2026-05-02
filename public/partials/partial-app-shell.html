@@ -968,96 +968,124 @@
                             <div class="admin-runtime-grid">
                                 <div class="admin-runtime-card">
                                     <div class="admin-runtime-card-title">AI채팅</div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">채팅 최대 토큰</label>
-                                        <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-chatMaxOutputTokens">채팅 최대 토큰</label>
+                                            <input type="number" id="adminAi-runtime-chatMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-chatMaxOutputTokens-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">한 번의 채팅 응답 길이 제한입니다. 낮으면 답변이 중간에 끊길 수 있습니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">한 번의 채팅 응답 길이 제한입니다. 낮으면 답변이 중간에 끊길 수 있습니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxOutputTokens-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
-                                        <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-chatMaxContinuations">채팅 이어쓰기 횟수</label>
+                                            <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuations-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">응답이 잘릴 때 자동으로 이어쓰기하는 최대 횟수입니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">응답이 잘릴 때 자동으로 이어쓰기하는 최대 횟수입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuations-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
-                                        <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="0" max="3600000" step="1" placeholder="0 또는 비움 = 기본값" data-ms-human-target="adminAi-runtime-chatMaxContinuationRuntimeMs-human">
-                                        <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-chatMaxContinuationRuntimeMs">채팅 이어쓰기 시간(ms)</label>
+                                            <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="0" max="3600000" step="1" placeholder="0 또는 비움 = 기본값" data-ms-human-target="adminAi-runtime-chatMaxContinuationRuntimeMs-human">
+                                            <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuationRuntimeMs-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">이어쓰기 전체 동작 시간 제한입니다. <strong>0·비움</strong>이면 서버 기본값이며, 입력 시 최소 100ms~최대 약 60분(3600000ms)입니다.</p>
+                                        <div id="adminAi-runtime-chatMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                     </div>
-                                    <div class="admin-settings-subhint">이어쓰기 전체 동작 시간 제한입니다. <strong>0·비움</strong>이면 서버 기본값이며, 입력 시 최소 100ms~최대 약 60분(3600000ms)입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuationRuntimeMs-validation" role="alert"></div>
-                                    <div id="adminAi-runtime-chatMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                 </div>
 
                                 <div class="admin-runtime-card">
                                     <div class="admin-runtime-card-title">AI답변 (게시물)</div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">게시물 최대 토큰</label>
-                                        <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-postMaxOutputTokens">게시물 최대 토큰</label>
+                                            <input type="number" id="adminAi-runtime-postMaxOutputTokens" class="input" min="50" max="8192" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-postMaxOutputTokens-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">게시판 답변(IT/규정) 1회 생성 길이 제한입니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">게시판 답변(IT/규정) 1회 생성 길이 제한입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-postMaxOutputTokens-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
-                                        <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-postMaxContinuations">게시물 이어쓰기 횟수</label>
+                                            <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-postMaxContinuations-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">게시물 답변이 길어 잘렸을 때 자동 이어쓰기 최대 횟수입니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">게시물 답변이 길어 잘렸을 때 자동 이어쓰기 최대 횟수입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-postMaxContinuations-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
-                                        <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="0" max="3600000" step="1" placeholder="0 또는 비움 = 기본값" data-ms-human-target="adminAi-runtime-postMaxContinuationRuntimeMs-human">
-                                        <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-postMaxContinuationRuntimeMs">게시물 이어쓰기 시간(ms)</label>
+                                            <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="0" max="3600000" step="1" placeholder="0 또는 비움 = 기본값" data-ms-human-target="adminAi-runtime-postMaxContinuationRuntimeMs-human">
+                                            <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-postMaxContinuationRuntimeMs-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">게시물 이어쓰기 전체 동작 시간 제한입니다. <strong>0·비움</strong>은 기본값, 숫자 입력 시 100ms~약 60분까지 허용됩니다.</p>
+                                        <div id="adminAi-runtime-postMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                     </div>
-                                    <div class="admin-settings-subhint">게시물 이어쓰기 전체 동작 시간 제한입니다. <strong>0·비움</strong>은 기본값, 숫자 입력 시 100ms~약 60분까지 허용됩니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-postMaxContinuationRuntimeMs-validation" role="alert"></div>
-                                    <div id="adminAi-runtime-postMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                 </div>
 
                                 <div class="admin-runtime-card">
                                     <div class="admin-runtime-card-title">RAG 관련 설정</div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">RAG 최대 후보 수</label>
-                                        <input type="number" id="adminAi-runtime-ragMaxCandidates" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-ragMaxCandidates-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-ragMaxCandidates">RAG 최대 후보 수</label>
+                                            <input type="number" id="adminAi-runtime-ragMaxCandidates" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-ragMaxCandidates-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-ragMaxCandidates-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">프롬프트에 포함할 RAG 지식 최대 개수입니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">프롬프트에 포함할 RAG 지식 최대 개수입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-ragMaxCandidates-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">RAG 최소 토큰 일치 수</label>
-                                        <input type="number" id="adminAi-runtime-ragMinOverlapTokens" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-ragMinOverlapTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-ragMinOverlapTokens">RAG 최소 토큰 일치 수</label>
+                                            <input type="number" id="adminAi-runtime-ragMinOverlapTokens" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-ragMinOverlapTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-ragMinOverlapTokens-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">질문과 겹치는 토큰 수가 이 값 이상일 때만 후보로 인정합니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">질문과 겹치는 토큰 수가 이 값 이상일 때만 후보로 인정합니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-ragMinOverlapTokens-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">RAG 최소 점수</label>
-                                        <input type="number" id="adminAi-runtime-ragMinScore" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-ragMinScore-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-ragMinScore">RAG 최소 점수</label>
+                                            <input type="number" id="adminAi-runtime-ragMinScore" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-ragMinScore-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-ragMinScore-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-ragMinScore-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">RAG 상대 컷오프(%)</label>
-                                        <input type="number" id="adminAi-runtime-ragRelativeCutoffPct" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
-                                        <span id="adminAi-runtime-ragRelativeCutoffPct-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                    <div class="admin-runtime-field">
+                                        <div class="admin-gen-row">
+                                            <label class="admin-gen-label" for="adminAi-runtime-ragRelativeCutoffPct">RAG 상대 컷오프(%)</label>
+                                            <input type="number" id="adminAi-runtime-ragRelativeCutoffPct" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
+                                            <span id="adminAi-runtime-ragRelativeCutoffPct-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-field-error" id="adminAi-runtime-ragRelativeCutoffPct-validation" role="alert"></div>
+                                        <p class="admin-ai-param-desc">최고 점수 대비 낮은 꼬리 후보를 제거하는 비율입니다.</p>
                                     </div>
-                                    <div class="admin-settings-subhint">최고 점수 대비 낮은 꼬리 후보를 제거하는 비율입니다.</div>
-                                    <div class="admin-field-error" id="adminAi-runtime-ragRelativeCutoffPct-validation" role="alert"></div>
-                                    <div class="admin-gen-row">
-                                        <label class="admin-gen-label">RAG 키워드 금칙어 목록</label>
-                                        <textarea id="adminAi-runtime-ragKeywordBlocklist" class="input" style="min-height:84px; resize:vertical;" placeholder="쉼표 또는 줄바꿈으로 구분해 입력"></textarea>
-                                        <span id="adminAi-runtime-ragKeywordBlocklist-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
-                                    </div>
-                                    <div class="admin-settings-subhint">RAG 학습 키워드에서 제외할 의미 없는 표현/꾸밈말 목록입니다. (예: 대해, 설명해줘)</div>
-                                    <div class="admin-settings-actions" style="justify-content:flex-start; gap:8px; margin-top:8px;">
-                                        <button type="button" class="btn btn-outline" onclick="exportAdminRagKeywordBlocklist()">금칙어 내보내기</button>
-                                        <button type="button" class="btn btn-outline" onclick="importAdminRagKeywordBlocklist()">금칙어 가져오기</button>
-                                        <input id="adminAi-ragKeywordImportInput" type="file" accept=".txt,.csv,.json" style="display:none;" onchange="handleAdminRagKeywordImport(event)">
+                                    <div class="admin-runtime-field admin-runtime-field--rag-blocklist">
+                                        <div class="admin-gen-row admin-gen-row--rag-blocklist-title">
+                                            <label class="admin-gen-label">RAG 키워드 금칙어 목록</label>
+                                            <span id="adminAi-runtime-ragKeywordBlocklist-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
+                                        </div>
+                                        <div class="admin-rag-blocklist-editor">
+                                            <div class="admin-rag-blocklist-add-row">
+                                                <input type="text" id="adminAi-runtime-ragKeywordBlocklist-input" class="input admin-rag-blocklist-input" maxlength="64" placeholder="금칙어 입력 후 Enter 또는 추가" autocomplete="off" aria-label="금칙어 추가 입력">
+                                                <button type="button" id="adminAi-runtime-ragKeywordBlocklist-add" class="btn btn-outline admin-rag-blocklist-add-btn">추가</button>
+                                            </div>
+                                            <ul id="adminAi-runtime-ragKeywordBlocklist-list" class="admin-rag-keyword-list" aria-label="등록된 RAG 금칙어"></ul>
+                                            <p class="admin-ai-param-desc">RAG 검색 키워드에서 제외할 표현입니다. 2글자 이상만 저장됩니다. (예: 대해, 설명해줘)</p>
+                                            <div class="admin-settings-actions admin-rag-blocklist-actions">
+                                                <button type="button" class="btn btn-outline" onclick="exportAdminRagKeywordBlocklist()">금칙어 내보내기</button>
+                                                <button type="button" class="btn btn-outline" onclick="importAdminRagKeywordBlocklist()">금칙어 가져오기</button>
+                                                <input id="adminAi-ragKeywordImportInput" type="file" accept=".txt,.csv,.json" style="display:none;" onchange="handleAdminRagKeywordImport(event)">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

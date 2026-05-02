@@ -12,6 +12,7 @@ let adminAiApiLogsFilter = "all";
 let adminAiApiLogsSearchRaw = "";
 let adminAiSettingsHistory = [];
 let adminRuntimeValidationWired = false;
+let adminRagBlocklistWired = false;
 
 function clampAdminAiGen01(v) {
     const n = Math.round(Number(v) * 10) / 10;
@@ -56,14 +57,113 @@ function parseAdminKeywordBlocklist(raw) {
     return out;
 }
 
-function getAdminRagKeywordInputEl() {
-    return document.getElementById("adminAi-runtime-ragKeywordBlocklist");
+function normalizeRagBlocklistTokenOne(raw) {
+    const oneLine = String(raw || "").replace(/\n/g, ",");
+    const parsed = parseAdminKeywordBlocklist(oneLine);
+    return parsed.length ? parsed[parsed.length - 1] : "";
+}
+
+function getRagKeywordBlocklistFromUI() {
+    const listEl = document.getElementById("adminAi-runtime-ragKeywordBlocklist-list");
+    if (!listEl) return [];
+    const out = [];
+    const seen = new Set();
+    listEl.querySelectorAll(".admin-rag-keyword-item[data-rag-keyword]").forEach((li) => {
+        const t = String(li.getAttribute("data-rag-keyword") || "").trim();
+        if (t.length < 2 || seen.has(t)) return;
+        seen.add(t);
+        out.push(t);
+    });
+    return out;
+}
+
+function createRagKeywordListItemEl(token) {
+    const li = document.createElement("li");
+    li.className = "admin-rag-keyword-item";
+    li.setAttribute("data-rag-keyword", token);
+    const span = document.createElement("span");
+    span.className = "admin-rag-keyword-text";
+    span.textContent = token;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-outline admin-rag-keyword-remove";
+    btn.textContent = "삭제";
+    li.appendChild(span);
+    li.appendChild(btn);
+    return li;
+}
+
+function renderRagKeywordBlocklistUI(tokenList) {
+    const listEl = document.getElementById("adminAi-runtime-ragKeywordBlocklist-list");
+    if (!listEl) return;
+    const merged = Array.isArray(tokenList)
+        ? parseAdminKeywordBlocklist(tokenList.join("\n"))
+        : parseAdminKeywordBlocklist(String(tokenList || ""));
+    listEl.innerHTML = "";
+    if (!merged.length) {
+        const empty = document.createElement("li");
+        empty.className = "admin-rag-keyword-empty";
+        empty.setAttribute("role", "status");
+        empty.textContent = "등록된 금칙어가 없습니다. 위 입력란에 추가하세요.";
+        listEl.appendChild(empty);
+        return;
+    }
+    merged.forEach((w) => listEl.appendChild(createRagKeywordListItemEl(w)));
+}
+
+function wireRagKeywordBlocklistEditorOnce() {
+    if (adminRagBlocklistWired) return;
+    const listEl = document.getElementById("adminAi-runtime-ragKeywordBlocklist-list");
+    const addBtn = document.getElementById("adminAi-runtime-ragKeywordBlocklist-add");
+    const input = document.getElementById("adminAi-runtime-ragKeywordBlocklist-input");
+    if (!listEl || !addBtn || !input) return;
+    adminRagBlocklistWired = true;
+    const showEmptyIfNeeded = () => {
+        if (!listEl.querySelector(".admin-rag-keyword-item")) {
+            listEl.innerHTML = "";
+            const empty = document.createElement("li");
+            empty.className = "admin-rag-keyword-empty";
+            empty.setAttribute("role", "status");
+            empty.textContent = "등록된 금칙어가 없습니다. 위 입력란에 추가하세요.";
+            listEl.appendChild(empty);
+        }
+    };
+    const addOne = () => {
+        const t = normalizeRagBlocklistTokenOne(input.value);
+        if (!t) {
+            showAlert("2글자 이상의 한글·영문·숫자만 추가할 수 있습니다.", "error");
+            return;
+        }
+        const existing = getRagKeywordBlocklistFromUI();
+        if (existing.includes(t)) {
+            showAlert("이미 목록에 있습니다.", "error");
+            return;
+        }
+        const emptyRow = listEl.querySelector(".admin-rag-keyword-empty");
+        if (emptyRow) emptyRow.remove();
+        listEl.appendChild(createRagKeywordListItemEl(t));
+        input.value = "";
+        input.focus();
+    };
+    addBtn.addEventListener("click", addOne);
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            addOne();
+        }
+    });
+    listEl.addEventListener("click", (e) => {
+        const btn = e.target && e.target.closest && e.target.closest(".admin-rag-keyword-remove");
+        if (!btn) return;
+        const li = btn.closest(".admin-rag-keyword-item");
+        if (li) li.remove();
+        showEmptyIfNeeded();
+    });
+    if (!listEl.querySelector(".admin-rag-keyword-item")) showEmptyIfNeeded();
 }
 
 function exportAdminRagKeywordBlocklist() {
-    const input = getAdminRagKeywordInputEl();
-    if (!input) return;
-    const list = parseAdminKeywordBlocklist(input.value);
+    const list = getRagKeywordBlocklistFromUI();
     const payload = list.join("\n");
     const blob = new Blob([payload], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -102,9 +202,7 @@ async function handleAdminRagKeywordImport(event) {
             else if (parsed && Array.isArray(parsed.ragKeywordBlocklist)) sourceText = parsed.ragKeywordBlocklist.join(",");
         }
         const list = parseAdminKeywordBlocklist(sourceText);
-        const target = getAdminRagKeywordInputEl();
-        if (!target) return;
-        target.value = list.join(", ");
+        renderRagKeywordBlocklistUI(list);
         if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
             window.applyRuntimeRagKeywordBlocklist(list);
         }
@@ -254,9 +352,7 @@ function collectAdminAiSettingsFromForm() {
                 100,
                 null,
             ),
-            ragKeywordBlocklist: parseAdminKeywordBlocklist(
-                document.getElementById("adminAi-runtime-ragKeywordBlocklist")?.value,
-            ),
+            ragKeywordBlocklist: getRagKeywordBlocklistFromUI(),
         },
     };
     ADMIN_AI_POST_KEYS.forEach((k) => {
@@ -480,13 +576,11 @@ async function loadAdminAiSettingsView() {
             runtime.ragRelativeCutoffPct,
             defaults.ragRelativeCutoffPct,
         );
-        const ragKeywordInput = document.getElementById("adminAi-runtime-ragKeywordBlocklist");
-        if (ragKeywordInput) {
-            const runtimeList = Array.isArray(runtime.ragKeywordBlocklist) ? runtime.ragKeywordBlocklist : [];
-            ragKeywordInput.value = runtimeList.join(", ");
-            if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
-                window.applyRuntimeRagKeywordBlocklist(runtimeList);
-            }
+        const runtimeList = Array.isArray(runtime.ragKeywordBlocklist) ? runtime.ragKeywordBlocklist : [];
+        renderRagKeywordBlocklistUI(runtimeList);
+        wireRagKeywordBlocklistEditorOnce();
+        if (typeof window.applyRuntimeRagKeywordBlocklist === "function") {
+            window.applyRuntimeRagKeywordBlocklist(runtimeList);
         }
         setAdminRuntimeDefaultText("adminAi-runtime-chatMaxOutputTokens-default", defaults.chatMaxOutputTokens);
         setAdminRuntimeDefaultText("adminAi-runtime-postMaxOutputTokens-default", defaults.postMaxOutputTokens);
@@ -693,6 +787,7 @@ function initAdminSettingsMainTabsOnce() {
     }
     wireAdminRuntimeHumanHintOnce();
     wireAdminRuntimeValidationOnce();
+    wireRagKeywordBlocklistEditorOnce();
 }
 
 function buildAdminAiApiLogPlainText(log) {

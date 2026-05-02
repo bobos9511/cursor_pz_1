@@ -950,6 +950,22 @@
             border-left-color: #60a5fa;
             color: #9fb0c8;
         }
+        body[data-theme="dark"] .admin-rag-blocklist-editor {
+            background: #13233a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .admin-rag-keyword-item {
+            background: #172941;
+            border-color: #4a5f7f;
+        }
+        body[data-theme="dark"] .admin-rag-keyword-text {
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .admin-rag-keyword-empty {
+            background: rgba(15, 23, 42, 0.45);
+            border-color: #4a5f7f;
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .admin-perms-table-wrap,
         body[data-theme="dark"] .admin-ai-logs-list-wrap,
         body[data-theme="dark"] .admin-ai-log-detail-card,
