@@ -382,9 +382,10 @@
             color: #94a3b8;
             line-height: 1.5;
         }
+        /* 라이트 모드: 흰 카드 위 대비 — 다크 테마는 styles-theme-dark.css #loginPage에서 덮음 */
         .login-brand-title {
             font-size: 38px;
-            color: #f8fbff;
+            color: var(--ibk-blue);
             margin-bottom: 10px;
             cursor: pointer;
             line-height: 1.04;
@@ -392,7 +393,9 @@
             opacity: 0;
             animation: loginLogoIn 0.52s cubic-bezier(.2,.8,.2,1) forwards;
         }
-        .login-brand-point { color: var(--ibk-light); }
+        .login-brand-point {
+            color: var(--ibk-light);
+        }
         .login-brand-subtitle {
             display: inline-flex;
             align-items: center;
