@@ -1020,9 +1020,12 @@
             body[data-theme="dark"] .admin-ai-logs-table tbody tr {
                 border-color: #3f5475;
                 background: #172941;
+                box-shadow: 0 1px 3px rgba(2, 8, 24, 0.4);
             }
             body[data-theme="dark"] .admin-ai-logs-table tbody tr:hover {
                 background: #1b2f4c;
+                border-color: #4a6a9a;
+                box-shadow: 0 4px 16px rgba(2, 8, 24, 0.55);
             }
             body[data-theme="dark"] .admin-ai-logs-table tbody td::before {
                 color: #9fb0c8;

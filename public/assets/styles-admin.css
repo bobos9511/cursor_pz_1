@@ -717,6 +717,16 @@
             background: #fee2e2;
             color: #b91c1c;
         }
+        @keyframes admin-ai-log-card-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
         /* 좁은 화면: 가로 스크롤(숨김 스크롤바)에 의존하지 않고 카드형으로 표시 */
         @media (max-width: 720px) {
             .admin-ai-logs-table-scroll {
@@ -744,35 +754,68 @@
             .admin-ai-logs-table tbody tr {
                 display: block;
                 border: 1px solid #e2e8f0;
-                border-radius: 10px;
-                margin-bottom: 10px;
-                padding: 4px 12px 10px;
+                border-radius: 8px;
+                margin-bottom: 6px;
+                padding: 6px 10px 7px;
                 background: #fff;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+                transition:
+                    transform 0.22s ease,
+                    box-shadow 0.22s ease,
+                    border-color 0.22s ease,
+                    background-color 0.22s ease;
+                animation: admin-ai-log-card-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
             }
+            .admin-ai-logs-table tbody tr:nth-child(1) { animation-delay: 0.02s; }
+            .admin-ai-logs-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+            .admin-ai-logs-table tbody tr:nth-child(3) { animation-delay: 0.08s; }
+            .admin-ai-logs-table tbody tr:nth-child(4) { animation-delay: 0.11s; }
+            .admin-ai-logs-table tbody tr:nth-child(5) { animation-delay: 0.14s; }
+            .admin-ai-logs-table tbody tr:nth-child(6) { animation-delay: 0.17s; }
+            .admin-ai-logs-table tbody tr:nth-child(7) { animation-delay: 0.2s; }
+            .admin-ai-logs-table tbody tr:nth-child(8) { animation-delay: 0.23s; }
+            .admin-ai-logs-table tbody tr:nth-child(9) { animation-delay: 0.26s; }
+            .admin-ai-logs-table tbody tr:nth-child(10) { animation-delay: 0.29s; }
+            .admin-ai-logs-table tbody tr:nth-child(11) { animation-delay: 0.32s; }
+            .admin-ai-logs-table tbody tr:nth-child(12) { animation-delay: 0.35s; }
+            .admin-ai-logs-table tbody tr:nth-child(n + 13) { animation-delay: 0.38s; }
             .admin-ai-logs-table tbody tr:last-child {
                 margin-bottom: 0;
+            }
+            .admin-ai-logs-table tbody tr:active {
+                transform: scale(0.992);
+            }
+            .admin-ai-logs-table tbody tr:hover {
+                background: #f8fbff;
+                border-color: #bfdbfe;
+                box-shadow: 0 4px 14px rgba(37, 99, 235, 0.1);
+                transform: translateY(-1px);
             }
             .admin-ai-logs-table tbody td {
                 display: flex;
                 align-items: flex-start;
-                gap: 10px;
-                padding: 8px 0;
+                gap: 8px;
+                padding: 4px 0;
                 border: none;
                 vertical-align: top;
                 text-align: left;
+                font-size: 12px;
             }
             .admin-ai-logs-table tbody td::before {
                 content: attr(data-label);
-                flex: 0 0 76px;
-                font-size: 11px;
+                flex: 0 0 64px;
+                font-size: 10px;
                 font-weight: 800;
                 color: #64748b;
-                line-height: 1.45;
-                padding-top: 2px;
+                line-height: 1.35;
+                padding-top: 1px;
+                letter-spacing: -0.02em;
             }
             .admin-ai-logs-table tbody td .admin-ai-logs-cell-val {
                 flex: 1;
                 min-width: 0;
+                font-size: 12px;
+                line-height: 1.38;
             }
             .admin-ai-logs-col-time,
             .admin-ai-logs-col-board,
@@ -784,12 +827,28 @@
             .admin-ai-logs-col-result {
                 text-align: left !important;
             }
+            .admin-ai-logs-col-result .admin-ai-log-pill {
+                padding: 1px 7px;
+                font-size: 10px;
+            }
             .admin-ai-logs-title-clip {
                 overflow: visible;
                 text-overflow: unset;
                 white-space: normal;
                 word-break: break-word;
-                line-height: 1.45;
+                line-height: 1.38;
+            }
+        }
+        @media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+            .admin-ai-logs-table tbody tr {
+                animation: none !important;
+                transition: none !important;
+            }
+            .admin-ai-logs-table tbody tr:hover {
+                transform: none;
+            }
+            .admin-ai-logs-table tbody tr:active {
+                transform: none;
             }
         }
         .admin-ai-logs-pagination {
