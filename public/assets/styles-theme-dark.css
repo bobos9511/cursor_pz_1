@@ -1167,6 +1167,10 @@
         body[data-theme="dark"] #memberListModal .member-list-scroll {
             scrollbar-color: #475569 transparent;
         }
+        body[data-theme="dark"] #memberListModal .member-list-table-wrap {
+            border-color: #3f5475;
+            background: rgba(15, 23, 42, 0.4);
+        }
         body[data-theme="dark"] .member-list-card {
             border-color: #3f5475;
             background: linear-gradient(180deg, #172941 0%, #142338 100%);

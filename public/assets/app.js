@@ -1964,6 +1964,46 @@
                 wrap.innerHTML = '<div class="member-list-empty">저장된 회원이 없습니다.<br><span class="member-list-empty-sub">테스트용 회원가입으로 계정을 추가한 뒤 다시 열어 주세요.</span></div>';
                 return;
             }
+            const isMobile = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches;
+            if (!isMobile) {
+                wrap.innerHTML = `
+                <div class="member-list-table-wrap">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:1;">
+                            <tr>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">이름</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직원번호</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서명</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">부서코드</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">직급/직책</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">업무 역할</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">최근 접속</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center;">플랫폼 관리</th>
+                                <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:center; width:170px;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${visibleUsers.map((u) => `
+                                <tr>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(u.name || '')}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(String(u.employeeNo || ''))}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(u.deptName || '')}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(String(u.deptCode || ''))}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(u.grade || '')} / ${escapeHtml(u.position || '')}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(getRoleDisplayName(u.role))}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9;">${escapeHtml(formatSignupUserLastAccess(u))}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">${resolveUserIsAdmin(u) ? '예' : '아니오'}</td>
+                                    <td style="padding:10px; border-bottom:1px solid #f1f5f9; text-align:center;">
+                                        <button type="button" class="btn btn-primary" style="padding:6px 10px; font-size:12px;" onclick="loginByMemberId(${u.id})">선택 로그인</button>
+                                        <button type="button" class="btn btn-outline" style="padding:6px 10px; font-size:12px; margin-left:6px;" onclick="deleteSignupUser(${u.id})" ${isAiSystemUser(u) ? 'disabled title="AI 시스템 계정은 삭제할 수 없습니다."' : ''}>삭제</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+                return;
+            }
 
             wrap.innerHTML = `<div class="member-list-cards" role="list">
                 ${visibleUsers
@@ -2021,7 +2061,7 @@
                     title: '관리자 PIN',
                     mode: 'verify',
                     employeeNo: normalizeEmployeeNo(user.employeeNo, true),
-                    message: `${user.name || ''} (${user.employeeNo}) 계정 로그인을 위해 6자리 PIN을 입력하세요.`,
+                    message: '6자리 PIN을 입력하세요.',
                     onResult: (pin) => {
                         if (pin == null) return;
                         void doLogin({ pinPreVerified: true, adminPin: pin, fromMemberListLogin: true });

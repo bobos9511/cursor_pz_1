@@ -174,7 +174,7 @@
                 <button class="btn-icon" onclick="closeLoginTestToolsModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body flex-col gap-10">
-                <button type="button" onclick="openMemberListFromTestTools()" class="btn w-full" style="border: 1px solid #93c5fd; color: #1e40af; background: #eff6ff;">테스트회원 관리</button>
+                <button type="button" onclick="openMemberListFromTestTools()" class="btn w-full" style="border: 1px solid #93c5fd; color: #1e40af; background: #eff6ff;">테스트 회원 목록</button>
                 <button type="button" onclick="openSignupFromTestTools()" class="btn w-full" style="border: 1px solid #cbd5e1; color: #334155; background: #f8fafc;">테스트용 회원가입</button>
             </div>
         </div>
@@ -187,10 +187,9 @@
                 <button type="button" class="btn-icon" onclick="closeAdminPinGateModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body admin-pin-gate-body">
-                <div class="admin-pin-gate-chip">SECURE PIN</div>
                 <p id="adminPinGateMessage" class="signup-modal-hint admin-pin-gate-msg"></p>
                 <div id="adminPinGateSlots" class="admin-pin-slots" aria-hidden="true"></div>
-                <p class="admin-pin-gate-help">관리자 전용 PIN입니다. 로그인 화면 비밀번호와 다릅니다. 숫자 키패드 또는 숫자 키로 입력하세요.</p>
+                <p class="admin-pin-gate-help">숫자 키패드 또는 숫자 키로 입력하세요.</p>
                 <input type="password" id="adminPinGateInput" class="sr-only" tabindex="-1" maxlength="6" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN 6자리">
                 <div id="adminPinGateKeypad" class="admin-pin-keypad">
                     <button type="button" class="admin-pin-key" data-digit="1">1</button>
