@@ -6,12 +6,77 @@ function stripHtmlToPlainText(rawHtml) {
     return (temp.textContent || temp.innerText || "").trim();
 }
 
+/** 이어쓰기 청크 병합: 접미·접두 중복 제거 후, 문장 중간이면 공백으로만 이음(불필요한 줄바꿈 방지). */
+function mergeAiContinuationSegments(base, next) {
+    const a = String(base || "").replace(/\r/g, "").trimEnd();
+    const b = String(next || "").replace(/\r/g, "").trim();
+    if (!a) return b;
+    if (!b) return a;
+    if (a.includes(b)) return a;
+    if (b.includes(a)) return b;
+    const maxOverlap = Math.min(500, a.length, b.length);
+    for (let i = maxOverlap; i >= 2; i--) {
+        if (a.slice(-i) === b.slice(0, i)) {
+            return `${a}${b.slice(i)}`.trim();
+        }
+    }
+    if (/^(?:[-*•]|[0-9]+[.)])\s/m.test(b)) return `${a}\n${b}`;
+    if (/[.!?。．…]["')\]]*\s*$/.test(a)) return `${a}\n${b}`;
+    return `${a} ${b}`.replace(/[ \t]{2,}/g, " ").trim();
+}
+
+function isAiBulletLine(line) {
+    return /^(?:[-*•]|[0-9]+[.)])\s/.test(String(line || "").trim());
+}
+
+function endsAiSentenceTerminator(buf) {
+    return /[.!?。．…]["')\]]*\s*$/.test(String(buf || "").trim());
+}
+
+/** 단일 줄바꿈으로 갈라진 연속 문장·항목을 공백으로 이어 자연스럽게 표시(문단 구분 \\n\\n·목록 시작은 유지). */
+function collapseMidSentenceLineBreaks(text) {
+    const raw = String(text || "").replace(/\r/g, "");
+    const paras = raw.split(/\n{2,}/);
+    return paras
+        .map((para) => {
+            const lines = para.split("\n").map((l) => l.trimEnd());
+            const nonempty = lines.filter((l) => l.replace(/\s/g, "").length > 0);
+            if (nonempty.length <= 1) return nonempty.join("") || lines.join("\n").trim();
+            let buf = nonempty[0];
+            const chunks = [];
+            for (let i = 1; i < nonempty.length; i++) {
+                const line = nonempty[i];
+                if (isAiBulletLine(line)) {
+                    chunks.push(buf);
+                    buf = line;
+                    continue;
+                }
+                if (isAiBulletLine(buf)) {
+                    buf = `${buf} ${line.trimStart()}`.replace(/[ \t]{2,}/g, " ");
+                    continue;
+                }
+                if (endsAiSentenceTerminator(buf)) {
+                    chunks.push(buf);
+                    buf = line;
+                    continue;
+                }
+                buf = `${buf} ${line.trimStart()}`.replace(/[ \t]{2,}/g, " ");
+            }
+            chunks.push(buf);
+            return chunks.join("\n");
+        })
+        .join("\n\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
 function normalizeAiReplyText(rawReply) {
     let text = String(rawReply || "").replace(/\r/g, "").trim();
     text = text.replace(/[ \t]+\n/g, "\n");
     text = text.replace(/\n[ \t]+/g, "\n");
     text = text.replace(/[ \t]{2,}/g, " ");
     text = text.replace(/\n{3,}/g, "\n\n");
+    text = collapseMidSentenceLineBreaks(text);
     return text.trim();
 }
 
@@ -341,7 +406,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
             continueFrom: mergedRawReply,
         });
         if (!next.ok || !next.rawReply) break;
-        mergedRawReply = `${mergedRawReply}\n${String(next.rawReply || "")}`.trim();
+        mergedRawReply = mergeAiContinuationSegments(mergedRawReply, String(next.rawReply || ""));
         result = {
             ...next,
             rawReply: mergedRawReply,

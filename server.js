@@ -326,13 +326,16 @@ function mergeContinuationText(base, next) {
   if (b.includes(a)) return b;
   const maxOverlap = Math.min(300, a.length, b.length);
   let overlap = 0;
-  for (let i = maxOverlap; i >= 20; i -= 1) {
+  for (let i = maxOverlap; i >= 2; i -= 1) {
     if (a.slice(-i) === b.slice(0, i)) {
       overlap = i;
       break;
     }
   }
-  return overlap > 0 ? `${a}${b.slice(overlap)}`.trim() : `${a}\n${b}`.trim();
+  if (overlap > 0) return `${a}${b.slice(overlap)}`.trim();
+  if (/^(?:[-*•]|[0-9]+[.)])\s/m.test(b)) return `${a}\n${b}`.trim();
+  if (/[.!?。．…]["')\]]*\s*$/.test(a)) return `${a}\n${b}`.trim();
+  return `${a} ${b}`.replace(/[ \t]{2,}/g, " ").trim();
 }
 
 function normalizeKnowStatus(statusRaw) {

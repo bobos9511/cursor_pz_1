@@ -637,7 +637,7 @@ async function continueAiSearchAnswer() {
             needsMore = false;
             break;
         }
-        continuedRaw = `${continuedRaw}\n${nextRaw}`.trim();
+        continuedRaw = mergeAiContinuationSegments(continuedRaw, nextRaw);
         const lastIdx = aiSearchActive.messages.length - 1;
         aiSearchActive.messages[lastIdx].text = formatAiReplyHtml(continuedRaw);
         saveAiSearchActiveState();
