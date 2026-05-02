@@ -376,6 +376,7 @@
             if (!canUseSystemNotificationApi()) return false;
             const osNotifyEnabled = !(appData && appData.settings && appData.settings.osNotify === false);
             if (!osNotifyEnabled) return false;
+            if (!currentLoginUser) return false;
             const isMobile = isMobileOsClient();
             if (!isMobile) return true;
             const isAsyncOnly = options && options.asyncOnly === true;
@@ -468,7 +469,9 @@
                 maybeRequestSystemNotificationPermission();
             }
             const systemShown = wantsSystem ? showSystemNotification(message, type, options) : false;
-            const skipPageToast = wantsSystem && systemShown;
+            // 브라우저에서는 OS 방해금지(DND) 상태 감지가 어려워, 시스템 알림 성공 시에도 토스트를 기본 병행합니다.
+            const keepToastWithSystem = !(options && options.keepToastWithSystem === false);
+            const skipPageToast = wantsSystem && systemShown && !keepToastWithSystem;
             if (!container || skipPageToast) return;
 
             const toast = document.createElement('div');
@@ -544,6 +547,7 @@
         let historyRouteInitialized = false;
         const USER_SCOPE_COOKIE = 'knockUserScope';
         const APP_DATA_SHARED_SCOPE = 'shared';
+        const LOGIN_THEME_MODE_KEY = 'knock-login-theme-mode';
         const AI_SEARCH_HISTORY_KEY_PREFIX = 'knockAiHistory:';
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         const AI_REQUEST_TIMEOUT_MS = 60000;
@@ -683,12 +687,52 @@
             const handler = () => {
                 const mode = getCurrentThemeMode();
                 if (mode === 'system') applyThemeMode('system');
+                const loginTheme = localStorage.getItem(LOGIN_THEME_MODE_KEY) || 'system';
+                if (!currentLoginUser && loginTheme === 'system') {
+                    applyThemeMode('system');
+                    updateLoginThemeFabUi();
+                }
             };
             if (typeof systemThemeMedia.addEventListener === 'function') {
                 systemThemeMedia.addEventListener('change', handler);
             } else if (typeof systemThemeMedia.addListener === 'function') {
                 systemThemeMedia.addListener(handler);
             }
+        }
+        function getLoginThemeMode() {
+            const raw = String(localStorage.getItem(LOGIN_THEME_MODE_KEY) || 'system');
+            return raw === 'dark' || raw === 'light' ? raw : 'system';
+        }
+        function updateLoginThemeFabUi() {
+            const btn = document.getElementById('loginThemeFab');
+            const icon = document.getElementById('loginThemeFabIcon');
+            if (!btn || !icon) return;
+            const loginPageVisible = !currentLoginUser && document.getElementById('loginPage') && document.getElementById('loginPage').style.display !== 'none';
+            btn.style.display = loginPageVisible ? 'inline-flex' : 'none';
+            const resolved = resolveThemeFromMode(getLoginThemeMode());
+            icon.textContent = resolved === 'dark' ? '☀' : '☾';
+            btn.title = resolved === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
+        }
+        function applyLoginThemeMode(mode) {
+            const m = mode === 'light' || mode === 'dark' ? mode : 'system';
+            localStorage.setItem(LOGIN_THEME_MODE_KEY, m);
+            if (!currentLoginUser) applyThemeMode(m);
+            updateLoginThemeFabUi();
+        }
+        function toggleLoginThemeMode() {
+            const resolved = resolveThemeFromMode(getLoginThemeMode());
+            applyLoginThemeMode(resolved === 'dark' ? 'light' : 'dark');
+        }
+        window.toggleLoginThemeMode = toggleLoginThemeMode;
+        function initializeLoginThemeControls() {
+            if (currentLoginUser) {
+                updateLoginThemeFabUi();
+                return;
+            }
+            // 로그인 전 기본은 시스템 테마
+            localStorage.setItem(LOGIN_THEME_MODE_KEY, 'system');
+            applyThemeMode(getLoginThemeMode());
+            updateLoginThemeFabUi();
         }
         function getKnowCategoryLabel(category) {
             return KNOW_CATEGORY_LABEL[category] || '-';
@@ -1174,6 +1218,36 @@
             const cookieScope = getCookie(USER_SCOPE_COOKIE);
             return cookieScope || 'guest';
         }
+        function getUserSettingsScope() {
+            if (currentLoginUser && currentLoginUser.employeeNo) return String(currentLoginUser.employeeNo);
+            const empInput = document.getElementById('loginEmpNo');
+            const typed = normalizeEmployeeNo(empInput && empInput.value, true);
+            if (typed && typed !== AI_SYSTEM_USER_EMP_NO) return typed;
+            const cookieScope = getCookie(USER_SCOPE_COOKIE);
+            return cookieScope || 'guest';
+        }
+        async function loadUserSettingsFromServer() {
+            const scope = encodeURIComponent(getUserSettingsScope());
+            const data = await fetchJson(`/api/db/user-settings?scope=${scope}`);
+            return data && data.settings && typeof data.settings === 'object' ? data.settings : {};
+        }
+        function saveUserSettingsToServer() {
+            const scope = encodeURIComponent(getUserSettingsScope());
+            const settingsPayload = {
+                osNotify: !(appData && appData.settings && appData.settings.osNotify === false),
+                themeMode: normalizeThemeMode(appData && appData.settings ? appData.settings.themeMode : 'system'),
+                initialView: getPreferredInitialView(),
+                notifyPolicy: normalizeNotifyPolicy(appData && appData.settings ? appData.settings.notifyPolicy : getDefaultNotifyPolicy()),
+            };
+            fetchJson(`/api/db/user-settings?scope=${scope}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: settingsPayload }),
+            }).catch((error) => {
+                console.error('saveUserSettingsToServer failed:', error);
+                showAlert('사용자 설정 저장에 실패했습니다.', 'error');
+            });
+        }
         const KNOCK_SESSION_TOKEN_KEY = 'knockSessionToken';
 
         function getStoredSessionToken() {
@@ -1306,10 +1380,22 @@
         }
         function saveData() {
             const scope = encodeURIComponent(getAppDataUserScope());
+            const payload = {
+                ...appData,
+                settings: {
+                    boardHelp:
+                        appData &&
+                        appData.settings &&
+                        appData.settings.boardHelp &&
+                        typeof appData.settings.boardHelp === 'object'
+                            ? appData.settings.boardHelp
+                            : {},
+                },
+            };
             fetchJson(`/api/db/app-data?scope=${scope}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ appData })
+                body: JSON.stringify({ appData: payload })
             }).catch((error) => {
                 console.error('saveData failed:', error);
                 showAlert('서버 저장에 실패했습니다.', 'error');
@@ -1437,6 +1523,18 @@
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
             if (appData.settings.initialView !== 'dashboard' && appData.settings.initialView !== 'ai-search') appData.settings.initialView = 'ai-search';
             appData.settings.notifyPolicy = normalizeNotifyPolicy(appData.settings.notifyPolicy);
+            try {
+                const userSettings = await loadUserSettingsFromServer();
+                if (userSettings && typeof userSettings === 'object') {
+                    appData.settings.osNotify = userSettings.osNotify !== false;
+                    appData.settings.themeMode = normalizeThemeMode(userSettings.themeMode || appData.settings.themeMode || 'system');
+                    appData.settings.initialView = userSettings.initialView === 'dashboard' ? 'dashboard' : 'ai-search';
+                    appData.settings.notifyPolicy = normalizeNotifyPolicy(userSettings.notifyPolicy || appData.settings.notifyPolicy);
+                }
+            } catch (error) {
+                if (error && error.knockSessionHandled) throw error;
+                console.error('loadUserSettingsFromServer failed:', error);
+            }
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
             const localBoardHelp = appData.settings.boardHelp || {};
@@ -2453,6 +2551,7 @@
             aiSearchHistory = [];
             if (!currentSessionIp) currentSessionIp = getDummyIp();
             document.getElementById('loginPage').style.display = 'none'; 
+            updateLoginThemeFabUi();
             const appContainer = document.getElementById('appContainer');
             appContainer.style.visibility = 'hidden';
             appContainer.style.display = 'flex';
@@ -2503,6 +2602,8 @@
             setStoredSessionToken('');
             navigateToLoginUrl();
             currentLoginUser = null;
+            applyLoginThemeMode('system');
+            updateLoginThemeFabUi();
         }
         function saveSettings() {
             const osNotifyEl = document.getElementById('setOsNotify');
@@ -2529,7 +2630,7 @@
                 includeKeywords: normalizeKeywordList(notifyIncludeEl ? notifyIncludeEl.value : ''),
             });
             applyThemeMode(appData.settings.themeMode);
-            saveData();
+            saveUserSettingsToServer();
             showAlert('설정이 저장되었습니다.', 'success');
         }
         function clearCookie(name) {
@@ -4733,4 +4834,7 @@
             }
         }
 
-        bootstrapSession();
+        initializeLoginThemeControls();
+        bootstrapSession().finally(() => {
+            updateLoginThemeFabUi();
+        });

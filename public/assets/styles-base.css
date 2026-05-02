@@ -160,6 +160,8 @@
             box-shadow: 0 8px 18px rgba(14, 116, 214, 0.15);
             transition: transform 0.15s ease, color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
             position: relative;
+            margin-left: auto;
+            margin-right: auto;
         }
         .login-brand-callout:hover {
             color: #1d4ed8;
@@ -199,6 +201,38 @@
             0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45); }
             70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+        .login-theme-fab {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,245,249,0.94));
+            color: #0f172a;
+            font-size: 19px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+            cursor: pointer;
+            z-index: 130;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .login-theme-fab:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+        }
+        @media (max-width: 520px) {
+            .login-theme-fab {
+                right: 12px;
+                bottom: 12px;
+                width: 40px;
+                height: 40px;
+                font-size: 17px;
+            }
         }
         .login-box { background: rgba(255,255,255,0.97); backdrop-filter: blur(2px); padding: 40px; border-radius: 14px; box-shadow: 0 22px 48px rgba(15,23,42,0.24); width: 100%; max-width: 430px; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.8); animation: loginCardIn 0.55s cubic-bezier(.2,.8,.2,1) both; }
         .server-error-page {

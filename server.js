@@ -68,6 +68,8 @@ function createDefaultDb() {
     aiSettingsHistory: [],
     /** 직원번호(스코프)별 AI채팅 지난 대화 — 브라우저와 무관하게 동기화 */
     aiChatHistoryByScope: {},
+    /** 직원번호(스코프)별 개인 환경설정 */
+    userSettingsByScope: {},
     /** 직원번호(스코프)별 알림센터 기록 */
     notificationsByScope: {},
     /** 테스트 계정 단일 접속 세션: 직원번호 → { tokenHash, createdAt, lastSeenAt } (구형 sessionId는 무시) */
@@ -440,6 +442,8 @@ function readDb() {
       aiSettingsHistory: Array.isArray(parsed && parsed.aiSettingsHistory) ? parsed.aiSettingsHistory : [],
       aiChatHistoryByScope:
         parsed && typeof parsed.aiChatHistoryByScope === "object" ? parsed.aiChatHistoryByScope : {},
+      userSettingsByScope:
+        parsed && typeof parsed.userSettingsByScope === "object" ? parsed.userSettingsByScope : {},
       notificationsByScope:
         parsed && typeof parsed.notificationsByScope === "object" ? parsed.notificationsByScope : {},
       testSessionsByEmpNo:
@@ -1414,6 +1418,36 @@ function pruneNotificationsByScope(db, nowMs = Date.now()) {
   return changed;
 }
 
+function sanitizeUserSettings(raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const notifyPolicy = src.notifyPolicy && typeof src.notifyPolicy === "object" ? src.notifyPolicy : {};
+  const normKeywords = (arrOrText) =>
+    Array.from(
+      new Set(
+        (Array.isArray(arrOrText) ? arrOrText : String(arrOrText || "").split(","))
+          .map((v) => String(v || "").trim())
+          .filter(Boolean),
+      ),
+    ).slice(0, 50);
+  return {
+    osNotify: src.osNotify !== false,
+    themeMode: src.themeMode === "dark" || src.themeMode === "light" || src.themeMode === "system" ? src.themeMode : "system",
+    initialView: src.initialView === "dashboard" ? "dashboard" : "ai-search",
+    notifyPolicy: {
+      master: notifyPolicy.master === "block" ? "block" : "allow",
+      level: notifyPolicy.level === "important" ? "important" : "all",
+      timeMode:
+        notifyPolicy.timeMode === "all" || notifyPolicy.timeMode === "night" || notifyPolicy.timeMode === "custom"
+          ? notifyPolicy.timeMode
+          : "all",
+      customStart: /^\d{2}:\d{2}$/.test(String(notifyPolicy.customStart || "")) ? String(notifyPolicy.customStart) : "09:00",
+      customEnd: /^\d{2}:\d{2}$/.test(String(notifyPolicy.customEnd || "")) ? String(notifyPolicy.customEnd) : "18:00",
+      excludeKeywords: normKeywords(notifyPolicy.excludeKeywords),
+      includeKeywords: normKeywords(notifyPolicy.includeKeywords),
+    },
+  };
+}
+
 async function handleDbApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/db/app-data") {
     const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
@@ -1516,6 +1550,40 @@ async function handleDbApi(req, res, url) {
     pruneNotificationsByScope(db);
     writeDb(db);
     sendJson(res, 200, { ok: true, count: db.notificationsByScope[scope].length });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/user-settings") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 200, { settings: sanitizeUserSettings({}) });
+      return true;
+    }
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    if (!db.userSettingsByScope || typeof db.userSettingsByScope !== "object") db.userSettingsByScope = {};
+    const settings = sanitizeUserSettings(db.userSettingsByScope[scope]);
+    sendJson(res, 200, { settings });
+    return true;
+  }
+  if (req.method === "PUT" && url.pathname === "/api/db/user-settings") {
+    const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
+    if (scope === "guest") {
+      sendJson(res, 400, { error: "Invalid scope." });
+      return true;
+    }
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    if (!db.userSettingsByScope || typeof db.userSettingsByScope !== "object") db.userSettingsByScope = {};
+    db.userSettingsByScope[scope] = sanitizeUserSettings(body && body.settings);
+    writeDb(db);
+    sendJson(res, 200, { ok: true });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/claim") {
