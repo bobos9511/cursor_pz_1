@@ -714,9 +714,55 @@
             border-bottom-color: #a16207 !important;
             color: #fde68a !important;
         }
+        /* 게시물 상세: AI 어시스턴트 레포트 카드 — 라이트 블루 톤 완화 */
+        body[data-theme="dark"] #view-detail #dtlAiWrap {
+            border-color: #3f5475 !important;
+            background: linear-gradient(180deg, #141d2e 0%, #101b2d 100%);
+            box-shadow: 0 8px 24px rgba(2, 8, 24, 0.35);
+            overflow: hidden;
+        }
+        body[data-theme="dark"] #view-detail #dtlAiWrap > .panel-header.ai-panel-head-row {
+            background: linear-gradient(135deg, #1b3250 0%, #142a45 48%, #122038 100%) !important;
+            color: #e8f0ff !important;
+            border-bottom: 1px solid #3f5475 !important;
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+        }
+        body[data-theme="dark"] #view-detail #dtlAiWrap > .panel-header .icon {
+            color: #93c5fd;
+            opacity: 0.95;
+        }
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory {
+            border-color: rgba(148, 163, 184, 0.45) !important;
+            color: #e8f0ff !important;
+            background: rgba(15, 23, 42, 0.35) !important;
+        }
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory:hover {
+            background: rgba(30, 58, 95, 0.55) !important;
+            border-color: rgba(147, 197, 253, 0.45) !important;
+        }
         body[data-theme="dark"] #view-detail #aiPanelContent {
-            background: #111c30 !important;
+            background: linear-gradient(180deg, #0f172a 0%, #0c1422 100%) !important;
             color: #dce7f6 !important;
+            border-top: 1px solid rgba(63, 84, 117, 0.35);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text,
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text p,
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text li {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text b {
+            color: #bfdbfe;
+        }
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-toggle-btn {
+            border-color: #4a5f7f;
+            background: #172338;
+            color: #bfdbfe;
+        }
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-toggle-btn:hover {
+            background: #1f3555;
+            border-color: #6488b8;
+            color: #e8f4ff;
         }
         body[data-theme="dark"] #similarPostModal .modal-body > div[style*="background: #fff"],
         body[data-theme="dark"] #similarPostModal details[style*="background: #fff"] {
