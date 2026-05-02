@@ -1991,6 +1991,101 @@
         }
 
         let testSessionHeartbeatTimer = null;
+        /** 서버 기본 SESSION_TTL_MS(1h)와 동일 — ping 응답의 ttlMs가 우선 */
+        const SESSION_CLIENT_TTL_MS_DEFAULT = 60 * 60 * 1000;
+        const SESSION_EXTEND_WARN_BEFORE_MS = 5 * 60 * 1000;
+        let sessionExpiryDeadlineMs = 0;
+        let sessionWarnTimerId = null;
+        let sessionWarnAlreadyShown = false;
+
+        function clearSessionExpiryWatch() {
+            if (sessionWarnTimerId) {
+                clearTimeout(sessionWarnTimerId);
+                sessionWarnTimerId = null;
+            }
+            sessionExpiryDeadlineMs = 0;
+            sessionWarnAlreadyShown = false;
+        }
+
+        function bumpSessionExpiryFromPingResponse(payload, options = {}) {
+            const raw = payload && payload.ttlMs;
+            const ttl =
+                Number(raw) > 0 ? Number(raw) : SESSION_CLIENT_TTL_MS_DEFAULT;
+            sessionExpiryDeadlineMs = Date.now() + ttl;
+            const modal = document.getElementById('appDialogModal');
+            if (modal && modal.classList.contains('active') && sessionWarnAlreadyShown && !options.fromModalConfirm) {
+                closeAppDialog();
+            }
+            sessionWarnAlreadyShown = false;
+            scheduleSessionExpiryWarning();
+        }
+
+        function scheduleSessionExpiryWarning() {
+            if (sessionWarnTimerId) {
+                clearTimeout(sessionWarnTimerId);
+                sessionWarnTimerId = null;
+            }
+            if (!currentLoginUser || !sessionExpiryDeadlineMs || !getStoredSessionToken()) return;
+            const triggerAt = sessionExpiryDeadlineMs - SESSION_EXTEND_WARN_BEFORE_MS;
+            const delay = triggerAt - Date.now();
+            if (delay <= 0) {
+                sessionWarnTimerId = setTimeout(() => {
+                    openSessionExtendPromptIfNeeded();
+                }, 0);
+            } else {
+                sessionWarnTimerId = setTimeout(() => {
+                    openSessionExtendPromptIfNeeded();
+                }, delay);
+            }
+        }
+
+        function openSessionExtendPromptIfNeeded() {
+            sessionWarnTimerId = null;
+            if (!currentLoginUser || !getStoredSessionToken()) return;
+            if (sessionWarnAlreadyShown) return;
+            if (Date.now() >= sessionExpiryDeadlineMs) return;
+            sessionWarnAlreadyShown = true;
+            openAppDialog({
+                title: '세션 만료 안내',
+                message:
+                    '보안을 위해 곧 로그인 세션이 종료됩니다 (약 5분 후).\n로그인 상태를 연장하시겠습니까?',
+                confirmText: '연장',
+                cancelText: '나중에',
+                showCancel: true,
+                onConfirm: () => {
+                    void extendSessionOnceFromModal();
+                },
+                onCancel: () => {},
+            });
+        }
+
+        async function extendSessionOnceFromModal() {
+            const token = getStoredSessionToken();
+            if (!token || !currentLoginUser) return;
+            try {
+                const res = await fetch('/api/db/test-session/ping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token,
+                    },
+                    body: JSON.stringify({}),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    bumpSessionExpiryFromPingResponse(data, { fromModalConfirm: true });
+                    showAlert('세션이 연장되었습니다.', 'success');
+                    return;
+                }
+                if (res.status === 401 || res.status === 403) {
+                    knockOnSessionUnauthorized(data);
+                } else {
+                    showAlert('세션 연장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+                }
+            } catch (_) {
+                showAlert('세션 연장 요청에 실패했습니다. 네트워크를 확인해주세요.', 'error');
+            }
+        }
 
         async function claimTestSessionForLogin(empNoRaw, forceTakeover) {
             const emp = normalizeEmployeeNo(empNoRaw, true);
@@ -2020,10 +2115,12 @@
                 clearInterval(testSessionHeartbeatTimer);
                 testSessionHeartbeatTimer = null;
             }
+            clearSessionExpiryWatch();
         }
 
         function startTestSessionHeartbeat() {
             stopTestSessionHeartbeat();
+            bumpSessionExpiryFromPingResponse({ ttlMs: SESSION_CLIENT_TTL_MS_DEFAULT });
             testSessionHeartbeatTimer = setInterval(async () => {
                 if (!currentLoginUser || !currentLoginUser.employeeNo) return;
                 const token = getStoredSessionToken();
@@ -2038,7 +2135,9 @@
                         body: JSON.stringify({}),
                     });
                     const pingData = await res.json().catch(() => ({}));
-                    if (res.status === 403 || res.status === 401) {
+                    if (res.ok) {
+                        bumpSessionExpiryFromPingResponse(pingData);
+                    } else if (res.status === 403 || res.status === 401) {
                         stopTestSessionHeartbeat();
                         knockOnSessionUnauthorized(pingData);
                     }

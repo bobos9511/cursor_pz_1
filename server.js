@@ -1348,7 +1348,7 @@ async function handleDbApi(req, res, url) {
     r.rec.lastSeenAt = Date.now();
     db.testSessionsByEmpNo[r.emp] = r.rec;
     writeDb(db);
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true, ttlMs: SESSION_TTL_MS });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/logout") {
