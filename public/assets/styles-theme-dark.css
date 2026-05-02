@@ -1213,7 +1213,12 @@
             color: #dbeafe;
         }
         body[data-theme="dark"] .ai-chat-layer-host {
-            background: #0f172a;
+            background: transparent;
+        }
+        body[data-theme="dark"] .ai-chat-layer-host .ai-search-main.panel {
+            background: rgba(17, 28, 48, 0.94);
+            border: none;
+            box-shadow: none;
         }
         body[data-theme="dark"] .ai-layer-new-chat-btn {
             color: #bfdbfe;
