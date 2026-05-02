@@ -19,90 +19,112 @@
     </div>
 
     <!-- 테스트용 회원가입 모달 -->
-    <div id="signupModal" class="modal-overlay" style="z-index: 120;">
-        <div class="modal-content" style="max-width: 520px;">
-            <div class="modal-header">
-                <h3 class="signup-modal-title" style="font-size:18px;">테스트용 회원가입</h3>
-                <button class="btn-icon" onclick="closeSignupModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
-            <form onsubmit="event.preventDefault(); submitSignup();" class="modal-body flex-col gap-10">
+    <div id="signupModal" class="modal-overlay signup-modal-overlay" style="z-index: 120;">
+        <div class="modal-content signup-modal-shell">
+            <header class="signup-modal-header">
+                <div class="signup-modal-header-inner">
+                    <span class="signup-modal-badge" aria-hidden="true">테스트 전용</span>
+                    <h3 class="signup-modal-title">테스트용 회원가입</h3>
+                    <p class="signup-modal-lead">개발·검증용 가상 직원 계정을 등록합니다. 실제 인사 DB와 연동되지 않습니다.</p>
+                </div>
+                <button type="button" class="btn-icon signup-modal-close" onclick="closeSignupModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </header>
+            <form onsubmit="event.preventDefault(); submitSignup();" class="modal-body signup-modal-body flex-col">
                 <input type="hidden" id="signupOriginalEmpNo" value="">
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">이름</label>
-                    <input type="text" id="signupName" class="input" placeholder="이름 입력">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직원번호</label>
-                    <input type="text" id="signupEmpNo" class="input" placeholder="직원번호 6자리" maxlength="6" inputmode="numeric" oninput="formatSignupEmpNoInput()" onblur="padSignupEmpNo()">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">부서명</label>
-                    <input type="text" id="signupDeptName" class="input" placeholder="부서명 입력">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">부서코드</label>
-                    <input type="text" id="signupDeptCode" class="input" placeholder="부서코드 4자리" maxlength="4" inputmode="numeric" oninput="formatDeptCodeInput()" onblur="padDeptCodeInput()">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직급</label>
-                    <select id="signupGrade" class="input">
-                        <option value="1급">1급</option>
-                        <option value="2급">2급</option>
-                        <option value="3급">3급</option>
-                        <option value="4급">4급</option>
-                        <option value="5급">5급</option>
-                        <option value="기타">기타</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">직책</label>
-                    <select id="signupPosition" class="input">
-                        <option value="은행장">은행장</option>
-                        <option value="전무이사">전무이사</option>
-                        <option value="부행장">부행장</option>
-                        <option value="센터장">센터장</option>
-                        <option value="부장">부장</option>
-                        <option value="팀장">팀장</option>
-                        <option value="차장">차장</option>
-                        <option value="과장">과장</option>
-                        <option value="대리">대리</option>
-                        <option value="계장">계장</option>
-                        <option value="수습행원">수습행원</option>
-                        <option value="인턴">인턴</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">권한</label>
-                    <select id="signupRole" class="input">
-                        <option value="branch">영업점</option>
-                        <option value="hq">본부</option>
-                        <option value="it">IT</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">내선번호 <span style="color:#dc2626;">*</span></label>
-                    <input type="text" id="signupExtNo" class="input" placeholder="예: 8-0000" value="8-0000">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">FAX번호</label>
-                    <input type="text" id="signupFaxNo" class="input" placeholder="예: 02-0000-0000" value="02-0000-0000">
-                </div>
-                <div>
-                    <label class="font-bold" style="display:block; margin-bottom:6px; color:#475569;">휴대전화번호</label>
-                    <input type="text" id="signupMobileNo" class="input" placeholder="예: 010-0000-0000" value="010-0000-0000">
-                </div>
-                <div class="flex items-center gap-10 signup-admin-grant" style="padding:10px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
-                    <input type="checkbox" id="signupIsAdmin" style="width:18px; height:18px;">
-                    <label for="signupIsAdmin" class="font-bold" style="margin:0; color:#334155; cursor:pointer;">플랫폼 관리자 권한 부여</label>
-                </div>
-                <p style="font-size:12px; color:#64748b; margin:0;">관리자 설정(AI·권한) 메뉴 접근 및 저장에 필요합니다. 영업점·본부 계정에도 부여할 수 있습니다.</p>
-                <div class="flex items-center justify-between mt-10">
-                    <span id="signupSavedCount" style="font-size:12px; color:#64748b;">저장된 회원: 0명</span>
-                    <div class="flex gap-10">
-                        <button type="button" class="btn btn-outline" onclick="closeSignupModal()">취소</button>
-                        <button type="submit" class="btn btn-primary">저장</button>
+                <section class="signup-modal-section" aria-labelledby="signup-section-basic">
+                    <h4 id="signup-section-basic" class="signup-modal-section-title">기본 정보</h4>
+                    <div class="signup-modal-grid">
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupName">이름</label>
+                            <input type="text" id="signupName" class="input signup-field-input" placeholder="이름 입력" autocomplete="name">
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupEmpNo">직원번호</label>
+                            <input type="text" id="signupEmpNo" class="input signup-field-input" placeholder="6자리 숫자" maxlength="6" inputmode="numeric" oninput="formatSignupEmpNoInput()" onblur="padSignupEmpNo()">
+                        </div>
+                        <div class="signup-field signup-field-span2">
+                            <label class="signup-field-label" for="signupDeptName">부서명</label>
+                            <input type="text" id="signupDeptName" class="input signup-field-input" placeholder="부서명 입력">
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupDeptCode">부서코드</label>
+                            <input type="text" id="signupDeptCode" class="input signup-field-input" placeholder="4자리" maxlength="4" inputmode="numeric" oninput="formatDeptCodeInput()" onblur="padDeptCodeInput()">
+                        </div>
+                    </div>
+                </section>
+                <section class="signup-modal-section" aria-labelledby="signup-section-role">
+                    <h4 id="signup-section-role" class="signup-modal-section-title">직무 · 권한</h4>
+                    <div class="signup-modal-grid">
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupGrade">직급</label>
+                            <select id="signupGrade" class="input signup-field-input">
+                                <option value="1급">1급</option>
+                                <option value="2급">2급</option>
+                                <option value="3급">3급</option>
+                                <option value="4급">4급</option>
+                                <option value="5급">5급</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupPosition">직책</label>
+                            <select id="signupPosition" class="input signup-field-input">
+                                <option value="은행장">은행장</option>
+                                <option value="전무이사">전무이사</option>
+                                <option value="부행장">부행장</option>
+                                <option value="센터장">센터장</option>
+                                <option value="부장">부장</option>
+                                <option value="팀장">팀장</option>
+                                <option value="차장">차장</option>
+                                <option value="과장">과장</option>
+                                <option value="대리">대리</option>
+                                <option value="계장">계장</option>
+                                <option value="수습행원">수습행원</option>
+                                <option value="인턴">인턴</option>
+                            </select>
+                        </div>
+                        <div class="signup-field signup-field-span2">
+                            <label class="signup-field-label" for="signupRole">앱 권한</label>
+                            <select id="signupRole" class="input signup-field-input">
+                                <option value="branch">영업점</option>
+                                <option value="hq">본부</option>
+                                <option value="it">IT</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+                <section class="signup-modal-section" aria-labelledby="signup-section-contact">
+                    <h4 id="signup-section-contact" class="signup-modal-section-title">연락처</h4>
+                    <div class="signup-modal-grid">
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupExtNo">내선번호 <abbr class="signup-req" title="필수">*</abbr></label>
+                            <input type="text" id="signupExtNo" class="input signup-field-input" placeholder="예: 8-0000" value="8-0000">
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupFaxNo">FAX</label>
+                            <input type="text" id="signupFaxNo" class="input signup-field-input" placeholder="예: 02-0000-0000" value="02-0000-0000">
+                        </div>
+                        <div class="signup-field signup-field-span2">
+                            <label class="signup-field-label" for="signupMobileNo">휴대전화</label>
+                            <input type="text" id="signupMobileNo" class="input signup-field-input" placeholder="예: 010-0000-0000" value="010-0000-0000">
+                        </div>
+                    </div>
+                </section>
+                <div class="signup-admin-card signup-admin-grant">
+                    <input type="checkbox" id="signupIsAdmin" class="signup-admin-checkbox">
+                    <div class="signup-admin-copy">
+                        <label for="signupIsAdmin" class="signup-admin-label">플랫폼 관리자 권한 부여</label>
+                        <p class="signup-admin-desc">관리자 설정(AI·권한) 접근 및 저장이 가능합니다.</p>
                     </div>
                 </div>
+                <p class="signup-modal-hint">영업점·본부 계정에도 필요 시 부여할 수 있습니다.</p>
+                <footer class="signup-modal-footer">
+                    <span id="signupSavedCount" class="signup-saved-pill">저장된 회원: 0명</span>
+                    <div class="signup-modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeSignupModal()">취소</button>
+                        <button type="submit" class="btn btn-primary signup-submit-btn">저장</button>
+                    </div>
+                </footer>
             </form>
         </div>
     </div>

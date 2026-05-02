@@ -1153,6 +1153,49 @@
             border-color: #3f5475;
             color: #dce7f6;
         }
+        body[data-theme="dark"] #signupModal .signup-modal-shell {
+            background: linear-gradient(180deg, #152238 0%, #111c2e 100%);
+            border-color: #3f5475;
+            box-shadow:
+                0 24px 48px -12px rgba(2, 8, 24, 0.65),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        body[data-theme="dark"] .signup-modal-header {
+            background: linear-gradient(135deg, #0c2748 0%, #154a7d 48%, #176596 100%);
+            border-bottom-color: rgba(148, 163, 184, 0.22);
+        }
+        body[data-theme="dark"] .signup-modal-section {
+            border-color: #3f5475;
+            background: linear-gradient(180deg, #172941 0%, #142338 100%);
+            box-shadow: 0 2px 8px rgba(2, 8, 24, 0.35);
+        }
+        body[data-theme="dark"] .signup-modal-section-title {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .signup-field-label {
+            color: #b8c9df;
+        }
+        body[data-theme="dark"] .signup-saved-pill {
+            background: #1a2d48;
+            border-color: #3f5475;
+            color: #c7d7eb;
+        }
+        body[data-theme="dark"] .signup-modal-footer {
+            border-top-color: #3f5475;
+        }
+        body[data-theme="dark"] .signup-modal-hint {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .signup-admin-card.signup-admin-grant {
+            border-color: #4f6b94;
+            background: linear-gradient(135deg, #1a2842 0%, #1d3554 100%);
+        }
+        body[data-theme="dark"] .signup-admin-label {
+            color: #bfdbfe !important;
+        }
+        body[data-theme="dark"] .signup-admin-desc {
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .signup-modal-title,
         body[data-theme="dark"] .member-list-modal-title,
         body[data-theme="dark"] .login-test-tools-modal-title {
@@ -1170,11 +1213,11 @@
             border-color: #3f5475 !important;
             color: #d4e0f2 !important;
         }
-        body[data-theme="dark"] .signup-admin-grant {
+        body[data-theme="dark"] .signup-admin-grant:not(.signup-admin-card) {
             background: #17243a !important;
             border-color: #3f5475 !important;
         }
-        body[data-theme="dark"] .signup-admin-grant label {
+        body[data-theme="dark"] .signup-admin-grant:not(.signup-admin-card) label {
             color: #dce7f6 !important;
         }
         body[data-theme="dark"] #memberListContainer {
