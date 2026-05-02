@@ -179,20 +179,33 @@
         </div>
     </div>
 
-    <div id="adminPinGateModal" class="modal-overlay" style="z-index: 12100;" onclick="if(event.target===this) closeAdminPinGateModal(false)">
-        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
-            <div class="modal-header">
+    <div id="adminPinGateModal" class="modal-overlay admin-pin-gate-overlay" style="z-index: 12100;" onclick="if(event.target===this) closeAdminPinGateModal()">
+        <div id="adminPinGatePanel" class="modal-content admin-pin-gate-panel" onclick="event.stopPropagation()">
+            <div class="modal-header admin-pin-gate-head">
                 <h3 id="adminPinGateTitle" style="font-size:17px;">관리자 PIN</h3>
-                <button type="button" class="btn-icon" onclick="closeAdminPinGateModal(false)" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                <button type="button" class="btn-icon" onclick="closeAdminPinGateModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
-            <div class="modal-body">
-                <p id="adminPinGateMessage" class="signup-modal-hint" style="margin-bottom:12px;"></p>
-                <label class="signup-field-label" for="adminPinGateInput">PIN (숫자 6자리)</label>
-                <input type="password" id="adminPinGateInput" class="input w-full" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+            <div class="modal-body admin-pin-gate-body">
+                <p id="adminPinGateMessage" class="signup-modal-hint admin-pin-gate-msg"></p>
+                <div id="adminPinGateSlots" class="admin-pin-slots" aria-hidden="true"></div>
+                <input type="password" id="adminPinGateInput" class="sr-only" tabindex="-1" maxlength="6" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN 6자리" readonly>
+                <div id="adminPinGateKeypad" class="admin-pin-keypad">
+                    <button type="button" class="admin-pin-key" data-digit="1">1</button>
+                    <button type="button" class="admin-pin-key" data-digit="2">2</button>
+                    <button type="button" class="admin-pin-key" data-digit="3">3</button>
+                    <button type="button" class="admin-pin-key" data-digit="4">4</button>
+                    <button type="button" class="admin-pin-key" data-digit="5">5</button>
+                    <button type="button" class="admin-pin-key" data-digit="6">6</button>
+                    <button type="button" class="admin-pin-key" data-digit="7">7</button>
+                    <button type="button" class="admin-pin-key" data-digit="8">8</button>
+                    <button type="button" class="admin-pin-key" data-digit="9">9</button>
+                    <span class="admin-pin-key-spacer" aria-hidden="true"></span>
+                    <button type="button" class="admin-pin-key" data-digit="0">0</button>
+                    <button type="button" class="admin-pin-key admin-pin-key--wide" data-action="backspace" title="삭제">⌫</button>
+                </div>
             </div>
-            <div class="modal-footer flex gap-10 justify-end" style="padding:12px 16px;border-top:1px solid #e2e8f0;">
-                <button type="button" class="btn btn-outline" onclick="closeAdminPinGateModal(false)">취소</button>
-                <button type="button" class="btn btn-primary" onclick="confirmAdminPinGateModal()">확인</button>
+            <div class="modal-footer admin-pin-gate-foot flex gap-10 justify-end">
+                <button type="button" class="btn btn-outline" onclick="closeAdminPinGateModal()">취소</button>
             </div>
         </div>
     </div>

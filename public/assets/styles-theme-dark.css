@@ -1171,6 +1171,33 @@
         body[data-theme="dark"] #memberListModal .member-list-help strong {
             color: #e2e8f0;
         }
+        body[data-theme="dark"] #adminPinGateModal .modal-content {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-gate-msg {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-slot {
+            border-color: #64748b;
+            background: #0f172a;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-slot--filled {
+            background: #60a5fa;
+            border-color: #60a5fa;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-key {
+            background: #1e293b;
+            border-color: #475569;
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-key:hover {
+            background: #334155;
+            border-color: #60a5fa;
+        }
+        body[data-theme="dark"] #adminPinGateModal .admin-pin-gate-foot {
+            border-top-color: #3f5475;
+            background: #172338;
+        }
         body[data-theme="dark"] #signupModal .signup-modal-shell {
             background: linear-gradient(180deg, #152238 0%, #111c2e 100%);
             border-color: #3f5475;

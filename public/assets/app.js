@@ -553,6 +553,7 @@
         const AI_SYSTEM_USER_EMP_NO = '000000';
         const AI_SYSTEM_USER_NAME = 'AI';
         let signupUsers = [];
+        let adminPinAutoLoginBusy = false;
         let currentLoginUser = null;
         let pendingProfileImageData = '';
         let aiSearchActive = null;
@@ -2017,12 +2018,14 @@
                 if (pwdRadio) pwdRadio.checked = true;
                 openAdminPinGateModal({
                     title: '관리자 PIN',
+                    mode: 'verify',
+                    employeeNo: normalizeEmployeeNo(user.employeeNo, true),
                     message: `${user.name || ''} (${user.employeeNo}) 계정 로그인을 위해 6자리 PIN을 입력하세요.`,
                     onResult: (pin) => {
                         if (pin == null) return;
                         const authIn = document.getElementById('authInput');
                         if (authIn) authIn.value = pin;
-                        void doLogin();
+                        void doLogin({ pinPreVerified: true, adminPin: pin });
                     },
                 });
                 return;
@@ -2292,6 +2295,36 @@
             }
         }
 
+        function setupAdminPinAuthInputAutoLogin() {
+            const input = document.getElementById('authInput');
+            if (!input || input.dataset.knockAdminPinAuto) return;
+            input.dataset.knockAdminPinAuto = '1';
+            input.addEventListener('input', () => {
+                if (adminPinAutoLoginBusy) return;
+                const empNo = (document.getElementById('loginEmpNo') && document.getElementById('loginEmpNo').value || '').trim();
+                if (!empNo) return;
+                const u = signupUsers.find((x) => String(x.employeeNo) === String(empNo));
+                if (!resolveUserIsAdmin(u) || !u.hasAdminPin) return;
+                const pin = normalizeAdminPinDigits(input.value);
+                if (!isValidAdminPinFormatClient(pin)) return;
+                adminPinAutoLoginBusy = true;
+                void (async () => {
+                    try {
+                        const vr = await fetch('/api/auth/admin-pin/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
+                        });
+                        if (vr.ok) {
+                            await doLogin({ pinPreVerified: true, adminPin: pin });
+                        }
+                    } finally {
+                        adminPinAutoLoginBusy = false;
+                    }
+                })();
+            });
+        }
+
         async function doLogin(options = {}) { 
             hideServerErrorPage();
             padEmployeeNo();
@@ -2332,28 +2365,51 @@
                     return;
                 }
                 if (authType === 'vein') {
-                    showAlert('관리자 계정은 비밀번호(PIN) 입력란에 숫자 PIN을 입력해 로그인하세요.', 'error');
+                    showAlert('관리자 계정은 PIN(비밀번호) 입력란·PIN 화면에서 6자리 숫자로 로그인하세요.', 'error');
                     return;
                 }
-                const pin = normalizeAdminPinDigits(authInput);
-                if (!isValidAdminPinFormatClient(pin)) {
-                    showAlert('관리자 PIN은 숫자 6자리로 입력해주세요.', 'error');
-                    return;
-                }
-                try {
-                    const vr = await fetch('/api/auth/admin-pin/verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
-                    });
-                    const vd = await vr.json().catch(() => ({}));
-                    if (!vr.ok) {
-                        showAlert((vd && vd.error) || 'PIN이 올바르지 않습니다.', 'error');
+                if (
+                    options.pinPreVerified &&
+                    options.adminPin &&
+                    isValidAdminPinFormatClient(normalizeAdminPinDigits(String(options.adminPin)))
+                ) {
+                    /* PIN은 모달·자동 입력에서 이미 확인됨 */
+                } else {
+                    const pin = normalizeAdminPinDigits(authInput);
+                    if (isValidAdminPinFormatClient(pin)) {
+                        try {
+                            const vr = await fetch('/api/auth/admin-pin/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
+                            });
+                            const vd = await vr.json().catch(() => ({}));
+                            if (!vr.ok) {
+                                showAlert((vd && vd.error) || 'PIN이 올바르지 않습니다.', 'error');
+                                return;
+                            }
+                        } catch (_) {
+                            showAlert('PIN 확인에 실패했습니다.', 'error');
+                            return;
+                        }
+                    } else {
+                        if (typeof openAdminPinGateModal === 'function') {
+                            openAdminPinGateModal({
+                                mode: 'verify',
+                                employeeNo: normalizeEmployeeNo(empNo, true),
+                                title: '관리자 PIN',
+                                message: `${currentLoginUser.name || ''} — 6자리 PIN을 입력하세요.`,
+                                seedFromAuthField: true,
+                                onResult: (p) => {
+                                    if (p == null) return;
+                                    void doLogin(Object.assign({}, options, { pinPreVerified: true, adminPin: p }));
+                                },
+                            });
+                        } else {
+                            showAlert('관리자 PIN은 숫자 6자리로 입력해주세요.', 'error');
+                        }
                         return;
                     }
-                } catch (_) {
-                    showAlert('PIN 확인에 실패했습니다.', 'error');
-                    return;
                 }
             } else {
                 if (authType === 'pwd' && !authInput) {
@@ -4685,4 +4741,5 @@
             }
         }
 
+        setupAdminPinAuthInputAutoLogin();
         bootstrapSession();

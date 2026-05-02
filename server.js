@@ -1220,6 +1220,7 @@ function mergeSignupUsersFromPut(incomingList, db) {
     let pinHash = prev && prev.adminPinHash;
     if (!isAdmin) {
       pinHash = undefined;
+      delete cleaned.adminPinHash;
     } else if (plain !== "") {
       const digits = normalizeAdminPinDigitsServer(plain);
       if (isValidAdminPinFormatServer(digits)) {

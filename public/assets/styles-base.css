@@ -2079,6 +2079,114 @@
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; }
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        body.admin-pin-gate-open {
+            overflow: hidden;
+        }
+        .admin-pin-gate-overlay.admin-pin-gate--fullscreen {
+            align-items: stretch;
+            padding: 0;
+            z-index: 12100;
+        }
+        .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen {
+            max-width: none;
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            border-radius: 0;
+            margin: 0;
+        }
+        .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen .admin-pin-gate-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: none;
+        }
+        #adminPinGateModal .admin-pin-gate-body {
+            max-height: none;
+        }
+        .admin-pin-gate-body {
+            padding-top: 12px;
+        }
+        .admin-pin-gate-msg {
+            margin-bottom: 14px;
+        }
+        .admin-pin-slots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-pin-slot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            background: #fff;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .admin-pin-slot--filled {
+            background: var(--ibk-blue);
+            border-color: var(--ibk-blue);
+        }
+        .admin-pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        .admin-pin-gate-panel--fullscreen .admin-pin-keypad {
+            max-width: min(92vw, 320px);
+            gap: 12px;
+            margin-top: auto;
+            margin-bottom: 8px;
+        }
+        .admin-pin-key {
+            min-height: 48px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 20px;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .admin-pin-key:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+        .admin-pin-key:active {
+            transform: scale(0.97);
+        }
+        .admin-pin-key--wide {
+            font-size: 18px;
+        }
+        .admin-pin-key-spacer {
+            pointer-events: none;
+        }
+        .admin-pin-gate-panel--shake {
+            animation: adminPinShake 0.42s ease;
+        }
+        @keyframes adminPinShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
         .modal-body { padding: 20px; font-size: 14px; color: #444; line-height: 1.5; overflow-y: auto; max-height: 60vh; }
         .modal-footer { padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
 

@@ -17,41 +17,133 @@ let adminRagBlocklistWired = false;
 const pendingAdminPinByEmp = new Map();
 let adminPinGateCallback = null;
 
-function openAdminPinGateModal({ title, message, onResult }) {
-    adminPinGateCallback = typeof onResult === "function" ? onResult : null;
-    const modal = document.getElementById("adminPinGateModal");
-    const tEl = document.getElementById("adminPinGateTitle");
-    const mEl = document.getElementById("adminPinGateMessage");
-    const inp = document.getElementById("adminPinGateInput");
-    if (tEl) tEl.textContent = title || "관리자 PIN";
-    if (mEl) mEl.textContent = message || "";
-    if (inp) inp.value = "";
-    if (modal) modal.classList.add("active");
-    setTimeout(() => {
-        if (inp) inp.focus();
-    }, 80);
-}
-window.openAdminPinGateModal = openAdminPinGateModal;
+/** @type {{ mode: "collect"|"verify", employeeNo: string|null, digits: string, verifyBusy: boolean }} */
+const adminPinGateContext = {
+    mode: "collect",
+    employeeNo: null,
+    digits: "",
+    verifyBusy: false,
+};
 
-function closeAdminPinGateModal(isCancel) {
-    const modal = document.getElementById("adminPinGateModal");
-    if (modal) modal.classList.remove("active");
-    if (adminPinGateCallback) {
-        const fn = adminPinGateCallback;
-        adminPinGateCallback = null;
-        if (isCancel) fn(null);
+let adminPinGateKeypadWired = false;
+
+function wireAdminPinGateKeypadOnce() {
+    if (adminPinGateKeypadWired) return;
+    const kp = document.getElementById("adminPinGateKeypad");
+    if (!kp) return;
+    adminPinGateKeypadWired = true;
+    kp.addEventListener("click", (ev) => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest("[data-digit],[data-action]") : null;
+        if (!btn) return;
+        if (btn.getAttribute("data-digit") != null) {
+            adminPinGateAppendDigit(String(btn.getAttribute("data-digit")).slice(0, 1));
+        } else if (btn.getAttribute("data-action") === "backspace") {
+            adminPinGateBackspace();
+        }
+    });
+}
+
+function applyAdminPinGateResponsive() {
+    const overlay = document.getElementById("adminPinGateModal");
+    const panel = document.getElementById("adminPinGatePanel");
+    if (!overlay || !panel) return;
+    const mobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 768px)").matches;
+    overlay.classList.toggle("admin-pin-gate--fullscreen", mobile);
+    panel.classList.toggle("admin-pin-gate-panel--fullscreen", mobile);
+}
+
+function syncAdminPinGateHiddenInput() {
+    const inp = document.getElementById("adminPinGateInput");
+    if (inp) inp.value = adminPinGateContext.digits;
+}
+
+function renderAdminPinGateSlots() {
+    const mount = document.getElementById("adminPinGateSlots");
+    if (!mount) return;
+    const n = adminPinGateContext.digits.length;
+    let html = "";
+    for (let i = 0; i < 6; i++) {
+        const filled = i < n;
+        html += `<span class="admin-pin-slot${filled ? " admin-pin-slot--filled" : ""}" aria-hidden="true"></span>`;
     }
+    mount.innerHTML = html;
 }
 
-function confirmAdminPinGateModal() {
-    const inp = document.getElementById("adminPinGateInput");
-    const pin = normalizeAdminPinDigits(inp && inp.value);
-    if (!isValidAdminPinFormatClient(pin)) {
-        showAlert("숫자 6자리 PIN을 입력해주세요.", "error");
+function resetAdminPinGateDigits() {
+    adminPinGateContext.digits = "";
+    adminPinGateContext.verifyBusy = false;
+    syncAdminPinGateHiddenInput();
+    renderAdminPinGateSlots();
+    const panel = document.getElementById("adminPinGatePanel");
+    if (panel) panel.classList.remove("admin-pin-gate-panel--shake");
+}
+
+function adminPinGateAppendDigit(d) {
+    if (adminPinGateContext.verifyBusy) return;
+    if (adminPinGateContext.digits.length >= 6) return;
+    adminPinGateContext.digits += d;
+    syncAdminPinGateHiddenInput();
+    renderAdminPinGateSlots();
+    if (adminPinGateContext.digits.length === 6) void tryFinishAdminPinGate();
+}
+
+function adminPinGateBackspace() {
+    if (adminPinGateContext.verifyBusy) return;
+    adminPinGateContext.digits = adminPinGateContext.digits.slice(0, -1);
+    syncAdminPinGateHiddenInput();
+    renderAdminPinGateSlots();
+}
+
+async function tryFinishAdminPinGate() {
+    const pin = normalizeAdminPinDigits(adminPinGateContext.digits);
+    if (!isValidAdminPinFormatClient(pin)) return;
+
+    if (adminPinGateContext.mode === "collect") {
+        finalizeAdminPinGateSuccess(pin);
         return;
     }
+
+    if (adminPinGateContext.mode !== "verify") return;
+    if (adminPinGateContext.verifyBusy) return;
+    const emp = adminPinGateContext.employeeNo;
+    if (!emp) {
+        showAlert("직원번호가 없습니다.", "error");
+        resetAdminPinGateDigits();
+        return;
+    }
+    adminPinGateContext.verifyBusy = true;
+    try {
+        const vr = await fetch("/api/auth/admin-pin/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ employeeNo: emp, pin }),
+        });
+        const vd = await vr.json().catch(() => ({}));
+        adminPinGateContext.verifyBusy = false;
+        if (!vr.ok) {
+            showAlert((vd && vd.error) || "PIN이 올바르지 않습니다.", "error");
+            const panel = document.getElementById("adminPinGatePanel");
+            if (panel) {
+                panel.classList.remove("admin-pin-gate-panel--shake");
+                void panel.offsetWidth;
+                panel.classList.add("admin-pin-gate-panel--shake");
+            }
+            resetAdminPinGateDigits();
+            return;
+        }
+        finalizeAdminPinGateSuccess(pin);
+    } catch (_) {
+        adminPinGateContext.verifyBusy = false;
+        showAlert("PIN 확인에 실패했습니다.", "error");
+        resetAdminPinGateDigits();
+    }
+}
+
+function finalizeAdminPinGateSuccess(pin) {
     const modal = document.getElementById("adminPinGateModal");
     if (modal) modal.classList.remove("active");
+    document.body.classList.remove("admin-pin-gate-open");
+    resetAdminPinGateDigits();
     if (adminPinGateCallback) {
         const fn = adminPinGateCallback;
         adminPinGateCallback = null;
@@ -59,10 +151,81 @@ function confirmAdminPinGateModal() {
     }
 }
 
-window.closeAdminPinGateModal = function () {
-    closeAdminPinGateModal(true);
-};
+/**
+ * @param {{ title?: string, message?: string, onResult?: (pin: string|null) => void, mode?: "collect"|"verify", employeeNo?: string|null, seedFromAuthField?: boolean }} opts
+ */
+function openAdminPinGateModal(opts) {
+    const o = opts && typeof opts === "object" ? opts : {};
+    adminPinGateCallback = typeof o.onResult === "function" ? o.onResult : null;
+    adminPinGateContext.mode = o.mode === "verify" ? "verify" : "collect";
+    adminPinGateContext.employeeNo = o.employeeNo != null && String(o.employeeNo).trim() !== "" ? String(o.employeeNo).trim() : null;
+    adminPinGateContext.verifyBusy = false;
+
+    let seed = "";
+    if (o.seedFromAuthField) {
+        const authIn = document.getElementById("authInput");
+        if (authIn) seed = normalizeAdminPinDigits(authIn.value);
+    }
+    adminPinGateContext.digits = seed.slice(0, 6);
+    if (adminPinGateContext.digits.length === 6 && !isValidAdminPinFormatClient(adminPinGateContext.digits)) {
+        adminPinGateContext.digits = "";
+    }
+
+    wireAdminPinGateKeypadOnce();
+
+    const modal = document.getElementById("adminPinGateModal");
+    const tEl = document.getElementById("adminPinGateTitle");
+    const mEl = document.getElementById("adminPinGateMessage");
+    if (tEl) tEl.textContent = o.title || "관리자 PIN";
+    if (mEl) mEl.textContent = o.message || "";
+    syncAdminPinGateHiddenInput();
+    renderAdminPinGateSlots();
+    applyAdminPinGateResponsive();
+    if (modal) {
+        modal.classList.add("active");
+        document.body.classList.add("admin-pin-gate-open");
+    }
+    if (adminPinGateContext.digits.length === 6 && isValidAdminPinFormatClient(adminPinGateContext.digits)) {
+        void tryFinishAdminPinGate();
+    }
+}
+window.openAdminPinGateModal = openAdminPinGateModal;
+
+function closeAdminPinGateModal() {
+    const modal = document.getElementById("adminPinGateModal");
+    if (modal) modal.classList.remove("active");
+    document.body.classList.remove("admin-pin-gate-open");
+    resetAdminPinGateDigits();
+    if (adminPinGateCallback) {
+        const fn = adminPinGateCallback;
+        adminPinGateCallback = null;
+        fn(null);
+    }
+}
+
+function confirmAdminPinGateModal() {
+    const pin = normalizeAdminPinDigits(adminPinGateContext.digits);
+    if (!isValidAdminPinFormatClient(pin)) {
+        showAlert("숫자 6자리 PIN을 입력해주세요.", "error");
+        return;
+    }
+    if (adminPinGateContext.mode === "verify") {
+        void tryFinishAdminPinGate();
+        return;
+    }
+    finalizeAdminPinGateSuccess(pin);
+}
+
+window.closeAdminPinGateModal = closeAdminPinGateModal;
 window.confirmAdminPinGateModal = confirmAdminPinGateModal;
+
+if (typeof window !== "undefined" && !window.__adminPinGateResizeWired) {
+    window.__adminPinGateResizeWired = true;
+    window.addEventListener("resize", () => {
+        const m = document.getElementById("adminPinGateModal");
+        if (m && m.classList.contains("active")) applyAdminPinGateResponsive();
+    });
+}
 
 async function submitAdminSelfPinChange() {
     if (!currentUserHasAdminAccess()) {
@@ -1019,6 +1182,7 @@ function toggleSignupUserAdminFlag(empNo, checked) {
         if (!resolveUserIsAdmin(u) && !u.hasAdminPin) {
             openAdminPinGateModal({
                 title: "관리자 PIN 설정",
+                mode: "collect",
                 message: `${u.name || ""} 직원에게 부여할 관리자 PIN(숫자 6자리)을 입력하세요. 권한 저장 시 서버에 반영됩니다.`,
                 onResult: (pin) => {
                     if (pin == null) {
@@ -1036,6 +1200,7 @@ function toggleSignupUserAdminFlag(empNo, checked) {
     } else {
         pendingAdminPinByEmp.delete(empStr);
         u.isAdmin = false;
+        u.hasAdminPin = false;
     }
 }
 
@@ -1136,10 +1301,16 @@ async function saveAdminPermissionsToServer() {
     }
     const prevUsers = signupUsers;
     signupUsers = signupUsers.map((u) => {
-        const pin = pendingAdminPinByEmp.get(String(u.employeeNo));
-        if (resolveUserIsAdmin(u) && pin) {
-            return { ...u, adminPinPlain: pin };
+        if (isAiSystemUser(u)) return { ...u };
+        if (!resolveUserIsAdmin(u)) {
+            const o = { ...u, isAdmin: false };
+            delete o.hasAdminPin;
+            delete o.adminPinPlain;
+            delete o.adminPinHash;
+            return o;
         }
+        const pin = pendingAdminPinByEmp.get(String(u.employeeNo));
+        if (pin) return { ...u, adminPinPlain: pin };
         return { ...u };
     });
     try {
