@@ -4,6 +4,9 @@ services:
     runtime: node
     region: singapore
     plan: starter
+    # main 푸시마다 자동 배포(Blueprint/서비스에 동기화될 때 적용)
+    branch: main
+    autoDeployTrigger: commit
     buildCommand: ""
     startCommand: "node server.js"
     envVars:

@@ -1,0 +1,25 @@
+# main 푸시 시 Render 배포를 돕는 워크플로입니다.
+# - Render가 GitHub와 연결돼 있고 대시보드에서 Auto-Deploy가 켜져 있으면, 푸시만으로도 배포됩니다.
+# - 훅으로만 배포하려면 Render → Service → Deploys → Deploy Hook URL을 발급한 뒤
+#   GitHub 리포지토리 Secret에 RENDER_DEPLOY_HOOK_URL 로 저장하세요. (훅 + Git 자동배포 동시 사용 시 이중 배포될 수 있으니 한 가지만 쓰는 것을 권장합니다.)
+name: Deploy to Render
+on:
+  push:
+    branches: [main]
+concurrency:
+  group: deploy-render-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  trigger-deploy-hook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST Render deploy hook (optional)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK"
+            echo "Deploy hook triggered."
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not set — skipping hook (Render Git auto-deploy or Blueprint render.yaml is enough for most setups)."
+          fi
