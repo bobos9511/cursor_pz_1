@@ -11,15 +11,11 @@
                 z-index: 1150;
                 flex-direction: column;
                 gap: 0;
-                padding: 72px 12px 14px;
-                background:
-                    radial-gradient(circle at 10% 8%, rgba(56,189,248,0.2), transparent 34%),
-                    radial-gradient(circle at 92% 12%, rgba(99,102,241,0.24), transparent 36%),
-                    linear-gradient(180deg, rgba(7,15,28,0.96), rgba(10,23,43,0.98));
+                padding: 64px 0 max(16px, env(safe-area-inset-bottom, 0px)) 0;
+                background: #121214;
                 overflow-y: auto;
                 box-sizing: border-box;
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
+                -webkit-overflow-scrolling: touch;
                 transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
             }
             .top-nav-mobile.collapsed {
@@ -28,7 +24,9 @@
                 pointer-events: none;
                 transform: translateY(-6px);
             }
-            .top-nav-mobile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .top-nav-mobile-grid--4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
             .sidebar { display: none !important; }
             .main-area-wrapper { border-top-left-radius: 0; box-shadow: none; }
             .body-wrapper { background: var(--bg-color); }
@@ -71,18 +69,20 @@
                 transform: translateY(0) scale(1);
                 pointer-events: auto;
             }
-            .top-nav-mobile-panel { padding: 12px; }
-            .top-nav-mobile-title { font-size: 18px; }
-            .top-nav-mobile-close .icon { width: 16px; height: 16px; }
+            .top-nav-mobile-panel { padding: 8px 16px 24px; }
+            .top-nav-mobile-title { font-size: 20px; }
+            .top-nav-mobile-close .icon { width: 20px; height: 20px; }
             .top-nav-item {
-                min-height: 48px;
-                padding: 11px 11px;
-                font-size: 12px;
+                font-size: 10px;
+                padding: 10px 2px 12px;
+            }
+            .top-nav-item-icon-wrap {
+                width: 44px;
+                height: 44px;
             }
             .top-nav-item .icon {
-                width: 26px;
-                height: 26px;
-                padding: 5px;
+                width: 22px;
+                height: 22px;
             }
             /* Footer(~72px) + 페이지네이션 한 줄(~56px) 위로 올려 하단 버튼과 겹침 방지 */
             .ai-chat-floating-btn {
@@ -1402,6 +1402,9 @@
             button, .btn, .nav-item, .top-nav-item, .ai-search-history-item {
                 min-height: 44px;
             }
+            .top-nav-mobile .top-nav-item {
+                min-height: 0 !important;
+            }
             .input, textarea, select {
                 min-height: 44px;
                 font-size: 16px;
@@ -1433,6 +1436,12 @@
             .btn { padding: 8px 10px; font-size: 12px; }
             .input { padding: 9px 10px; font-size: 13px; }
         }
+        @media (max-width: 380px) {
+            .top-nav-mobile-grid--4 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
