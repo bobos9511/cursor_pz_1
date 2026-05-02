@@ -223,9 +223,17 @@
             #view-list #boardStatusFilter,
             #view-list #boardKnowCategoryFilter,
             #view-list #boardKeywordInput,
-            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
+            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary:not(#boardSearchBtn),
             #view-list #listWriteBtn {
                 width: 100% !important;
+            }
+            #view-list #boardSearchBtn {
+                width: auto !important;
+                min-width: 94px;
+                justify-self: end;
+            }
+            #view-list #boardKeywordInput {
+                min-width: 220px;
             }
         }
         @media (max-width: 768px) {
