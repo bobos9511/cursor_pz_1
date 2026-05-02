@@ -2838,7 +2838,7 @@
             const thread = ensurePostThread(post);
             if (thread.length === 0) return '';
             let requestStep = 0;
-            return `<div style="margin-top:20px; border-top:1px dashed #ccc; padding-top:15px;">${
+            return `<div class="post-thread-timeline">${
                 thread.map((item) => {
                     const isManager = item.role === 'manager';
                     const isRequest = isManager && item.action === 'request';
@@ -2849,14 +2849,12 @@
                             : (isRequest ? `담당자 ${requestStep}차 추가 요청` : '담당자 답변'))
                         : '질의자 추가 정보';
                     const icon = isManager ? '#icon-info' : '#icon-user';
-                    const boxBg = isManager ? '#fff7ed' : '#f8fafc';
-                    const border = isManager ? '#fed7aa' : '#dbeafe';
-                    const color = isManager ? '#9a3412' : '#1e40af';
-                    return `<div style="background:${boxBg}; border:1px solid ${border}; padding:15px; margin-bottom:10px; border-radius:6px;">
-                        <p style="font-size:12px; color:${color}; margin-bottom:10px; font-weight:bold;">
+                    const cardClass = isManager ? 'post-thread-card post-thread-card--manager' : 'post-thread-card post-thread-card--inquirer';
+                    return `<div class="${cardClass}">
+                        <p class="post-thread-card__title">
                             <svg class="icon"><use href="${icon}"></use></svg> ${title} (${item.datetime || ''})
                         </p>
-                        <div>${item.content || ''}</div>
+                        <div class="post-thread-card__body">${item.content || ''}</div>
                     </div>`;
                 }).join('')
             }</div>`;

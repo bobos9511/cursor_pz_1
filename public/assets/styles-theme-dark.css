@@ -725,6 +725,57 @@
             color: #dce7f6 !important;
         }
         body[data-theme="dark"] #similarPostModal [id^="sim"] { color: #dce7f6; }
+        /* 상세 본문 스레드: 담당자 답변 / 질의자 추가 정보 */
+        body[data-theme="dark"] .post-thread-timeline {
+            border-top-color: #3f5475;
+        }
+        body[data-theme="dark"] .post-thread-card--manager {
+            background: #2a2218;
+            border-color: #92400e;
+        }
+        body[data-theme="dark"] .post-thread-card--inquirer {
+            background: #152238;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .post-thread-card--manager .post-thread-card__title {
+            color: #fde68a;
+        }
+        body[data-theme="dark"] .post-thread-card--inquirer .post-thread-card__title {
+            color: #93c5fd;
+        }
+        body[data-theme="dark"] .post-thread-card__body {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .post-thread-card__body a {
+            color: #93c5fd;
+        }
+        /* AI 답변 이력 모달 (데스크톱·모바일 공통 클래스 보강) */
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-reply-history-body {
+            background: #0f172a !important;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-card {
+            background: #13233a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-at {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content {
+            background: #111c30 !important;
+            border-color: #285070 !important;
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content .ai-content-text,
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content .ai-content-text p,
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content .ai-content-text li,
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content .ai-content-text td,
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-item-content .ai-content-text th {
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] #aiReplyHistoryModal .ai-history-empty {
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .profile-overlay-panel {
             background: linear-gradient(180deg, #14233a 0%, #101b2d 100%);
             border-color: #3f5475;

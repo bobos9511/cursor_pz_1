@@ -2067,6 +2067,47 @@
             background: #f8fafc;
         }
 
+        /* 게시물 상세: 담당자/질의자 스레드 타임라인 (테마는 styles-theme-dark.css) */
+        .post-thread-timeline {
+            margin-top: 20px;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 15px;
+        }
+        .post-thread-card {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+        }
+        .post-thread-card--manager {
+            background: #fff7ed;
+            border-color: #fed7aa;
+        }
+        .post-thread-card--inquirer {
+            background: #f8fafc;
+            border-color: #dbeafe;
+        }
+        .post-thread-card__title {
+            font-size: 12px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .post-thread-card--manager .post-thread-card__title {
+            color: #9a3412;
+        }
+        .post-thread-card--inquirer .post-thread-card__title {
+            color: #1e40af;
+        }
+        .post-thread-card__body {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #334155;
+            word-break: break-word;
+        }
+
         #integratedSearchModal { z-index: 110; }
         .integrated-search-modal {
             max-width: 820px;
