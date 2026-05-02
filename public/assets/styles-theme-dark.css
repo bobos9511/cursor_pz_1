@@ -1192,13 +1192,18 @@
             background: linear-gradient(180deg, #263b5d, #1d314e);
         }
         body[data-theme="dark"] .ai-chat-floating-btn {
-            border-color: #38bdf8;
-            background: linear-gradient(135deg, #075985, #0284c7);
-            box-shadow: 0 14px 30px rgba(2, 132, 199, 0.42);
+            border-color: rgba(56, 189, 248, 0.52);
+            background: linear-gradient(135deg, rgba(7, 89, 133, 0.42), rgba(2, 132, 199, 0.48));
+            backdrop-filter: blur(12px) saturate(1.12);
+            -webkit-backdrop-filter: blur(12px) saturate(1.12);
+            box-shadow:
+                0 12px 28px rgba(2, 8, 24, 0.38),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12);
             color: #e0f2fe;
         }
         body[data-theme="dark"] .ai-chat-floating-btn:hover {
-            filter: brightness(1.06);
+            background: linear-gradient(135deg, rgba(7, 89, 133, 0.55), rgba(2, 132, 199, 0.6));
+            filter: brightness(1.05);
         }
         body[data-theme="dark"] .ai-chat-floating-btn::after {
             background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
