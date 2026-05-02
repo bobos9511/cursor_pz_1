@@ -143,7 +143,7 @@ function sanitizeChatReplyText(text) {
   out = out.replace(ko.re.chatWordSplit, "$1$2");
 
   const blocked =
-    /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt|refining\s+for|of\s+the\s+sentence)/i;
+    /(if applicable|previous logic|wait,|snippet might|let's think|internal|reasoning|analysis|thought process|system prompt|refining\s+for|of\s+the\s+sentence|according\s+to\s+search|here'?s\s+what|let\s+me\s+summarize|chain\s+of\s+thought|tl;?dr|executive\s+summary)/i;
   const normalized = out
     .split("\n")
     .map((v) => v.trim())
@@ -177,55 +177,114 @@ function compressAiReply(text) {
 }
 
 /**
- * 모델이 본문에 섞어 출력하는 영문 편집 메모·섹션 라벨·내부 코멘트 제거
+ * 모델이 본문에 섞어 출력하는 영문 편집 메모·섹션 라벨·내부 코멘트·마크다운 잔재 제거
  */
 function stripGeminiEditorialLeakage(text) {
   let out = String(text || "");
+
   const junkPhrases = [
     /\bLTVRefining\s+for\s+flow\s+and\s+style\s*\(\s*/gi,
     /\bRefining\s+for\s+flow\s+and\s+style\s*\(\s*/gi,
     /\bRefining\s+for\s+flow\s+and\s+style\b/gi,
+    /\bRefining\s+the\s+(?:answer|response|text|output)\b[^가-힣\n]{0,80}?/gi,
+    /\bRefine\s+(?:for|the)\s+[^가-힣\n]{0,60}?/gi,
     /\s*Stress\s+DSR:\s*\*?\s*Mention\s*/gi,
     /\s*DSR:\s*\*?\s*Mention\s*/gi,
+    /\s+LTV\s*DSR\s*:\s*\*?\s*Mention\s*/gi,
     /\s+Mention\s+(?=스트레스|[가-힣])/gi,
     /\s*of\s+the\s+sentence:\s*\*/gi,
+    /\s*of\s+the\s+(?:paragraph|response|answer|reply|section|document|passage|bullet)\s*:\s*\*?\s*/gi,
     /\s*of\s+Policy\s+Loans\s+section:\s*\*\s*/gi,
     /\s*of\s+Policy\s+[A-Za-z]+\s+section:\s*\*\s*/gi,
+    /\s*of\s+Regulatory\s+[^\n]{0,40}?section:\s*\*?\s*/gi,
     /\s*Conclusion\/Summary:\s*\*\s*General\s*/gi,
+    /\s*(?:Introduction|Overview|Background)\s*\/\s*(?:Summary|Conclusion)\s*:\s*\*?\s*[A-Za-z]*\s*/gi,
     /\s*Policy\s+Loans\s+section:\s*\*\s*/gi,
+    /\s*Compliance\s+(?:Note|Section)\s*:\s*\*?\s*/gi,
     /\s*\*+\s*Mention\s+/gi,
     /\s*\(\s*General\s*\)\s*/gi,
+    /\s*(?:Key\s+Takeaways?|Main\s+Takeaway)\s*:\s*\*?\s*/gi,
+    /\s*(?:Executive\s+)?Summary\s*:\s*\*(?:\s*General)?\s*/gi,
+    /\s*TL;?DR\s*:\s*/gi,
+    /\s*(?:Next\s+Steps?|Action\s+Items?|Follow-?up)\s*:\s*\*?\s*/gi,
+    /\s*(?:Important|Please\s+note|Note|NB|FYI|Reminder)\s*:\s*(?=[A-Za-z])/gi,
+    /\s*(?:According\s+to|Based\s+on)\s+(?:the\s+)?(?:search|Google|web)\s+results?[,:]\s*/gi,
+    /\s*(?:Here's|Here\s+is)\s+(?:what|a|the)\s+[^가-힣]{0,100}?[.:]\s*/gi,
+    /\s*Let\s+me\s+(?:explain|summarize|provide|clarify)\s*[^가-힣]{0,80}?[.:]\s*/gi,
+    /\s*I'll\s+(?:summarize|provide|note)\s*[^가-힣]{0,60}?[.:]\s*/gi,
+    /\s*We\s+should\s+note\s+that\s+/gi,
+    /\s*Output\s*:\s*(?=[A-Za-z])/gi,
+    /\s*Response\s*:\s*(?=[A-Za-z])/gi,
+    /\s*Answer\s*\(\s*continued\s*\)\s*:\s*/gi,
+    /\s*\[\s*(?:EDIT|TODO|FIXME|TBD|DRAFT|INTERNAL|PLACEHOLDER)\s*\]\s*/gi,
+    /\s*\[앞부분\]\s*/g,
+    /\s*<\s*(?:thinking|reasoning|scratchpad|analysis)\s*>[\s\S]*?<\s*\/\s*(?:thinking|reasoning|scratchpad|analysis)\s*>/gi,
+    /\s*\[\s*(?:thinking|reasoning|chain\s+of\s+thought)\s*\][\s\S]*?\[\s*\/\s*(?:thinking|reasoning|chain\s+of\s+thought)\s*\]/gi,
+    /\(\s*see\s+above\s*\)|\(\s*as\s+mentioned\s+earlier\s*\)/gi,
+    /\s*,\s*for\s+(?:clarity|brevity|completeness)(?:\s+and\s+safety)?\s*[,.]?\s*/gi,
+    /\s+for\s+flow\s+and\s+style\s*/gi,
+    /\s*\*\s*(?:Summary|Details|Analysis)\s*:\s*\*?\s*/gi,
+    /\s*:{2,}\s*(?:Mention|Note|Warning)\s+/gi,
+    /\s*Disclaimer\s*:\s*(?=[A-Za-z\*])/gi,
+    /\s*(?:Written|Edited)\s+by\s*:\s*/gi,
+    /\s*(?:Draft|Version)\s*[v\d.]+\s*:\s*/gi,
+    /\s*Bullet\s+\d+\s*:\s*\*?\s*/gi,
+    /\s*(?:Step\s+\d+|Part\s+[A-Z])\s*:\s*\*?\s*/gi,
+    /\s*#{1,3}\s+(?:Introduction|Overview|Summary|Conclusion|References)\s*$/gim,
+    /\s*-\s*\*\*(?:Note|Warning|Caution)\*\*\s*:\s*/gi,
+    /\s*\[\s*(?:continued|to\s+be\s+continued|\.\.\.)\s*\]\s*/gi,
+    /\s*<\/?(?:assistant|user|system)\s*>\s*/gi,
+    /\s*\{(?:continuing|same\s+as\s+above)\}\s*/gi,
   ];
   junkPhrases.forEach((re) => {
     out = out.replace(re, "");
   });
 
-  out = out.replace(/of\s+the\s+sentence:\s*\*[^가-힣]*(?:\.{2,3})?[^가-힣]{0,120}?/gi, "");
-  out = out.replace(/([가-힣])(of\s+Policy[^\n가-힣]{0,80})(?=[가-힣])/gi, "$1");
-  out = out.replace(/([가-힣])(Conclusion\/[^\n가-힣]{0,60})(?=[가-힣])/gi, "$1");
+  out = out.replace(/of\s+the\s+sentence:\s*\*[^가-힣]*(?:\.{2,3})?[^가-힣]{0,160}?/gi, "");
+  out = out.replace(/([가-힣])(of\s+Policy[^\n가-힣]{0,100})(?=[가-힣])/gi, "$1");
+  out = out.replace(/([가-힣])(Conclusion\/[^\n가-힣]{0,80})(?=[가-힣])/gi, "$1");
+  out = out.replace(/([가-힣])(Introduction\/[^\n가-힣]{0,80})(?=[가-힣])/gi, "$1");
 
-  out = out.replace(/\(\s*[A-Za-z][A-Za-z\s,:.'\-\/\*]{3,100}\)/g, (block) => {
+  out = out.replace(/\(\s*[A-Za-z][A-Za-z\s,:.'\-\/\*]{3,120}\)/g, (block) => {
     if (/[가-힣]/.test(block)) return block;
-    if (/refining|sentence|policy|summary|mention|section|flow|style|general|conclusion|stress|loans|analysis/i.test(block))
+    if (
+      /refining|sentence|policy|summary|mention|section|flow|style|general|conclusion|stress|loans|analysis|overview|introduction|appendix|regulatory|compliance|takeaway|emphasis|disclaimer|caveat|elaboration|clarification|bullet|paragraph|response|answer/i.test(
+        block,
+      )
+    )
       return "";
     return block;
   });
 
   out = out.replace(/([가-힣])([A-Z][a-z]+)\s+for\s+flow\s+and\s+style/gi, "$1");
 
+  const editorialStarters =
+    /^(?:refining|mention|general|summary|conclusion|policy|sentence|section|stress|flow|style|analysis|overview|introduction|appendix|regulatory|compliance|takeaway|emphasis|disclaimer|caveat|elaboration|clarification|bullet)$/i;
   out = out.replace(
-    /([가-힣])([A-Z][a-z]{3,18})(?=\s*[(\.]|[가-힣])/g,
+    /([가-힣])([A-Z][a-z]{2,22})(?=\s*[(\.,]|[가-힣])/g,
     (full, hangul, word) => {
-      const w = word.toLowerCase();
+      if (editorialStarters.test(word)) return hangul;
+      return full;
+    },
+  );
+
+  out = out.replace(
+    /([가-힣])\s+([A-Z][a-z]+(?:\s+[a-z]{2,12}){0,4})\s+(?=\()/g,
+    (full, hangul, phrase) => {
+      const p = phrase.toLowerCase();
       if (
-        /^(refining|mention|general|summary|conclusion|policy|sentence|section|stress|flow|style|analysis)$/i.test(w)
+        /\b(?:section|summary|policy|sentence|mention|refining|for\s+flow)\b/i.test(p) ||
+        /^(?:Key|Main|Policy|Summary)\s/i.test(phrase)
       )
         return hangul;
       return full;
     },
   );
 
-  out = out.replace(/\*{3,}/g, "").replace(/[ \t]{2,}/g, " ").replace(/\s*\n\s*/g, "\n");
+  out = out.replace(/\*{3,}/g, "");
+  out = out.replace(/[ \t]{2,}/g, " ");
+  out = out.replace(/\s*\n\s*/g, "\n");
+  out = out.replace(/\n{4,}/g, "\n\n\n");
   return out;
 }
 
@@ -234,7 +293,7 @@ function sanitizePostReplyText(text) {
   if (!out) return out;
 
   const blockedLine =
-    /^(\*+\s*)?(refining the flow|refining\s+for|point\s*\d+|policy\/regulations|analysis|reasoning|thought process|system prompt|mention\s*[:\*]|of\s+the\s+sentence)\b/i;
+    /^(\*+\s*)?(refining the flow|refining\s+for|refine\s+for|point\s*\d+|policy\/regulations|analysis|reasoning|thought process|system prompt|mention\s*[:\*]|of\s+the\s+sentence|according\s+to\s+(?:the\s+)?search|based\s+on\s+(?:the\s+)?search|here'?s\s+what|let\s+me\s+(?:explain|summarize)|tl;?dr|executive\s+summary|key\s+takeaways?|chain\s+of\s+thought)\b|^\s*(?:sources?|references?|disclaimer)\s*:\s*$/i;
   out = out
     .split("\n")
     .map((line) => line.trim())
