@@ -3256,7 +3256,9 @@
                     : '<svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성';
             }
             if (aiHistoryBtn) {
-                const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
+                const hist = typeof getVisibleAiReplyHistoryEntries === 'function'
+                    ? getVisibleAiReplyHistoryEntries(post)
+                    : (post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : []);
                 aiHistoryBtn.classList.toggle('hidden', !hist.length);
             }
 

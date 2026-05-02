@@ -234,6 +234,27 @@ function hasAdoptableAiReply(post) {
     return aiText.length >= 40;
 }
 
+/** 이력 모달·저장에 포함할 만한 AI 답변 HTML인지 (오류/대기/불필요 응답 제외) */
+function shouldKeepAiReplyHistoryEntry(html) {
+    const t = stripHtmlToPlainText(html || "").trim();
+    if (!t) return false;
+    if (t.includes("AI 분석 실패")) return false;
+    if (t.includes("AI 답변 생성 중입니다")) return false;
+    if (t.includes("원인 미상 오류")) return false;
+    if (t.includes("환경변수") && (t.includes("쿼터") || t.includes("모델명"))) return false;
+    if (/AI\s*응답\s*시간이\s*\d+\s*초를\s*초과/.test(t)) return false;
+    if (/AI\s*응답을\s*가져오지\s*못했습니다/i.test(t)) return false;
+    if (/AI\s*서버\s*통신\s*중\s*오류/.test(t)) return false;
+    if (/^(Failed to fetch|NetworkError|Load failed|TypeError\b)/i.test(t)) return false;
+    if (t.length < 20 && /오류|실패|timeout|timed?\s*out/i.test(t)) return false;
+    return true;
+}
+
+function getVisibleAiReplyHistoryEntries(post) {
+    const raw = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
+    return raw.filter((h) => shouldKeepAiReplyHistoryEntry(h && h.html));
+}
+
 function ensurePostMeta(post) {
     if (!post || typeof post !== "object") return {};
     if (!post.meta || typeof post.meta !== "object") post.meta = {};
@@ -241,9 +262,9 @@ function ensurePostMeta(post) {
 }
 
 function pushAiReplyHistory(post, prevAiHtml) {
+    if (!shouldKeepAiReplyHistoryEntry(prevAiHtml)) return;
     const prevText = stripHtmlToPlainText(prevAiHtml || "").trim();
     if (!prevText) return;
-    if (prevText.includes("AI 답변 생성 중입니다")) return;
     const meta = ensurePostMeta(post);
     if (!Array.isArray(meta.aiReplyHistory)) meta.aiReplyHistory = [];
     meta.aiReplyHistory.unshift({
@@ -283,6 +304,10 @@ function expandAiShortViewIfNeeded(event, stateKey) {
     if (stateKey.startsWith("similar-")) {
         const id = Number(String(stateKey).replace(/^similar-/, ""));
         if (Number.isFinite(id)) openSimilarPostModal(id);
+        return;
+    }
+    if (stateKey.startsWith("history-")) {
+        openAiReplyHistoryModal();
     }
 }
 
@@ -295,6 +320,10 @@ function toggleAiContentExpand(stateKey) {
     if (stateKey.startsWith("similar-")) {
         const id = Number(String(stateKey).replace(/^similar-/, ""));
         if (Number.isFinite(id)) openSimilarPostModal(id);
+        return;
+    }
+    if (stateKey.startsWith("history-")) {
+        openAiReplyHistoryModal();
     }
 }
 
@@ -303,9 +332,9 @@ function openAiReplyHistoryModal() {
     const body = document.getElementById("aiReplyHistoryBody");
     if (!modal || !body) return;
     const post = getPostByIdAndType(currentPostId, currentBoardType);
-    const hist = post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : [];
+    const hist = getVisibleAiReplyHistoryEntries(post);
     if (!hist.length) {
-        body.innerHTML = '<div class="ai-history-empty">이력이 없습니다.</div>';
+        body.innerHTML = '<div class="ai-history-empty">표시할 유효 이력이 없습니다.</div>';
         modal.classList.add("active");
         return;
     }
