@@ -1434,10 +1434,8 @@
             background: rgba(2, 6, 23, 0.58);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-end;
-            padding: 18px 18px 18px 84px;
+            display: block;
+            padding: 0;
         }
         .ai-chat-layer-overlay:not(.hidden) {
             animation: aiChatLayerBackdropIn 0.2s ease-out both;
@@ -1452,8 +1450,14 @@
             animation: aiChatLayerPanelOut 0.16s ease-in both;
         }
         .ai-chat-layer-panel {
+            position: absolute;
+            left: auto;
+            right: 22px;
+            bottom: calc(96px + 56px + 12px);
             width: min(560px, calc(100vw - 24px));
-            height: min(78vh, 760px);
+            max-height: min(78vh, 760px);
+            height: auto;
+            min-height: 0;
             border-radius: 16px;
             border: 1px solid rgba(148, 163, 184, 0.35);
             background: rgba(248, 251, 255, 0.92);
@@ -1461,7 +1465,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transform-origin: calc(100% - 30px) calc(100% - 30px);
+            transform-origin: calc(100% - 28px) calc(100% + 14px);
         }
         .ai-chat-layer-host {
             flex: 1;

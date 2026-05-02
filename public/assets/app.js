@@ -567,6 +567,8 @@
         let aiChatLayerPrevParent = null;
         let aiChatLayerPrevNextSibling = null;
         let aiChatLayerCloseTimer = null;
+        let aiChatLayerFabPositionUnbind = null;
+        const AI_LAYER_FAB_GAP = 12;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -2797,6 +2799,64 @@
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
             btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
         }
+        function clearAiChatLayerPanelGeometry() {
+            const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
+            if (!panel) return;
+            panel.style.bottom = '';
+            panel.style.right = '';
+            panel.style.left = '';
+            panel.style.width = '';
+            panel.style.maxHeight = '';
+            panel.style.transformOrigin = '';
+            panel.style.removeProperty('--ai-layer-tail-right');
+        }
+        function positionAiChatLayerPanel() {
+            const fab = document.getElementById('aiChatFloatingBtn');
+            const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
+            const overlay = document.getElementById('aiChatLayerOverlay');
+            if (!fab || !panel || !overlay || overlay.classList.contains('hidden')) return;
+            const fabRect = fab.getBoundingClientRect();
+            if (fabRect.width < 2 && fabRect.height < 2) return;
+            const gap = AI_LAYER_FAB_GAP;
+            const bottomPx = window.innerHeight - fabRect.top + gap;
+            const rightPx = window.innerWidth - fabRect.right;
+            panel.style.bottom = `${bottomPx}px`;
+            panel.style.right = `${rightPx}px`;
+            panel.style.left = 'auto';
+            const marginLeft = 10;
+            const rawMax = window.innerWidth - rightPx - marginLeft;
+            const panelW = Math.min(560, Math.max(280, rawMax));
+            panel.style.width = `${panelW}px`;
+            const topBreathing = 12;
+            const maxByFabTop = Math.max(260, fabRect.top - gap - topBreathing);
+            const maxByVh = Math.floor(window.innerHeight * 0.82);
+            panel.style.maxHeight = `${Math.min(maxByFabTop, maxByVh)}px`;
+            const tailInset = Math.max(18, fabRect.width / 2);
+            panel.style.setProperty('--ai-layer-tail-right', `${tailInset}px`);
+            panel.style.transformOrigin = `calc(100% - ${tailInset}px) calc(100% + ${gap}px)`;
+        }
+        function bindAiChatLayerFabPositioning() {
+            if (typeof aiChatLayerFabPositionUnbind === 'function') aiChatLayerFabPositionUnbind();
+            const handler = () => positionAiChatLayerPanel();
+            window.addEventListener('resize', handler);
+            window.addEventListener('orientationchange', handler);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', handler);
+                window.visualViewport.addEventListener('scroll', handler);
+            }
+            aiChatLayerFabPositionUnbind = () => {
+                window.removeEventListener('resize', handler);
+                window.removeEventListener('orientationchange', handler);
+                if (window.visualViewport) {
+                    window.visualViewport.removeEventListener('resize', handler);
+                    window.visualViewport.removeEventListener('scroll', handler);
+                }
+                aiChatLayerFabPositionUnbind = null;
+            };
+        }
+        function stopAiChatLayerFabPositionListeners() {
+            if (typeof aiChatLayerFabPositionUnbind === 'function') aiChatLayerFabPositionUnbind();
+        }
         function openAiChatLayerFromFloating() {
             if (!currentLoginUser) return;
             if (document.body.classList.contains('ai-chat-layer-open')) {
@@ -2821,6 +2881,12 @@
             overlay.classList.remove('hidden');
             document.body.classList.add('ai-chat-layer-open');
             updateAiChatFloatingButton();
+            positionAiChatLayerPanel();
+            bindAiChatLayerFabPositioning();
+            requestAnimationFrame(() => {
+                positionAiChatLayerPanel();
+                requestAnimationFrame(() => positionAiChatLayerPanel());
+            });
         }
         function closeAiChatLayer(event) {
             if (event && event.target && event.target.id !== 'aiChatLayerOverlay') return;
@@ -2828,11 +2894,13 @@
             const host = document.getElementById('aiChatLayerHost');
             const aiView = document.getElementById('view-ai-search');
             if (!overlay || overlay.classList.contains('hidden') || overlay.classList.contains('closing')) return;
+            stopAiChatLayerFabPositionListeners();
             overlay.classList.add('closing');
             document.body.classList.remove('ai-chat-layer-open');
             aiChatLayerCloseTimer = setTimeout(() => {
                 overlay.classList.add('hidden');
                 overlay.classList.remove('closing');
+                clearAiChatLayerPanelGeometry();
                 if (host && aiView && aiView.parentElement === host && aiChatLayerPrevParent) {
                     if (aiChatLayerPrevNextSibling && aiChatLayerPrevNextSibling.parentNode === aiChatLayerPrevParent) {
                         aiChatLayerPrevParent.insertBefore(aiView, aiChatLayerPrevNextSibling);
