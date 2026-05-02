@@ -378,24 +378,50 @@
             color: #d8e4f7;
         }
         body[data-theme="dark"] .noti-item,
-        body[data-theme="dark"] .noti-stack,
         body[data-theme="dark"] .notification-filter-group {
             background: linear-gradient(180deg, #152238 0%, #111c30 100%);
             border-color: #3a4a63;
             color: #e2ebf8;
         }
-        body[data-theme="dark"] .noti-stack::before,
-        body[data-theme="dark"] .noti-stack::after {
-            background: linear-gradient(180deg, #1a2b45, #15243c);
-            border-color: #40577b;
+        body[data-theme="dark"] .noti-stack-head {
+            border-color: #4c5f8a;
+            border-left-color: #818cf8;
+            background: linear-gradient(135deg, rgba(55, 48, 163, 0.38) 0%, rgba(21, 34, 56, 0.96) 100%);
+            box-shadow: 0 2px 14px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .noti-stack-head:hover {
+            border-color: #6478b8;
+        }
+        body[data-theme="dark"] .noti-stack.expanded .noti-stack-head {
+            border-color: #6e82c4;
+            background: linear-gradient(135deg, rgba(67, 56, 202, 0.35) 0%, rgba(26, 39, 64, 0.98) 100%);
+            box-shadow: 0 6px 22px rgba(2, 8, 24, 0.55);
+        }
+        body[data-theme="dark"] .noti-stack-icon-wrap {
+            background: rgba(129, 140, 248, 0.18);
+            color: #c7d2fe;
+        }
+        body[data-theme="dark"] .noti-stack-title {
+            color: #eef2ff;
+        }
+        body[data-theme="dark"] .noti-stack-count {
+            color: #e0e7ff;
+            background: rgba(129, 140, 248, 0.18);
+            border-color: rgba(129, 140, 248, 0.38);
+        }
+        body[data-theme="dark"] .noti-stack-body {
+            border-left-color: #4c5f8a;
+        }
+        body[data-theme="dark"] .noti-stack .noti-item.noti-item-compact {
+            background: linear-gradient(180deg, #1a2740 0%, #152238 100%);
+            border-color: #3f5475;
+            box-shadow: 0 4px 14px rgba(2, 8, 24, 0.35);
         }
         body[data-theme="dark"] .noti-item-msg,
-        body[data-theme="dark"] .noti-stack-title,
         body[data-theme="dark"] .notification-filter-label {
             color: #dce7f6;
         }
         body[data-theme="dark"] .noti-item-meta,
-        body[data-theme="dark"] .noti-stack-toggle,
         body[data-theme="dark"] .noti-empty {
             color: #a7b6cc;
         }
@@ -421,13 +447,14 @@
             color: #fecdd3;
         }
         body[data-theme="dark"] .noti-stack-toggle {
-            background: #1a2b45;
-            border-color: #41597b;
+            background: #17253b;
+            border-color: #4c5f8a;
             color: #d7e6fb;
         }
         body[data-theme="dark"] .noti-stack.expanded .noti-stack-toggle {
-            background: #223a5c;
-            border-color: #5f7da4;
+            background: rgba(79, 70, 229, 0.22);
+            border-color: #818cf8;
+            color: #e0e7ff;
         }
         body[data-theme="dark"] .board-help-card,
         body[data-theme="dark"] .know-form-shell,
@@ -1050,11 +1077,6 @@
         body[data-theme="dark"] .integrated-ranking-row {
             border-color: #4a5f7f;
             background: linear-gradient(180deg, #1a283f, #152238);
-        }
-        body[data-theme="dark"] .noti-stack-count {
-            color: #dbeafe;
-            background: #1e3a8a;
-            border-color: #60a5fa;
         }
         body[data-theme="dark"] .bg-wait {
             background: #3a2a14;

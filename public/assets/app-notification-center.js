@@ -293,17 +293,18 @@ function renderNotificationStack(cluster) {
         <div class="noti-stack ${expanded ? "expanded" : ""}">
             <button type="button" class="noti-stack-head" onclick="toggleNotificationStack('${stackId}')">
                 <div class="noti-stack-head-left">
-                    <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
-                    <span class="noti-stack-count">${cluster.items.length}건 모아보기</span>
+                    <span class="noti-stack-icon-wrap" aria-hidden="true">
+                        <svg class="icon"><use href="#icon-list"></use></svg>
+                    </span>
+                    <div class="noti-stack-head-text">
+                        <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
+                        <span class="noti-stack-count">${cluster.items.length}건 모아보기</span>
+                    </div>
                 </div>
                 <span class="noti-stack-toggle" title="${expanded ? "접기" : "펼치기"}">
                     <svg class="icon"><use href="#icon-chevron-down"></use></svg>
                 </span>
             </button>
-            <div class="noti-stack-preview" aria-hidden="true">
-                <div class="noti-stack-layer"></div>
-                <div class="noti-stack-layer"></div>
-            </div>
             <div class="noti-stack-body">
                 ${cluster.items.map((it) => renderNotificationItemCard(it, { compact: true })).join("")}
             </div>
