@@ -4957,9 +4957,22 @@
             }, { passive: true });
         }
 
+        const loginPageEl = document.getElementById('loginPage');
+        const appContainerEl = document.getElementById('appContainer');
+        if (loginPageEl) loginPageEl.style.visibility = 'hidden';
+        if (appContainerEl) {
+            appContainerEl.style.display = 'none';
+            appContainerEl.style.visibility = 'hidden';
+        }
+
         initializeLoginThemeControls();
         setupMobilePullToRefresh();
         bootstrapSession().finally(() => {
+            if (!currentLoginUser && loginPageEl) {
+                loginPageEl.style.display = 'flex';
+            }
+            if (loginPageEl) loginPageEl.style.visibility = 'visible';
+            if (appContainerEl) appContainerEl.style.visibility = 'visible';
             updateLoginThemeFabUi();
             updateAiChatFloatingButton();
         });
