@@ -1495,16 +1495,42 @@
             flex: 1 1 auto;
             min-height: 0;
         }
-        .ai-chat-layer-host .ai-search-input-row {
-            position: relative;
-            bottom: auto;
-            margin-top: auto;
-            padding-top: 4px;
-            background: transparent;
+        /* 레이어: 전체 화면용 #view-ai-search(vh·grid·sticky) 규칙보다 우선해 하단 빈 여백 제거 */
+        .ai-chat-layer-host #view-ai-search .ai-search-shell {
+            min-height: 0 !important;
+            height: 100%;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-main {
+            min-height: 0 !important;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-main-body {
+            display: flex !important;
+            flex-direction: column !important;
+            grid-template-columns: unset !important;
+            grid-template-rows: unset !important;
+            min-height: 0 !important;
+            height: 100%;
+            flex: 1 1 auto !important;
+            gap: 8px !important;
+            padding: 10px 12px 6px !important;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-log {
+            min-height: 0 !important;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-input-row {
+            position: relative !important;
+            bottom: auto !important;
+            margin-top: auto !important;
+            padding-top: 4px !important;
+            background: transparent !important;
             display: flex;
             flex-direction: column;
             align-items: stretch;
             gap: 8px;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-input-help {
+            margin-top: 0 !important;
+            flex-shrink: 0;
         }
         .ai-search-input-actions {
             display: flex;

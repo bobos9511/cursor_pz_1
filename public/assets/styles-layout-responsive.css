@@ -99,7 +99,7 @@
                 display: none;
             }
             .ai-chat-layer-overlay {
-                padding: 8px 10px calc(16px + env(safe-area-inset-bottom, 0px));
+                padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
                 align-items: flex-end;
                 justify-content: center;
             }
@@ -107,16 +107,17 @@
                 width: 100%;
                 max-height: min(82dvh, calc(100svh - 56px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px)));
                 height: auto;
+                min-height: 0;
                 border-radius: 14px;
             }
             .ai-chat-layer-host {
-                padding: 4px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+                padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
             }
             .ai-chat-layer-host .ai-search-main-head {
                 display: none;
             }
             .ai-chat-layer-host #view-ai-search .ai-search-main-body {
-                padding: 8px 8px 10px !important;
+                padding: 8px 8px 6px !important;
             }
             .ai-chat-layer-host #view-ai-search .ai-search-log {
                 max-height: none;
