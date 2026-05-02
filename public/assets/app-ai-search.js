@@ -4,8 +4,73 @@ function getLoginNonce() {
     return localStorage.getItem("knockLoginNonce") || "no-login";
 }
 
+/** 직원번호 표기(앞자리 0 유무)가 달라도 동일 키를 쓰도록 6자리로 통일. guest는 그대로. */
+function normalizeAiSearchScopeKey(raw) {
+    const s = String(raw || "").trim();
+    if (!s || s === "guest") return "guest";
+    const digits = s.replace(/\D/g, "").slice(0, 6);
+    if (!digits) return "guest";
+    return digits.padStart(6, "0");
+}
+
+/** 예전 버전에서 쓰던 history 키 후보(비정규 직원번호 등) */
+function legacyAiSearchHistoryKeys(scopeRaw) {
+    const s = String(scopeRaw || "").trim();
+    if (!s || s === "guest") return [];
+    const keys = [];
+    keys.push(`${AI_SEARCH_HISTORY_KEY_PREFIX}${s}`);
+    const digits = s.replace(/\D/g, "").slice(0, 6);
+    if (!digits) return [...new Set(keys)];
+    keys.push(`${AI_SEARCH_HISTORY_KEY_PREFIX}${digits}`);
+    keys.push(`${AI_SEARCH_HISTORY_KEY_PREFIX}${digits.padStart(6, "0")}`);
+    const unpadded = digits.replace(/^0+/, "") || "0";
+    if (unpadded !== digits) keys.push(`${AI_SEARCH_HISTORY_KEY_PREFIX}${unpadded}`);
+    return [...new Set(keys)];
+}
+
+function loadAiSearchHistoryWithMigration() {
+    const keys = getAiSearchStorageKeyBase();
+    const primary = keys.historyKey;
+    let data = loadJsonFromStorage(primary, []);
+    if (Array.isArray(data) && data.length > 0) return data;
+
+    const rawCookie = typeof getCookie === "function" ? getCookie(USER_SCOPE_COOKIE) || "" : "";
+    const variants = legacyAiSearchHistoryKeys(rawCookie);
+    for (let i = 0; i < variants.length; i++) {
+        const vk = variants[i];
+        if (vk === primary) continue;
+        const alt = loadJsonFromStorage(vk, []);
+        if (Array.isArray(alt) && alt.length > 0) {
+            saveJsonToStorage(primary, alt);
+            return alt;
+        }
+    }
+    return [];
+}
+
+function bindAiSearchHistoryCrossTabSyncOnce() {
+    if (typeof window === "undefined" || window.__knockAiHistoryStorageBound) return;
+    window.__knockAiHistoryStorageBound = true;
+    window.addEventListener("storage", (e) => {
+        if (!e.key || e.key.indexOf(AI_SEARCH_HISTORY_KEY_PREFIX) !== 0) return;
+        const keys = getAiSearchStorageKeyBase();
+        if (e.key !== keys.historyKey) return;
+        try {
+            const next = e.newValue ? JSON.parse(e.newValue) : [];
+            if (!Array.isArray(next)) return;
+            aiSearchHistory = next;
+            renderAiSearchHistory();
+            renderAiSearchHistoryMobile();
+            updateAiSearchDeleteAllButtonState();
+        } catch (_) {
+            // no-op
+        }
+    });
+}
+
 function getAiSearchStorageKeyBase() {
-    const scope = getCookie(USER_SCOPE_COOKIE) || "guest";
+    const raw = typeof getCookie === "function" ? getCookie(USER_SCOPE_COOKIE) || "" : "";
+    const scope = normalizeAiSearchScopeKey(raw);
     return { activeKey: `${AI_SEARCH_ACTIVE_KEY_PREFIX}${scope}:${getLoginNonce()}`, historyKey: `${AI_SEARCH_HISTORY_KEY_PREFIX}${scope}` };
 }
 
@@ -523,8 +588,8 @@ function initializeAiSearchView() {
     if (aiSearchInitialized) return;
     const logEl = document.getElementById("aiSearchLog");
     const inputEl = document.getElementById("aiSearchInput");
-    const keys = getAiSearchStorageKeyBase();
-    aiSearchHistory = loadJsonFromStorage(keys.historyKey, []);
+    bindAiSearchHistoryCrossTabSyncOnce();
+    aiSearchHistory = loadAiSearchHistoryWithMigration();
     aiSearchActive = loadJsonFromStorage(keys.activeKey, null) || makeDefaultAiSearchState();
     if (inputEl) inputEl.value = aiSearchActive.draft || "";
     if (aiSearchActive && Array.isArray(aiSearchActive.messages) && aiSearchActive.messages.length === 1 && aiSearchActive.messages[0].role === "ai") {
