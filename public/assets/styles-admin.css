@@ -3,6 +3,9 @@
             max-width: 880px;
             margin: 0 auto 32px;
             padding: 0 8px 24px;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
         .admin-settings-hero {
             display: flex;
@@ -151,6 +154,8 @@
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
             width: 100%;
+            min-width: 0;
+            align-items: stretch;
         }
         .admin-runtime-card {
             border: 1px solid #dbe7f5;
@@ -161,7 +166,9 @@
             gap: 8px;
             align-content: start;
             min-width: 0;
-            overflow: visible;
+            max-width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
         .admin-runtime-card .input,
         .admin-runtime-card textarea,
@@ -183,6 +190,34 @@
             border-bottom: 1px dashed #cbd5e1;
             padding-bottom: 6px;
             margin-bottom: 2px;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+        }
+        /* 좁은 3열 그리드에서 가로 한 줄(라벨+입력+기본값) 배치 시 넘침 방지 */
+        .admin-runtime-card .admin-gen-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+        }
+        .admin-runtime-card .admin-gen-label {
+            min-width: 0;
+            width: 100%;
+        }
+        .admin-runtime-card .admin-gen-row > .input:not([type="range"]),
+        .admin-runtime-card .admin-gen-row > textarea {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            flex: none;
+        }
+        .admin-runtime-card .admin-gen-row > span.admin-settings-hint {
+            margin: 0 !important;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+        .admin-runtime-card .admin-settings-actions {
+            flex-wrap: wrap;
+            justify-content: flex-start;
         }
         .admin-gen-row {
             display: flex;
