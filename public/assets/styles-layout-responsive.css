@@ -12,7 +12,7 @@
                 flex-direction: column;
                 gap: 0;
                 padding: 64px 0 max(16px, env(safe-area-inset-bottom, 0px)) 0;
-                background: #121214;
+                background: linear-gradient(180deg, rgba(0, 75, 155, 0.09) 0%, #e8f0fc 16%, var(--bg-color) 42%, var(--bg-color) 100%);
                 overflow-y: auto;
                 box-sizing: border-box;
                 -webkit-overflow-scrolling: touch;

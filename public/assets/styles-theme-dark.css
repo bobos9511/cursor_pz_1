@@ -1648,3 +1648,58 @@
         }
         body[data-theme="dark"] .integrated-search-result-item { background: #111827; border-color: #334155; }
         body[data-theme="dark"] .integrated-search-result-item:hover { background: #1f2937; }
+
+        body[data-theme="dark"] .top-nav-mobile {
+            background: linear-gradient(180deg, #121d31 0%, #0f172a 18%, var(--bg-color) 38%, var(--bg-color) 100%);
+        }
+        body[data-theme="dark"] .top-nav-mobile-head {
+            border-bottom-color: rgba(100, 116, 139, 0.38);
+        }
+        body[data-theme="dark"] .top-nav-mobile-title {
+            color: #f1f5f9;
+        }
+        body[data-theme="dark"] .top-nav-mobile-subtitle {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .top-nav-mobile-group-label {
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .top-nav-mobile-close {
+            border-color: rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.65);
+            color: #e2e8f0;
+            box-shadow: 0 2px 12px rgba(2, 6, 23, 0.45);
+        }
+        body[data-theme="dark"] .top-nav-mobile-close:active {
+            background: rgba(30, 41, 59, 0.75);
+        }
+        body[data-theme="dark"] .top-nav-item {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(71, 85, 105, 0.55);
+            color: #e2e8f0;
+            box-shadow: 0 2px 12px rgba(2, 6, 23, 0.4);
+        }
+        body[data-theme="dark"] .top-nav-item-icon-wrap {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border-color: rgba(100, 116, 139, 0.45);
+        }
+        body[data-theme="dark"] .top-nav-item .icon {
+            color: #7dd3fc;
+        }
+        body[data-theme="dark"] .top-nav-item:hover {
+            background: rgba(51, 65, 85, 0.55);
+            border-color: rgba(125, 211, 252, 0.38);
+        }
+        body[data-theme="dark"] .top-nav-item.active {
+            color: #f0f9ff;
+            border-color: rgba(56, 189, 248, 0.55);
+            background: linear-gradient(180deg, rgba(30, 58, 138, 0.45), rgba(15, 52, 96, 0.55));
+            box-shadow: 0 6px 20px rgba(2, 6, 23, 0.55);
+        }
+        body[data-theme="dark"] .top-nav-item.active .top-nav-item-icon-wrap {
+            background: rgba(59, 130, 246, 0.28);
+            border-color: rgba(147, 197, 253, 0.5);
+        }
+        body[data-theme="dark"] .top-nav-item.active .icon {
+            color: #bae6fd;
+        }
