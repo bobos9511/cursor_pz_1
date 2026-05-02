@@ -1506,8 +1506,8 @@
             left: auto;
             right: 22px;
             bottom: calc(96px + 56px + 12px);
-            width: min(560px, calc(100vw - 24px));
-            max-height: min(78vh, 760px);
+            width: min(680px, calc(100vw - 24px));
+            max-height: min(90vh, 840px);
             height: auto;
             min-height: 0;
             border-radius: 16px;
@@ -1590,6 +1590,11 @@
         }
         .ai-chat-layer-host #view-ai-search .ai-search-log {
             min-height: 0 !important;
+        }
+        @media (min-width: 1025px) {
+            .ai-chat-layer-host #view-ai-search .ai-search-log {
+                min-height: 320px !important;
+            }
         }
         .ai-chat-layer-host #view-ai-search .ai-search-input-row {
             position: relative !important;
