@@ -10,9 +10,12 @@
                 inset: 0;
                 z-index: 1150;
                 flex-direction: column;
-                gap: 10px;
-                padding: 78px 14px 18px;
-                background: linear-gradient(180deg, rgba(7,15,28,0.96), rgba(10,23,43,0.98));
+                gap: 0;
+                padding: 72px 12px 14px;
+                background:
+                    radial-gradient(circle at 10% 8%, rgba(56,189,248,0.2), transparent 34%),
+                    radial-gradient(circle at 92% 12%, rgba(99,102,241,0.24), transparent 36%),
+                    linear-gradient(180deg, rgba(7,15,28,0.96), rgba(10,23,43,0.98));
                 overflow-y: auto;
                 box-sizing: border-box;
                 backdrop-filter: blur(6px);
@@ -25,6 +28,7 @@
                 pointer-events: none;
                 transform: translateY(-6px);
             }
+            .top-nav-mobile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .sidebar { display: none !important; }
             .main-area-wrapper { border-top-left-radius: 0; box-shadow: none; }
             .body-wrapper { background: var(--bg-color); }
@@ -66,6 +70,30 @@
                 visibility: visible;
                 transform: translateY(0) scale(1);
                 pointer-events: auto;
+            }
+            .top-nav-mobile-panel { padding: 12px; }
+            .top-nav-mobile-title { font-size: 18px; }
+            .top-nav-mobile-close .icon { width: 16px; height: 16px; }
+            .top-nav-item {
+                min-height: 48px;
+                padding: 11px 11px;
+                font-size: 12px;
+            }
+            .top-nav-item .icon {
+                width: 26px;
+                height: 26px;
+                padding: 5px;
+            }
+            .ai-chat-floating-btn {
+                right: 14px;
+                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                height: 48px;
+                padding: 0 14px;
+                font-size: 13px;
+            }
+            .ai-chat-floating-btn .icon {
+                width: 20px;
+                height: 20px;
             }
             #loginPage { padding: 12px; }
             .login-box { padding: 24px 16px; max-width: 100%; }

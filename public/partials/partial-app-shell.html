@@ -61,15 +61,39 @@
             </div>
         </header>
         <div id="topNavMobile" class="top-nav-mobile collapsed" onclick="if(event.target===this) toggleSidebarPC()">
-            <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI Chat</button>
-            <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
-            <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
-            <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
-            <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>KNOCK 개선</button>
-            <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI 지식 베이스</button>
-            <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#7dd3fc;"><use href="#icon-admin-settings"></use></svg>관리자</button>
-            <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
+            <div class="top-nav-mobile-panel" onclick="event.stopPropagation()">
+                <div class="top-nav-mobile-head">
+                    <div class="top-nav-mobile-title-wrap">
+                        <div class="top-nav-mobile-title">전체 메뉴</div>
+                        <div class="top-nav-mobile-subtitle">원하는 기능으로 빠르게 이동하세요</div>
+                    </div>
+                    <button type="button" class="top-nav-mobile-close" onclick="event.stopPropagation(); toggleSidebarPC();">
+                        <svg class="icon"><use href="#icon-close"></use></svg>
+                    </button>
+                </div>
+                <div class="top-nav-mobile-group-label">주요 메뉴</div>
+                <div class="top-nav-mobile-grid">
+                    <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI Chat</button>
+                    <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
+                </div>
+                <div class="top-nav-mobile-group-label">문의/지식</div>
+                <div class="top-nav-mobile-grid">
+                    <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>
+                    <button class="top-nav-item" id="topnav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon"><use href="#icon-book"></use></svg>규정/상품</button>
+                    <button class="top-nav-item" id="topnav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon"><use href="#icon-lightbulb"></use></svg>KNOCK 개선</button>
+                    <button class="top-nav-item hq-it-only hidden" id="topnav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon"><use href="#icon-history"></use></svg>AI 지식 베이스</button>
+                </div>
+                <div class="top-nav-mobile-group-label">설정/관리</div>
+                <div class="top-nav-mobile-grid">
+                    <button class="top-nav-item platform-admin-only hidden" id="topnav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon"><use href="#icon-admin-settings"></use></svg>관리자</button>
+                    <button class="top-nav-item" id="topnav-settings" onclick="switchView('settings')"><svg class="icon"><use href="#icon-cog"></use></svg>설정</button>
+                </div>
+            </div>
         </div>
+        <button id="aiChatFloatingBtn" class="ai-chat-floating-btn hidden" type="button" onclick="switchView('ai-search')" title="AI Chat 열기">
+            <svg class="icon"><use href="#icon-magic"></use></svg>
+            <span>AI Chat</span>
+        </button>
 
         <div id="headerProfileOverlay" class="profile-overlay" onclick="closeHeaderProfileOverlay()">
             <div class="profile-overlay-panel" onclick="event.stopPropagation()">

@@ -1183,6 +1183,15 @@
         body[data-theme="dark"] .login-theme-fab:hover {
             background: linear-gradient(180deg, #263b5d, #1d314e);
         }
+        body[data-theme="dark"] .ai-chat-floating-btn {
+            border-color: #38bdf8;
+            background: linear-gradient(135deg, #075985, #0284c7);
+            box-shadow: 0 14px 30px rgba(2, 132, 199, 0.42);
+            color: #e0f2fe;
+        }
+        body[data-theme="dark"] .ai-chat-floating-btn:hover {
+            filter: brightness(1.06);
+        }
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,

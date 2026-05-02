@@ -2561,6 +2561,7 @@
             const appContainer = document.getElementById('appContainer');
             appContainer.style.visibility = 'hidden';
             appContainer.style.display = 'flex';
+            updateAiChatFloatingButton();
             appContainer.classList.remove('page-intro');
             void appContainer.offsetWidth;
             appContainer.classList.add('page-intro');
@@ -2610,6 +2611,7 @@
             currentLoginUser = null;
             applyLoginThemeMode('system');
             updateLoginThemeFabUi();
+            updateAiChatFloatingButton();
         }
         function saveSettings() {
             const osNotifyEl = document.getElementById('setOsNotify');
@@ -2743,6 +2745,7 @@
                     document.body.classList.toggle('mobile-menu-open', !topNav.classList.contains('collapsed'));
                 }
                 updateSidebarToggleButton();
+                updateAiChatFloatingButton();
                 const listViewMobile = document.getElementById('view-list');
                 if (listViewMobile && listViewMobile.classList.contains('active')) {
                     setTimeout(syncBoardListCardMode, 0);
@@ -2781,6 +2784,16 @@
             const collapsed = sidebar.classList.contains('collapsed');
             iconUse.setAttribute('href', collapsed ? '#icon-bars' : '#icon-chevron-left');
             btn.setAttribute('title', collapsed ? '메뉴 펼치기' : '메뉴 접기');
+        }
+        function updateAiChatFloatingButton() {
+            const btn = document.getElementById('aiChatFloatingBtn');
+            if (!btn) return;
+            const appContainer = document.getElementById('appContainer');
+            const aiView = document.getElementById('view-ai-search');
+            const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
+            const aiSearchActive = !!aiView && aiView.classList.contains('active');
+            const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
+            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
         }
 
         // --- Dashboard Widgets / Charts ---
@@ -3199,6 +3212,13 @@
                     document.body.classList.remove('mobile-menu-open');
                     updateSidebarToggleButton();
                 }
+            } else {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                    applySidebarTooltipState();
+                    updateSidebarToggleButton();
+                }
             }
             if (boardHelpEditing) {
                 const changingListBoard = viewId === 'list' && boardType && boardType !== currentBoardType;
@@ -3289,6 +3309,7 @@
                 const routeBoardType = viewId === 'list' ? currentBoardType : null;
                 syncHistoryRoute(viewId, routeBoardType, null, false);
             }
+            updateAiChatFloatingButton();
         }
 
         // --- Dashboard Update ---
@@ -4808,6 +4829,7 @@
                 if (topNav) topNav.classList.add('collapsed');
                 updateSidebarToggleButton();
             }
+            updateAiChatFloatingButton();
             const dashView = document.getElementById('view-dashboard');
             if (dashView && dashView.classList.contains('active')) {
                 setTimeout(renderCSSCharts, 80);
@@ -4899,4 +4921,5 @@
         setupMobilePullToRefresh();
         bootstrapSession().finally(() => {
             updateLoginThemeFabUi();
+            updateAiChatFloatingButton();
         });
