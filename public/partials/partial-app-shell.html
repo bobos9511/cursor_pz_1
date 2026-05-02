@@ -800,9 +800,23 @@
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge">CHAT</span>
                                 <h3 class="admin-settings-card-title">AI 채팅</h3>
-                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('chat')">도움말</button>
                             </div>
                             <p class="admin-settings-hint">저장된 값이 비어 있으면 기본 시스템 프롬프트가 그대로 사용됩니다.</p>
+                            <details class="admin-help-details">
+                                <summary class="admin-help-details-summary">설명·권장값 보기</summary>
+                                <div class="admin-help-details-body">
+                                    <div class="admin-help-chip-row">
+                                        <span class="admin-help-chip">권장 Temperature 0.2~0.4</span>
+                                        <span class="admin-help-chip">권장 Top-P 0.7~0.9</span>
+                                    </div>
+                                    <ul class="admin-help-details-list">
+                                        <li><strong>시스템 프롬프트</strong>: 말투·역할·금지사항. 비우면 기본 프롬프트 사용.</li>
+                                        <li><strong>Temperature</strong>: 낮을수록 일관적, 높을수록 다양한 표현.</li>
+                                        <li><strong>Top-P</strong>: 후보 단어 범위로 표현 다양성 조절.</li>
+                                        <li>업무 답변은 T 0.2~0.4, 초안·아이디어는 T를 조금 높여 보세요. 오답이 늘면 먼저 Temperature를 낮춥니다.</li>
+                                    </ul>
+                                </div>
+                            </details>
                             <div class="admin-default-block">
                                 <div class="admin-default-label">기본(Default) 시스템 프롬프트</div>
                                 <pre class="admin-default-pre" id="admin-default-chat"></pre>
@@ -815,12 +829,14 @@
                                     <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
                                     <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
                                 </div>
+                                <div class="admin-field-error" id="adminAi-chat-temp-num-msg" role="alert"></div>
                                 <div class="admin-settings-subhint">Temperature가 높을수록 답변이 다양해지고, 낮을수록 일관성이 높아집니다.</div>
                                 <div class="admin-gen-row">
                                     <label class="admin-gen-label">Top-P</label>
                                     <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
                                     <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
                                 </div>
+                                <div class="admin-field-error" id="adminAi-chat-topP-num-msg" role="alert"></div>
                                 <div class="admin-settings-subhint">Top-P는 선택 후보 범위를 조절합니다. Temperature와 함께 미세 조정해 주세요.</div>
                             </div>
                         </div>
@@ -829,9 +845,22 @@
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge admin-settings-badge-violet">POST</span>
                                 <h3 class="admin-settings-card-title">AI 답변 (게시물)</h3>
-                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('post')">도움말</button>
                             </div>
                             <p class="admin-settings-hint">게시판 유형별로 시스템 프롬프트와 Temperature·Top-P를 지정합니다.</p>
+                            <details class="admin-help-details">
+                                <summary class="admin-help-details-summary">설명·권장값 보기</summary>
+                                <div class="admin-help-details-body">
+                                    <div class="admin-help-chip-row">
+                                        <span class="admin-help-chip">IT: T 0.1~0.3 / P 0.7~0.85</span>
+                                        <span class="admin-help-chip">BIZ: T 0.2~0.5 / P 0.8~0.95</span>
+                                    </div>
+                                    <ul class="admin-help-details-list">
+                                        <li>게시판별 시스템 프롬프트를 나누면 답변 기준이 명확해집니다.</li>
+                                        <li>IT는 낮은 Temperature로 사실·절차 중심, 규정·상품은 설명력이 필요하면 Temperature를 약간 높입니다.</li>
+                                        <li>값은 한 번에 하나만 바꾼 뒤 결과를 비교하는 것이 안전합니다.</li>
+                                    </ul>
+                                </div>
+                            </details>
                             <div class="admin-tab-row" id="adminAi-post-tabs">
                                 <button type="button" class="admin-tab-btn btn btn-outline" data-board="IT">IT / 오류</button>
                                 <button type="button" class="admin-tab-btn btn btn-outline" data-board="BIZ">규정·상품</button>
@@ -850,12 +879,14 @@
                                             <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-field-error" id="adminAi-post-IT-temp-num-msg" role="alert"></div>
                                         <div class="admin-settings-subhint">Temperature가 높을수록 문장 다양성이 올라가고, 낮을수록 사실 중심의 답변이 안정적입니다.</div>
                                         <div class="admin-gen-row">
                                             <label class="admin-gen-label">Top-P</label>
                                             <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-field-error" id="adminAi-post-IT-topP-num-msg" role="alert"></div>
                                         <div class="admin-settings-subhint">Top-P는 답변 후보 폭을 조절합니다. 낮추면 보수적, 높이면 표현 범위가 넓어집니다.</div>
                                     </div>
                                 </div>
@@ -872,12 +903,14 @@
                                             <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-field-error" id="adminAi-post-BIZ-temp-num-msg" role="alert"></div>
                                         <div class="admin-settings-subhint">Temperature가 높으면 설명형 문장이 자연스러워지고, 낮으면 규정형 답변의 일관성이 높아집니다.</div>
                                         <div class="admin-gen-row">
                                             <label class="admin-gen-label">Top-P</label>
                                             <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
                                             <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
                                         </div>
+                                        <div class="admin-field-error" id="adminAi-post-BIZ-topP-num-msg" role="alert"></div>
                                         <div class="admin-settings-subhint">Top-P는 단어 선택 폭 제어값입니다. 규정/상품 안내는 0.8~0.95 범위에서 시작하는 것을 권장합니다.</div>
                                     </div>
                                 </div>
@@ -888,10 +921,26 @@
                         <div class="admin-settings-card">
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">RUNTIME</span>
-                                <h3 class="admin-settings-card-title">토큰/이어쓰기 설정</h3>
-                                <button type="button" class="btn btn-outline admin-help-btn" onclick="openAdminAiHelpModal('runtime')">도움말</button>
+                                <h3 class="admin-settings-card-title">AI 상세설정</h3>
                             </div>
                             <p class="admin-settings-hint">AI채팅과 AI답변(게시물)을 각각 설정할 수 있습니다. 입력이 비어 있으면 기본값 수치를 자동 적용합니다.</p>
+                            <details class="admin-help-details">
+                                <summary class="admin-help-details-summary">설명·권장값 보기</summary>
+                                <div class="admin-help-details-body">
+                                    <div class="admin-help-chip-row">
+                                        <span class="admin-help-chip">채팅 토큰 1024~2048</span>
+                                        <span class="admin-help-chip">게시물 토큰 1536~3072</span>
+                                        <span class="admin-help-chip">이어쓰기 1~3회</span>
+                                    </div>
+                                    <ul class="admin-help-details-list">
+                                        <li><strong>최대 토큰</strong>: 한 번 응답 길이. 자주 끊기면 먼저 늘리고, 그다음 이어쓰기 횟수를 조정합니다.</li>
+                                        <li><strong>이어쓰기 시간(ms)</strong>: 전체 이어쓰기 허용 시간. 지연이 길면 상한을 낮춰 체감 속도를 맞출 수 있습니다.</li>
+                                        <li><strong>RAG 최대 후보</strong>: 지식 후보 개수. 많을수록 근거는 늘지만 길이·지연이 늘 수 있습니다.</li>
+                                        <li><strong>RAG 최소 점수·상대 컷오프</strong>: 정확도를 올리려면 점수·컷오프를 단계적으로 올려 보세요.</li>
+                                        <li><strong>금칙어 목록</strong>: 검색 잡음을 줄입니다. 과하면 필요 문서도 빠질 수 있어 조금씩 조정하세요.</li>
+                                    </ul>
+                                </div>
+                            </details>
                             <div class="admin-runtime-grid">
                                 <div class="admin-runtime-card">
                                     <div class="admin-runtime-card-title">AI채팅</div>
@@ -901,18 +950,21 @@
                                         <span id="adminAi-runtime-chatMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">한 번의 채팅 응답 길이 제한입니다. 낮으면 답변이 중간에 끊길 수 있습니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxOutputTokens-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">채팅 이어쓰기 횟수</label>
                                         <input type="number" id="adminAi-runtime-chatMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
                                         <span id="adminAi-runtime-chatMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">응답이 잘릴 때 자동으로 이어쓰기하는 최대 횟수입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuations-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">채팅 이어쓰기 시간(ms)</label>
                                         <input type="number" id="adminAi-runtime-chatMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용" data-ms-human-target="adminAi-runtime-chatMaxContinuationRuntimeMs-human">
                                         <span id="adminAi-runtime-chatMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">이어쓰기 전체 동작 시간 제한입니다. 초과 시 안전하게 종료됩니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-chatMaxContinuationRuntimeMs-validation" role="alert"></div>
                                     <div id="adminAi-runtime-chatMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                 </div>
 
@@ -924,18 +976,21 @@
                                         <span id="adminAi-runtime-postMaxOutputTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">게시판 답변(IT/규정) 1회 생성 길이 제한입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-postMaxOutputTokens-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">게시물 이어쓰기 횟수</label>
                                         <input type="number" id="adminAi-runtime-postMaxContinuations" class="input" min="0" max="200" step="1" placeholder="기본값 사용">
                                         <span id="adminAi-runtime-postMaxContinuations-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">게시물 답변이 길어 잘렸을 때 자동 이어쓰기 최대 횟수입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-postMaxContinuations-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">게시물 이어쓰기 시간(ms)</label>
                                         <input type="number" id="adminAi-runtime-postMaxContinuationRuntimeMs" class="input" min="500" max="300000" step="100" placeholder="기본값 사용" data-ms-human-target="adminAi-runtime-postMaxContinuationRuntimeMs-human">
                                         <span id="adminAi-runtime-postMaxContinuationRuntimeMs-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">게시물 이어쓰기 전체 동작 시간 제한입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-postMaxContinuationRuntimeMs-validation" role="alert"></div>
                                     <div id="adminAi-runtime-postMaxContinuationRuntimeMs-human" class="admin-ms-hint-wrap"><span class="admin-ms-hint-chip">입력 시 시간 환산</span></div>
                                 </div>
 
@@ -947,24 +1002,28 @@
                                         <span id="adminAi-runtime-ragMaxCandidates-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">프롬프트에 포함할 RAG 지식 최대 개수입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-ragMaxCandidates-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">RAG 최소 토큰 일치 수</label>
                                         <input type="number" id="adminAi-runtime-ragMinOverlapTokens" class="input" min="1" max="10" step="1" placeholder="기본값 사용">
                                         <span id="adminAi-runtime-ragMinOverlapTokens-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">질문과 겹치는 토큰 수가 이 값 이상일 때만 후보로 인정합니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-ragMinOverlapTokens-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">RAG 최소 점수</label>
                                         <input type="number" id="adminAi-runtime-ragMinScore" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
                                         <span id="adminAi-runtime-ragMinScore-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-ragMinScore-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">RAG 상대 컷오프(%)</label>
                                         <input type="number" id="adminAi-runtime-ragRelativeCutoffPct" class="input" min="0" max="100" step="1" placeholder="기본값 사용">
                                         <span id="adminAi-runtime-ragRelativeCutoffPct-default" class="admin-settings-hint" style="margin:0;">기본값: -</span>
                                     </div>
                                     <div class="admin-settings-subhint">최고 점수 대비 낮은 꼬리 후보를 제거하는 비율입니다.</div>
+                                    <div class="admin-field-error" id="adminAi-runtime-ragRelativeCutoffPct-validation" role="alert"></div>
                                     <div class="admin-gen-row">
                                         <label class="admin-gen-label">RAG 키워드 금칙어 목록</label>
                                         <textarea id="adminAi-runtime-ragKeywordBlocklist" class="input" style="min-height:84px; resize:vertical;" placeholder="쉼표 또는 줄바꿈으로 구분해 입력"></textarea>

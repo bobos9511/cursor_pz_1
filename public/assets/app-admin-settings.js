@@ -11,6 +11,7 @@ let adminAiApiLogsPage = 1;
 let adminAiApiLogsFilter = "all";
 let adminAiApiLogsSearchRaw = "";
 let adminAiSettingsHistory = [];
+let adminRuntimeValidationWired = false;
 
 function clampAdminAiGen01(v) {
     const n = Math.round(Number(v) * 10) / 10;
@@ -253,6 +254,11 @@ function collectAdminAiSettingsFromForm() {
     return aiSettings;
 }
 
+function setAdminGenParamMsg(numId, message) {
+    const el = document.getElementById(`${numId}-msg`);
+    if (el) el.textContent = message || "";
+}
+
 function wireAdminAiGenControlsOnce() {
     if (adminAiGenWired) return;
     adminAiGenWired = true;
@@ -261,19 +267,85 @@ function wireAdminAiGenControlsOnce() {
             const v = clampAdminAiGen01(range.value);
             range.value = String(v);
             const num = document.getElementById(`${range.id}-num`);
-            if (num) num.value = String(v);
+            if (num) {
+                num.value = String(v);
+                setAdminGenParamMsg(num.id, "");
+            }
         });
     });
     document.querySelectorAll(".admin-ai-gen-num").forEach((num) => {
         const syncFromNum = () => {
+            const rawTrim = String(num.value ?? "").trim();
+            const rawNum = Number(rawTrim);
+            let msg = "";
+            if (rawTrim !== "") {
+                if (!Number.isFinite(rawNum)) msg = "숫자만 입력할 수 있습니다.";
+                else if (rawNum < 0 || rawNum > 1) msg = "0 이상 1 이하만 입력할 수 있습니다.";
+            }
             const v = clampAdminAiGen01(num.value);
             num.value = String(v);
+            setAdminGenParamMsg(num.id, msg);
             const rangeId = num.id.replace(/-num$/, "");
             const range = document.getElementById(rangeId);
             if (range) range.value = String(v);
         };
         num.addEventListener("input", syncFromNum);
         num.addEventListener("change", syncFromNum);
+    });
+}
+
+function wireAdminRuntimeValidationOnce() {
+    if (adminRuntimeValidationWired) return;
+    adminRuntimeValidationWired = true;
+    const fields = [
+        { id: "adminAi-runtime-chatMaxOutputTokens", min: 50, max: 8192 },
+        { id: "adminAi-runtime-postMaxOutputTokens", min: 50, max: 8192 },
+        { id: "adminAi-runtime-chatMaxContinuations", min: 0, max: 200 },
+        { id: "adminAi-runtime-postMaxContinuations", min: 0, max: 200 },
+        { id: "adminAi-runtime-chatMaxContinuationRuntimeMs", min: 500, max: 300000 },
+        { id: "adminAi-runtime-postMaxContinuationRuntimeMs", min: 500, max: 300000 },
+        { id: "adminAi-runtime-ragMaxCandidates", min: 1, max: 10 },
+        { id: "adminAi-runtime-ragMinOverlapTokens", min: 1, max: 10 },
+        { id: "adminAi-runtime-ragMinScore", min: 0, max: 100 },
+        { id: "adminAi-runtime-ragRelativeCutoffPct", min: 0, max: 100 },
+    ];
+    fields.forEach(({ id, min, max }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const errEl = document.getElementById(`${id}-validation`);
+        const syncMsHint = () => {
+            if (id.indexOf("ContinuationRuntimeMs") !== -1) updateAdminRuntimeHumanHint(id);
+        };
+        const apply = (isBlur) => {
+            const raw = String(el.value ?? "").trim();
+            el.classList.remove("admin-input-invalid");
+            if (!raw) {
+                if (errEl) errEl.textContent = "";
+                syncMsHint();
+                return;
+            }
+            const n = Number(raw);
+            if (!Number.isFinite(n)) {
+                if (isBlur) {
+                    el.classList.add("admin-input-invalid");
+                    if (errEl) errEl.textContent = "숫자만 입력할 수 있습니다.";
+                }
+                syncMsHint();
+                return;
+            }
+            const rounded = Math.round(n);
+            if (rounded < min || rounded > max) {
+                const clamped = Math.min(max, Math.max(min, rounded));
+                el.value = String(clamped);
+                if (errEl) errEl.textContent = `허용 범위는 ${min}~${max}입니다. 범위에 맞게 조정했습니다.`;
+            } else {
+                if (rounded !== n) el.value = String(rounded);
+                if (errEl) errEl.textContent = "";
+            }
+            syncMsHint();
+        };
+        el.addEventListener("input", () => apply(false));
+        el.addEventListener("blur", () => apply(true));
     });
 }
 
@@ -464,7 +536,7 @@ function summarizeAiSettingsHtml(settings) {
             <div class="admin-ai-settings-version-card"><b>채팅</b><span>T ${c.temperature ?? "-"} / P ${c.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>IT 답변</b><span>T ${postIT.temperature ?? "-"} / P ${postIT.topP ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>BIZ 답변</b><span>T ${postBIZ.temperature ?? "-"} / P ${postBIZ.topP ?? "-"}</span></div>
-            <div class="admin-ai-settings-version-card"><b>토큰/이어쓰기</b><span>chat ${r.chatMaxOutputTokens ?? "-"} / post ${r.postMaxOutputTokens ?? "-"}</span></div>
+            <div class="admin-ai-settings-version-card"><b>AI 상세설정</b><span>chat ${r.chatMaxOutputTokens ?? "-"} / post ${r.postMaxOutputTokens ?? "-"}</span></div>
             <div class="admin-ai-settings-version-card"><b>RAG</b><span>후보 ${r.ragMaxCandidates ?? "-"} / 최소점수 ${r.ragMinScore ?? "-"} / 금칙어 ${ragBlockCount}개</span></div>
         </div>
     `;
@@ -564,6 +636,7 @@ function initAdminSettingsMainTabsOnce() {
         });
     }
     wireAdminRuntimeHumanHintOnce();
+    wireAdminRuntimeValidationOnce();
 }
 
 function buildAdminAiApiLogPlainText(log) {
@@ -917,25 +990,29 @@ function renderAdminAiApiLogsList() {
             : "";
     mount.innerHTML = `
         <div class="admin-ai-logs-toolbar">
-            <div class="admin-ai-logs-toolbar-left admin-ai-logs-toolbar-filters">
-                <span class="admin-ai-logs-toolbar-caption">구분</span>
-                <select class="input admin-ai-logs-filter-select" onchange="setAdminAiApiLogsFilter(this.value)">
-                    <option value="all" ${f === "all" ? "selected" : ""}>전체</option>
-                    <option value="chat" ${f === "chat" ? "selected" : ""}>AI채팅</option>
-                    <option value="post" ${f === "post" ? "selected" : ""}>AI답변(게시판 단위)</option>
-                    <option value="other" ${f === "other" ? "selected" : ""}>기타</option>
-                </select>
-                <span class="admin-ai-logs-toolbar-caption">검색</span>
-                <input type="search" class="input admin-ai-logs-search-input" placeholder="제목·프롬프트·미리보기" value="${escapeHtml(adminAiApiLogsSearchRaw)}" oninput="setAdminAiApiLogsSearch(this.value)" autocomplete="off">
-            </div>
-            <div class="admin-ai-logs-toolbar-right">
-                <span class="admin-ai-logs-toolbar-caption">페이지당 표시</span>
-                <select class="input admin-ai-logs-page-size" onchange="changeAdminAiApiLogPageSize(this.value)">
-                    <option value="10" ${pageSize === 10 ? "selected" : ""}>10개</option>
-                    <option value="30" ${pageSize === 30 ? "selected" : ""}>30개</option>
-                    <option value="50" ${pageSize === 50 ? "selected" : ""}>50개</option>
-                    <option value="100" ${pageSize === 100 ? "selected" : ""}>100개</option>
-                </select>
+            <div class="admin-ai-logs-toolbar-inner">
+                <div class="admin-ai-logs-field">
+                    <label class="admin-ai-logs-field-label" for="adminAiLogsFilterSelect">구분</label>
+                    <select id="adminAiLogsFilterSelect" class="input admin-ai-logs-filter-select" onchange="setAdminAiApiLogsFilter(this.value)">
+                        <option value="all" ${f === "all" ? "selected" : ""}>전체</option>
+                        <option value="chat" ${f === "chat" ? "selected" : ""}>AI채팅</option>
+                        <option value="post" ${f === "post" ? "selected" : ""}>AI답변(게시판 단위)</option>
+                        <option value="other" ${f === "other" ? "selected" : ""}>기타</option>
+                    </select>
+                </div>
+                <div class="admin-ai-logs-field admin-ai-logs-field-search">
+                    <label class="admin-ai-logs-field-label" for="adminAiLogsSearchInput">검색</label>
+                    <input id="adminAiLogsSearchInput" type="search" class="input admin-ai-logs-search-input" placeholder="제목·프롬프트·미리보기" value="${escapeHtml(adminAiApiLogsSearchRaw)}" oninput="setAdminAiApiLogsSearch(this.value)" autocomplete="off">
+                </div>
+                <div class="admin-ai-logs-field admin-ai-logs-field-pagesize">
+                    <label class="admin-ai-logs-field-label" for="adminAiLogsPageSizeSelect">페이지당</label>
+                    <select id="adminAiLogsPageSizeSelect" class="input admin-ai-logs-page-size" onchange="changeAdminAiApiLogPageSize(this.value)">
+                        <option value="10" ${pageSize === 10 ? "selected" : ""}>10개</option>
+                        <option value="30" ${pageSize === 30 ? "selected" : ""}>30개</option>
+                        <option value="50" ${pageSize === 50 ? "selected" : ""}>50개</option>
+                        <option value="100" ${pageSize === 100 ? "selected" : ""}>100개</option>
+                    </select>
+                </div>
             </div>
         </div>
         ${tableBlock}
@@ -1133,146 +1210,14 @@ function openAdminAiApiLogModal(logId) {
     modal.classList.add("active");
 }
 
-function closeAdminAiHelpModal() {
-    const modal = document.getElementById("adminAiHelpModal");
-    if (modal) modal.classList.remove("active");
-}
+function closeAdminAiHelpModal() {}
 
-function openAdminAiHelpModal(topic) {
-    const modal = document.getElementById("adminAiHelpModal");
-    const titleEl = document.getElementById("adminAiHelpModalTitle");
-    const bodyEl = document.getElementById("adminAiHelpModalBody");
-    if (!modal || !titleEl || !bodyEl) return;
-    const key = String(topic || "runtime");
-    const helpMap = {
-        chat: {
-            title: "AI 채팅 설정 도움말",
-            html: `
-                <div class="admin-help-hero">
-                    <div class="admin-help-hero-title">CHAT 운영 가이드</div>
-                    <div class="admin-help-hero-sub">업무 Q&A는 안정성 중심, 초안 작성은 유연성 중심으로 운영하세요.</div>
-                    <div class="admin-help-chip-row">
-                        <span class="admin-help-chip">권장 Temperature 0.2~0.4</span>
-                        <span class="admin-help-chip">권장 Top-P 0.7~0.9</span>
-                    </div>
-                </div>
-                <div class="admin-help-grid">
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">핵심 설정 의미</div>
-                        <ul>
-                            <li><b>시스템 프롬프트</b>: 말투/역할/금지사항을 정의합니다. 비우면 기본 프롬프트를 사용합니다.</li>
-                            <li><b>Temperature</b>: 낮을수록 일관적, 높을수록 창의적입니다.</li>
-                            <li><b>Top-P</b>: 후보 단어 범위를 제어해 표현 다양성을 조절합니다.</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">운영 팁</div>
-                        <ul>
-                            <li>일반 업무 답변: Temperature 0.2~0.4, Top-P 0.7~0.9</li>
-                            <li>아이디어/초안: Temperature 0.5~0.7, Top-P 0.8~1.0</li>
-                            <li>오답 증가 시 Temperature를 먼저 낮춘 후 Top-P를 조정하세요.</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">실무 예시</div>
-                        <ul>
-                            <li>"규정 답변이 들쭉날쭉"하면 Temperature 0.3, Top-P 0.8부터 고정 운영합니다.</li>
-                        </ul>
-                    </div>
-                </div>
-            `,
-        },
-        post: {
-            title: "AI 답변(게시물) 설정 도움말",
-            html: `
-                <div class="admin-help-hero">
-                    <div class="admin-help-hero-title">POST 운영 가이드</div>
-                    <div class="admin-help-hero-sub">게시판 성격(IT/규정)에 맞춰 프롬프트와 생성값을 분리 운영하세요.</div>
-                    <div class="admin-help-chip-row">
-                        <span class="admin-help-chip">IT: T 0.1~0.3 / P 0.7~0.85</span>
-                        <span class="admin-help-chip">BIZ: T 0.2~0.5 / P 0.8~0.95</span>
-                    </div>
-                </div>
-                <div class="admin-help-grid">
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">핵심 설정 의미</div>
-                        <ul>
-                            <li>게시판별 <b>시스템 프롬프트</b>를 분리해 답변 기준을 명확히 합니다.</li>
-                            <li><b>Temperature/Top-P</b>를 분리하면 정확도와 가독성을 동시에 관리할 수 있습니다.</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">운영 팁</div>
-                        <ul>
-                            <li>IT 문의는 낮은 Temperature로 사실/절차 중심으로 운영합니다.</li>
-                            <li>규정/상품 문의는 설명력이 필요한 만큼 Temperature를 약간 높입니다.</li>
-                            <li>값 변경은 한 번에 하나씩 조정 후 결과를 비교하세요.</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">실무 예시</div>
-                        <ul>
-                            <li>"규정은 이해하기 쉽게, IT는 정확하게" 목표라면 게시판별 프롬프트와 온도를 분리하는 것이 안정적입니다.</li>
-                        </ul>
-                    </div>
-                </div>
-            `,
-        },
-        runtime: {
-            title: "토큰/이어쓰기 설정 도움말",
-            html: `
-                <div class="admin-help-hero">
-                    <div class="admin-help-hero-title">RUNTIME 운영 가이드</div>
-                    <div class="admin-help-hero-sub">응답 길이, 끊김, 지연시간은 토큰과 이어쓰기 설정으로 균형을 맞춥니다.</div>
-                    <div class="admin-help-chip-row">
-                        <span class="admin-help-chip">채팅 토큰 1024~2048</span>
-                        <span class="admin-help-chip">게시물 토큰 1536~3072</span>
-                        <span class="admin-help-chip">이어쓰기 1~3회</span>
-                    </div>
-                </div>
-                <div class="admin-help-grid">
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">핵심 설정 의미</div>
-                        <ul>
-                            <li><b>최대 토큰</b>: 1회 응답 길이 제한</li>
-                            <li><b>이어쓰기 횟수</b>: 잘린 답변 자동 이어쓰기 시도 횟수</li>
-                            <li><b>이어쓰기 시간(ms)</b>: 전체 이어쓰기 타임아웃</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">운영 팁</div>
-                        <ul>
-                            <li>답변이 자주 끊기면 최대 토큰을 먼저 늘립니다.</li>
-                            <li>그래도 끊기면 이어쓰기 횟수를 1씩 증가시킵니다.</li>
-                            <li>지연이 길면 이어쓰기 시간 제한을 낮춰 체감 속도를 개선합니다.</li>
-                            <li>입력을 비우면 서버 기본값이 자동 적용됩니다.</li>
-                        </ul>
-                    </div>
-                    <div class="admin-help-card">
-                        <div class="admin-help-card-title">RAG 관련 설정 가이드</div>
-                        <ul>
-                            <li><b>RAG 최대 후보 수</b>: 프롬프트에 포함할 지식 후보 개수입니다. 높을수록 근거는 늘지만 응답이 길어지고 느려질 수 있습니다.</li>
-                            <li><b>RAG 최소 토큰 일치 수</b>: 질문과 겹치는 핵심 토큰 최소 개수입니다. 높이면 잡음 후보를 줄일 수 있습니다.</li>
-                            <li><b>RAG 최소 점수</b>: 후보 점수가 이 값 미만이면 RAG 문맥에서 제외합니다. 정확도 우선 시 값을 높게 운영합니다.</li>
-                            <li><b>RAG 상대 컷오프(%)</b>: 최고 점수 대비 낮은 후보를 제거하는 비율입니다. 값이 높을수록 상위 문서 위주로 엄격히 선별합니다.</li>
-                            <li><b>RAG 키워드 금칙어 목록</b>: 의미 없는 단어를 제외해 검색 품질을 높입니다. 너무 공격적으로 늘리면 필요한 후보도 빠질 수 있어 단계적으로 조정하세요.</li>
-                        </ul>
-                    </div>
-                </div>
-            `,
-        },
-    };
-    const selected = helpMap[key] || helpMap.runtime;
-    titleEl.innerText = selected.title;
-    bodyEl.innerHTML = selected.html;
-    modal.classList.add("active");
-}
-
-window.openAdminAiHelpModal = openAdminAiHelpModal;
-window.closeAdminAiHelpModal = closeAdminAiHelpModal;
+function openAdminAiHelpModal() {}
 window.exportAdminRagKeywordBlocklist = exportAdminRagKeywordBlocklist;
 window.importAdminRagKeywordBlocklist = importAdminRagKeywordBlocklist;
 window.handleAdminRagKeywordImport = handleAdminRagKeywordImport;
+window.openAdminAiHelpModal = openAdminAiHelpModal;
+window.closeAdminAiHelpModal = closeAdminAiHelpModal;
 window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
 window.changeAdminAiApiLogPageSize = changeAdminAiApiLogPageSize;
 window.goAdminAiApiLogPage = goAdminAiApiLogPage;

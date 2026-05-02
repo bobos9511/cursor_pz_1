@@ -85,6 +85,68 @@
             margin-top: 6px;
             line-height: 1.45;
         }
+        .admin-help-details {
+            margin: 4px 0 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 0;
+        }
+        .admin-help-details-summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .admin-help-details-summary::-webkit-details-marker {
+            display: none;
+        }
+        .admin-help-details-summary::before {
+            content: "▸";
+            font-size: 11px;
+            color: #64748b;
+            transition: transform 0.15s ease;
+        }
+        details.admin-help-details[open] > .admin-help-details-summary::before {
+            transform: rotate(90deg);
+        }
+        .admin-help-details-body {
+            padding: 0 14px 14px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 0;
+        }
+        .admin-help-details-body .admin-help-chip-row {
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+        .admin-help-details-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.55;
+        }
+        .admin-help-details-list li {
+            margin-bottom: 6px;
+        }
+        .admin-field-error {
+            font-size: 12px;
+            color: #dc2626;
+            line-height: 1.35;
+            min-height: 0;
+        }
+        .admin-field-error:empty {
+            display: none;
+        }
+        .admin-input-invalid {
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.35);
+        }
         .admin-help-btn {
             padding: 4px 9px !important;
             font-size: 11px !important;
@@ -360,59 +422,55 @@
             overflow: hidden;
         }
         .admin-ai-logs-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border-bottom: 1px solid #e2e8f0;
             background: #f8fafc;
-            flex-wrap: wrap;
         }
-        .admin-ai-logs-toolbar-left {
-            font-size: 12px;
-            font-weight: 700;
-            color: #475569;
+        .admin-ai-logs-toolbar-inner {
+            display: grid;
+            grid-template-columns: minmax(168px, 220px) minmax(200px, 1fr) minmax(118px, 140px);
+            gap: 14px 18px;
+            align-items: end;
+            width: 100%;
         }
-        .admin-ai-logs-toolbar-filters {
+        @media (max-width: 720px) {
+            .admin-ai-logs-toolbar-inner {
+                grid-template-columns: 1fr;
+            }
+        }
+        .admin-ai-logs-field {
             display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px 10px;
-            flex: 1;
-            min-width: min(100%, 280px);
+            flex-direction: column;
+            gap: 5px;
+            min-width: 0;
         }
-        .admin-ai-logs-toolbar-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-        .admin-ai-logs-toolbar-caption {
-            font-size: 12px;
-            font-weight: 700;
+        .admin-ai-logs-field-label {
+            font-size: 11px;
+            font-weight: 800;
             color: #64748b;
-            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .admin-ai-logs-field-search .admin-ai-logs-search-input {
+            width: 100%;
+            max-width: none;
         }
         .admin-ai-logs-filter-select {
-            min-width: 200px;
-            max-width: 100%;
-            height: 34px;
-            padding: 6px 30px 6px 10px;
+            width: 100%;
+            height: 36px;
+            padding: 6px 28px 6px 10px;
             font-size: 12px;
         }
         .admin-ai-logs-search-input {
-            flex: 1;
-            min-width: 160px;
-            max-width: 360px;
-            height: 34px;
+            width: 100%;
+            height: 36px;
             padding: 6px 10px;
             font-size: 12px;
         }
         .admin-ai-logs-page-size {
-            min-width: 98px;
-            height: 34px;
-            padding: 6px 30px 6px 10px;
+            width: 100%;
+            min-width: 0;
+            height: 36px;
+            padding: 6px 28px 6px 10px;
             font-size: 12px;
         }
         .admin-ai-settings-history-wrap {
