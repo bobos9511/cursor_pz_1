@@ -114,18 +114,47 @@ function isQuotaOrRateLimitError(message) {
 }
 
 function extractReplyFromGeminiData(data) {
-  const candidate =
-    data && Array.isArray(data.candidates) && data.candidates[0] ? data.candidates[0] : null;
-  const parts =
-    candidate && candidate.content && Array.isArray(candidate.content.parts)
-      ? candidate.content.parts
-      : [];
-  const reply = parts
-    .map((part) => (part && typeof part.text === "string" ? part.text : ""))
-    .join("")
-    .trim();
-  const finishReason = candidate && typeof candidate.finishReason === "string" ? candidate.finishReason : "";
-  return { reply, finishReason };
+  const blockReason =
+    data && data.promptFeedback && data.promptFeedback.blockReason
+      ? String(data.promptFeedback.blockReason)
+      : "";
+  const candidates = data && Array.isArray(data.candidates) ? data.candidates : [];
+
+  const joinPartsText = (candidate) => {
+    const parts =
+      candidate && candidate.content && Array.isArray(candidate.content.parts) ? candidate.content.parts : [];
+    return parts
+      .map((part) => (part && typeof part.text === "string" ? part.text : ""))
+      .join("")
+      .trim();
+  };
+
+  let reply = "";
+  let finishReason = "";
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const chunk = joinPartsText(candidate);
+    const fr = typeof candidate.finishReason === "string" ? candidate.finishReason : "";
+    if (chunk) {
+      reply = chunk;
+      finishReason = fr || finishReason;
+      break;
+    }
+    if (fr && !finishReason) finishReason = fr;
+  }
+
+  // 여러 후보에 텍스트가 흩어진 경우(드물게 발생)
+  if (!reply && candidates.length) {
+    const chunks = [];
+    for (const candidate of candidates) {
+      const t = joinPartsText(candidate);
+      if (t) chunks.push(t);
+    }
+    reply = chunks.join("\n").trim();
+  }
+
+  return { reply, finishReason, blockReason };
 }
 
 function sanitizeAiReplyText(text) {
@@ -882,18 +911,64 @@ async function handleAiChat(req, res) {
       sendJson(res, 502, { error: apiError });
       return;
     }
-    let { reply, finishReason } = extractReplyFromGeminiData(data);
+    let { reply, finishReason, blockReason } = extractReplyFromGeminiData(data);
+
+    // google_search 그라운딩 시 첫 응답에 사용자 텍스트 없이 검색/도구 메타만 오는 경우가 있어, 본문이 비면 도구 없이 1회 재요청합니다.
+    if (!reply && geminiRes.ok && useGrounding) {
+      ({ res: geminiRes, json: data } = await callGemini(
+        {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig,
+        },
+        "retry_empty_without_grounding",
+      ));
+      if (!geminiRes.ok) {
+        const apiError = data && data.error && data.error.message ? data.error.message : ko.errors.geminiApiGeneric;
+        if (isQuotaOrRateLimitError(apiError)) {
+          aiApiLog.final = {
+            ok: true,
+            statusCode: 200,
+            error: "quota_exceeded",
+            truncated: false,
+            continuationCount: 0,
+          };
+          saveAiApiLog(aiApiLog);
+          sendJson(res, 200, {
+            reply: ko.quotaDegradedReplyLines().join("\n"),
+            degraded: true,
+            reason: "quota_exceeded",
+          });
+          return;
+        }
+        aiApiLog.final = {
+          ok: false,
+          statusCode: 502,
+          error: String(apiError || ""),
+          truncated: false,
+          continuationCount: 0,
+        };
+        saveAiApiLog(aiApiLog);
+        sendJson(res, 502, { error: apiError });
+        return;
+      }
+      ({ reply, finishReason, blockReason } = extractReplyFromGeminiData(data));
+    }
 
     if (!reply) {
+      let friendly = ko.errors.aiReplyParse;
+      if (blockReason) friendly = `${ko.errors.aiReplyParse} (${blockReason})`;
+      else if (finishReason && String(finishReason).toUpperCase() === "SAFETY") {
+        friendly = `${ko.errors.aiReplyParse} (안전 필터)`;
+      }
       aiApiLog.final = {
         ok: false,
         statusCode: 502,
-        error: ko.errors.aiReplyParse,
+        error: friendly,
         truncated: false,
         continuationCount: 0,
       };
       saveAiApiLog(aiApiLog);
-      sendJson(res, 502, { error: ko.errors.aiReplyParse });
+      sendJson(res, 502, { error: friendly });
       return;
     }
 
