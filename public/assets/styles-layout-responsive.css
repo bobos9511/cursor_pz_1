@@ -86,7 +86,7 @@
             }
             .ai-chat-floating-btn {
                 right: 14px;
-                bottom: calc(94px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(114px + env(safe-area-inset-bottom, 0px));
                 width: 50px;
                 height: 50px;
             }
