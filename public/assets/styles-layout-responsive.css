@@ -4,11 +4,31 @@
             html, body, #appContainer, .body-wrapper, .main-area-wrapper, .main-area {
                 overflow-x: hidden !important;
             }
-            .top-nav-mobile { display: flex; }
+            .top-nav-mobile {
+                display: flex;
+                position: fixed;
+                inset: 0;
+                z-index: 1150;
+                flex-direction: column;
+                gap: 10px;
+                padding: 78px 14px 18px;
+                background: linear-gradient(180deg, rgba(7,15,28,0.96), rgba(10,23,43,0.98));
+                overflow-y: auto;
+                box-sizing: border-box;
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+            }
+            .top-nav-mobile.collapsed {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transform: translateY(-6px);
+            }
             .sidebar { display: none !important; }
             .main-area-wrapper { border-top-left-radius: 0; box-shadow: none; }
             .body-wrapper { background: var(--bg-color); }
-            .header, .top-nav-mobile, .main-area-wrapper, .main-area { max-width: 100vw; }
+            .header, .main-area-wrapper, .main-area { max-width: 100vw; }
             .header { padding: 0 10px; height: 56px; }
             .header .logo { font-size: 18px; }
             .header-title { display: none; }

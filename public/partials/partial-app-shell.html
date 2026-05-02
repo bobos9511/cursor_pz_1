@@ -60,7 +60,7 @@
                 </div>
             </div>
         </header>
-        <div id="topNavMobile" class="top-nav-mobile">
+        <div id="topNavMobile" class="top-nav-mobile collapsed" onclick="if(event.target===this) toggleSidebarPC()">
             <button class="top-nav-item" id="topnav-ai-search" onclick="switchView('ai-search')"><svg class="icon"><use href="#icon-magic"></use></svg>AI Chat</button>
             <button class="top-nav-item active" id="topnav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg>대시보드</button>
             <button class="top-nav-item" id="topnav-list-it" onclick="switchView('list', 'IT')"><svg class="icon"><use href="#icon-info"></use></svg>IT/오류</button>

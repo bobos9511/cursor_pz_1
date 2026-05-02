@@ -564,6 +564,8 @@
         let aiSearchInitialized = false;
         let aiSearchIsLoading = false;
         let aiSearchPendingContinuation = null;
+        let pullToRefreshStartY = null;
+        let pullToRefreshTriggered = false;
         const AI_FALLBACK_HTML = '<b>AI 분석 결과:</b><br>접수 내용 기반 분석 완료.';
         const initialRoute = (() => {
             try {
@@ -2445,6 +2447,7 @@
             const authInput = (document.getElementById('authInput').value || '').trim();
             const skipAuthValidation = !!options.skipAuthValidation;
             const forceTakeover = !!options.forceTakeover;
+            const allowAdminSessionRestore = !!options.allowAdminSessionRestore;
 
             if (!empNo) {
                 showAlert('직원번호를 입력하거나 회원목록에서 선택해주세요.', 'error');
@@ -2473,8 +2476,11 @@
 
             if (skipAuthValidation) {
                 if (resolveUserIsAdmin(currentLoginUser) && currentLoginUser.hasAdminPin) {
-                    showAlert('관리자 계정은 비밀번호(PIN) 입력 후 로그인해야 합니다.', 'error');
-                    return;
+                    const canRestoreAdminSession = sessionRestoreLogin && allowAdminSessionRestore && !!getStoredSessionToken();
+                    if (!canRestoreAdminSession) {
+                        showAlert('관리자 계정은 비밀번호(PIN) 입력 후 로그인해야 합니다.', 'error');
+                        return;
+                    }
                 }
             } else if (resolveUserIsAdmin(currentLoginUser)) {
                 if (!currentLoginUser.hasAdminPin) {
@@ -2732,7 +2738,10 @@
         function toggleSidebarPC() {
             if (window.matchMedia('(max-width: 1024px)').matches) {
                 const topNav = document.getElementById('topNavMobile');
-                if (topNav) topNav.classList.toggle('collapsed');
+                if (topNav) {
+                    topNav.classList.toggle('collapsed');
+                    document.body.classList.toggle('mobile-menu-open', !topNav.classList.contains('collapsed'));
+                }
                 updateSidebarToggleButton();
                 const listViewMobile = document.getElementById('view-list');
                 if (listViewMobile && listViewMobile.classList.contains('active')) {
@@ -2763,8 +2772,8 @@
             if (isMobile) {
                 const topNav = document.getElementById('topNavMobile');
                 const collapsed = !!topNav && topNav.classList.contains('collapsed');
-                iconUse.setAttribute('href', collapsed ? '#icon-bars' : '#icon-chevron-down');
-                btn.setAttribute('title', collapsed ? '상단 메뉴 펼치기' : '상단 메뉴 접기');
+                iconUse.setAttribute('href', collapsed ? '#icon-bars' : '#icon-close');
+                btn.setAttribute('title', collapsed ? '전체 메뉴 열기' : '전체 메뉴 닫기');
                 return;
             }
             const sidebar = document.getElementById('sidebar');
@@ -3182,6 +3191,15 @@
         function switchView(viewId, boardType = null, options = {}) {
             const fromHistory = !!options.fromHistory;
             const skipHistory = !!options.skipHistory;
+            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+            if (isMobile) {
+                const topNav = document.getElementById('topNavMobile');
+                if (topNav && !topNav.classList.contains('collapsed')) {
+                    topNav.classList.add('collapsed');
+                    document.body.classList.remove('mobile-menu-open');
+                    updateSidebarToggleButton();
+                }
+            }
             if (boardHelpEditing) {
                 const changingListBoard = viewId === 'list' && boardType && boardType !== currentBoardType;
                 const leavingListView = viewId !== 'list';
@@ -4784,6 +4802,12 @@
         window.addEventListener('resize', () => {
             closeHeaderActionsLayer();
             updateHeaderActionOverflow();
+            if (!window.matchMedia('(max-width: 1024px)').matches) {
+                document.body.classList.remove('mobile-menu-open');
+                const topNav = document.getElementById('topNavMobile');
+                if (topNav) topNav.classList.add('collapsed');
+                updateSidebarToggleButton();
+            }
             const dashView = document.getElementById('view-dashboard');
             if (dashView && dashView.classList.contains('active')) {
                 setTimeout(renderCSSCharts, 80);
@@ -4821,10 +4845,15 @@
             currentLoginUser = matched;
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
-            if (resolveUserIsAdmin(matched) && matched.hasAdminPin) {
+            const hasStoredSessionToken = !!getStoredSessionToken();
+            if (resolveUserIsAdmin(matched) && matched.hasAdminPin && !hasStoredSessionToken) {
                 return;
             }
-            await doLogin({ skipAuthValidation: true, sessionRestoreLogin: true });
+            await doLogin({
+                skipAuthValidation: true,
+                sessionRestoreLogin: true,
+                allowAdminSessionRestore: hasStoredSessionToken,
+            });
             if (!currentLoginUser) return;
             if (history && history.state && history.state.page === 'app') {
                 applyHistoryRoute(history.state);
@@ -4834,7 +4863,40 @@
             }
         }
 
+        function setupMobilePullToRefresh() {
+            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
+            const mainArea = document.getElementById('mainScrollArea');
+            if (!mainArea) return;
+
+            mainArea.addEventListener('touchstart', (event) => {
+                if (!event.touches || !event.touches.length) return;
+                if (mainArea.scrollTop > 0) {
+                    pullToRefreshStartY = null;
+                    return;
+                }
+                pullToRefreshStartY = event.touches[0].clientY;
+                pullToRefreshTriggered = false;
+            }, { passive: true });
+
+            mainArea.addEventListener('touchmove', (event) => {
+                if (pullToRefreshStartY == null || pullToRefreshTriggered) return;
+                if (!event.touches || !event.touches.length) return;
+                if (mainArea.scrollTop > 0) return;
+                const deltaY = event.touches[0].clientY - pullToRefreshStartY;
+                if (deltaY < 96) return;
+                pullToRefreshTriggered = true;
+                showAlert('새로고침 중입니다...', 'info');
+                window.location.reload();
+            }, { passive: true });
+
+            mainArea.addEventListener('touchend', () => {
+                pullToRefreshStartY = null;
+                pullToRefreshTriggered = false;
+            }, { passive: true });
+        }
+
         initializeLoginThemeControls();
+        setupMobilePullToRefresh();
         bootstrapSession().finally(() => {
             updateLoginThemeFabUi();
         });
