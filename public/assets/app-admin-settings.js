@@ -8,6 +8,8 @@ let adminRuntimeHumanHintWired = false;
 let adminAiApiLogs = [];
 let adminAiApiLogsPageSize = 10;
 let adminAiApiLogsPage = 1;
+let adminAiApiLogsFilter = "all";
+let adminAiApiLogsSearchRaw = "";
 let adminAiSettingsHistory = [];
 
 function clampAdminAiGen01(v) {
@@ -792,35 +794,89 @@ function formatAdminAiApiLogTime(iso) {
     return `${y}.${m}.${day} ${hh}:${mm}:${ss}`;
 }
 
+function resolveAiApiLogFilterGroup(boardType) {
+    const t = String(boardType || "").toUpperCase();
+    if (t === "CHAT") return "chat";
+    if (t === "IT" || t === "BIZ") return "post";
+    return "other";
+}
+
+function resolveAiApiLogDisplayLabel(boardType) {
+    const t = String(boardType || "").toUpperCase();
+    if (t === "CHAT") return "AI채팅";
+    if (t === "IT") return "IT문의";
+    if (t === "BIZ") return "규정문의";
+    if (!t) return "기타";
+    return `기타 (${t})`;
+}
+
+function matchesAdminAiApiLogsSearch(log, q) {
+    const needle = String(q || "").trim().toLowerCase();
+    if (!needle) return true;
+    const hay = [
+        log.title,
+        log.contentPreview,
+        log.promptText,
+        log.model,
+        log.boardType,
+        resolveAiApiLogDisplayLabel(log.boardType),
+    ]
+        .map((x) => String(x || "").toLowerCase())
+        .join(" ");
+    return hay.includes(needle);
+}
+
+function getAdminAiApiLogsFiltered() {
+    const q = adminAiApiLogsSearchRaw;
+    const f = adminAiApiLogsFilter;
+    return adminAiApiLogs.filter((log) => {
+        if (f !== "all") {
+            const g = resolveAiApiLogFilterGroup(log.boardType);
+            const want = f === "chat" ? "chat" : f === "post" ? "post" : "other";
+            if (g !== want) return false;
+        }
+        return matchesAdminAiApiLogsSearch(log, q);
+    });
+}
+
+function setAdminAiApiLogsFilter(value) {
+    const v = String(value || "all");
+    adminAiApiLogsFilter = ["all", "chat", "post", "other"].includes(v) ? v : "all";
+    adminAiApiLogsPage = 1;
+    renderAdminAiApiLogsList();
+}
+
+function setAdminAiApiLogsSearch(value) {
+    adminAiApiLogsSearchRaw = String(value || "");
+    adminAiApiLogsPage = 1;
+    renderAdminAiApiLogsList();
+}
+
 function renderAdminAiApiLogsList() {
     const mount = document.getElementById("adminAiApiLogsList");
     const summary = document.getElementById("adminAiApiLogsSummary");
     if (!mount || !summary) return;
-    const total = adminAiApiLogs.length;
-    const pageSize = [10, 30, 50, 100].includes(Number(adminAiApiLogsPageSize)) ? Number(adminAiApiLogsPageSize) : 10;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    adminAiApiLogsPage = Math.min(totalPages, Math.max(1, Number(adminAiApiLogsPage) || 1));
-    const startIndex = total > 0 ? (adminAiApiLogsPage - 1) * pageSize : 0;
-    const endIndex = Math.min(total, startIndex + pageSize);
-    const pageItems = total > 0 ? adminAiApiLogs.slice(startIndex, endIndex) : [];
-    summary.innerText = `요청 기록: ${total}건 (표시 ${total > 0 ? startIndex + 1 : 0}~${endIndex}, 페이지 ${adminAiApiLogsPage}/${totalPages})`;
-    if (!adminAiApiLogs.length) {
+    const allTotal = adminAiApiLogs.length;
+    if (!allTotal) {
+        summary.innerText = "요청 기록: 0건";
         mount.innerHTML = '<div class="text-center p-20" style="color:#94a3b8;">로그가 없습니다.</div>';
         return;
     }
-    mount.innerHTML = `
-        <div class="admin-ai-logs-toolbar">
-            <div class="admin-ai-logs-toolbar-left">페이지당 표시</div>
-            <div class="admin-ai-logs-toolbar-right">
-                <select class="input admin-ai-logs-page-size" onchange="changeAdminAiApiLogPageSize(this.value)">
-                    <option value="10" ${pageSize === 10 ? "selected" : ""}>10개</option>
-                    <option value="30" ${pageSize === 30 ? "selected" : ""}>30개</option>
-                    <option value="50" ${pageSize === 50 ? "selected" : ""}>50개</option>
-                    <option value="100" ${pageSize === 100 ? "selected" : ""}>100개</option>
-                </select>
-            </div>
-        </div>
-        <table class="admin-ai-logs-table">
+    const filteredLogs = getAdminAiApiLogsFiltered();
+    const total = filteredLogs.length;
+    const pageSize = [10, 30, 50, 100].includes(Number(adminAiApiLogsPageSize)) ? Number(adminAiApiLogsPageSize) : 10;
+    const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    adminAiApiLogsPage = Math.min(totalPages, Math.max(1, Number(adminAiApiLogsPage) || 1));
+    const startIndex = total > 0 ? (adminAiApiLogsPage - 1) * pageSize : 0;
+    const endIndex = total > 0 ? Math.min(total, startIndex + pageSize) : 0;
+    const pageItems = total > 0 ? filteredLogs.slice(startIndex, endIndex) : [];
+    let summaryPrefix = `요청 기록: ${total}건`;
+    if (total !== allTotal) summaryPrefix += ` (전체 ${allTotal}건 중)`;
+    summary.innerText = `${summaryPrefix} (표시 ${total > 0 ? startIndex + 1 : 0}~${endIndex}, 페이지 ${adminAiApiLogsPage}/${totalPages})`;
+    const f = adminAiApiLogsFilter;
+    const tableBlock =
+        total > 0
+            ? `<table class="admin-ai-logs-table">
             <thead>
                 <tr>
                     <th style="width:170px;">요청시각</th>
@@ -833,7 +889,7 @@ function renderAdminAiApiLogsList() {
                 ${pageItems
                     .map((log) => {
                         const title = escapeHtml(String(log.title || "(제목 없음)"));
-                        const board = escapeHtml(String(log.boardType || "-"));
+                        const board = escapeHtml(resolveAiApiLogDisplayLabel(log.boardType));
                         const ok = !!(log.final && log.final.ok);
                         const pill = ok
                             ? '<span class="admin-ai-log-pill">성공</span>'
@@ -847,14 +903,43 @@ function renderAdminAiApiLogsList() {
                     })
                     .join("")}
             </tbody>
-        </table>
-        <div class="admin-ai-logs-pagination">
+        </table>`
+            : '<div class="text-center p-20" style="color:#94a3b8;">조건에 맞는 로그가 없습니다.</div>';
+    const paginationBlock =
+        total > 0
+            ? `<div class="admin-ai-logs-pagination">
             <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(1)" ${adminAiApiLogsPage <= 1 ? "disabled" : ""}>처음</button>
             <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${adminAiApiLogsPage - 1})" ${adminAiApiLogsPage <= 1 ? "disabled" : ""}>이전</button>
             <span class="admin-ai-logs-page-status">${adminAiApiLogsPage} / ${totalPages}</span>
             <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${adminAiApiLogsPage + 1})" ${adminAiApiLogsPage >= totalPages ? "disabled" : ""}>다음</button>
             <button type="button" class="btn btn-outline admin-ai-logs-page-btn" onclick="goAdminAiApiLogPage(${totalPages})" ${adminAiApiLogsPage >= totalPages ? "disabled" : ""}>마지막</button>
+        </div>`
+            : "";
+    mount.innerHTML = `
+        <div class="admin-ai-logs-toolbar">
+            <div class="admin-ai-logs-toolbar-left admin-ai-logs-toolbar-filters">
+                <span class="admin-ai-logs-toolbar-caption">구분</span>
+                <select class="input admin-ai-logs-filter-select" onchange="setAdminAiApiLogsFilter(this.value)">
+                    <option value="all" ${f === "all" ? "selected" : ""}>전체</option>
+                    <option value="chat" ${f === "chat" ? "selected" : ""}>AI채팅</option>
+                    <option value="post" ${f === "post" ? "selected" : ""}>AI답변(게시판 단위)</option>
+                    <option value="other" ${f === "other" ? "selected" : ""}>기타</option>
+                </select>
+                <span class="admin-ai-logs-toolbar-caption">검색</span>
+                <input type="search" class="input admin-ai-logs-search-input" placeholder="제목·프롬프트·미리보기" value="${escapeHtml(adminAiApiLogsSearchRaw)}" oninput="setAdminAiApiLogsSearch(this.value)" autocomplete="off">
+            </div>
+            <div class="admin-ai-logs-toolbar-right">
+                <span class="admin-ai-logs-toolbar-caption">페이지당 표시</span>
+                <select class="input admin-ai-logs-page-size" onchange="changeAdminAiApiLogPageSize(this.value)">
+                    <option value="10" ${pageSize === 10 ? "selected" : ""}>10개</option>
+                    <option value="30" ${pageSize === 30 ? "selected" : ""}>30개</option>
+                    <option value="50" ${pageSize === 50 ? "selected" : ""}>50개</option>
+                    <option value="100" ${pageSize === 100 ? "selected" : ""}>100개</option>
+                </select>
+            </div>
         </div>
+        ${tableBlock}
+        ${paginationBlock}
     `;
 }
 
@@ -866,7 +951,9 @@ function changeAdminAiApiLogPageSize(value) {
 }
 
 function goAdminAiApiLogPage(page) {
-    const totalPages = Math.max(1, Math.ceil(adminAiApiLogs.length / Math.max(1, Number(adminAiApiLogsPageSize) || 10)));
+    const filteredLen = getAdminAiApiLogsFiltered().length;
+    const totalPages =
+        filteredLen > 0 ? Math.max(1, Math.ceil(filteredLen / Math.max(1, Number(adminAiApiLogsPageSize) || 10))) : 1;
     adminAiApiLogsPage = Math.min(totalPages, Math.max(1, Number(page) || 1));
     renderAdminAiApiLogsList();
 }
@@ -893,6 +980,8 @@ async function clearAdminAiApiLogs() {
             await fetchJson("/api/db/ai-api-logs", { method: "DELETE" });
             adminAiApiLogs = [];
             adminAiApiLogsPage = 1;
+            adminAiApiLogsFilter = "all";
+            adminAiApiLogsSearchRaw = "";
             renderAdminAiApiLogsList();
             showAlert("AI API 로그를 삭제했습니다.", "success");
         } catch (e) {
@@ -918,10 +1007,10 @@ function getAdminAiApiBoardMeta(boardTypeRaw) {
         return { boardType, boardLabel: "AI채팅", settingsLabel: "AI채팅 설정", isChat: true };
     }
     if (boardType === "IT") {
-        return { boardType, boardLabel: "AI답변(IT)", settingsLabel: "AI답변 설정(IT)", isChat: false };
+        return { boardType, boardLabel: "IT문의", settingsLabel: "AI답변 설정(IT)", isChat: false };
     }
     if (boardType === "BIZ") {
-        return { boardType, boardLabel: "AI답변(규정/상품)", settingsLabel: "AI답변 설정(규정/상품)", isChat: false };
+        return { boardType, boardLabel: "규정문의", settingsLabel: "AI답변 설정(규정/상품)", isChat: false };
     }
     return { boardType, boardLabel: boardType || "-", settingsLabel: "AI 설정", isChat: false };
 }
@@ -1187,6 +1276,8 @@ window.handleAdminRagKeywordImport = handleAdminRagKeywordImport;
 window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
 window.changeAdminAiApiLogPageSize = changeAdminAiApiLogPageSize;
 window.goAdminAiApiLogPage = goAdminAiApiLogPage;
+window.setAdminAiApiLogsFilter = setAdminAiApiLogsFilter;
+window.setAdminAiApiLogsSearch = setAdminAiApiLogsSearch;
 window.deleteSignupUserFromAdmin = deleteSignupUserFromAdmin;
 window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
 window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;

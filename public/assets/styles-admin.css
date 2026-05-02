@@ -367,11 +367,47 @@
             padding: 10px 12px;
             border-bottom: 1px solid #e2e8f0;
             background: #f8fafc;
+            flex-wrap: wrap;
         }
         .admin-ai-logs-toolbar-left {
             font-size: 12px;
             font-weight: 700;
             color: #475569;
+        }
+        .admin-ai-logs-toolbar-filters {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px 10px;
+            flex: 1;
+            min-width: min(100%, 280px);
+        }
+        .admin-ai-logs-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .admin-ai-logs-toolbar-caption {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            white-space: nowrap;
+        }
+        .admin-ai-logs-filter-select {
+            min-width: 200px;
+            max-width: 100%;
+            height: 34px;
+            padding: 6px 30px 6px 10px;
+            font-size: 12px;
+        }
+        .admin-ai-logs-search-input {
+            flex: 1;
+            min-width: 160px;
+            max-width: 360px;
+            height: 34px;
+            padding: 6px 10px;
+            font-size: 12px;
         }
         .admin-ai-logs-page-size {
             min-width: 98px;

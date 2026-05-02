@@ -783,10 +783,13 @@
             border-bottom-color: #3f5475;
         }
         body[data-theme="dark"] .admin-ai-logs-toolbar-left,
-        body[data-theme="dark"] .admin-ai-logs-page-status {
+        body[data-theme="dark"] .admin-ai-logs-page-status,
+        body[data-theme="dark"] .admin-ai-logs-toolbar-caption {
             color: #c7d7ec;
         }
-        body[data-theme="dark"] .admin-ai-logs-page-size {
+        body[data-theme="dark"] .admin-ai-logs-page-size,
+        body[data-theme="dark"] .admin-ai-logs-filter-select,
+        body[data-theme="dark"] .admin-ai-logs-search-input {
             background: #13233a;
             border-color: #4a5f7f;
             color: #e6edf8;
