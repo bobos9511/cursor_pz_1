@@ -10,6 +10,8 @@ const {
   buildGenerationConfig,
   loadPromptDefaults,
   DEFAULT_RAG_KEYWORD_BLOCKLIST,
+  RUNTIME_CONTINUATION_MS_MIN,
+  RUNTIME_CONTINUATION_MS_MAX,
 } = require("./server-ai-settings");
 const ko = require("./server-messages.ko.cjs");
 
@@ -612,14 +614,14 @@ async function handleAiChat(req, res) {
   const postMaxContinuations = clampIntWithFallback(runtime.postMaxContinuations, 0, 200, GEMINI_MAX_CONTINUATIONS);
   const chatMaxContinuationRuntimeMs = clampIntWithFallback(
     runtime.chatMaxContinuationRuntimeMs,
-    500,
-    300000,
+    RUNTIME_CONTINUATION_MS_MIN,
+    RUNTIME_CONTINUATION_MS_MAX,
     GEMINI_CHAT_MAX_CONTINUATION_RUNTIME_MS,
   );
   const postMaxContinuationRuntimeMs = clampIntWithFallback(
     runtime.postMaxContinuationRuntimeMs,
-    500,
-    300000,
+    RUNTIME_CONTINUATION_MS_MIN,
+    RUNTIME_CONTINUATION_MS_MAX,
     GEMINI_MAX_CONTINUATION_RUNTIME_MS,
   );
   const ragMaxCandidates = clampIntWithFallback(runtime.ragMaxCandidates, 1, 10, RAG_MAX_CANDIDATES);

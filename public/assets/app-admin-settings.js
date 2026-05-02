@@ -25,6 +25,22 @@ function clampAdminAiInt(v, min, max, fallback) {
     return Math.min(max, Math.max(min, n));
 }
 
+/** 서버 RUNTIME_CONTINUATION_MS_* 와 동일: 0·비움 → null(기본값), 그 외 100ms~1시간 */
+const ADMIN_RUNTIME_CONTINUATION_MS_MIN = 100;
+const ADMIN_RUNTIME_CONTINUATION_MS_MAX = 3600000;
+
+function clampAdminContinuationRuntimeMsOrNull(raw) {
+    const s = String(raw ?? "").trim();
+    if (!s) return null;
+    const n = Math.round(Number(s));
+    if (!Number.isFinite(n)) return null;
+    if (n === 0) return null;
+    return Math.min(
+        ADMIN_RUNTIME_CONTINUATION_MS_MAX,
+        Math.max(ADMIN_RUNTIME_CONTINUATION_MS_MIN, n),
+    );
+}
+
 function parseAdminKeywordBlocklist(raw) {
     const source = String(raw || "")
         .split(/[,\n]/g)
@@ -151,6 +167,10 @@ function updateAdminRuntimeHumanHint(inputId) {
         hintEl.innerHTML = '<span class="admin-ms-hint-chip">입력 시 시간 환산</span>';
         return;
     }
+    if (raw === "0") {
+        hintEl.innerHTML = '<span class="admin-ms-hint-chip">0 = 서버 기본값 사용</span>';
+        return;
+    }
     hintEl.innerHTML = `<span class="admin-ms-hint-chip">환산: ${escapeHtml(formatMsToHumanReadable(raw))}</span>`;
 }
 
@@ -204,17 +224,11 @@ function collectAdminAiSettingsFromForm() {
                 200,
                 null,
             ),
-            chatMaxContinuationRuntimeMs: clampAdminAiInt(
+            chatMaxContinuationRuntimeMs: clampAdminContinuationRuntimeMsOrNull(
                 document.getElementById("adminAi-runtime-chatMaxContinuationRuntimeMs")?.value,
-                500,
-                300000,
-                null,
             ),
-            postMaxContinuationRuntimeMs: clampAdminAiInt(
+            postMaxContinuationRuntimeMs: clampAdminContinuationRuntimeMsOrNull(
                 document.getElementById("adminAi-runtime-postMaxContinuationRuntimeMs")?.value,
-                500,
-                300000,
-                null,
             ),
             ragMaxCandidates: clampAdminAiInt(
                 document.getElementById("adminAi-runtime-ragMaxCandidates")?.value,
@@ -302,8 +316,6 @@ function wireAdminRuntimeValidationOnce() {
         { id: "adminAi-runtime-postMaxOutputTokens", min: 50, max: 8192 },
         { id: "adminAi-runtime-chatMaxContinuations", min: 0, max: 200 },
         { id: "adminAi-runtime-postMaxContinuations", min: 0, max: 200 },
-        { id: "adminAi-runtime-chatMaxContinuationRuntimeMs", min: 500, max: 300000 },
-        { id: "adminAi-runtime-postMaxContinuationRuntimeMs", min: 500, max: 300000 },
         { id: "adminAi-runtime-ragMaxCandidates", min: 1, max: 10 },
         { id: "adminAi-runtime-ragMinOverlapTokens", min: 1, max: 10 },
         { id: "adminAi-runtime-ragMinScore", min: 0, max: 100 },
@@ -313,13 +325,47 @@ function wireAdminRuntimeValidationOnce() {
         const el = document.getElementById(id);
         if (!el) return;
         const errEl = document.getElementById(`${id}-validation`);
-        const syncMsHint = () => {
-            if (id.indexOf("ContinuationRuntimeMs") !== -1) updateAdminRuntimeHumanHint(id);
-        };
         const apply = (isBlur) => {
             const raw = String(el.value ?? "").trim();
             el.classList.remove("admin-input-invalid");
             if (!raw) {
+                if (errEl) errEl.textContent = "";
+                return;
+            }
+            const n = Number(raw);
+            if (!Number.isFinite(n)) {
+                if (isBlur) {
+                    el.classList.add("admin-input-invalid");
+                    if (errEl) errEl.textContent = "숫자만 입력할 수 있습니다.";
+                }
+                return;
+            }
+            const rounded = Math.round(n);
+            if (rounded < min || rounded > max) {
+                const clamped = Math.min(max, Math.max(min, rounded));
+                el.value = String(clamped);
+                if (errEl) errEl.textContent = `허용 범위는 ${min}~${max}입니다. 범위에 맞게 조정했습니다.`;
+            } else {
+                if (rounded !== n) el.value = String(rounded);
+                if (errEl) errEl.textContent = "";
+            }
+        };
+        el.addEventListener("input", () => apply(false));
+        el.addEventListener("blur", () => apply(true));
+    });
+    const continuationMsIds = [
+        "adminAi-runtime-chatMaxContinuationRuntimeMs",
+        "adminAi-runtime-postMaxContinuationRuntimeMs",
+    ];
+    continuationMsIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const errEl = document.getElementById(`${id}-validation`);
+        const syncMsHint = () => updateAdminRuntimeHumanHint(id);
+        const apply = (isBlur) => {
+            const raw = String(el.value ?? "").trim();
+            el.classList.remove("admin-input-invalid");
+            if (!raw || raw === "0") {
                 if (errEl) errEl.textContent = "";
                 syncMsHint();
                 return;
@@ -334,14 +380,24 @@ function wireAdminRuntimeValidationOnce() {
                 return;
             }
             const rounded = Math.round(n);
-            if (rounded < min || rounded > max) {
-                const clamped = Math.min(max, Math.max(min, rounded));
-                el.value = String(clamped);
-                if (errEl) errEl.textContent = `허용 범위는 ${min}~${max}입니다. 범위에 맞게 조정했습니다.`;
-            } else {
-                if (rounded !== n) el.value = String(rounded);
+            if (rounded < 0) {
+                el.value = "0";
                 if (errEl) errEl.textContent = "";
+                syncMsHint();
+                return;
             }
+            if (rounded > ADMIN_RUNTIME_CONTINUATION_MS_MAX) {
+                el.value = String(ADMIN_RUNTIME_CONTINUATION_MS_MAX);
+                if (errEl)
+                    errEl.textContent = `최대 ${ADMIN_RUNTIME_CONTINUATION_MS_MAX.toLocaleString("ko-KR")}ms까지 설정할 수 있습니다.`;
+                syncMsHint();
+                return;
+            }
+            if (isBlur && rounded > 0 && rounded < ADMIN_RUNTIME_CONTINUATION_MS_MIN) {
+                if (errEl)
+                    errEl.textContent = `저장 시 최소 ${ADMIN_RUNTIME_CONTINUATION_MS_MIN}ms로 맞춰집니다. 기본 설정을 쓰려면 0으로 두세요.`;
+            } else if (errEl) errEl.textContent = "";
+            if (rounded !== n) el.value = String(rounded);
             syncMsHint();
         };
         el.addEventListener("input", () => apply(false));

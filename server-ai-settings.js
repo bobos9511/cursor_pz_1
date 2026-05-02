@@ -127,6 +127,18 @@ function clampIntOrNull(v, min, max) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+/** 이어쓰기 전체 시간(ms): 0·비움 = 서버·환경 기본값 사용. 유효 입력은 RUNTIME_CONTINUATION_MS 범위로만 제한 */
+const RUNTIME_CONTINUATION_MS_MIN = 100;
+const RUNTIME_CONTINUATION_MS_MAX = 3600000;
+
+function clampContinuationMsOrNull(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  if (n === 0) return null;
+  return Math.min(RUNTIME_CONTINUATION_MS_MAX, Math.max(RUNTIME_CONTINUATION_MS_MIN, Math.round(n)));
+}
+
 function normalizeKeywordToken(v) {
   return String(v || "")
     .toLowerCase()
@@ -174,8 +186,8 @@ function mergeAiSettingsFromDb(parsed) {
     base.runtime.postMaxOutputTokens = clampIntOrNull(r.postMaxOutputTokens, 50, 8192);
     base.runtime.chatMaxContinuations = clampIntOrNull(r.chatMaxContinuations, 0, 200);
     base.runtime.postMaxContinuations = clampIntOrNull(r.postMaxContinuations, 0, 200);
-    base.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
-    base.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
+    base.runtime.chatMaxContinuationRuntimeMs = clampContinuationMsOrNull(r.chatMaxContinuationRuntimeMs);
+    base.runtime.postMaxContinuationRuntimeMs = clampContinuationMsOrNull(r.postMaxContinuationRuntimeMs);
     base.runtime.ragMaxCandidates = clampIntOrNull(r.ragMaxCandidates, 1, 10);
     base.runtime.ragMinOverlapTokens = clampIntOrNull(r.ragMinOverlapTokens, 1, 10);
     base.runtime.ragMinScore = clampIntOrNull(r.ragMinScore, 0, 100);
@@ -214,9 +226,9 @@ function mergeAiSettingsPatch(base, patch) {
     if (r.postMaxContinuations !== undefined)
       out.runtime.postMaxContinuations = clampIntOrNull(r.postMaxContinuations, 0, 200);
     if (r.chatMaxContinuationRuntimeMs !== undefined)
-      out.runtime.chatMaxContinuationRuntimeMs = clampIntOrNull(r.chatMaxContinuationRuntimeMs, 500, 300000);
+      out.runtime.chatMaxContinuationRuntimeMs = clampContinuationMsOrNull(r.chatMaxContinuationRuntimeMs);
     if (r.postMaxContinuationRuntimeMs !== undefined)
-      out.runtime.postMaxContinuationRuntimeMs = clampIntOrNull(r.postMaxContinuationRuntimeMs, 500, 300000);
+      out.runtime.postMaxContinuationRuntimeMs = clampContinuationMsOrNull(r.postMaxContinuationRuntimeMs);
     if (r.ragMaxCandidates !== undefined) out.runtime.ragMaxCandidates = clampIntOrNull(r.ragMaxCandidates, 1, 10);
     if (r.ragMinOverlapTokens !== undefined)
       out.runtime.ragMinOverlapTokens = clampIntOrNull(r.ragMinOverlapTokens, 1, 10);
@@ -299,4 +311,6 @@ module.exports = {
   buildAiPrompt,
   buildGenerationConfig,
   DEFAULT_RAG_KEYWORD_BLOCKLIST,
+  RUNTIME_CONTINUATION_MS_MIN,
+  RUNTIME_CONTINUATION_MS_MAX,
 };
