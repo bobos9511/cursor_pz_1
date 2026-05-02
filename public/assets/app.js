@@ -2795,11 +2795,14 @@
             const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
             const aiSearchActive = !!aiView && aiView.classList.contains('active');
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
-            const layerOpen = document.body.classList.contains('ai-chat-layer-open');
-            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu || layerOpen);
+            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
         }
         function openAiChatLayerFromFloating() {
             if (!currentLoginUser) return;
+            if (document.body.classList.contains('ai-chat-layer-open')) {
+                closeAiChatLayer();
+                return;
+            }
             const overlay = document.getElementById('aiChatLayerOverlay');
             const host = document.getElementById('aiChatLayerHost');
             const aiView = document.getElementById('view-ai-search');

@@ -1364,6 +1364,9 @@
             border-color: rgba(165,243,252,0.7);
         }
         body.mobile-menu-open { overflow: hidden; }
+        body.ai-chat-layer-open .ai-chat-floating-btn {
+            z-index: 1250;
+        }
         .ai-chat-floating-btn {
             position: fixed;
             right: 22px;
@@ -1568,6 +1571,11 @@
         }
         #view-ai-search #aiLayerNewChatBtn {
             display: none !important;
+        }
+        .ai-chat-layer-host #view-ai-search #aiLayerNewChatBtn {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
         }
         .ai-chat-layer-host #aiSearchSendBtn {
             align-self: auto;
