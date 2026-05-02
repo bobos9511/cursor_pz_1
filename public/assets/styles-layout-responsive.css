@@ -98,20 +98,57 @@
             .ai-chat-floating-btn::after {
                 display: none;
             }
+            /* FAB(right 14px, bottom 176px+safe, 50px) 위 말풍선형 패널 — 하단 전체 폭 고정 대신 버튼 위에 배치 */
             .ai-chat-layer-overlay {
-                padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-                align-items: flex-end;
-                justify-content: center;
+                display: block;
+                padding: 0;
+            }
+            .ai-chat-layer-overlay:not(.hidden) .ai-chat-layer-panel {
+                animation: aiChatLayerBubbleIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+            }
+            .ai-chat-layer-overlay.closing .ai-chat-layer-panel {
+                animation: aiChatLayerBubbleOut 0.18s ease-in both;
             }
             .ai-chat-layer-panel {
-                width: 100%;
-                max-height: min(82dvh, calc(100svh - 56px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px)));
+                position: absolute;
+                left: 10px;
+                right: 10px;
+                bottom: calc(238px + env(safe-area-inset-bottom, 0px));
+                width: auto;
+                max-height: min(
+                    62dvh,
+                    calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 292px)
+                );
                 height: auto;
                 min-height: 0;
                 border-radius: 14px;
+                overflow: visible;
+                transform-origin: calc(100% - 39px) calc(100% + 12px);
+                box-shadow:
+                    0 18px 42px rgba(2, 6, 23, 0.34),
+                    0 5px 16px rgba(2, 6, 23, 0.2);
+            }
+            .ai-chat-layer-panel::after {
+                content: '';
+                position: absolute;
+                right: 29px;
+                bottom: -11px;
+                transform: translateX(50%);
+                width: 0;
+                height: 0;
+                border-left: 11px solid transparent;
+                border-right: 11px solid transparent;
+                border-top: 12px solid #e8f1fb;
+                filter: drop-shadow(0 3px 5px rgba(15, 23, 42, 0.18));
+                pointer-events: none;
+                z-index: 2;
             }
             .ai-chat-layer-host {
-                padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+                padding: 4px 8px 6px;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 0 0 13px 13px;
+                min-height: 0;
             }
             .ai-chat-layer-host .ai-search-main-head {
                 display: none;
@@ -1406,4 +1443,25 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @keyframes aiChatLayerBubbleIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.94);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes aiChatLayerBubbleOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(10px) scale(0.96);
+            }
+        }
 
