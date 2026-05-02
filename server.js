@@ -558,6 +558,9 @@ function saveClientAiApiErrorLog(payload = {}) {
       timeoutMs: Number(payload.timeoutMs || 0),
       continueFromChars: Number(payload.continueFromChars || 0),
       isTimeout: !!payload.isTimeout,
+      errorName: String(payload.errorName || "").slice(0, 120),
+      navigatorOnline: payload.navigatorOnline === true ? true : payload.navigatorOnline === false ? false : null,
+      attemptCount: Number(payload.attemptCount || 0) || 0,
     },
     generationConfig: {},
     promptText: String(payload.promptText || "").slice(0, 12000),
@@ -1300,6 +1303,18 @@ function serveStatic(req, res) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  /* JSON POST 등 non-simple 요청의 CORS preflight(일부 환경·리버스 프록시) */
+  if (req.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": req.headers.origin || "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+      Vary: "Origin",
+    });
+    res.end();
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, { ok: true, now: Date.now() });
     return;

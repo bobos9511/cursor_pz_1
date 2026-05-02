@@ -156,64 +156,133 @@ function sanitizePostAiRawReply(rawReply) {
     return out;
 }
 
-async function requestAiPreview({ title, content, boardType, timeoutMs = AI_REQUEST_TIMEOUT_MS, abortOnTimeout = true, onTimeout = null, continueFrom = "" }) {
-    const controller = new AbortController();
-    let timeoutNotified = false;
-    const timeoutId =
-        timeoutMs > 0
-            ? setTimeout(() => {
-                  timeoutNotified = true;
-                  if (typeof onTimeout === "function") onTimeout();
-                  if (abortOnTimeout) controller.abort();
-              }, timeoutMs)
-            : null;
-    try {
-        const response = await fetch("/api/ai/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, content, boardType, continueFrom }),
-            signal: controller.signal,
-        });
-        const data = await response.json();
-        if (!response.ok || !data || !data.reply) {
-            throw new Error((data && data.error) || "AI 응답을 가져오지 못했습니다.");
-        }
-        return {
-            ok: true,
-            replyHtml: formatAiReplyHtml(data.reply),
-            rawReply: String(data.reply || ""),
-            truncated: !!data.truncated,
-            errorMessage: "",
-            isTimeout: false,
-            wasDelayed: timeoutNotified,
-        };
-    } catch (error) {
-        console.error("AI preview request failed:", error);
-        await recordAiApiClientErrorLog({
-            title: String(title || "").slice(0, 200),
-            contentPreview: String(content || "").slice(0, 1000),
-            boardType: String(boardType || "").slice(0, 32),
-            error: String((error && error.message) || "ai_client_request_failed"),
-            timeoutMs: Number(timeoutMs || 0),
-            continueFromChars: String(continueFrom || "").length,
-            isTimeout: !!(error && error.name === "AbortError"),
-            requesterScope:
-                typeof getAppDataUserScope === "function" ? String(getAppDataUserScope() || "guest").slice(0, 64) : "guest",
-        });
-        if (error && error.name === "AbortError") {
-            return {
-                ok: false,
-                replyHtml: "",
-                errorMessage: `AI 응답 시간이 ${Math.round(timeoutMs / 1000)}초를 초과했습니다.`,
-                isTimeout: true,
-                wasDelayed: true,
-            };
-        }
-        const reason = error && error.message ? error.message : "AI 서버 통신 중 오류";
-        return { ok: false, replyHtml: "", errorMessage: reason, isTimeout: false, wasDelayed: timeoutNotified };
-    } finally {
-        if (timeoutId) clearTimeout(timeoutId);
+function resolveAiRequestDefaultTimeout() {
+    return typeof AI_REQUEST_TIMEOUT_MS !== "undefined" ? AI_REQUEST_TIMEOUT_MS : 60000;
+}
+
+function resolveAiPostBackgroundTimeout() {
+    if (typeof AI_POST_BACKGROUND_TIMEOUT_MS !== "undefined") return AI_POST_BACKGROUND_TIMEOUT_MS;
+    return Math.max(resolveAiRequestDefaultTimeout(), 120000);
+}
+
+/** 브라우저가 서버 HTTP 응답 전에 연결을 잃을 때(프록시·TLS·호스트 절전 등) */
+function isTransientAiFetchError(err) {
+    if (!err || err.name === "AbortError") return false;
+    const m = String(err.message || "");
+    return /failed to fetch|load failed|networkerror|network request failed|fetch failed|connection.*(reset|refused)|econnreset|econnrefused/i.test(
+        m,
+    );
+}
+
+function humanizeAiClientNetworkError(rawMessage) {
+    const m = String(rawMessage || "").trim();
+    if (/failed to fetch/i.test(m)) {
+        return [
+            "브라우저가 애플리케이션 서버와 연결을 완료하지 못했습니다.",
+            "VPN·방화벽·사내망 SSL 검사, 또는 호스팅 절전(첫 요청 지연)일 수 있습니다.",
+            "잠시 후 다시 시도하거나 네트워크 관리자에게 문의해 주세요.",
+        ].join(" ");
     }
+    return m || "AI 서버 통신 중 오류";
+}
+
+async function requestAiPreview({
+    title,
+    content,
+    boardType,
+    timeoutMs,
+    abortOnTimeout = true,
+    onTimeout = null,
+    continueFrom = "",
+    transientRetries = 2,
+} = {}) {
+    /* timeoutMs === 0 && !abortOnTimeout → 클라이언트에서 대기 제한 없음(기존 AI채팅 동작) */
+    const resolvedTimeout =
+        timeoutMs === 0 && !abortOnTimeout
+            ? 0
+            : typeof timeoutMs === "number" && timeoutMs > 0
+              ? timeoutMs
+              : resolveAiRequestDefaultTimeout();
+    let lastError = null;
+    const maxAttempts = Math.max(1, 1 + Math.max(0, Math.min(4, Number(transientRetries) || 0)));
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 700 * attempt));
+        }
+        const controller = new AbortController();
+        let timeoutNotified = false;
+        const timeoutId =
+            resolvedTimeout > 0
+                ? setTimeout(() => {
+                      timeoutNotified = true;
+                      if (typeof onTimeout === "function") onTimeout();
+                      if (abortOnTimeout) controller.abort();
+                  }, resolvedTimeout)
+                : null;
+        try {
+            const response = await fetch("/api/ai/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content, boardType, continueFrom }),
+                signal: controller.signal,
+            });
+            const data = await response.json();
+            if (!response.ok || !data || !data.reply) {
+                throw new Error((data && data.error) || "AI 응답을 가져오지 못했습니다.");
+            }
+            if (timeoutId) clearTimeout(timeoutId);
+            return {
+                ok: true,
+                replyHtml: formatAiReplyHtml(data.reply),
+                rawReply: String(data.reply || ""),
+                truncated: !!data.truncated,
+                errorMessage: "",
+                isTimeout: false,
+                wasDelayed: timeoutNotified,
+            };
+        } catch (error) {
+            lastError = error;
+            if (timeoutId) clearTimeout(timeoutId);
+            const canRetry =
+                attempt < maxAttempts - 1 &&
+                isTransientAiFetchError(error) &&
+                !(error && error.name === "AbortError");
+            if (canRetry) {
+                console.warn(`AI preview fetch retry ${attempt + 1}/${maxAttempts}:`, error && error.message);
+                continue;
+            }
+            break;
+        }
+    }
+
+    const error = lastError || new Error("ai_client_request_failed");
+    console.error("AI preview request failed:", error);
+    await recordAiApiClientErrorLog({
+        title: String(title || "").slice(0, 200),
+        contentPreview: String(content || "").slice(0, 1000),
+        boardType: String(boardType || "").slice(0, 32),
+        error: String((error && error.message) || "ai_client_request_failed"),
+        errorName: String((error && error.name) || "").slice(0, 120),
+        navigatorOnline: typeof navigator !== "undefined" ? !!navigator.onLine : null,
+        attemptCount: maxAttempts,
+        timeoutMs: Number(resolvedTimeout || 0),
+        continueFromChars: String(continueFrom || "").length,
+        isTimeout: !!(error && error.name === "AbortError"),
+        requesterScope:
+            typeof getAppDataUserScope === "function" ? String(getAppDataUserScope() || "guest").slice(0, 64) : "guest",
+    });
+    if (error && error.name === "AbortError") {
+        return {
+            ok: false,
+            replyHtml: "",
+            errorMessage: `AI 응답 시간이 ${Math.round(resolvedTimeout / 1000)}초를 초과했습니다.`,
+            isTimeout: true,
+            wasDelayed: true,
+        };
+    }
+    const reason = humanizeAiClientNetworkError(error && error.message ? error.message : "AI 서버 통신 중 오류");
+    return { ok: false, replyHtml: "", errorMessage: reason, isTimeout: false, wasDelayed: false };
 }
 
 function makeAiPendingHtml() {
@@ -419,8 +488,9 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
         title,
         content: requestContent,
         boardType,
-        timeoutMs: 0,
-        abortOnTimeout: false,
+        timeoutMs: resolveAiPostBackgroundTimeout(),
+        abortOnTimeout: true,
+        transientRetries: 2,
     });
     let mergedRawReply = result && result.ok ? String(result.rawReply || "") : "";
     let continueStep = 0;
@@ -430,8 +500,9 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
             title: `${title} (이어쓰기 ${continueStep})`,
             content: requestContent,
             boardType,
-            timeoutMs: 0,
-            abortOnTimeout: false,
+            timeoutMs: resolveAiPostBackgroundTimeout(),
+            abortOnTimeout: true,
+            transientRetries: 2,
             continueFrom: mergedRawReply,
         });
         if (!next.ok || !next.rawReply) break;

@@ -540,6 +540,8 @@
         const AI_SEARCH_ACTIVE_KEY_PREFIX = 'knockAiActive:';
         const AI_REQUEST_TIMEOUT_MS = 60000;
         const AI_CHAT_REQUEST_TIMEOUT_MS = 60000;
+        /** 게시물 AI 자동답변: 무제한 대기 시 프록시/게이트웨이가 먼저 끊어 Failed to fetch가 나기 쉬움 */
+        const AI_POST_BACKGROUND_TIMEOUT_MS = 120000;
         const AI_SYSTEM_USER_EMP_NO = '000000';
         const AI_SYSTEM_USER_NAME = 'AI';
         let signupUsers = [];
