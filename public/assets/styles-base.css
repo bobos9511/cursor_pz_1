@@ -832,8 +832,41 @@
             border-radius: 999px;
             border: 1px dashed rgba(255,255,255,0.45);
         }
+        .profile-overlay-identity {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            width: 100%;
+            min-width: 0;
+        }
         .profile-overlay-title { font-size: 17px; font-weight: 900; letter-spacing: -0.15px; }
-        .profile-overlay-sub { font-size: 12px; opacity: 0.95; margin-top: 5px; }
+        .profile-overlay-sub { font-size: 12px; opacity: 0.95; margin-top: 0; }
+        .profile-admin-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            line-height: 1.2;
+            border: 1px solid rgba(253, 224, 71, 0.72);
+            background: linear-gradient(135deg, #fde68a 0%, #fbbf24 42%, #d97706 100%);
+            color: #422006;
+            box-shadow:
+                0 4px 14px rgba(180, 83, 9, 0.38),
+                inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+        .profile-admin-badge-icon {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
+            opacity: 0.92;
+        }
         .profile-empno-pill {
             display: inline-flex;
             align-items: center;

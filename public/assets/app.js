@@ -3176,6 +3176,8 @@
             if (headerRoleChip) headerRoleChip.innerText = rName;
             const overlayUserDisplay = document.getElementById('overlayUserDisplay');
             if (overlayUserDisplay) overlayUserDisplay.innerText = userDisplay;
+            const overlayAdminBadge = document.getElementById('overlayAdminBadge');
+            if (overlayAdminBadge) overlayAdminBadge.classList.toggle('hidden', !resolveUserIsAdmin(activeUser));
             const overlayUserDept = document.getElementById('overlayUserDept');
             if (overlayUserDept) overlayUserDept.innerText = deptDisplay;
             const overlayProfileInitial = document.getElementById('overlayProfileInitial');

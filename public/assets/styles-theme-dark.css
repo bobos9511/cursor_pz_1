@@ -893,6 +893,14 @@
         body[data-theme="dark"] .profile-overlay-title {
             color: #f2f7ff;
         }
+        body[data-theme="dark"] .profile-admin-badge {
+            border-color: rgba(253, 224, 71, 0.55);
+            background: linear-gradient(135deg, rgba(253, 230, 138, 0.98) 0%, rgba(251, 191, 36, 0.96) 45%, rgba(217, 119, 6, 0.96) 100%);
+            color: #3f2407;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
         body[data-theme="dark"] .profile-overlay-body,
         body[data-theme="dark"] .profile-overlay-foot {
             background: transparent;
