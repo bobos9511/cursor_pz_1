@@ -1199,10 +1199,10 @@ function renderAdminAiApiLogsList() {
                             ? '<span class="admin-ai-log-pill">성공</span>'
                             : '<span class="admin-ai-log-pill error">실패</span>';
                         return `<tr onclick="openAdminAiApiLogModal('${escapeHtml(String(log.id || ""))}')">
-                            <td class="admin-ai-logs-col-time">${escapeHtml(formatAdminAiApiLogTime(log.createdAt))}</td>
-                            <td class="admin-ai-logs-col-board">${board}</td>
-                            <td class="admin-ai-logs-col-title"><div class="admin-ai-logs-title-clip" title="${titleTip}">${title}</div></td>
-                            <td class="admin-ai-logs-col-result">${pill}</td>
+                            <td class="admin-ai-logs-col-time" data-label="요청시각"><span class="admin-ai-logs-cell-val">${escapeHtml(formatAdminAiApiLogTime(log.createdAt))}</span></td>
+                            <td class="admin-ai-logs-col-board" data-label="구분"><span class="admin-ai-logs-cell-val">${board}</span></td>
+                            <td class="admin-ai-logs-col-title" data-label="요청 제목"><div class="admin-ai-logs-title-clip admin-ai-logs-cell-val" title="${titleTip}">${title}</div></td>
+                            <td class="admin-ai-logs-col-result" data-label="결과"><span class="admin-ai-logs-cell-val">${pill}</span></td>
                         </tr>`;
                     })
                     .join("")}

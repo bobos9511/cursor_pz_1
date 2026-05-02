@@ -1016,6 +1016,18 @@
         body[data-theme="dark"] .admin-ai-logs-table tbody tr:hover {
             background: #1b2f4c;
         }
+        @media (max-width: 720px) {
+            body[data-theme="dark"] .admin-ai-logs-table tbody tr {
+                border-color: #3f5475;
+                background: #172941;
+            }
+            body[data-theme="dark"] .admin-ai-logs-table tbody tr:hover {
+                background: #1b2f4c;
+            }
+            body[data-theme="dark"] .admin-ai-logs-table tbody td::before {
+                color: #9fb0c8;
+            }
+        }
         body[data-theme="dark"] .admin-ai-log-pill {
             border-color: #3b82f6;
             background: rgba(59,130,246,0.22);
