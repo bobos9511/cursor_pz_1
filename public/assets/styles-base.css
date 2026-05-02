@@ -2094,20 +2094,23 @@
             overflow: hidden;
         }
         .admin-pin-gate-overlay {
-            backdrop-filter: blur(3px);
+            backdrop-filter: blur(8px);
+            background: radial-gradient(circle at 50% -10%, rgba(37, 99, 235, 0.25), rgba(2, 6, 23, 0.72) 48%, rgba(2, 6, 23, 0.9) 100%);
         }
         .admin-pin-gate-overlay.admin-pin-gate--fullscreen {
             align-items: stretch;
             padding: 0;
             z-index: 12100;
-            background: linear-gradient(180deg, rgba(9, 23, 44, 0.86), rgba(3, 10, 24, 0.96));
+            background: linear-gradient(180deg, rgba(8, 17, 33, 0.88), rgba(2, 6, 23, 0.98));
         }
         .admin-pin-gate-panel {
-            max-width: 420px;
-            border-radius: 18px;
-            border: 1px solid #dbe7f5;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-            box-shadow: 0 24px 40px rgba(15, 23, 42, 0.28);
+            max-width: 440px;
+            border-radius: 24px;
+            border: 1px solid #d6e4ff;
+            background: linear-gradient(180deg, #fafdff 0%, #f2f8ff 100%);
+            box-shadow:
+                0 24px 60px rgba(2, 6, 23, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
             overflow: hidden;
         }
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen {
@@ -2121,7 +2124,7 @@
             box-shadow: none;
         }
         .admin-pin-gate-head {
-            background: linear-gradient(130deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%);
+            background: linear-gradient(135deg, #0f3f74 0%, #0b6ab3 52%, #2563eb 100%);
             border-bottom: 0;
         }
         .admin-pin-gate-panel.admin-pin-gate-panel--fullscreen .admin-pin-gate-body {
@@ -2136,68 +2139,53 @@
             max-height: none;
         }
         .admin-pin-gate-body {
-            padding-top: 14px;
+            padding-top: 18px;
         }
         .admin-pin-gate-chip {
             display: inline-flex;
             align-self: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.08em;
-            color: #1d4ed8;
-            padding: 4px 10px;
+            letter-spacing: 0.14em;
+            color: #2563eb;
+            padding: 5px 11px;
             border-radius: 999px;
             border: 1px solid #bfdbfe;
-            background: #eff6ff;
-            margin-bottom: 8px;
+            background: #eaf2ff;
+            margin-bottom: 10px;
         }
         .admin-pin-gate-msg {
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             text-align: center;
+            color: #475569;
+            font-size: 15px;
         }
-        .admin-pin-input-label {
-            display: block;
-            margin: 0 auto 8px;
-            width: min(92%, 280px);
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 600;
-        }
-        .admin-pin-direct-input {
-            width: min(92%, 280px);
+        .admin-pin-gate-help {
+            text-align: center;
             margin: 0 auto 14px;
-            text-align: center;
-            letter-spacing: 0.22em;
-            font-size: 18px;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 10px 12px;
-            border: 1px solid #bfdbfe;
-            background: #f8fbff;
-        }
-        .admin-pin-direct-input:focus {
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            color: #64748b;
+            font-size: 12px;
         }
         .admin-pin-slots {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            width: min(92%, 280px);
-            margin: 0 auto 14px;
+            gap: 10px;
+            width: min(92%, 300px);
+            margin: 0 auto 10px;
         }
         .admin-pin-slot {
-            height: 46px;
-            border-radius: 12px;
+            height: 48px;
+            border-radius: 14px;
             border: 1px solid #cbd5e1;
-            background: #f8fafc;
+            background: #ffffff;
             position: relative;
-            transition: border-color 0.15s, background 0.15s;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+            transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
         }
         .admin-pin-slot::after {
             content: "";
-            width: 8px;
-            height: 8px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
             background: transparent;
             position: absolute;
@@ -2207,52 +2195,59 @@
             transition: background 0.15s;
         }
         .admin-pin-slot--filled {
-            border-color: #60a5fa;
-            background: #eff6ff;
+            border-color: #3b82f6;
+            background: #eaf2ff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
         }
         .admin-pin-slot--filled::after {
-            background: #1d4ed8;
+            background: #1e40af;
         }
         .admin-pin-keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-width: 280px;
+            gap: 11px;
+            max-width: 300px;
             margin: 0 auto;
         }
         .admin-pin-gate-panel--fullscreen .admin-pin-keypad {
-            max-width: min(92vw, 340px);
+            max-width: min(92vw, 360px);
             gap: 12px;
             margin-top: auto;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .admin-pin-key {
-            min-height: 52px;
-            border-radius: 14px;
+            min-height: 54px;
+            border-radius: 16px;
             border: 1px solid #dbe7f5;
-            background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-            font-size: 21px;
+            background: linear-gradient(180deg, #ffffff 0%, #eaf2ff 100%);
+            font-size: 22px;
             font-weight: 700;
-            color: #0f172a;
+            color: #0b2545;
             cursor: pointer;
-            transition: transform 0.08s, background 0.15s, border-color 0.15s;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.95),
+                0 8px 16px rgba(37, 99, 235, 0.12);
+            transition: transform 0.08s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
         }
         .admin-pin-key:hover {
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-            border-color: #93c5fd;
+            background: linear-gradient(180deg, #f8fbff 0%, #dbeafe 100%);
+            border-color: #60a5fa;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.95),
+                0 10px 20px rgba(37, 99, 235, 0.2);
         }
         .admin-pin-key:active {
             transform: translateY(1px) scale(0.98);
         }
         .admin-pin-key--wide {
-            font-size: 17px;
+            font-size: 20px;
         }
         .admin-pin-key-spacer {
             pointer-events: none;
         }
         .admin-pin-gate-foot {
-            background: #f8fafc;
-            border-top-color: #e2e8f0;
+            background: linear-gradient(180deg, #f4f8ff 0%, #ecf3ff 100%);
+            border-top-color: #d7e3f7;
         }
         .admin-pin-gate-panel--shake {
             animation: adminPinShake 0.42s ease;

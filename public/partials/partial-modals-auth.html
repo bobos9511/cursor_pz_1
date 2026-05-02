@@ -186,11 +186,11 @@
                 <button type="button" class="btn-icon" onclick="closeAdminPinGateModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="modal-body admin-pin-gate-body">
-                <div class="admin-pin-gate-chip">보안 인증</div>
+                <div class="admin-pin-gate-chip">SECURE PIN</div>
                 <p id="adminPinGateMessage" class="signup-modal-hint admin-pin-gate-msg"></p>
                 <div id="adminPinGateSlots" class="admin-pin-slots" aria-hidden="true"></div>
-                <label for="adminPinGateInput" class="admin-pin-input-label">PIN 직접 입력 (키보드 가능)</label>
-                <input type="password" id="adminPinGateInput" class="input admin-pin-direct-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN 6자리" placeholder="6자리 PIN">
+                <p class="admin-pin-gate-help">숫자 키패드 또는 키보드 숫자키로 입력하세요.</p>
+                <input type="password" id="adminPinGateInput" class="sr-only" tabindex="-1" maxlength="6" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN 6자리">
                 <div id="adminPinGateKeypad" class="admin-pin-keypad">
                     <button type="button" class="admin-pin-key" data-digit="1">1</button>
                     <button type="button" class="admin-pin-key" data-digit="2">2</button>

@@ -26,7 +26,6 @@ const adminPinGateContext = {
 };
 
 let adminPinGateKeypadWired = false;
-let adminPinGateInputWired = false;
 let adminPinGateKeydownWired = false;
 
 function wireAdminPinGateKeypadOnce() {
@@ -41,32 +40,6 @@ function wireAdminPinGateKeypadOnce() {
             adminPinGateAppendDigit(String(btn.getAttribute("data-digit")).slice(0, 1));
         } else if (btn.getAttribute("data-action") === "backspace") {
             adminPinGateBackspace();
-        }
-        focusAdminPinGateInput();
-    });
-}
-
-function wireAdminPinGateInputOnce() {
-    if (adminPinGateInputWired) return;
-    const inp = document.getElementById("adminPinGateInput");
-    if (!inp) return;
-    adminPinGateInputWired = true;
-    inp.addEventListener("input", () => {
-        if (adminPinGateContext.verifyBusy) return;
-        adminPinGateContext.digits = normalizeAdminPinDigits(inp.value).slice(0, 6);
-        syncAdminPinGateHiddenInput();
-        renderAdminPinGateSlots();
-        if (adminPinGateContext.digits.length === 6) void tryFinishAdminPinGate();
-    });
-    inp.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter") {
-            ev.preventDefault();
-            void tryFinishAdminPinGate();
-            return;
-        }
-        if (ev.key === "Escape") {
-            ev.preventDefault();
-            closeAdminPinGateModal();
         }
     });
 }
@@ -98,18 +71,6 @@ function wireAdminPinGateKeyboardOnce() {
             closeAdminPinGateModal();
         }
     });
-}
-
-function focusAdminPinGateInput() {
-    const inp = document.getElementById("adminPinGateInput");
-    if (!inp) return;
-    try {
-        inp.focus({ preventScroll: true });
-        const len = inp.value.length;
-        inp.setSelectionRange(len, len);
-    } catch (_) {
-        // no-op
-    }
 }
 
 function applyAdminPinGateResponsive() {
@@ -149,7 +110,6 @@ function resetAdminPinGateDigits() {
 
 function clearAdminPinGateInput() {
     resetAdminPinGateDigits();
-    focusAdminPinGateInput();
 }
 
 function adminPinGateAppendDigit(d) {
@@ -246,7 +206,6 @@ function openAdminPinGateModal(opts) {
     }
 
     wireAdminPinGateKeypadOnce();
-    wireAdminPinGateInputOnce();
     wireAdminPinGateKeyboardOnce();
 
     const modal = document.getElementById("adminPinGateModal");
@@ -261,9 +220,6 @@ function openAdminPinGateModal(opts) {
         modal.classList.add("active");
         document.body.classList.add("admin-pin-gate-open");
     }
-    setTimeout(() => {
-        focusAdminPinGateInput();
-    }, 40);
     if (adminPinGateContext.digits.length === 6 && isValidAdminPinFormatClient(adminPinGateContext.digits)) {
         void tryFinishAdminPinGate();
     }
