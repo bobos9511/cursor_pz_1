@@ -1412,7 +1412,7 @@
             height: min(78vh, 760px);
             border-radius: 16px;
             border: 1px solid rgba(148, 163, 184, 0.35);
-            background: linear-gradient(180deg, #f8fbff, #eef4ff);
+            background: rgba(248, 251, 255, 0.92);
             box-shadow: 0 24px 48px rgba(2, 6, 23, 0.38);
             display: flex;
             flex-direction: column;
@@ -1476,20 +1476,16 @@
             border: none;
             box-shadow: none;
             border-radius: 12px;
-            background: rgba(248, 251, 255, 0.92);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
         }
         .ai-chat-layer-host .ai-search-main-head {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(219, 231, 245, 0.95);
-            background: transparent;
+            display: none;
         }
         .ai-chat-layer-host .ai-search-main-body {
             padding: 10px 12px 12px !important;
             gap: 9px;
-        }
-        .ai-chat-layer-host .ai-search-main-body {
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -1518,16 +1514,19 @@
             flex-wrap: wrap;
         }
         .ai-layer-new-chat-btn {
-            display: none;
+            display: none !important;
             min-width: 104px;
             padding: 8px 11px;
             font-size: 12px;
             font-weight: 800;
         }
         .ai-chat-layer-host .ai-layer-new-chat-btn {
-            display: inline-flex;
+            display: inline-flex !important;
             align-items: center;
             justify-content: center;
+        }
+        #view-ai-search #aiLayerNewChatBtn {
+            display: none !important;
         }
         .ai-chat-layer-host #aiSearchSendBtn {
             align-self: auto;

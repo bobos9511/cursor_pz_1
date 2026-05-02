@@ -194,6 +194,41 @@
             }
         }
 
+        @media (max-width: 1560px) {
+            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+                display: flex !important;
+                flex-wrap: wrap;
+                justify-content: flex-end !important;
+                align-items: center;
+                gap: 8px !important;
+                row-gap: 8px !important;
+            }
+            #view-list #boardStatusFilter,
+            #view-list #boardKnowCategoryFilter {
+                flex: 0 0 auto;
+                width: auto !important;
+                min-width: 112px;
+                max-width: 156px;
+            }
+            #view-list #boardKeywordInput {
+                flex: 1 1 320px !important;
+                min-width: 240px !important;
+                width: auto !important;
+            }
+            #view-list #boardSearchBtn {
+                flex: 0 0 auto !important;
+                width: auto !important;
+                max-width: 118px;
+                min-width: 96px;
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+            #view-list #listWriteBtn {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+        }
+
         @media (max-width: 1280px) {
             #view-list .panel > .flex.items-center.justify-between.p-20 {
                 align-items: flex-start !important;
