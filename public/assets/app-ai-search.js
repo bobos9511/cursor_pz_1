@@ -417,7 +417,9 @@ function renderAiSearchHistory() {
                         <svg class="icon"><use href="#icon-close"></use></svg>
                     </button>
                     <div class="ai-search-history-item">
-                        <div class="ai-search-history-title">${title}</div>
+                        <div class="ai-search-history-title-wrap">
+                            <div class="ai-search-history-title">${title}</div>
+                        </div>
                         <div class="ai-search-history-meta">${meta}</div>
                     </div>
                 </div>
@@ -443,7 +445,9 @@ function renderAiSearchHistoryMobile() {
             return `
                 <div class="ai-history-mobile-item" onclick="loadAiSearchConversation('${id}')">
                     <div class="ai-history-mobile-item-head">
-                        <div class="ai-history-mobile-title">${title}</div>
+                        <div class="ai-history-mobile-title-wrap">
+                            <div class="ai-history-mobile-title">${title}</div>
+                        </div>
                         <button type="button" class="ai-history-mobile-del" title="지난대화 삭제" onclick="event.stopPropagation(); deleteAiSearchConversation('${id}')">
                             <svg class="icon"><use href="#icon-close"></use></svg>
                         </button>

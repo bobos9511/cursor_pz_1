@@ -329,10 +329,14 @@
             background: linear-gradient(180deg, #15243b, #132239);
             border-color: #3f5475;
             box-shadow: 0 5px 12px rgba(2, 8, 24, 0.35);
+            --history-title-fade: #15243b;
+            --history-title-fade-mid: rgba(21, 36, 59, 0.62);
         }
         body[data-theme="dark"] .ai-search-history-card:hover {
             border-color: #6488b8;
             background: linear-gradient(180deg, #1a2d48, #172841);
+            --history-title-fade: #1a2d48;
+            --history-title-fade-mid: rgba(26, 45, 72, 0.62);
         }
         body[data-theme="dark"] .ai-search-history-close {
             border-color: #3f5475;
