@@ -1,5 +1,15 @@
 "use strict";
 
+function knockSessionAuthHeaders() {
+    try {
+        const t = sessionStorage.getItem("knockSessionToken") || "";
+        if (!t) return {};
+        return { Authorization: "Bearer " + t };
+    } catch (_) {
+        return {};
+    }
+}
+
 function getLoginNonce() {
     return localStorage.getItem("knockLoginNonce") || "no-login";
 }
@@ -92,7 +102,9 @@ async function mergeAiChatHistoryFromServer() {
     const scope = normalizeAiSearchScopeKey(raw);
     if (scope === "guest") return;
     try {
-        const res = await fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`);
+        const res = await fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`, {
+            headers: { ...knockSessionAuthHeaders() },
+        });
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         const remote = Array.isArray(data && data.history) ? data.history : [];
@@ -119,7 +131,7 @@ function persistAiSearchHistoryToServer() {
         try {
             fetch(`/api/db/ai-chat-history?scope=${encodeURIComponent(scope)}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...knockSessionAuthHeaders() },
                 body: JSON.stringify({ history: aiSearchHistory }),
             }).catch(() => {});
         } catch (_) {

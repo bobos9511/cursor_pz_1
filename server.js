@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { URL } = require("url");
 const {
   deepCloneAiSettings,
@@ -63,7 +64,7 @@ function createDefaultDb() {
     aiSettingsHistory: [],
     /** 직원번호(스코프)별 AI채팅 지난 대화 — 브라우저와 무관하게 동기화 */
     aiChatHistoryByScope: {},
-    /** 테스트 계정 단일 접속 세션: 직원번호 → { sessionId, createdAt, lastSeenAt } */
+    /** 테스트 계정 단일 접속 세션: 직원번호 → { tokenHash, createdAt, lastSeenAt } (구형 sessionId는 무시) */
     testSessionsByEmpNo: {},
   };
 }
@@ -1068,6 +1069,61 @@ function normalizeAiChatHistoryScope(raw) {
   return digits.padStart(6, "0");
 }
 
+function hashSessionToken(rawToken) {
+  return crypto.createHash("sha256").update(String(rawToken || ""), "utf8").digest("hex");
+}
+
+function extractBearerToken(req) {
+  const h = req.headers && req.headers.authorization;
+  if (!h || typeof h !== "string") return "";
+  const m = h.match(/^\s*Bearer\s+(\S+)/i);
+  return m ? String(m[1]).trim().slice(0, 200) : "";
+}
+
+function findEmpBySessionToken(db, rawToken) {
+  if (!rawToken) return "";
+  const want = hashSessionToken(rawToken);
+  const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+  for (const emp of Object.keys(by)) {
+    const rec = by[emp];
+    if (rec && rec.tokenHash && rec.tokenHash === want) return emp;
+  }
+  return "";
+}
+
+function hasActiveTestSessionRecord(rec) {
+  if (!rec || typeof rec !== "object") return false;
+  if (rec.tokenHash) return true;
+  if (rec.sessionId) return true;
+  return false;
+}
+
+function scopeRequiresSessionToken(scopeRaw) {
+  const s = String(scopeRaw || "").trim();
+  if (!s || s === "guest" || s === "shared") return false;
+  return normalizeAiChatHistoryScope(s) !== "guest";
+}
+
+function ensureEmployeeScopeSession(req, res, db, scopeRaw) {
+  if (!scopeRequiresSessionToken(scopeRaw)) return true;
+  const wantEmp = normalizeAiChatHistoryScope(scopeRaw);
+  const token = extractBearerToken(req);
+  if (!token) {
+    sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
+    return false;
+  }
+  const emp = findEmpBySessionToken(db, token);
+  if (!emp) {
+    sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+    return false;
+  }
+  if (emp !== wantEmp) {
+    sendJson(res, 403, { error: "이 데이터에 접근할 수 없습니다.", code: "scope_mismatch" });
+    return false;
+  }
+  return true;
+}
+
 function sanitizeAiChatHistoryArray(raw) {
   if (!Array.isArray(raw)) return [];
   const out = [];
@@ -1102,6 +1158,7 @@ async function handleDbApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/db/app-data") {
     const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
     const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     const appData = db.appDataByScope[scope] || { posts: [], settings: { notify: true, sms: false } };
     sendJson(res, 200, { appData });
     return true;
@@ -1121,6 +1178,7 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     db.appDataByScope[scope] = appData;
     writeDb(db);
     sendJson(res, 200, { ok: true });
@@ -1133,6 +1191,7 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     const byScope = db.aiChatHistoryByScope && typeof db.aiChatHistoryByScope === "object" ? db.aiChatHistoryByScope : {};
     const history = Array.isArray(byScope[scope]) ? byScope[scope] : [];
     sendJson(res, 200, { history });
@@ -1153,6 +1212,7 @@ async function handleDbApi(req, res, url) {
     }
     const history = sanitizeAiChatHistoryArray(body && body.history);
     const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     if (!db.aiChatHistoryByScope || typeof db.aiChatHistoryByScope !== "object") {
       db.aiChatHistoryByScope = {};
     }
@@ -1170,31 +1230,38 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
-    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
     const force = !!(body && body.forceTakeover);
-    if (!emp || emp === "guest" || !sid) {
-      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+    const clientRenewToken = String((body && body.sessionToken) || "").trim().slice(0, 200);
+    if (!emp || emp === "guest") {
+      sendJson(res, 400, { error: "employeeNo is required." });
       return true;
     }
     const db = readDb();
     if (!db.testSessionsByEmpNo || typeof db.testSessionsByEmpNo !== "object") {
       db.testSessionsByEmpNo = {};
     }
-    const existing = db.testSessionsByEmpNo[emp];
     const now = Date.now();
 
-    if (!existing || !existing.sessionId) {
-      db.testSessionsByEmpNo[emp] = { sessionId: sid, createdAt: now, lastSeenAt: now };
-      writeDb(db);
-      sendJson(res, 200, { ok: true });
-      return true;
+    if (clientRenewToken) {
+      const tokenEmp = findEmpBySessionToken(db, clientRenewToken);
+      if (tokenEmp === emp) {
+        const rec = db.testSessionsByEmpNo[emp];
+        if (rec && rec.tokenHash === hashSessionToken(clientRenewToken)) {
+          rec.lastSeenAt = now;
+          db.testSessionsByEmpNo[emp] = rec;
+          writeDb(db);
+          sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken });
+          return true;
+        }
+      }
     }
 
-    if (existing.sessionId === sid) {
-      existing.lastSeenAt = now;
-      db.testSessionsByEmpNo[emp] = existing;
+    const existing = db.testSessionsByEmpNo[emp];
+    if (!hasActiveTestSessionRecord(existing)) {
+      const sessionToken = crypto.randomBytes(32).toString("hex");
+      db.testSessionsByEmpNo[emp] = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
       writeDb(db);
-      sendJson(res, 200, { ok: true, renewed: true });
+      sendJson(res, 200, { ok: true, sessionToken });
       return true;
     }
 
@@ -1207,9 +1274,10 @@ async function handleDbApi(req, res, url) {
       return true;
     }
 
-    db.testSessionsByEmpNo[emp] = { sessionId: sid, createdAt: now, lastSeenAt: now };
+    const sessionToken = crypto.randomBytes(32).toString("hex");
+    db.testSessionsByEmpNo[emp] = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
     writeDb(db);
-    sendJson(res, 200, { ok: true, takeover: true });
+    sendJson(res, 200, { ok: true, takeover: true, sessionToken });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/ping") {
@@ -1220,17 +1288,21 @@ async function handleDbApi(req, res, url) {
       sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
-    const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
-    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
-    if (!emp || emp === "guest" || !sid) {
-      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+    const token = extractBearerToken(req) || String((body && body.sessionToken) || "").trim().slice(0, 200);
+    if (!token) {
+      sendJson(res, 400, { error: "sessionToken is required." });
       return true;
     }
     const db = readDb();
+    const emp = findEmpBySessionToken(db, token);
+    if (!emp) {
+      sendJson(res, 401, { valid: false, reason: "session_revoked_or_replaced" });
+      return true;
+    }
     const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
     const cur = by[emp];
-    if (!cur || cur.sessionId !== sid) {
-      sendJson(res, 403, { valid: false, reason: "session_revoked_or_replaced" });
+    if (!cur || cur.tokenHash !== hashSessionToken(token)) {
+      sendJson(res, 401, { valid: false, reason: "session_revoked_or_replaced" });
       return true;
     }
     cur.lastSeenAt = Date.now();
@@ -1248,16 +1320,20 @@ async function handleDbApi(req, res, url) {
       sendJson(res, 400, { error: ko.errors.invalidJsonBody });
       return true;
     }
-    const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
-    const sid = String((body && body.sessionId) || "").trim().slice(0, 128);
-    if (!emp || emp === "guest" || !sid) {
-      sendJson(res, 400, { error: "employeeNo and sessionId are required." });
+    const token = extractBearerToken(req) || String((body && body.sessionToken) || "").trim().slice(0, 200);
+    if (!token) {
+      sendJson(res, 400, { error: "sessionToken is required." });
       return true;
     }
     const db = readDb();
+    const emp = findEmpBySessionToken(db, token);
+    if (!emp) {
+      sendJson(res, 200, { ok: true });
+      return true;
+    }
     const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
     const cur = by[emp];
-    if (cur && cur.sessionId === sid) {
+    if (cur && cur.tokenHash === hashSessionToken(token)) {
       delete by[emp];
       db.testSessionsByEmpNo = by;
       writeDb(db);

@@ -1163,9 +1163,36 @@
             const cookieScope = getCookie(USER_SCOPE_COOKIE);
             return cookieScope || 'guest';
         }
+        const KNOCK_SESSION_TOKEN_KEY = 'knockSessionToken';
+
+        function getStoredSessionToken() {
+            try {
+                return sessionStorage.getItem(KNOCK_SESSION_TOKEN_KEY) || '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function setStoredSessionToken(token) {
+            try {
+                if (token) sessionStorage.setItem(KNOCK_SESSION_TOKEN_KEY, String(token));
+                else sessionStorage.removeItem(KNOCK_SESSION_TOKEN_KEY);
+            } catch (_) {
+                /* no-op */
+            }
+        }
+
         async function fetchJson(url, options = {}) {
             try {
-                const response = await fetch(url, options);
+                let authHeaders = {};
+                try {
+                    const t = sessionStorage.getItem(KNOCK_SESSION_TOKEN_KEY);
+                    if (t) authHeaders.Authorization = 'Bearer ' + t;
+                } catch (_) {
+                    /* no-op */
+                }
+                const merged = { ...options, headers: { ...authHeaders, ...(options.headers || {}) } };
+                const response = await fetch(url, merged);
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
                     const errorMessage = (data && data.error) || '서버 요청에 실패했습니다.';
@@ -1907,43 +1934,28 @@
             empInput.value = normalizeEmployeeNo(empInput.value, true);
         }
 
-        const KNOCK_TEST_SESSION_ID_KEY = 'knockTestSessionId';
         let testSessionHeartbeatTimer = null;
-
-        function getOrCreateTestSessionId() {
-            try {
-                let id = sessionStorage.getItem(KNOCK_TEST_SESSION_ID_KEY);
-                if (!id) {
-                    id = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 14)}`;
-                    sessionStorage.setItem(KNOCK_TEST_SESSION_ID_KEY, id);
-                }
-                return id;
-            } catch (_) {
-                return `sess_fb_${Date.now()}`;
-            }
-        }
-
-        function clearStoredTestSessionId() {
-            try {
-                sessionStorage.removeItem(KNOCK_TEST_SESSION_ID_KEY);
-            } catch (_) {
-                // no-op
-            }
-        }
 
         async function claimTestSessionForLogin(empNoRaw, forceTakeover) {
             const emp = normalizeEmployeeNo(empNoRaw, true);
-            const sessionId = getOrCreateTestSessionId();
+            const prior = getStoredSessionToken();
             try {
                 const res = await fetch('/api/db/test-session/claim', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ employeeNo: emp, sessionId, forceTakeover: !!forceTakeover }),
+                    body: JSON.stringify({
+                        employeeNo: emp,
+                        forceTakeover: !!forceTakeover,
+                        ...(prior ? { sessionToken: prior } : {}),
+                    }),
                 });
                 const data = await res.json().catch(() => ({}));
-                return { ok: res.ok, status: res.status, data, sessionId };
+                if (res.ok && data && data.sessionToken) {
+                    setStoredSessionToken(data.sessionToken);
+                }
+                return { ok: res.ok, status: res.status, data };
             } catch (error) {
-                return { ok: false, status: 0, data: {}, error, sessionId };
+                return { ok: false, status: 0, data: {}, error };
             }
         }
 
@@ -1958,15 +1970,18 @@
             stopTestSessionHeartbeat();
             testSessionHeartbeatTimer = setInterval(async () => {
                 if (!currentLoginUser || !currentLoginUser.employeeNo) return;
-                const emp = normalizeEmployeeNo(currentLoginUser.employeeNo, true);
-                const sessionId = getOrCreateTestSessionId();
+                const token = getStoredSessionToken();
+                if (!token) return;
                 try {
                     const res = await fetch('/api/db/test-session/ping', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ employeeNo: emp, sessionId }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: 'Bearer ' + token,
+                        },
+                        body: JSON.stringify({}),
                     });
-                    if (res.status === 403) {
+                    if (res.status === 403 || res.status === 401) {
                         stopTestSessionHeartbeat();
                         showAlert('다른 기기(또는 브라우저)에서 로그인하여 이 세션은 종료되었습니다.', 'error');
                         doLogout();
@@ -1978,14 +1993,16 @@
         }
 
         async function notifyTestSessionLogout() {
-            if (!currentLoginUser || !currentLoginUser.employeeNo) return;
-            const emp = normalizeEmployeeNo(currentLoginUser.employeeNo, true);
-            const sessionId = getOrCreateTestSessionId();
+            const token = getStoredSessionToken();
+            if (!token) return;
             try {
                 await fetch('/api/db/test-session/logout', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ employeeNo: emp, sessionId }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token,
+                    },
+                    body: JSON.stringify({}),
                 });
             } catch (_) {
                 // no-op
@@ -2042,8 +2059,18 @@
                 );
                 return;
             }
-            if (!sessionClaim.ok && sessionClaim.status !== 409 && sessionClaim.status !== 0) {
-                console.warn('test-session claim:', sessionClaim.status, sessionClaim.data);
+            if (!sessionClaim.ok) {
+                if (sessionClaim.status !== 409) {
+                    showAlert(
+                        '세션을 시작할 수 없습니다. 네트워크 또는 서버 상태를 확인한 뒤 다시 시도해주세요.',
+                        'error',
+                    );
+                }
+                return;
+            }
+            if (!getStoredSessionToken()) {
+                showAlert('서버로부터 세션을 받지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
+                return;
             }
 
             await markSignupUserLoginState(currentLoginUser.employeeNo, true);
@@ -2099,7 +2126,7 @@
             appContainer.style.display = 'none';
             appContainer.style.visibility = 'visible';
             closeHeaderProfileOverlay();
-            clearStoredTestSessionId();
+            setStoredSessionToken('');
             currentLoginUser = null;
         }
         function saveSettings() {
