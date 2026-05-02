@@ -696,6 +696,12 @@
             border-width: 0 2px 2px 0;
             transform: rotate(45deg);
         }
+        body[data-theme="dark"] #view-detail .post-detail-meta {
+            color: var(--text-gray);
+        }
+        body[data-theme="dark"] #view-detail .post-detail-meta-ip .text-gray-400 {
+            color: #94a3b8;
+        }
         body[data-theme="dark"] #view-detail #dtlInlineSimilarWrap {
             border-color: #3f5475 !important;
             background: #13233a;

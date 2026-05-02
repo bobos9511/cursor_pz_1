@@ -942,6 +942,87 @@
         .view-section.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* 게시물 상세: 작성자·일시 / 수정이력·IP — 줄바꿈·ellipsis로 레이아웃 붕괴 방지 */
+        .post-detail-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            column-gap: 14px;
+            row-gap: 10px;
+            font-size: 13px;
+            color: #64748b;
+            width: 100%;
+            min-width: 0;
+        }
+        .post-detail-meta-primary {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            column-gap: 18px;
+            row-gap: 8px;
+            min-width: 0;
+            flex: 1 1 12rem;
+        }
+        .post-detail-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            max-width: 100%;
+        }
+        .post-detail-meta-item > .icon {
+            flex-shrink: 0;
+        }
+        .post-detail-meta-item > span:last-child {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .post-detail-meta-tail {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            column-gap: 12px;
+            row-gap: 8px;
+            flex: 0 1 auto;
+            min-width: 0;
+            margin-left: auto;
+        }
+        .post-detail-edit-history-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            flex-shrink: 0;
+            max-width: 100%;
+        }
+        .post-detail-edit-history-badge {
+            margin-left: 6px;
+            padding: 1px 6px;
+            font-size: 10px;
+        }
+        .post-detail-meta-ip {
+            display: none;
+            align-items: center;
+            font-size: 13px;
+            white-space: nowrap;
+            min-width: 0;
+            max-width: min(100%, 12rem);
+        }
+        @media (min-width: 640px) {
+            .post-detail-meta-ip {
+                display: inline-flex;
+            }
+        }
+        .post-detail-meta-ip #dtlIp {
+            display: inline-block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            vertical-align: bottom;
+        }
+
         .page-title { font-size: 22px; font-weight: bold; color: #111; border-left: 5px solid var(--ibk-blue); padding-left: 15px; margin-bottom: 30px; display: flex; align-items: center; }
 
         .panel { background: #fff; border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; flex-direction: column; margin-bottom: 24px; overflow: hidden;}

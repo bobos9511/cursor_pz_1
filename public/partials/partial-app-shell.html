@@ -389,14 +389,26 @@
                                         </div>
                                         <h3 id="dtlTitle" style="font-size: 24px; margin-bottom: 10px;"></h3>
                                         <div style="font-size:12px; color:#64748b; margin-bottom:10px;">게시물 번호: <b id="dtlPostId" style="color:#334155;"></b></div>
-                                        <div class="flex items-center gap-20 text-gray" style="font-size: 13px;">
-                                            <span><svg class="icon"><use href="#icon-user"></use></svg> <span id="dtlWriter"></span></span>
-                                            <span><svg class="icon"><use href="#icon-clock"></use></svg> <span id="dtlTime"></span></span>
-                                            <button type="button" id="dtlEditHistoryBtn" class="btn btn-outline hidden" style="padding:4px 10px; font-size:12px;" onclick="openEditHistoryModal()">
-                                                <svg class="icon"><use href="#icon-history"></use></svg> 수정이력
-                                                <span id="dtlEditHistoryBadge" class="badge bg-error hidden" style="margin-left:6px; padding:1px 6px; font-size:10px;"></span>
-                                            </button>
-                                            <span class="hidden sm:inline-block"><i class="fas fa-network-wired mr-1 text-gray-400"></i><span id="dtlIp"></span></span>
+                                        <div class="post-detail-meta text-gray">
+                                            <div class="post-detail-meta-primary">
+                                                <span class="post-detail-meta-item">
+                                                    <svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg>
+                                                    <span id="dtlWriter"></span>
+                                                </span>
+                                                <span class="post-detail-meta-item">
+                                                    <svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>
+                                                    <span id="dtlTime"></span>
+                                                </span>
+                                            </div>
+                                            <div class="post-detail-meta-tail">
+                                                <button type="button" id="dtlEditHistoryBtn" class="btn btn-outline post-detail-edit-history-btn hidden" onclick="openEditHistoryModal()">
+                                                    <svg class="icon"><use href="#icon-history"></use></svg> 수정이력
+                                                    <span id="dtlEditHistoryBadge" class="badge bg-error post-detail-edit-history-badge hidden"></span>
+                                                </button>
+                                                <span class="post-detail-meta-ip">
+                                                    <i class="fas fa-network-wired mr-1 text-gray-400" aria-hidden="true"></i><span id="dtlIp"></span>
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div style="padding: 30px; font-size: 15px; line-height: 1.8;">
