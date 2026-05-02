@@ -40,6 +40,7 @@ const RATE_LIMIT_MAX = 20;
 const rateLimitMap = new Map();
 /** 테스트 세션 유효 시간(기본 1시간, 마지막 활동 기준). 환경변수 SESSION_TTL_MS 로 조정 가능. */
 const SESSION_TTL_MS = Math.max(60_000, Number(process.env.SESSION_TTL_MS || 60 * 60 * 1000));
+const ADMIN_PIN_PEPPER = String(process.env.ADMIN_PIN_PEPPER || "knock-admin-pin-v1");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite-preview";
@@ -1166,6 +1167,164 @@ function ensureEmployeeScopeSession(req, res, db, scopeRaw) {
   return true;
 }
 
+function normalizeAdminPinDigitsServer(raw) {
+  return String(raw || "")
+    .replace(/\D/g, "")
+    .slice(0, 6);
+}
+
+function isValidAdminPinFormatServer(digits) {
+  const s = String(digits || "");
+  return /^\d{1,6}$/.test(s);
+}
+
+function hashAdminPin(empKey, pinDigits) {
+  const emp = String(empKey || "");
+  const pin = String(pinDigits || "");
+  return crypto
+    .createHash("sha256")
+    .update(`${ADMIN_PIN_PEPPER}|${emp}|${pin}`, "utf8")
+    .digest("hex");
+}
+
+function sanitizeSignupUserForClient(u) {
+  if (!u || typeof u !== "object") return u;
+  const o = { ...u };
+  delete o.adminPinHash;
+  delete o.adminPinPlain;
+  o.hasAdminPin = !!(u.adminPinHash && String(u.adminPinHash).length > 0);
+  return o;
+}
+
+function mergeSignupUsersFromPut(incomingList, db) {
+  const prevList = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+  const prevByEmp = new Map();
+  for (const u of prevList) {
+    const k = normalizeAiChatHistoryScope(u && u.employeeNo);
+    if (k && k !== "guest") prevByEmp.set(k, u);
+  }
+  if (!Array.isArray(incomingList)) return prevList;
+  return incomingList.map((incoming) => {
+    const emp = normalizeAiChatHistoryScope(incoming && incoming.employeeNo);
+    const prev = emp && emp !== "guest" ? prevByEmp.get(emp) : null;
+    const plain =
+      incoming && incoming.adminPinPlain != null && String(incoming.adminPinPlain).trim() !== ""
+        ? String(incoming.adminPinPlain)
+        : "";
+    const cleaned = { ...incoming };
+    delete cleaned.adminPinPlain;
+    delete cleaned.adminPinHash;
+    delete cleaned.hasAdminPin;
+
+    const isAdmin = cleaned.isAdmin === true;
+    let pinHash = prev && prev.adminPinHash;
+    if (!isAdmin) {
+      pinHash = undefined;
+    } else if (plain !== "") {
+      const digits = normalizeAdminPinDigitsServer(plain);
+      if (isValidAdminPinFormatServer(digits)) {
+        pinHash = hashAdminPin(emp, digits);
+      }
+    }
+    if (isAdmin && pinHash) {
+      cleaned.adminPinHash = pinHash;
+    } else {
+      delete cleaned.adminPinHash;
+    }
+    return cleaned;
+  });
+}
+
+async function handleAdminPinVerify(req, res) {
+  if (!applyRateLimit(req, res)) return;
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+    return;
+  }
+  const emp = normalizeAiChatHistoryScope(body && body.employeeNo);
+  const pin = normalizeAdminPinDigitsServer(body && body.pin);
+  if (!emp || emp === "guest" || !pin) {
+    sendJson(res, 400, { error: "employeeNo and pin are required." });
+    return;
+  }
+  if (!isValidAdminPinFormatServer(pin)) {
+    sendJson(res, 400, { error: "PIN은 숫자 1~6자리만 가능합니다." });
+    return;
+  }
+  const db = readDb();
+  const users = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+  const user = users.find((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === emp);
+  if (!user || user.isAdmin !== true) {
+    sendJson(res, 403, { error: "관리자 계정이 아닙니다." });
+    return;
+  }
+  if (!user.adminPinHash) {
+    sendJson(res, 403, { error: "관리자 PIN이 설정되지 않았습니다.", code: "admin_pin_required" });
+    return;
+  }
+  if (user.adminPinHash !== hashAdminPin(emp, pin)) {
+    sendJson(res, 401, { error: "PIN이 일치하지 않습니다." });
+    return;
+  }
+  sendJson(res, 200, { ok: true });
+}
+
+async function handleAdminPinChange(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+    return;
+  }
+  const token = extractBearerToken(req);
+  if (!token) {
+    sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
+    return;
+  }
+  const db = readDb();
+  const r = resolveSessionToken(db, token);
+  if (r.kind === "expired") {
+    sendJson(res, 401, { error: "세션이 만료되었습니다.", code: "session_expired" });
+    return;
+  }
+  if (r.kind !== "ok") {
+    sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+    return;
+  }
+  const emp = r.emp;
+  const users = Array.isArray(db.signupUsers) ? [...db.signupUsers] : [];
+  const idx = users.findIndex((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === emp);
+  if (idx < 0) {
+    sendJson(res, 404, { error: "사용자를 찾을 수 없습니다." });
+    return;
+  }
+  const user = users[idx];
+  if (user.isAdmin !== true) {
+    sendJson(res, 403, { error: "관리자만 PIN을 변경할 수 있습니다." });
+    return;
+  }
+  const newPin = normalizeAdminPinDigitsServer(body && body.newPin);
+  const currentPin = normalizeAdminPinDigitsServer(body && body.currentPin);
+  if (!isValidAdminPinFormatServer(newPin)) {
+    sendJson(res, 400, { error: "새 PIN은 숫자 1~6자리만 가능합니다." });
+    return;
+  }
+  if (user.adminPinHash) {
+    if (!isValidAdminPinFormatServer(currentPin) || user.adminPinHash !== hashAdminPin(emp, currentPin)) {
+      sendJson(res, 401, { error: "현재 PIN이 올바르지 않습니다." });
+      return;
+    }
+  }
+  users[idx] = { ...user, adminPinHash: hashAdminPin(emp, newPin) };
+  db.signupUsers = users;
+  writeDb(db);
+  sendJson(res, 200, { ok: true });
+}
+
 function sanitizeAiChatHistoryArray(raw) {
   if (!Array.isArray(raw)) return [];
   const out = [];
@@ -1381,7 +1540,9 @@ async function handleDbApi(req, res, url) {
   }
   if (req.method === "GET" && url.pathname === "/api/db/signup-users") {
     const db = readDb();
-    sendJson(res, 200, { signupUsers: db.signupUsers });
+    const raw = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+    const signupUsers = raw.map((u) => sanitizeSignupUserForClient(u));
+    sendJson(res, 200, { signupUsers });
     return true;
   }
   if (req.method === "PUT" && url.pathname === "/api/db/signup-users") {
@@ -1397,7 +1558,7 @@ async function handleDbApi(req, res, url) {
       return true;
     }
     const db = readDb();
-    db.signupUsers = body.signupUsers;
+    db.signupUsers = mergeSignupUsersFromPut(body.signupUsers, db);
     writeDb(db);
     sendJson(res, 200, { ok: true });
     return true;
@@ -1624,6 +1785,14 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, { ok: true, now: Date.now() });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/api/auth/admin-pin/verify") {
+    await handleAdminPinVerify(req, res);
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/api/auth/admin-pin/change") {
+    await handleAdminPinChange(req, res);
     return;
   }
   if (url.pathname.startsWith("/api/db/")) {

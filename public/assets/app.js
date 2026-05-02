@@ -514,6 +514,14 @@
             openAppDialog({ title: '확인', message, confirmText: '확인', cancelText: '취소', showCancel: true, onConfirm });
         }
 
+        function normalizeAdminPinDigits(raw) {
+            return String(raw || '').replace(/\D/g, '').slice(0, 6);
+        }
+
+        function isValidAdminPinFormatClient(digits) {
+            return /^\d{1,6}$/.test(String(digits || ''));
+        }
+
         // ==========================================
         // 1. Data Initialization
         // ==========================================
@@ -832,6 +840,9 @@
             if (user.isAdmin === true) out.isAdmin = true;
             else if (user.isAdmin === false) out.isAdmin = false;
             else delete out.isAdmin;
+            if (typeof user.hasAdminPin === 'boolean') out.hasAdminPin = user.hasAdminPin;
+            delete out.adminPinHash;
+            delete out.adminPinPlain;
             return out;
         }
 
@@ -1618,12 +1629,56 @@
             });
             const adm = document.getElementById('signupIsAdmin');
             if (adm) adm.checked = false;
+            const p1 = document.getElementById('signupAdminPin');
+            const p2 = document.getElementById('signupAdminPinConfirm');
+            if (p1) p1.value = '';
+            if (p2) p2.value = '';
+            const sec = document.getElementById('signupAdminPinSection');
+            if (sec) sec.classList.add('hidden');
+        }
+
+        let signupAdminControlsBound = false;
+        function bindSignupAdminControlsOnce() {
+            if (signupAdminControlsBound) return;
+            signupAdminControlsBound = true;
+            const cb = document.getElementById('signupIsAdmin');
+            if (cb) {
+                cb.addEventListener('change', () => {
+                    const orig = (document.getElementById('signupOriginalEmpNo') && document.getElementById('signupOriginalEmpNo').value) || '';
+                    const t = orig ? signupUsers.find((u) => String(u.employeeNo) === String(orig)) : null;
+                    syncSignupAdminPinSectionForUser(t);
+                });
+            }
+        }
+
+        function syncSignupAdminPinSectionForUser(targetUser) {
+            const sec = document.getElementById('signupAdminPinSection');
+            const cb = document.getElementById('signupIsAdmin');
+            const hint = document.getElementById('signupAdminPinHint');
+            if (!sec || !cb) return;
+            if (!cb.checked) {
+                sec.classList.add('hidden');
+                return;
+            }
+            if (targetUser && resolveUserIsAdmin(targetUser) && targetUser.hasAdminPin) {
+                sec.classList.add('hidden');
+                if (hint) {
+                    hint.textContent = 'PIN 변경은 관리자 설정의「내 관리자 PIN」에서 하세요.';
+                }
+            } else {
+                sec.classList.remove('hidden');
+                if (hint) {
+                    hint.textContent = '숫자 1~6자리. 관리자로 저장할 때 반드시 입력합니다.';
+                }
+            }
         }
 
         function openSignupModal() {
             loadSignupUsers();
             updateSignupSavedCount();
             resetSignupForm();
+            bindSignupAdminControlsOnce();
+            syncSignupAdminPinSectionForUser(null);
             document.getElementById('signupModal').classList.add('active');
             setTimeout(() => {
                 const first = document.getElementById('signupName');
@@ -1653,7 +1708,7 @@
             openSignupModal();
         }
 
-        function submitSignup() {
+        async function submitSignup() {
             padSignupEmpNo();
             padDeptCodeInput();
 
@@ -1668,6 +1723,8 @@
             const faxNo = (document.getElementById('signupFaxNo').value || '').trim() || '02-0000-0000';
             const mobileNo = (document.getElementById('signupMobileNo').value || '').trim() || '010-0000-0000';
             const originalEmpNo = (document.getElementById('signupOriginalEmpNo').value || '').trim();
+            const wantAdmin = !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked);
+            const prevUser = originalEmpNo ? signupUsers.find((u) => String(u.employeeNo) === String(originalEmpNo)) : null;
 
             if (!name || !empNo || !deptName || !deptCode) {
                 showAlert('필수 항목(이름, 직원번호, 부서명, 부서코드)을 입력해주세요.', 'error');
@@ -1676,6 +1733,26 @@
             if (!extNo) {
                 showAlert('내선번호는 필수 항목입니다.', 'error');
                 return;
+            }
+
+            let adminPinPlain = '';
+            if (wantAdmin) {
+                const needsNewPin =
+                    !prevUser || !resolveUserIsAdmin(prevUser) || !prevUser.hasAdminPin;
+                if (needsNewPin) {
+                    const pA = normalizeAdminPinDigits(
+                        document.getElementById('signupAdminPin') && document.getElementById('signupAdminPin').value,
+                    );
+                    const pB = normalizeAdminPinDigits(
+                        document.getElementById('signupAdminPinConfirm') &&
+                            document.getElementById('signupAdminPinConfirm').value,
+                    );
+                    if (!isValidAdminPinFormatClient(pA) || pA !== pB) {
+                        showAlert('관리자 PIN은 숫자 1~6자리로 두 번 동일하게 입력해주세요.', 'error');
+                        return;
+                    }
+                    adminPinPlain = pA;
+                }
             }
 
             const user = {
@@ -1690,7 +1767,7 @@
                 extNo,
                 faxNo,
                 mobileNo,
-                isAdmin: !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked),
+                isAdmin: wantAdmin,
                 createdAt: getCurrentDateTime()
             };
             if (String(user.employeeNo) === AI_SYSTEM_USER_EMP_NO) {
@@ -1705,15 +1782,29 @@
             const editingIdx = signupUsers.findIndex((u) => u.employeeNo === originalEmpNo);
             if (editingIdx > -1) {
                 const prev = signupUsers[editingIdx];
-                signupUsers[editingIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+                const merged = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+                if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                signupUsers[editingIdx] = merged;
             } else {
                 const sameEmpIdx = signupUsers.findIndex((u) => u.employeeNo === user.employeeNo);
                 if (sameEmpIdx > -1) {
                     const prev = signupUsers[sameEmpIdx];
-                    signupUsers[sameEmpIdx] = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
-                } else signupUsers.unshift(user);
+                    const merged = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
+                    if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                    signupUsers[sameEmpIdx] = merged;
+                } else {
+                    const merged = { ...user };
+                    if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                    signupUsers.unshift(merged);
+                }
             }
-            saveSignupUsers();
+            try {
+                await saveSignupUsers({ rethrow: true });
+                await loadSignupUsers();
+            } catch (error) {
+                console.error(error);
+                return;
+            }
             updateSignupSavedCount();
             renderMemberList();
             if (typeof renderAdminPermissionsPanel === 'function') {
@@ -1746,6 +1837,8 @@
             });
             const adm = document.getElementById('signupIsAdmin');
             if (adm) adm.checked = !!resolveUserIsAdmin(target);
+            bindSignupAdminControlsOnce();
+            syncSignupAdminPinSectionForUser(target);
             document.getElementById('signupModal').classList.add('active');
         }
         window.openSignupModalForEdit = openSignupModalForEdit;
@@ -1997,6 +2090,26 @@
         let sessionExpiryDeadlineMs = 0;
         let sessionWarnTimerId = null;
         let sessionWarnAlreadyShown = false;
+        let profileOverlaySessionTimer = null;
+
+        function formatSessionRemainingText() {
+            if (!sessionExpiryDeadlineMs || !currentLoginUser) return '—';
+            const ms = sessionExpiryDeadlineMs - Date.now();
+            if (ms <= 0) return '만료 임박';
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            if (h > 0) return `${h}시간 ${m}분 ${String(s).padStart(2, '0')}초`;
+            if (m > 0) return `${m}분 ${String(s).padStart(2, '0')}초`;
+            return `${s}초`;
+        }
+
+        function updateOverlaySessionRemaining() {
+            const el = document.getElementById('overlaySessionRemaining');
+            if (!el) return;
+            el.textContent = `세션 남은 시간: ${formatSessionRemainingText()}`;
+        }
 
         function clearSessionExpiryWatch() {
             if (sessionWarnTimerId) {
@@ -2183,25 +2296,63 @@
                 showAlert('AI 시스템 계정으로는 로그인할 수 없습니다.', 'error');
                 return;
             }
-            if (!skipAuthValidation && authType === 'pwd' && !authInput) {
-                showAlert('비밀번호를 입력해주세요.', 'error');
-                return;
-            }
-            if (!skipAuthValidation && authType === 'motp' && !authInput) {
-                showAlert('MOTP 번호를 입력해주세요.', 'error');
-                return;
-            }
-            if (!skipAuthValidation && authType === 'vein') {
-                document.getElementById('veinModal').classList.add('active');
-                return;
-            }
 
-            if (!currentLoginUser || currentLoginUser.employeeNo !== empNo) {
-                currentLoginUser = signupUsers.find(u => u.employeeNo === empNo) || null;
-            }
+            currentLoginUser = signupUsers.find((u) => String(u.employeeNo) === String(empNo)) || null;
             if (!currentLoginUser) {
                 showAlert('저장된 회원이 아닙니다. 회원가입 후 이용해주세요.', 'error');
                 return;
+            }
+
+            if (skipAuthValidation) {
+                if (resolveUserIsAdmin(currentLoginUser) && currentLoginUser.hasAdminPin) {
+                    showAlert('관리자 계정은 비밀번호(PIN) 입력 후 로그인해야 합니다.', 'error');
+                    return;
+                }
+            } else if (resolveUserIsAdmin(currentLoginUser)) {
+                if (!currentLoginUser.hasAdminPin) {
+                    showAlert(
+                        '관리자 PIN이 등록되어 있지 않습니다. 관리자 설정에서 PIN을 저장한 뒤 로그인해 주세요.',
+                        'error',
+                    );
+                    return;
+                }
+                if (authType === 'vein') {
+                    showAlert('관리자 계정은 비밀번호(PIN) 입력란에 숫자 PIN을 입력해 로그인하세요.', 'error');
+                    return;
+                }
+                const pin = normalizeAdminPinDigits(authInput);
+                if (!isValidAdminPinFormatClient(pin)) {
+                    showAlert('관리자 PIN은 숫자 1~6자리로 입력해주세요.', 'error');
+                    return;
+                }
+                try {
+                    const vr = await fetch('/api/auth/admin-pin/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employeeNo: normalizeEmployeeNo(empNo, true), pin }),
+                    });
+                    const vd = await vr.json().catch(() => ({}));
+                    if (!vr.ok) {
+                        showAlert((vd && vd.error) || 'PIN이 올바르지 않습니다.', 'error');
+                        return;
+                    }
+                } catch (_) {
+                    showAlert('PIN 확인에 실패했습니다.', 'error');
+                    return;
+                }
+            } else {
+                if (authType === 'pwd' && !authInput) {
+                    showAlert('비밀번호를 입력해주세요.', 'error');
+                    return;
+                }
+                if (authType === 'motp' && !authInput) {
+                    showAlert('MOTP 번호를 입력해주세요.', 'error');
+                    return;
+                }
+                if (authType === 'vein') {
+                    document.getElementById('veinModal').classList.add('active');
+                    return;
+                }
             }
 
             const sessionClaim = await claimTestSessionForLogin(empNo, forceTakeover);
@@ -2345,10 +2496,22 @@
             const overlay = document.getElementById('headerProfileOverlay');
             if (!overlay) return;
             overlay.classList.toggle('active');
+            if (overlay.classList.contains('active')) {
+                updateOverlaySessionRemaining();
+                if (profileOverlaySessionTimer) clearInterval(profileOverlaySessionTimer);
+                profileOverlaySessionTimer = setInterval(updateOverlaySessionRemaining, 1000);
+            } else if (profileOverlaySessionTimer) {
+                clearInterval(profileOverlaySessionTimer);
+                profileOverlaySessionTimer = null;
+            }
         }
         function closeHeaderProfileOverlay() {
             const overlay = document.getElementById('headerProfileOverlay');
             if (overlay) overlay.classList.remove('active');
+            if (profileOverlaySessionTimer) {
+                clearInterval(profileOverlaySessionTimer);
+                profileOverlaySessionTimer = null;
+            }
         }
         function closeHeaderActionsLayer() {
             const layer = document.getElementById('headerActionsLayer');
@@ -2809,6 +2972,7 @@
             if (overlayMobileNo) overlayMobileNo.innerText = normalizeDisplayText(activeUser.mobileNo, '010-0000-0000');
             const overlaySessionInfo = document.getElementById('overlaySessionInfo');
             if (overlaySessionInfo) overlaySessionInfo.innerText = `IP ${currentSessionIp || '-'}`;
+            updateOverlaySessionRemaining();
             const overlayGreetingText = document.getElementById('overlayGreetingText');
             if (overlayGreetingText) {
                 const greet = '안녕하세요. IBK KNOCK입니다.';
@@ -4493,6 +4657,9 @@
             currentLoginUser = matched;
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = matched.employeeNo;
+            if (resolveUserIsAdmin(matched) && matched.hasAdminPin) {
+                return;
+            }
             await doLogin({ skipAuthValidation: true });
             if (!currentLoginUser) return;
             if (history && history.state && history.state.page === 'app') {

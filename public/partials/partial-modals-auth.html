@@ -114,8 +114,22 @@
                     <input type="checkbox" id="signupIsAdmin" class="signup-admin-checkbox">
                     <div class="signup-admin-copy">
                         <label for="signupIsAdmin" class="signup-admin-label">플랫폼 관리자 권한 부여</label>
-                        <p class="signup-admin-desc">관리자 설정(AI·권한) 접근 및 저장이 가능합니다.</p>
+                        <p class="signup-admin-desc">관리자 설정(AI·권한) 접근 및 저장이 가능합니다. 관리자로 저장 시 숫자 PIN을 반드시 설정합니다.</p>
                     </div>
+                </div>
+                <div id="signupAdminPinSection" class="signup-modal-section hidden" style="margin-top:12px;">
+                    <h4 class="signup-modal-section-title">관리자 PIN (숫자 1~6자리)</h4>
+                    <div class="signup-modal-grid">
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupAdminPin">PIN</label>
+                            <input type="password" id="signupAdminPin" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="최대 6자리 숫자">
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupAdminPinConfirm">PIN 확인</label>
+                            <input type="password" id="signupAdminPinConfirm" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <p id="signupAdminPinHint" class="signup-modal-hint" style="margin-top:8px;"></p>
                 </div>
                 <p class="signup-modal-hint">영업점·본부 계정에도 필요 시 부여할 수 있습니다.</p>
                 <footer class="signup-modal-footer">
@@ -156,6 +170,24 @@
             <div class="modal-body flex-col gap-10">
                 <button type="button" onclick="openMemberListFromTestTools()" class="btn w-full" style="border: 1px solid #93c5fd; color: #1e40af; background: #eff6ff;">테스트회원 관리</button>
                 <button type="button" onclick="openSignupFromTestTools()" class="btn w-full" style="border: 1px solid #cbd5e1; color: #334155; background: #f8fafc;">테스트용 회원가입</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminPinGateModal" class="modal-overlay" style="z-index: 12100;" onclick="if(event.target===this) closeAdminPinGateModal(false)">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="adminPinGateTitle" style="font-size:17px;">관리자 PIN</h3>
+                <button type="button" class="btn-icon" onclick="closeAdminPinGateModal(false)" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+            </div>
+            <div class="modal-body">
+                <p id="adminPinGateMessage" class="signup-modal-hint" style="margin-bottom:12px;"></p>
+                <label class="signup-field-label" for="adminPinGateInput">PIN (숫자 최대 6자리)</label>
+                <input type="password" id="adminPinGateInput" class="input w-full" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+            </div>
+            <div class="modal-footer flex gap-10 justify-end" style="padding:12px 16px;border-top:1px solid #e2e8f0;">
+                <button type="button" class="btn btn-outline" onclick="closeAdminPinGateModal(false)">취소</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAdminPinGateModal()">확인</button>
             </div>
         </div>
     </div>

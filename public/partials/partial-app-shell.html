@@ -95,6 +95,7 @@
                 </div>
                 <div class="profile-overlay-foot">
                     <span class="profile-overlay-foot-note" id="overlaySessionInfo">IP 10.124.0.1</span>
+                    <span class="profile-overlay-foot-note" id="overlaySessionRemaining" style="display:block;margin-top:6px;font-size:12px;color:#64748b;">세션 남은 시간: —</span>
                     <div class="flex items-center gap-10">
                         <button onclick="openProfileImageModal()" class="logout-btn" style="font-size:12px; padding:7px 11px; color:#334155; border-color:#cbd5e1;">
                             <span>프로필 사진</span>
@@ -1105,6 +1106,16 @@
                                     <h3 class="admin-settings-card-title">플랫폼 관리자 권한</h3>
                                 </div>
                                 <p class="admin-settings-hint">테스트용 회원(직원번호)별로 이 앱의 <strong>관리자 설정</strong> 접근·저장 권한을 켜거나 끕니다. IT 업무 역할(게시판 답변 등)과는 별도입니다.</p>
+                                <div id="adminSelfPinMount" class="admin-settings-card" style="margin-bottom:14px;padding:14px;border:1px solid var(--border-color,#e2e8f0);border-radius:10px;">
+                                    <h4 style="margin:0 0 8px;font-size:14px;">내 관리자 PIN</h4>
+                                    <p class="admin-settings-hint" style="margin:0 0 10px;">숫자 1~6자리. 최초 설정 시 현재 PIN 칸은 비워두세요.</p>
+                                    <div class="flex flex-wrap gap-10 items-end">
+                                        <div><label class="signup-field-label" for="adminPinSelfCurrent">현재 PIN</label><input type="password" id="adminPinSelfCurrent" class="input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="변경 시 입력" style="width:120px;"></div>
+                                        <div><label class="signup-field-label" for="adminPinSelfNew">새 PIN</label><input type="password" id="adminPinSelfNew" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="1~6자리" style="width:120px;"></div>
+                                        <div><label class="signup-field-label" for="adminPinSelfNew2">새 PIN 확인</label><input type="password" id="adminPinSelfNew2" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password" style="width:120px;"></div>
+                                        <button type="button" class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="submitAdminSelfPinChange()">PIN 저장</button>
+                                    </div>
+                                </div>
                                 <div id="adminPermissionsMount"></div>
                                 <div class="admin-settings-actions">
                                     <button type="button" class="btn btn-outline" onclick="switchView('dashboard')">닫기</button>

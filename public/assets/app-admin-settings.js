@@ -14,6 +14,102 @@ let adminAiSettingsHistory = [];
 let adminRuntimeValidationWired = false;
 let adminRagBlocklistWired = false;
 
+const pendingAdminPinByEmp = new Map();
+let adminPinGateCallback = null;
+
+function openAdminPinGateModal({ title, message, onResult }) {
+    adminPinGateCallback = typeof onResult === "function" ? onResult : null;
+    const modal = document.getElementById("adminPinGateModal");
+    const tEl = document.getElementById("adminPinGateTitle");
+    const mEl = document.getElementById("adminPinGateMessage");
+    const inp = document.getElementById("adminPinGateInput");
+    if (tEl) tEl.textContent = title || "관리자 PIN";
+    if (mEl) mEl.textContent = message || "";
+    if (inp) inp.value = "";
+    if (modal) modal.classList.add("active");
+    setTimeout(() => {
+        if (inp) inp.focus();
+    }, 80);
+}
+
+function closeAdminPinGateModal(isCancel) {
+    const modal = document.getElementById("adminPinGateModal");
+    if (modal) modal.classList.remove("active");
+    if (adminPinGateCallback) {
+        const fn = adminPinGateCallback;
+        adminPinGateCallback = null;
+        if (isCancel) fn(null);
+    }
+}
+
+function confirmAdminPinGateModal() {
+    const inp = document.getElementById("adminPinGateInput");
+    const pin = normalizeAdminPinDigits(inp && inp.value);
+    if (!isValidAdminPinFormatClient(pin)) {
+        showAlert("숫자 1~6자리 PIN을 입력해주세요.", "error");
+        return;
+    }
+    const modal = document.getElementById("adminPinGateModal");
+    if (modal) modal.classList.remove("active");
+    if (adminPinGateCallback) {
+        const fn = adminPinGateCallback;
+        adminPinGateCallback = null;
+        fn(pin);
+    }
+}
+
+window.closeAdminPinGateModal = function () {
+    closeAdminPinGateModal(true);
+};
+window.confirmAdminPinGateModal = confirmAdminPinGateModal;
+
+async function submitAdminSelfPinChange() {
+    if (!currentUserHasAdminAccess()) {
+        showAlert("플랫폼 관리자만 변경할 수 있습니다.", "error");
+        return;
+    }
+    const curEl = document.getElementById("adminPinSelfCurrent");
+    const n1El = document.getElementById("adminPinSelfNew");
+    const n2El = document.getElementById("adminPinSelfNew2");
+    const cur = normalizeAdminPinDigits(curEl && curEl.value);
+    const n1 = normalizeAdminPinDigits(n1El && n1El.value);
+    const n2 = normalizeAdminPinDigits(n2El && n2El.value);
+    if (!isValidAdminPinFormatClient(n1)) {
+        showAlert("새 PIN은 숫자 1~6자리로 입력해주세요.", "error");
+        return;
+    }
+    if (n1 !== n2) {
+        showAlert("새 PIN 확인이 일치하지 않습니다.", "error");
+        return;
+    }
+    const self = signupUsers.find((x) => String(x.employeeNo) === String(currentLoginUser.employeeNo));
+    if (self && self.hasAdminPin && !isValidAdminPinFormatClient(cur)) {
+        showAlert("현재 PIN을 입력해주세요.", "error");
+        return;
+    }
+    try {
+        await fetchJson("/api/auth/admin-pin/change", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                currentPin: self && self.hasAdminPin ? cur : "",
+                newPin: n1,
+            }),
+        });
+        await loadSignupUsers();
+        const rf = signupUsers.find((x) => String(x.employeeNo) === String(currentLoginUser.employeeNo));
+        if (rf) currentLoginUser = rf;
+        if (curEl) curEl.value = "";
+        if (n1El) n1El.value = "";
+        if (n2El) n2El.value = "";
+        showAlert("관리자 PIN을 저장했습니다.", "success");
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.submitAdminSelfPinChange = submitAdminSelfPinChange;
+
 function clampAdminAiGen01(v) {
     const n = Math.round(Number(v) * 10) / 10;
     if (!Number.isFinite(n)) return 0.1;
@@ -917,7 +1013,29 @@ function selectAdminSettingsMainTab(tab) {
 function toggleSignupUserAdminFlag(empNo, checked) {
     const u = signupUsers.find((x) => String(x.employeeNo) === String(empNo));
     if (!u) return;
-    u.isAdmin = !!checked;
+    const empStr = String(empNo);
+    if (checked) {
+        if (!resolveUserIsAdmin(u) && !u.hasAdminPin) {
+            openAdminPinGateModal({
+                title: "관리자 PIN 설정",
+                message: `${u.name || ""} 직원에게 부여할 관리자 PIN(숫자 1~6자리)을 입력하세요. 권한 저장 시 서버에 반영됩니다.`,
+                onResult: (pin) => {
+                    if (pin == null) {
+                        const cb = document.querySelector(`.admin-perm-isadmin[data-emp="${empStr}"]`);
+                        if (cb) cb.checked = false;
+                        return;
+                    }
+                    pendingAdminPinByEmp.set(empStr, pin);
+                    u.isAdmin = true;
+                },
+            });
+            return;
+        }
+        u.isAdmin = true;
+    } else {
+        pendingAdminPinByEmp.delete(empStr);
+        u.isAdmin = false;
+    }
 }
 
 function renderAdminPermissionsPanel() {
@@ -986,6 +1104,7 @@ function deleteSignupUserFromAdmin(employeeNo) {
     showConfirm(`[${user.name}] 사용자를 삭제하시겠습니까?`, async () => {
         signupUsers = signupUsers.filter((u) => String(u.employeeNo) !== empNo);
         try {
+            pendingAdminPinByEmp.delete(empNo);
             await saveSignupUsers({ rethrow: true });
             renderAdminPermissionsPanel();
             showAlert("사용자를 삭제했습니다.", "success");
@@ -1001,8 +1120,31 @@ async function saveAdminPermissionsToServer() {
         showAlert("플랫폼 관리자 권한이 필요합니다.", "error");
         return;
     }
+    for (const u of signupUsers) {
+        if (isAiSystemUser(u)) continue;
+        if (resolveUserIsAdmin(u) && !u.hasAdminPin) {
+            const p = pendingAdminPinByEmp.get(String(u.employeeNo));
+            if (!p) {
+                showAlert(
+                    `[${u.name || u.employeeNo}] 님에게 관리자 PIN을 먼저 지정하세요. 플랫폼 관리자를 체크하면 PIN 입력 창이 열립니다.`,
+                    "error",
+                );
+                return;
+            }
+        }
+    }
+    const prevUsers = signupUsers;
+    signupUsers = signupUsers.map((u) => {
+        const pin = pendingAdminPinByEmp.get(String(u.employeeNo));
+        if (resolveUserIsAdmin(u) && pin) {
+            return { ...u, adminPinPlain: pin };
+        }
+        return { ...u };
+    });
     try {
         await saveSignupUsers({ rethrow: true });
+        await loadSignupUsers();
+        pendingAdminPinByEmp.clear();
         if (currentLoginUser && currentLoginUser.employeeNo) {
             const refreshed = signupUsers.find((u) => String(u.employeeNo) === String(currentLoginUser.employeeNo));
             if (refreshed) currentLoginUser = refreshed;
@@ -1011,6 +1153,8 @@ async function saveAdminPermissionsToServer() {
         showAlert("권한 설정을 저장했습니다.", "success");
     } catch (e) {
         console.error(e);
+        signupUsers = prevUsers;
+        showAlert("권한 저장에 실패했습니다.", "error");
     }
 }
 
