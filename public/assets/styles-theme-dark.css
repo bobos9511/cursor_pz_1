@@ -330,13 +330,24 @@
             border-color: #3f5475;
             box-shadow: 0 5px 12px rgba(2, 8, 24, 0.35);
             --history-title-fade: #15243b;
-            --history-title-fade-mid: rgba(21, 36, 59, 0.62);
+            --history-title-fade-mid: rgba(19, 34, 57, 0.88);
         }
         body[data-theme="dark"] .ai-search-history-card:hover {
             border-color: #6488b8;
             background: linear-gradient(180deg, #1a2d48, #172841);
             --history-title-fade: #1a2d48;
-            --history-title-fade-mid: rgba(26, 45, 72, 0.62);
+            --history-title-fade-mid: rgba(23, 41, 67, 0.88);
+        }
+        body[data-theme="dark"] .ai-search-history-title-wrap::after,
+        body[data-theme="dark"] .ai-history-mobile-title-wrap::after {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            background: linear-gradient(
+                270deg,
+                var(--history-title-fade) 0%,
+                var(--history-title-fade-mid) 38%,
+                transparent 100%
+            );
         }
         body[data-theme="dark"] .ai-search-history-close {
             border-color: #3f5475;
