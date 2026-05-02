@@ -835,21 +835,25 @@
                             </div>
                             <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
                             <textarea id="adminAi-chat-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
-                            <div class="admin-gen-grid">
-                                <div class="admin-gen-row">
-                                    <label class="admin-gen-label">Temperature</label>
-                                    <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
-                                    <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1">
+                            <div class="admin-gen-grid admin-gen-grid--ai-params">
+                                <div class="admin-ai-param-group">
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label" for="adminAi-chat-temp">Temperature</label>
+                                        <input type="range" id="adminAi-chat-temp" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-chat-temp-desc">
+                                        <input type="number" id="adminAi-chat-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-chat-temp-desc">
+                                    </div>
+                                    <div class="admin-field-error" id="adminAi-chat-temp-num-msg" role="alert"></div>
+                                    <p class="admin-ai-param-desc" id="adminAi-chat-temp-desc">Temperature가 높을수록 답변이 다양해지고, 낮을수록 일관성이 높아집니다.</p>
                                 </div>
-                                <div class="admin-field-error" id="adminAi-chat-temp-num-msg" role="alert"></div>
-                                <div class="admin-settings-subhint">Temperature가 높을수록 답변이 다양해지고, 낮을수록 일관성이 높아집니다.</div>
-                                <div class="admin-gen-row">
-                                    <label class="admin-gen-label">Top-P</label>
-                                    <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
-                                    <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1">
+                                <div class="admin-ai-param-group">
+                                    <div class="admin-gen-row">
+                                        <label class="admin-gen-label" for="adminAi-chat-topP">Top-P</label>
+                                        <input type="range" id="adminAi-chat-topP" class="admin-ai-gen-range" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-chat-topP-desc">
+                                        <input type="number" id="adminAi-chat-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-chat" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-chat-topP-desc">
+                                    </div>
+                                    <div class="admin-field-error" id="adminAi-chat-topP-num-msg" role="alert"></div>
+                                    <p class="admin-ai-param-desc" id="adminAi-chat-topP-desc">Top-P는 선택 후보 범위를 조절합니다. Temperature와 함께 미세 조정해 주세요.</p>
                                 </div>
-                                <div class="admin-field-error" id="adminAi-chat-topP-num-msg" role="alert"></div>
-                                <div class="admin-settings-subhint">Top-P는 선택 후보 범위를 조절합니다. Temperature와 함께 미세 조정해 주세요.</div>
                             </div>
                         </div>
 
@@ -885,21 +889,25 @@
                                     </div>
                                     <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
                                     <textarea id="adminAi-post-IT-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
-                                    <div class="admin-gen-grid">
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Temperature</label>
-                                            <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1">
+                                    <div class="admin-gen-grid admin-gen-grid--ai-params">
+                                        <div class="admin-ai-param-group">
+                                            <div class="admin-gen-row">
+                                                <label class="admin-gen-label" for="adminAi-post-IT-temp">Temperature</label>
+                                                <input type="range" id="adminAi-post-IT-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-post-IT-temp-desc">
+                                                <input type="number" id="adminAi-post-IT-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-post-IT-temp-desc">
+                                            </div>
+                                            <div class="admin-field-error" id="adminAi-post-IT-temp-num-msg" role="alert"></div>
+                                            <p class="admin-ai-param-desc" id="adminAi-post-IT-temp-desc">Temperature가 높을수록 문장 다양성이 올라가고, 낮을수록 사실 중심의 답변이 안정적입니다.</p>
                                         </div>
-                                        <div class="admin-field-error" id="adminAi-post-IT-temp-num-msg" role="alert"></div>
-                                        <div class="admin-settings-subhint">Temperature가 높을수록 문장 다양성이 올라가고, 낮을수록 사실 중심의 답변이 안정적입니다.</div>
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Top-P</label>
-                                            <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1">
+                                        <div class="admin-ai-param-group">
+                                            <div class="admin-gen-row">
+                                                <label class="admin-gen-label" for="adminAi-post-IT-topP">Top-P</label>
+                                                <input type="range" id="adminAi-post-IT-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-post-IT-topP-desc">
+                                                <input type="number" id="adminAi-post-IT-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-IT" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-post-IT-topP-desc">
+                                            </div>
+                                            <div class="admin-field-error" id="adminAi-post-IT-topP-num-msg" role="alert"></div>
+                                            <p class="admin-ai-param-desc" id="adminAi-post-IT-topP-desc">Top-P는 답변 후보 폭을 조절합니다. 낮추면 보수적, 높이면 표현 범위가 넓어집니다.</p>
                                         </div>
-                                        <div class="admin-field-error" id="adminAi-post-IT-topP-num-msg" role="alert"></div>
-                                        <div class="admin-settings-subhint">Top-P는 답변 후보 폭을 조절합니다. 낮추면 보수적, 높이면 표현 범위가 넓어집니다.</div>
                                     </div>
                                 </div>
                                 <div class="admin-ai-post-panel hidden" data-board="BIZ">
@@ -909,21 +917,25 @@
                                     </div>
                                     <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
                                     <textarea id="adminAi-post-BIZ-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
-                                    <div class="admin-gen-grid">
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Temperature</label>
-                                            <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1">
+                                    <div class="admin-gen-grid admin-gen-grid--ai-params">
+                                        <div class="admin-ai-param-group">
+                                            <div class="admin-gen-row">
+                                                <label class="admin-gen-label" for="adminAi-post-BIZ-temp">Temperature</label>
+                                                <input type="range" id="adminAi-post-BIZ-temp" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-post-BIZ-temp-desc">
+                                                <input type="number" id="adminAi-post-BIZ-temp-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="temp" min="0" max="1" step="0.1" aria-describedby="adminAi-post-BIZ-temp-desc">
+                                            </div>
+                                            <div class="admin-field-error" id="adminAi-post-BIZ-temp-num-msg" role="alert"></div>
+                                            <p class="admin-ai-param-desc" id="adminAi-post-BIZ-temp-desc">Temperature가 높으면 설명형 문장이 자연스러워지고, 낮으면 규정형 답변의 일관성이 높아집니다.</p>
                                         </div>
-                                        <div class="admin-field-error" id="adminAi-post-BIZ-temp-num-msg" role="alert"></div>
-                                        <div class="admin-settings-subhint">Temperature가 높으면 설명형 문장이 자연스러워지고, 낮으면 규정형 답변의 일관성이 높아집니다.</div>
-                                        <div class="admin-gen-row">
-                                            <label class="admin-gen-label">Top-P</label>
-                                            <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
-                                            <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1">
+                                        <div class="admin-ai-param-group">
+                                            <div class="admin-gen-row">
+                                                <label class="admin-gen-label" for="adminAi-post-BIZ-topP">Top-P</label>
+                                                <input type="range" id="adminAi-post-BIZ-topP" class="admin-ai-gen-range" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-post-BIZ-topP-desc">
+                                                <input type="number" id="adminAi-post-BIZ-topP-num" class="input admin-ai-gen-num" data-prefix="adminAi-post-BIZ" data-field="topP" min="0" max="1" step="0.1" aria-describedby="adminAi-post-BIZ-topP-desc">
+                                            </div>
+                                            <div class="admin-field-error" id="adminAi-post-BIZ-topP-num-msg" role="alert"></div>
+                                            <p class="admin-ai-param-desc" id="adminAi-post-BIZ-topP-desc">Top-P는 단어 선택 폭 제어값입니다. 규정/상품 안내는 0.8~0.95 범위에서 시작하는 것을 권장합니다.</p>
                                         </div>
-                                        <div class="admin-field-error" id="adminAi-post-BIZ-topP-num-msg" role="alert"></div>
-                                        <div class="admin-settings-subhint">Top-P는 단어 선택 폭 제어값입니다. 규정/상품 안내는 0.8~0.95 범위에서 시작하는 것을 권장합니다.</div>
                                     </div>
                                 </div>
                                 <!-- SYS/KNOW는 AI 답변 기능을 사용하지 않으므로 설정에서 제외 -->

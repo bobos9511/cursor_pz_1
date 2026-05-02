@@ -939,6 +939,17 @@
             border-color: #4a5f7f;
             color: #e6edf8;
         }
+        body[data-theme="dark"] .admin-ai-param-group {
+            background: linear-gradient(180deg, #182a42 0%, #142738 100%);
+            border-color: #3f5475;
+            box-shadow: 0 4px 18px rgba(2, 8, 24, 0.35);
+        }
+        body[data-theme="dark"] .admin-ai-param-desc {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: #3f5475;
+            border-left-color: #60a5fa;
+            color: #9fb0c8;
+        }
         body[data-theme="dark"] .admin-perms-table-wrap,
         body[data-theme="dark"] .admin-ai-logs-list-wrap,
         body[data-theme="dark"] .admin-ai-log-detail-card,
