@@ -765,19 +765,26 @@
             const name = String(nameRaw || '').replace(/\s+/g, '');
             return name ? name.slice(0, 1) : 'U';
         }
-        function getAvatarGradient(seedRaw) {
+        /** 배경 그라데이션별 가독성 있는 전경색(라이트/다크 자동 대응) */
+        const AVATAR_GRADIENT_PRESETS = [
+            { gradient: 'linear-gradient(135deg, #4f46e5, #06b6d4)', color: '#ffffff' },
+            { gradient: 'linear-gradient(135deg, #7c3aed, #ec4899)', color: '#ffffff' },
+            { gradient: 'linear-gradient(135deg, #2563eb, #10b981)', color: '#ffffff' },
+            { gradient: 'linear-gradient(135deg, #0ea5e9, #14b8a6)', color: '#0c1424' },
+            { gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: '#ffffff' },
+            { gradient: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', color: '#ffffff' },
+        ];
+        function getAvatarPresetIndex(seedRaw) {
             const seed = String(seedRaw || '');
             let hash = 0;
             for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-            const gradients = [
-                'linear-gradient(135deg, #4f46e5, #06b6d4)',
-                'linear-gradient(135deg, #7c3aed, #ec4899)',
-                'linear-gradient(135deg, #2563eb, #10b981)',
-                'linear-gradient(135deg, #0ea5e9, #14b8a6)',
-                'linear-gradient(135deg, #f59e0b, #ef4444)',
-                'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-            ];
-            return gradients[hash % gradients.length];
+            return hash % AVATAR_GRADIENT_PRESETS.length;
+        }
+        function getAvatarGradient(seedRaw) {
+            return AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seedRaw)].gradient;
+        }
+        function getAvatarTextColor(seedRaw) {
+            return AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seedRaw)].color;
         }
         function findSignupUserByWriter(writerRaw) {
             const writer = String(writerRaw || '').trim();
@@ -794,8 +801,8 @@
                 return `<span class="${className}"><img src="${imageData}" alt="프로필"></span>`;
             }
             const seed = String((user && (user.employeeNo || user.name)) || nameText || 'avatar');
-            const bg = getAvatarGradient(seed);
-            return `<span class="${className}" style="background:${bg};">${initial}</span>`;
+            const preset = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seed)];
+            return `<span class="${className}" style="background:${preset.gradient};color:${preset.color};">${initial}</span>`;
         }
         function renderWriterWithAvatar(writerRaw, options = {}) {
             const writerText = normalizeDisplayText(writerRaw, '-');
@@ -1682,8 +1689,9 @@
                 return;
             }
             const initial = escapeHtml(getUserInitial(nameText));
-            const gradient = getAvatarGradient(String((activeUser && (activeUser.employeeNo || activeUser.name)) || 'profile'));
-            preview.innerHTML = `<span class="profile-image-preview-avatar" style="background:${gradient};">${initial}</span>`;
+            const seed = String((activeUser && (activeUser.employeeNo || activeUser.name)) || 'profile');
+            const preset = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seed)];
+            preview.innerHTML = `<span class="profile-image-preview-avatar" style="background:${preset.gradient};color:${preset.color};">${initial}</span>`;
         }
 
         function openProfileImageModal() {
@@ -2485,12 +2493,15 @@
                 const imageData = normalizeProfileImageData(activeUser.profileImage);
                 if (imageData) {
                     overlayProfileInitial.style.background = '';
+                    overlayProfileInitial.style.color = '';
                     overlayProfileInitial.innerHTML = `<img src="${imageData}" alt="프로필">`;
                 } else {
                     const initial = escapeHtml(getUserInitial(activeName));
-                    const gradient = getAvatarGradient(String(activeUser.employeeNo || activeName || 'overlay'));
+                    const seed = String(activeUser.employeeNo || activeName || 'overlay');
+                    const preset = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seed)];
                     overlayProfileInitial.innerHTML = initial;
-                    overlayProfileInitial.style.background = gradient;
+                    overlayProfileInitial.style.background = preset.gradient;
+                    overlayProfileInitial.style.color = preset.color;
                 }
             }
             const overlayEmployeeNo = document.getElementById('overlayEmployeeNo');
