@@ -124,7 +124,12 @@ function fmtDateTime(d) {
 
 function updateNotificationBadge() {
     const badge = document.getElementById("headerNotificationBadge");
+    const modal = document.getElementById("notificationCenterModal");
     if (!badge) return;
+    if (modal && modal.classList.contains("active")) {
+        badge.classList.add("hidden");
+        return;
+    }
     const n = Number(notificationCenterState.unreadCount || 0);
     if (n <= 0) {
         badge.classList.add("hidden");
@@ -257,6 +262,7 @@ function resolveNotificationSourceLabel(it) {
 
 function renderNotificationItemCard(it, options = {}) {
     const compact = !!options.compact;
+    const readClass = it.isRead ? "noti-item-read" : "noti-item-unread";
     const sourceLabel = resolveNotificationSourceLabel(it);
     const readChip = it.isRead
         ? '<span class="noti-topic-chip noti-status-chip">확인됨</span>'
@@ -267,7 +273,7 @@ function renderNotificationItemCard(it, options = {}) {
         ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
         : "";
     return `
-        <div class="noti-item${compact ? " noti-item-compact" : ""}">
+        <div class="noti-item ${readClass}${compact ? " noti-item-compact" : ""}">
             <div class="noti-item-top">
                 <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
                 <div class="noti-item-source-row">
@@ -319,6 +325,32 @@ function toggleNotificationStack(stackId) {
     renderNotificationCenterBody();
 }
 
+function sortNotificationsByTimeDesc(arr) {
+    return [...arr].sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+}
+
+/** 시간/토픽 탭 기준 그룹 HTML (미확인·확인 구역 공통) */
+function buildNotificationGroupedRows(list) {
+    const groups = new Map();
+    list.forEach((it) => {
+        const key = notificationCenterState.viewMode === "topic" ? it.topic : `${it.dateLabel} · ${it.timeBand}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(it);
+    });
+    return Array.from(groups.entries())
+        .map(([groupKey, grouped]) => {
+            const rows = clusterNotificationItems(grouped)
+                .map((cluster) => {
+                    if (!cluster || !Array.isArray(cluster.items) || cluster.items.length === 0) return "";
+                    if (cluster.items.length === 1) return renderNotificationItemCard(cluster.items[0]);
+                    return renderNotificationStack(cluster);
+                })
+                .join("");
+            return `<div class="noti-group"><div class="noti-group-title">${escapeHtml(groupKey)}</div>${rows}</div>`;
+        })
+        .join("");
+}
+
 function renderNotificationCenterBody() {
     const body = document.getElementById("notificationCenterBody");
     if (!body) return;
@@ -332,25 +364,34 @@ function renderNotificationCenterBody() {
         return;
     }
 
-    const groups = new Map();
-    items.forEach((it) => {
-        const key = notificationCenterState.viewMode === "topic" ? it.topic : `${it.dateLabel} · ${it.timeBand}`;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(it);
-    });
+    const unreadList = sortNotificationsByTimeDesc(items.filter((it) => !it.isRead));
+    const readList = sortNotificationsByTimeDesc(items.filter((it) => it.isRead));
 
-    body.innerHTML = Array.from(groups.entries())
-        .map(([groupKey, list]) => {
-            const rows = clusterNotificationItems(list)
-                .map((cluster) => {
-                    if (!cluster || !Array.isArray(cluster.items) || cluster.items.length === 0) return "";
-                    if (cluster.items.length === 1) return renderNotificationItemCard(cluster.items[0]);
-                    return renderNotificationStack(cluster);
-                })
-                .join("");
-            return `<div class="noti-group"><div class="noti-group-title">${escapeHtml(groupKey)}</div>${rows}</div>`;
-        })
-        .join("");
+    const sections = [];
+    if (unreadList.length) {
+        sections.push(
+            `<div class="noti-section noti-section-unread" role="region" aria-label="미확인 알림">
+                <div class="noti-section-head">
+                    <span class="noti-section-label">미확인 알림</span>
+                    <span class="noti-section-count">${unreadList.length}</span>
+                </div>
+                ${buildNotificationGroupedRows(unreadList)}
+            </div>`
+        );
+    }
+    if (readList.length) {
+        sections.push(
+            `<div class="noti-section noti-section-read" role="region" aria-label="확인한 알림">
+                <div class="noti-section-head">
+                    <span class="noti-section-label">확인한 알림</span>
+                    <span class="noti-section-count">${readList.length}</span>
+                </div>
+                ${buildNotificationGroupedRows(readList)}
+            </div>`
+        );
+    }
+
+    body.innerHTML = sections.length ? sections.join("") : '<div class="noti-empty">표시할 알림이 없습니다.</div>';
 }
 
 function setNotificationViewMode(mode) {
@@ -431,21 +472,22 @@ function resetNotificationFilters() {
 function openNotificationCenter() {
     const modal = document.getElementById("notificationCenterModal");
     if (!modal) return;
-    notificationCenterState.items.forEach((it) => {
-        it.isRead = true;
-    });
-    recalcNotificationUnreadCount();
-    renderNotificationCenterBody();
     modal.classList.add("active");
+    renderNotificationCenterBody();
     updateNotificationBadge();
     updateNotificationFilterButton();
-    persistNotificationCenterState();
 }
 
 function closeNotificationCenter() {
     const modal = document.getElementById("notificationCenterModal");
     if (modal) modal.classList.remove("active");
     closeNotificationFilterModal();
+    notificationCenterState.items.forEach((it) => {
+        it.isRead = true;
+    });
+    recalcNotificationUnreadCount();
+    updateNotificationBadge();
+    persistNotificationCenterState();
 }
 
 function deleteNotificationItem(id) {
