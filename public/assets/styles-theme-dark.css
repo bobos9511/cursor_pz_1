@@ -1562,9 +1562,20 @@
         body[data-theme="dark"] .login-share-modal-lead {
             color: #9fb0c8;
         }
-        body[data-theme="dark"] .login-share-qr-wrap {
-            background: #0f172a;
-            border-color: #3f5475;
+        body[data-theme="dark"] .login-share-qr-stage {
+            box-shadow:
+                0 10px 28px rgba(2, 8, 24, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        body[data-theme="dark"] .login-share-qr-board {
+            background: linear-gradient(165deg, #152238 0%, #121b2d 55%, #0f172a 100%);
+            border-color: rgba(96, 165, 250, 0.35);
+        }
+        body[data-theme="dark"] .login-share-qr-ribbon__t {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .login-share-qr-img {
+            box-shadow: 0 2px 12px rgba(2, 8, 24, 0.45);
         }
         body[data-theme="dark"] .login-share-url-text {
             background: #17243a;
@@ -1573,6 +1584,14 @@
         }
         body[data-theme="dark"] .login-share-actions-label {
             color: #94a3b8;
+        }
+        body[data-theme="dark"] .login-share-tile {
+            background: linear-gradient(180deg, #1a2842 0%, #152038 100%);
+            border-color: #3f5475;
+            box-shadow: 0 4px 14px rgba(2, 8, 24, 0.35);
+        }
+        body[data-theme="dark"] .login-share-tile__cap {
+            color: #cbd5e1;
         }
         body[data-theme="dark"] .login-share-modal-hint {
             color: #7892b0;

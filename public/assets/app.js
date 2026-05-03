@@ -2454,11 +2454,14 @@
             const url = getKnockPublicSiteUrl();
             const textEl = document.getElementById('loginShareUrlText');
             const qr = document.getElementById('loginShareQrImg');
-            if (textEl) textEl.textContent = url;
+            if (textEl) {
+                textEl.textContent = url;
+                textEl.title = url;
+            }
             if (qr) {
                 qr.alt = '홈페이지 링크 QR 코드';
                 qr.src =
-                    'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' +
+                    'https://api.qrserver.com/v1/create-qr-code/?size=168x168&margin=2&color=003f85&bgcolor=ffffff&ecc=M&data=' +
                     encodeURIComponent(url);
             }
             const quickBtn = document.getElementById('loginShareQuickBtn');

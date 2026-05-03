@@ -172,40 +172,58 @@
     </div>
 
     <!-- 로그인 화면: 홈 링크 공유 -->
-    <div id="loginShareModal" class="modal-overlay" style="z-index: 123;">
-        <div class="modal-content login-share-modal-shell modal-content--no-header-bar" style="max-width: 380px;">
+    <div id="loginShareModal" class="modal-overlay login-share-modal-overlay" style="z-index: 123;">
+        <div class="modal-content login-share-modal-shell modal-content--no-header-bar">
             <div class="modal-body login-share-modal-body flex-col">
-                <div class="modal-flat-head">
-                    <h3 class="login-share-modal-title modal-inline-title" style="font-size:18px;">페이지 공유</h3>
+                <div class="modal-flat-head login-share-modal-flat-head">
+                    <h3 class="login-share-modal-title modal-inline-title">페이지 공유</h3>
                     <button type="button" class="btn-icon" onclick="closeLoginShareModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
-                <p class="login-share-modal-lead">아래 QR 코드는 현재 홈페이지 주소로 연결됩니다.</p>
-                <div class="login-share-qr-wrap">
-                    <img id="loginShareQrImg" class="login-share-qr-img" width="220" height="220" alt="" decoding="async">
+                <p class="login-share-modal-lead">스캔 시 아래 주소로 이동합니다.</p>
+                <div class="login-share-qr-stage" aria-hidden="true">
+                    <div class="login-share-qr-glow"></div>
+                    <div class="login-share-qr-board">
+                        <div class="login-share-qr-ribbon"><span class="login-share-qr-ribbon__t">IBK</span><span class="login-share-qr-ribbon__k">KNOCK</span></div>
+                        <img id="loginShareQrImg" class="login-share-qr-img" width="152" height="152" alt="" decoding="async">
+                    </div>
                 </div>
-                <div id="loginShareUrlText" class="login-share-url-text"></div>
-                <p class="login-share-actions-label">다른 앱으로 공유</p>
-                <div class="login-share-actions" role="group" aria-label="외부 앱 공유">
-                    <button type="button" id="loginShareQuickBtn" class="login-share-pill login-share-pill--quick" onclick="shareKnockSiteViaQuickShare()" title="퀵 쉐어" aria-label="퀵 쉐어(시스템 공유)">
-                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-ios-share"></use></svg>
+                <div id="loginShareUrlText" class="login-share-url-text" title=""></div>
+                <p class="login-share-actions-label">공유 채널</p>
+                <div class="login-share-actions login-share-actions--tiles" role="group" aria-label="외부 앱 공유">
+                    <button type="button" id="loginShareQuickBtn" class="login-share-tile login-share-tile--quick" onclick="shareKnockSiteViaQuickShare()" title="시스템 공유 시트" aria-label="퀵 쉐어(시스템 공유)">
+                        <span class="login-share-tile__icon" aria-hidden="true">
+                            <svg class="login-share-tile__glyph" width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><use href="#icon-ios-share"></use></svg>
+                        </span>
+                        <span class="login-share-tile__cap">퀵 쉐어</span>
                     </button>
-                    <button type="button" class="login-share-pill login-share-pill--kakao" onclick="shareKnockSiteToKakaoTalk()" title="카카오톡" aria-label="카카오톡으로 공유">
-                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#191919" d="M12 3C6.48 3 2 6.48 2 10.5c0 2.55 1.68 4.8 4.2 6.05l-.9 3.3c-.12.45.3.85.74.74l4.15-1.1c.58.1 1.18.16 1.81.16 5.52 0 10-3.48 10-7.5S17.52 3 12 3z"/></svg>
+                    <button type="button" class="login-share-tile login-share-tile--kakao" onclick="shareKnockSiteToKakaoTalk()" title="카카오톡·카카오스토리" aria-label="카카오톡으로 공유">
+                        <span class="login-share-tile__icon login-share-tile__icon--kakao" aria-hidden="true">
+                            <svg class="login-share-tile__glyph login-share-tile__glyph--kakao" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M19.5 9.2C19.5 12 16 14.5 12 15.5l.45 2.05a.45.45 0 01-.58.52l-2.05-.55c-.6.15-1.25.23-1.92.23C5.8 17.75 2 14.7 2 10.9 2 6.55 6.6 3 12 3s7.5 3.55 7.5 6.2zM8.25 9.5a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm3.75 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm3.75 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/></svg>
+                        </span>
+                        <span class="login-share-tile__cap">카카오톡</span>
                     </button>
-                    <button type="button" class="login-share-pill login-share-pill--line" onclick="shareKnockSiteToLine()" title="LINE" aria-label="LINE으로 공유">
-                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629v-4.77c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.77zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.739C24 14.22 18.615 17 12 17c-.582 0-1.155-.025-1.715-.074L6.07 18.73c-.18.048-.37-.03-.44-.205-.05-.12-.02-.255.08-.345l2.1-2.4C3.75 14.659 0 12.98 0 10.739 0 7.26 5.385 4.48 12 4.48S24 7.26 24 10.739"/></svg>
+                    <button type="button" class="login-share-tile login-share-tile--line" onclick="shareKnockSiteToLine()" title="LINE 공유" aria-label="LINE으로 공유">
+                        <span class="login-share-tile__icon login-share-tile__icon--line" aria-hidden="true"><span class="login-share-line-logo">LINE</span></span>
+                        <span class="login-share-tile__cap">LINE</span>
                     </button>
-                    <button type="button" class="login-share-pill login-share-pill--naver" onclick="shareKnockSiteToNaver()" title="네이버" aria-label="네이버로 공유">
-                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M16.273 12.868 9.376 3H3v18h6.727V11.132L16.624 21H21V3h-4.727v9.868z"/></svg>
+                    <button type="button" class="login-share-tile login-share-tile--naver" onclick="shareKnockSiteToNaver()" title="네이버 공유" aria-label="네이버로 공유">
+                        <span class="login-share-tile__icon login-share-tile__icon--naver" aria-hidden="true"><span class="login-share-naver-logo">N</span></span>
+                        <span class="login-share-tile__cap">네이버</span>
                     </button>
-                    <button type="button" class="login-share-pill login-share-pill--mail" onclick="shareKnockSiteByEmail()" title="메일" aria-label="메일로 공유">
-                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-mail"></use></svg>
+                    <button type="button" class="login-share-tile login-share-tile--mail" onclick="shareKnockSiteByEmail()" title="메일 앱" aria-label="메일로 공유">
+                        <span class="login-share-tile__icon" aria-hidden="true">
+                            <svg class="login-share-tile__glyph" width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><use href="#icon-mail"></use></svg>
+                        </span>
+                        <span class="login-share-tile__cap">메일</span>
                     </button>
-                    <button type="button" class="login-share-pill login-share-pill--copy" onclick="copyKnockSiteUrlToClipboard()" title="링크 복사" aria-label="클립보드에 링크 복사">
-                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-content-copy"></use></svg>
+                    <button type="button" class="login-share-tile login-share-tile--copy" onclick="copyKnockSiteUrlToClipboard()" title="클립보드" aria-label="클립보드에 링크 복사">
+                        <span class="login-share-tile__icon" aria-hidden="true">
+                            <svg class="login-share-tile__glyph" width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><use href="#icon-content-copy"></use></svg>
+                        </span>
+                        <span class="login-share-tile__cap">링크 복사</span>
                     </button>
                 </div>
-                <p class="login-share-modal-hint">모바일에서 카카오톡은 앱으로 열리며, PC에서는 카카오스토리 공유로 연결될 수 있습니다.</p>
+                <p class="login-share-modal-hint">※ 모바일은 카카오톡 앱, PC는 스토리 등으로 열릴 수 있습니다.</p>
             </div>
         </div>
     </div>
