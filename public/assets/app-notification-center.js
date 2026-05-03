@@ -281,8 +281,8 @@ function updateNotificationFilterButton() {
     const active = getNotificationActiveFilterCount();
     const html =
         active > 0
-            ? `<svg class="icon"><use href="#icon-cog"></use></svg> 필터 (${active})`
-            : `<svg class="icon"><use href="#icon-cog"></use></svg> 필터`;
+            ? `<svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg> 필터 (${active})`
+            : `<svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg> 필터`;
     document.querySelectorAll(".js-noti-filter-btn").forEach((btn) => {
         btn.innerHTML = html;
     });

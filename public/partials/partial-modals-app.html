@@ -94,14 +94,16 @@
     <div id="notificationCenterModal" class="modal-overlay" style="z-index: 1012;">
         <div class="modal-content notification-center-modal">
             <div class="notification-center-toolbar notification-center-toolbar--modal">
-                <div class="notification-toolbar-right">
-                    <button type="button" id="notiFilterBtn" class="btn btn-outline js-noti-filter-btn" onclick="openNotificationFilterModal()">
-                        <svg class="icon"><use href="#icon-cog"></use></svg> 필터
-                    </button>
-                    <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>
-                    <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
-                    <button type="button" class="btn btn-outline notification-center-close-btn" onclick="closeNotificationCenter()" title="닫기" aria-label="알림센터 닫기">
-                        <svg class="icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                <div class="notification-toolbar-modal-row">
+                    <div class="notification-toolbar-actions">
+                        <button type="button" id="notiFilterBtn" class="btn notification-toolbar-action-btn js-noti-filter-btn" onclick="openNotificationFilterModal()">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg> 필터
+                        </button>
+                        <button type="button" class="btn notification-toolbar-action-btn" onclick="resetNotificationFilters()">필터 초기화</button>
+                        <button type="button" class="btn notification-toolbar-action-btn notification-toolbar-action-btn--danger" onclick="clearAllNotifications()">전체 삭제</button>
+                    </div>
+                    <button type="button" class="notification-center-close-btn" onclick="closeNotificationCenter()" title="닫기" aria-label="알림센터 닫기">
+                        <span class="notification-center-close-btn__x" aria-hidden="true">×</span>
                     </button>
                 </div>
             </div>

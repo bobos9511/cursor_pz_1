@@ -523,6 +523,42 @@
             background: linear-gradient(180deg, #13233a 0%, #0f1a2d 100%);
             border-color: #3a4a63;
         }
+        body[data-theme="dark"] .notification-toolbar-action-btn {
+            border-color: rgba(96, 165, 250, 0.38) !important;
+            color: #bfdbfe !important;
+            background: linear-gradient(180deg, #1c2d47 0%, #152238 100%) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                0 4px 14px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .notification-toolbar-action-btn:hover {
+            border-color: rgba(147, 197, 253, 0.5) !important;
+            color: #e0f2fe !important;
+            background: linear-gradient(180deg, #243652 0%, #1a2840 100%) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                0 6px 18px rgba(37, 99, 235, 0.18);
+        }
+        body[data-theme="dark"] .notification-toolbar-action-btn--danger {
+            border-color: rgba(248, 113, 113, 0.4) !important;
+            color: #fca5a5 !important;
+            background: linear-gradient(180deg, #2a1c22 0%, #1f1519 100%) !important;
+        }
+        body[data-theme="dark"] .notification-toolbar-action-btn--danger:hover {
+            border-color: rgba(252, 165, 165, 0.55) !important;
+            color: #fecaca !important;
+            background: linear-gradient(180deg, #352026 0%, #281a1f 100%) !important;
+        }
+        body[data-theme="dark"] .notification-center-close-btn {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .notification-center-close-btn:hover {
+            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        body[data-theme="dark"] .notification-center-close-btn:focus-visible {
+            outline-color: #38bdf8;
+        }
         body[data-theme="dark"] .notification-center-modal > .modal-body.notification-center-body,
         body[data-theme="dark"] .notification-center-page-body {
             scrollbar-color: rgba(96, 165, 250, 0.45) rgba(15, 23, 42, 0.5);
