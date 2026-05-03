@@ -1153,10 +1153,9 @@
         /** 게시물 번호 표시용 칩(목록·상세·검색 등 공통) */
         function formatPostIdChipHtml(rawId, variant = 'compact') {
             const n = escapeHtml(String(rawId ?? '-'));
-            const cap = escapeHtml('문의번호');
             const aria = escapeHtml(`게시물 번호 ${String(rawId ?? '-')}`);
             if (variant === 'detail') {
-                return `<span class="post-id-chip post-id-chip--detail" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__body"><span class="post-id-chip__cap">${cap}</span><span class="post-id-chip__num">${n}</span></span></span>`;
+                return `<span class="post-id-chip post-id-chip--detail" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__num">${n}</span></span>`;
             }
             return `<span class="post-id-chip post-id-chip--compact" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__num">${n}</span></span>`;
         }

@@ -2928,10 +2928,10 @@
         }
         .post-id-chip__num {
             font-size: 13px;
-            font-weight: 900;
+            font-weight: 800;
             color: #0f172a;
             font-variant-numeric: tabular-nums;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
         }
         .post-id-chip--compact .post-id-chip__num {
             padding: 5px 11px 5px 9px;
@@ -2943,15 +2943,28 @@
         .post-id-chip--compact .post-id-chip__accent {
             width: 4px;
         }
-        .post-id-chip--detail .post-id-chip__body {
-            padding: 8px 14px 8px 12px;
+        .post-id-chip--detail {
+            align-items: center;
+            border-radius: 7px;
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
         }
-        .post-id-chip--detail .post-id-chip__cap {
-            font-size: 10px;
+        .post-id-chip--detail .post-id-chip__accent {
+            width: 3px;
+            align-self: stretch;
+            opacity: 1;
+            background: linear-gradient(180deg, #60a5fa, #2563eb);
+            border-radius: 6px 0 0 6px;
         }
         .post-id-chip--detail .post-id-chip__num {
-            font-size: 17px;
-            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            padding: 3px 10px 3px 7px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: #334155;
         }
         .dtl-post-ref-wrap {
             margin-bottom: 12px;

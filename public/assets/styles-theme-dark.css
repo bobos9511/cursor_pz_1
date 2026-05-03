@@ -695,6 +695,17 @@
             background: linear-gradient(180deg, #38bdf8, #1d4ed8);
             opacity: 1;
         }
+        body[data-theme="dark"] .post-id-chip--detail {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-color: #334155;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+        body[data-theme="dark"] .post-id-chip--detail .post-id-chip__num {
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .post-id-chip--detail .post-id-chip__accent {
+            background: linear-gradient(180deg, #38bdf8, #2563eb);
+        }
         body[data-theme="dark"] #widget-lists .panel-header {
             background: #152238 !important;
             border-bottom-color: transparent !important;
