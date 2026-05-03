@@ -735,10 +735,9 @@
             border-color: #3f5475;
             color: #b8c7dc;
         }
-        body[data-theme="dark"] #widget-lists .badge[style*="background:#e0f2fe"],
-        body[data-theme="dark"] #widget-charts .badge[style*="background:#e0f2fe"] {
-            background: #22324c !important;
-            color: #dce7f6 !important;
+        body[data-theme="dark"] #view-dashboard .dash-widget-drag-label {
+            background: #22324c;
+            color: #dce7f6;
             border: 1px solid #4a5f7f;
         }
         body[data-theme="dark"] #view-settings .panel-header {

@@ -188,7 +188,7 @@
                         <div id="dashboardWidgetContainer" class="flex-col gap-20">
                             <!-- 통계 위젯 -->
                             <div class="draggable-widget" draggable="false" id="widget-stats">
-                                <div class="flex justify-between items-center mb-10 drag-handle hidden"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">요약 통계 이동</span></div>
+                                <div class="flex justify-between items-center mb-10 drag-handle dash-widget-drag-row hidden"><span class="badge dash-widget-drag-label">요약 통계 이동</span></div>
                                 <div id="dashDataBranch" class="grid-4 mb-0">
                                     <div class="panel" style="margin-bottom: 0;"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">접수/대기 문의</p><p style="font-size:32px; font-weight:900; color:var(--danger); cursor:pointer;" id="statWait" onclick="openDashCountModal('branchWait')" title="목록 보기">0</p></div></div>
                                     <div class="panel" style="margin-bottom: 0;"><div class="panel-body text-center"><p style="color:var(--text-gray); font-weight:bold; margin-bottom:10px;">조치/해결 완료</p><p style="font-size:32px; font-weight:900; color:var(--text-dark); cursor:pointer;" id="statDone" onclick="openDashCountModal('branchDone')" title="목록 보기">0</p></div></div>
@@ -205,7 +205,7 @@
 
                             <!-- 리스트 위젯 -->
                             <div class="draggable-widget grid-2" draggable="false" id="widget-lists">
-                                <div class="flex justify-between items-center mb-2 drag-handle hidden" style="grid-column: span 2;"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">목록 영역 이동</span></div>
+                                <div class="flex justify-between items-center mb-2 drag-handle dash-widget-drag-row hidden"><span class="badge dash-widget-drag-label">목록 영역 이동</span></div>
                                 <div class="panel flex-col mb-0" style="height: 350px;">
                                     <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-blue); margin-right:8px;">●</span> 나의 질의 내역</div></div>
                                     <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
@@ -224,7 +224,7 @@
 
                             <!-- 차트 위젯 -->
                             <div class="draggable-widget grid-2" draggable="false" id="widget-charts">
-                                <div class="flex justify-between items-center mb-2 drag-handle hidden" style="grid-column: span 2;"><span class="badge" style="background:#e0f2fe; color:var(--ibk-blue);">차트 영역 이동</span></div>
+                                <div class="flex justify-between items-center mb-2 drag-handle dash-widget-drag-row hidden"><span class="badge dash-widget-drag-label">차트 영역 이동</span></div>
                                 <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
                                     <div class="panel-header"><div>주간 문의 통계</div></div>
                                     <div class="p-20 flex-1 relative w-full h-full"><div id="mainTrendChart"></div></div>

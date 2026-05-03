@@ -3134,6 +3134,17 @@
         }
         .dash-empty { text-align: center; padding: 24px; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px; background: #fff; }
 
+        /* 대시보드 위젯: 드래그 라벨 행은 명시적 그리드 전체 너비(span 2는 1열 강제 시 암시 열을 만들어 패널이 잘림) */
+        #widget-lists.grid-2 > .dash-widget-drag-row,
+        #widget-charts.grid-2 > .dash-widget-drag-row {
+            grid-column: 1 / -1;
+        }
+        .dash-widget-drag-label {
+            background: #e0f2fe;
+            color: var(--ibk-blue);
+            border: 1px solid #bfdbfe;
+        }
+
         /* 위젯 편집 모드에서는 레이아웃을 단순화(드래그 안정화) */
         .dashboard-editing #widget-lists,
         .dashboard-editing #widget-charts {
@@ -3142,6 +3153,8 @@
         .dashboard-editing #widget-lists .panel,
         .dashboard-editing #widget-charts .panel {
             width: 100%;
+            max-width: 100%;
+            min-width: 0;
         }
 
         /* 리치 에디터 및 활성 상태 모션 */
