@@ -63,32 +63,24 @@
                                 <option value="3급">3급</option>
                                 <option value="4급">4급</option>
                                 <option value="5급">5급</option>
+                                <option value="6급">6급</option>
                                 <option value="기타">기타</option>
                             </select>
                         </div>
                         <div class="signup-field">
                             <label class="signup-field-label" for="signupPosition">직책</label>
-                            <select id="signupPosition" class="input signup-field-input">
-                                <option value="은행장">은행장</option>
-                                <option value="전무이사">전무이사</option>
-                                <option value="부행장">부행장</option>
-                                <option value="센터장">센터장</option>
-                                <option value="부장">부장</option>
-                                <option value="팀장">팀장</option>
-                                <option value="차장">차장</option>
-                                <option value="과장">과장</option>
-                                <option value="대리">대리</option>
-                                <option value="계장">계장</option>
-                                <option value="수습행원">수습행원</option>
-                                <option value="인턴">인턴</option>
-                            </select>
+                            <select id="signupPosition" class="input signup-field-input"></select>
+                            <input type="text" id="signupPositionFree" class="input signup-field-input hidden" placeholder="직책 직접 입력" maxlength="40" autocomplete="organization-title">
                         </div>
                         <div class="signup-field signup-field-span2">
-                            <label class="signup-field-label" for="signupRole">앱 권한</label>
+                            <label class="signup-field-label" for="signupRole">권한</label>
                             <select id="signupRole" class="input signup-field-input">
                                 <option value="branch">영업점</option>
+                                <option value="callcenter">고객센터</option>
                                 <option value="hq">본부</option>
                                 <option value="it">IT</option>
+                                <option value="outsourced">외주인력</option>
+                                <option value="ibk_sub">IBK자회사</option>
                             </select>
                         </div>
                     </div>
@@ -97,16 +89,32 @@
                     <h4 id="signup-section-contact" class="signup-modal-section-title">연락처</h4>
                     <div class="signup-modal-grid">
                         <div class="signup-field">
-                            <label class="signup-field-label" for="signupExtNo">내선번호 <abbr class="signup-req" title="필수">*</abbr></label>
-                            <input type="text" id="signupExtNo" class="input signup-field-input" placeholder="예: 8-0000" value="8-0000">
+                            <span class="signup-field-label">내선번호 <abbr class="signup-req" title="필수">*</abbr></span>
+                            <div class="signup-tel-row" role="group" aria-label="내선번호">
+                                <span class="signup-tel-fixed-prefix" aria-hidden="true">8</span>
+                                <span class="signup-tel-hyphen" aria-hidden="true">-</span>
+                                <input type="text" id="signupExtTail" class="input signup-field-input signup-tel-part" maxlength="4" inputmode="numeric" placeholder="0000" autocomplete="tel-extension" aria-label="내선 뒷자리">
+                            </div>
                         </div>
                         <div class="signup-field">
-                            <label class="signup-field-label" for="signupFaxNo">FAX</label>
-                            <input type="text" id="signupFaxNo" class="input signup-field-input" placeholder="예: 02-0000-0000" value="02-0000-0000">
+                            <span class="signup-field-label">FAX</span>
+                            <div class="signup-tel-row signup-tel-row--fax" role="group" aria-label="FAX">
+                                <select id="signupFaxPrefix" class="input signup-field-input signup-tel-prefix-select" aria-label="FAX 지역·유형 번호"></select>
+                                <span class="signup-tel-hyphen" aria-hidden="true">-</span>
+                                <input type="text" id="signupFaxMid" class="input signup-field-input signup-tel-part" maxlength="4" inputmode="numeric" placeholder="0000" aria-label="FAX 가운뎃자리">
+                                <span class="signup-tel-hyphen" aria-hidden="true">-</span>
+                                <input type="text" id="signupFaxLast" class="input signup-field-input signup-tel-part" maxlength="4" inputmode="numeric" placeholder="0000" aria-label="FAX 끝자리">
+                            </div>
                         </div>
                         <div class="signup-field signup-field-span2">
-                            <label class="signup-field-label" for="signupMobileNo">휴대전화</label>
-                            <input type="text" id="signupMobileNo" class="input signup-field-input" placeholder="예: 010-0000-0000" value="010-0000-0000">
+                            <span class="signup-field-label">휴대전화</span>
+                            <div class="signup-tel-row signup-tel-row--mobile" role="group" aria-label="휴대전화">
+                                <select id="signupMobilePrefix" class="input signup-field-input signup-tel-prefix-select" aria-label="휴대전화 식별번호"></select>
+                                <span class="signup-tel-hyphen" aria-hidden="true">-</span>
+                                <input type="text" id="signupMobileMid" class="input signup-field-input signup-tel-part" maxlength="4" inputmode="numeric" placeholder="0000" aria-label="휴대전화 가운뎃자리">
+                                <span class="signup-tel-hyphen" aria-hidden="true">-</span>
+                                <input type="text" id="signupMobileLast" class="input signup-field-input signup-tel-part" maxlength="4" inputmode="numeric" placeholder="0000" aria-label="휴대전화 끝자리">
+                            </div>
                         </div>
                     </div>
                 </section>

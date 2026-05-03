@@ -1497,6 +1497,17 @@
         body[data-theme="dark"] .signup-field-label {
             color: #b8c9df;
         }
+        body[data-theme="dark"] span.signup-field-label {
+            color: #b8c9df;
+        }
+        body[data-theme="dark"] .signup-tel-fixed-prefix {
+            border-color: #4a5f7f;
+            background: linear-gradient(180deg, #1e2d45, #17243a);
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .signup-tel-hyphen {
+            color: #94a3b8;
+        }
         body[data-theme="dark"] .signup-saved-pill {
             background: #1a2d48;
             border-color: #3f5475;

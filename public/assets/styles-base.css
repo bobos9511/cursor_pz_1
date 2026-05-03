@@ -1116,6 +1116,44 @@
         .signup-field-span2 {
             grid-column: span 2;
         }
+        .signup-tel-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        .signup-tel-row .signup-tel-part {
+            flex: 1 1 56px;
+            min-width: 56px;
+            max-width: 120px;
+        }
+        .signup-tel-prefix-select {
+            flex: 0 1 auto;
+            min-width: 72px;
+            max-width: 110px;
+            padding-left: 10px;
+            padding-right: 28px;
+        }
+        .signup-tel-fixed-prefix {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 40px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .signup-tel-hyphen {
+            color: #64748b;
+            font-weight: 700;
+            user-select: none;
+        }
         .signup-field-label {
             display: block;
             margin-bottom: 6px;

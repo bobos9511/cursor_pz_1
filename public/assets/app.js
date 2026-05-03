@@ -908,9 +908,32 @@
 
         const roleMatrix = {
             'branch': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '홍길동 대리', dept: '영업부', showKnow: false },
+            'callcenter': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '고객센터 직원', dept: '고객센터', showKnow: false },
             'hq': { write: ['IT', 'SYS', 'KNOW'], answer: ['BIZ', 'KNOW'], name: '이본부 차장', dept: '여신기획부', showKnow: true },
-            'it': { write: ['BIZ', 'SYS', 'KNOW'], answer: ['IT', 'SYS', 'KNOW'], name: '김전산 책임', dept: 'IT금융개발부', showKnow: true }
+            'it': { write: ['BIZ', 'SYS', 'KNOW'], answer: ['IT', 'SYS', 'KNOW'], name: '김전산 책임', dept: 'IT금융개발부', showKnow: true },
+            'outsourced': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '외주 직원', dept: '외주', showKnow: false },
+            'ibk_sub': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '자회사 직원', dept: 'IBK자회사', showKnow: false },
         };
+
+        function getRoleMatrixEntry(role) {
+            const r = String(role || '');
+            return roleMatrix[r] || roleMatrix.branch;
+        }
+
+        function isBranchDashboardRole(role) {
+            const r = String(role || '');
+            return r === 'branch' || r === 'callcenter' || r === 'outsourced' || r === 'ibk_sub';
+        }
+
+        function getOrgLabelForRole(role) {
+            const r = String(role || '');
+            if (r === 'hq') return '본부';
+            if (r === 'it') return 'IT';
+            if (r === 'callcenter') return '고객센터';
+            if (r === 'outsourced') return '외주';
+            if (r === 'ibk_sub') return 'IBK자회사';
+            return '영업점';
+        }
 
         function resolveInitialViewForRole() {
             if (initialRouteApplied) return null;
@@ -918,7 +941,7 @@
             if (!page || page === 'login') return null;
             if (page === 'board') {
                 const requested = initialRoute.board || currentBoardType || 'IT';
-                const allowedBoards = roleMatrix[currentRole].write || [];
+                const allowedBoards = getRoleMatrixEntry(currentRole).write || [];
                 const board = allowedBoards.includes(requested) ? requested : (allowedBoards[0] || 'IT');
                 return { viewId: 'list', boardType: board };
             }
@@ -1104,7 +1127,7 @@
                 const full = `${nm}${pos ? ` ${pos}` : ''}`.trim();
                 if (full) return full;
             }
-            return roleMatrix[currentRole].name;
+            return getRoleMatrixEntry(currentRole).name;
         }
         function getCurrentActorNameToken() {
             const actor = getCurrentActorName();
@@ -2036,9 +2059,218 @@
 
         function getRoleDisplayName(role) {
             if (role === 'branch') return '영업점';
+            if (role === 'callcenter') return '고객센터';
             if (role === 'hq') return '본부';
             if (role === 'it') return 'IT';
+            if (role === 'outsourced') return '외주인력';
+            if (role === 'ibk_sub') return 'IBK자회사';
             return String(role || '-');
+        }
+
+        const SIGNUP_GRADE_POSITION_MAP = {
+            '1급': ['은행장', '전무이사', '부행장', '센터장'],
+            '2급': ['부행장', '센터장', '부장'],
+            '3급': ['부장', '팀장'],
+            '4급': ['차장', '과장', '파트장'],
+            '5급': ['대리', '계장'],
+            '6급': ['계장'],
+            '기타': ['수습행원', '인턴'],
+        };
+        const SIGNUP_FAX_PREFIXES = ['02', '031', '032', '033', '041', '042', '043', '044', '051', '052', '053', '054', '055', '061', '062', '063', '064', '070', '060'];
+        const SIGNUP_MOBILE_PREFIXES = ['010', '011', '016', '017', '018', '019'];
+
+        function usesFreePositionRole(role) {
+            return role === 'outsourced' || role === 'ibk_sub';
+        }
+
+        let signupTelSelectsFilled = false;
+        function fillSignupTelSelectsOnce() {
+            if (signupTelSelectsFilled) return;
+            signupTelSelectsFilled = true;
+            const faxSel = document.getElementById('signupFaxPrefix');
+            const mobSel = document.getElementById('signupMobilePrefix');
+            if (faxSel && faxSel.options.length === 0) {
+                SIGNUP_FAX_PREFIXES.forEach((p) => {
+                    const o = document.createElement('option');
+                    o.value = p;
+                    o.textContent = p;
+                    faxSel.appendChild(o);
+                });
+            }
+            if (mobSel && mobSel.options.length === 0) {
+                SIGNUP_MOBILE_PREFIXES.forEach((p) => {
+                    const o = document.createElement('option');
+                    o.value = p;
+                    o.textContent = p;
+                    mobSel.appendChild(o);
+                });
+            }
+        }
+
+        function ensureSignupSelectValue(sel, val, knownList) {
+            if (!sel) return;
+            const v = String(val || '').trim();
+            const list = knownList || [];
+            if (v && !list.includes(v)) {
+                const o = document.createElement('option');
+                o.value = v;
+                o.textContent = v;
+                sel.appendChild(o);
+            }
+            if (v) sel.value = v;
+        }
+
+        function parseSignupTelSegments(full, fallbackPrefix) {
+            const s = String(full || '').trim();
+            const parts = s.split('-').map((p) => p.trim()).filter(Boolean);
+            if (parts.length >= 3) {
+                return {
+                    p1: parts[0],
+                    mid: (parts[1] || '').replace(/\D/g, '').slice(0, 4),
+                    last: (parts[2] || '').replace(/\D/g, '').slice(0, 4),
+                };
+            }
+            return { p1: fallbackPrefix, mid: '0000', last: '0000' };
+        }
+
+        function applySignupContactFromStored(extNo, faxNo, mobileNo) {
+            fillSignupTelSelectsOnce();
+            const extStr = String(extNo || '').trim();
+            let tail = '0000';
+            if (extStr) {
+                const parts = extStr.split('-');
+                if (parts.length >= 2 && String(parts[0]).replace(/\D/g, '') === '8') {
+                    tail = String(parts[1] || '').replace(/\D/g, '').slice(0, 4);
+                } else {
+                    const d = extStr.replace(/\D/g, '');
+                    if (d.startsWith('8')) tail = d.slice(1).slice(0, 4);
+                    else tail = d.slice(-4);
+                }
+            }
+            const extEl = document.getElementById('signupExtTail');
+            if (extEl) extEl.value = String(tail || '0000').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+
+            const fax = parseSignupTelSegments(faxNo, '02');
+            const faxPre = document.getElementById('signupFaxPrefix');
+            ensureSignupSelectValue(faxPre, fax.p1, SIGNUP_FAX_PREFIXES);
+            const faxMid = document.getElementById('signupFaxMid');
+            const faxLast = document.getElementById('signupFaxLast');
+            if (faxMid) faxMid.value = String(fax.mid || '0000').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            if (faxLast) faxLast.value = String(fax.last || '0000').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+
+            const mob = parseSignupTelSegments(mobileNo, '010');
+            const mobPre = document.getElementById('signupMobilePrefix');
+            ensureSignupSelectValue(mobPre, mob.p1, SIGNUP_MOBILE_PREFIXES);
+            const mobMid = document.getElementById('signupMobileMid');
+            const mobLast = document.getElementById('signupMobileLast');
+            if (mobMid) mobMid.value = String(mob.mid || '0000').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            if (mobLast) mobLast.value = String(mob.last || '0000').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+        }
+
+        function composeSignupExtNo() {
+            const raw = document.getElementById('signupExtTail') && document.getElementById('signupExtTail').value;
+            const tail = String(raw || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            return `8-${tail}`;
+        }
+
+        function composeSignupFaxNo() {
+            const preEl = document.getElementById('signupFaxPrefix');
+            const pre = (preEl && preEl.value) || '02';
+            const mid = String(document.getElementById('signupFaxMid') && document.getElementById('signupFaxMid').value || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            const last = String(document.getElementById('signupFaxLast') && document.getElementById('signupFaxLast').value || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            return `${pre}-${mid}-${last}`;
+        }
+
+        function composeSignupMobileNo() {
+            const preEl = document.getElementById('signupMobilePrefix');
+            const pre = (preEl && preEl.value) || '010';
+            const mid = String(document.getElementById('signupMobileMid') && document.getElementById('signupMobileMid').value || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            const last = String(document.getElementById('signupMobileLast') && document.getElementById('signupMobileLast').value || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+            return `${pre}-${mid}-${last}`;
+        }
+
+        function populateSignupPositionOptions(grade, preferredPosition) {
+            const sel = document.getElementById('signupPosition');
+            if (!sel) return;
+            const list = SIGNUP_GRADE_POSITION_MAP[grade] || SIGNUP_GRADE_POSITION_MAP['기타'];
+            const prev = preferredPosition != null ? String(preferredPosition) : sel.value;
+            sel.innerHTML = '';
+            list.forEach((label) => {
+                const o = document.createElement('option');
+                o.value = label;
+                o.textContent = label;
+                sel.appendChild(o);
+            });
+            if (prev && list.includes(prev)) sel.value = prev;
+            else sel.selectedIndex = 0;
+        }
+
+        function syncSignupPositionFieldMode(preferredPosition) {
+            const roleEl = document.getElementById('signupRole');
+            const gradeEl = document.getElementById('signupGrade');
+            const sel = document.getElementById('signupPosition');
+            const free = document.getElementById('signupPositionFree');
+            if (!roleEl || !sel || !free) return;
+            const role = roleEl.value;
+            if (usesFreePositionRole(role)) {
+                sel.classList.add('hidden');
+                free.classList.remove('hidden');
+                if (preferredPosition != null) free.value = String(preferredPosition);
+            } else {
+                free.classList.add('hidden');
+                sel.classList.remove('hidden');
+                populateSignupPositionOptions((gradeEl && gradeEl.value) || '3급', preferredPosition);
+            }
+        }
+
+        function syncSignupEmpNoUiForRole() {
+            const roleEl = document.getElementById('signupRole');
+            const empEl = document.getElementById('signupEmpNo');
+            if (!empEl) return;
+            const role = roleEl ? roleEl.value : 'branch';
+            if (usesFreePositionRole(role)) {
+                empEl.placeholder = '예: A00000 또는 6자리 숫자';
+                empEl.setAttribute('inputmode', 'text');
+            } else {
+                empEl.placeholder = '6자리 숫자';
+                empEl.setAttribute('inputmode', 'numeric');
+            }
+        }
+
+        function bindSignupTelDigitInputsOnce() {
+            if (window.__signupTelDigitsBound) return;
+            window.__signupTelDigitsBound = true;
+            ['signupExtTail', 'signupFaxMid', 'signupFaxLast', 'signupMobileMid', 'signupMobileLast'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    el.value = el.value.replace(/\D/g, '').slice(0, 4);
+                });
+            });
+        }
+
+        let signupFormControlsBound = false;
+        function bindSignupFormControlsOnce() {
+            if (signupFormControlsBound) return;
+            signupFormControlsBound = true;
+            fillSignupTelSelectsOnce();
+            bindSignupTelDigitInputsOnce();
+            const gradeEl = document.getElementById('signupGrade');
+            const roleEl = document.getElementById('signupRole');
+            if (gradeEl) {
+                gradeEl.addEventListener('change', () => {
+                    const rSel = document.getElementById('signupRole');
+                    const r = rSel ? rSel.value : 'branch';
+                    if (!usesFreePositionRole(r)) populateSignupPositionOptions(gradeEl.value);
+                });
+            }
+            if (roleEl) {
+                roleEl.addEventListener('change', () => {
+                    syncSignupPositionFieldMode();
+                    syncSignupEmpNoUiForRole();
+                    formatSignupEmpNoInput();
+                });
+            }
         }
 
         function normalizeSignupEmpNo(raw, doPad) {
@@ -2046,16 +2278,55 @@
             return doPad ? digits.padStart(6, '0') : digits;
         }
 
+        function normalizeSignupEmpNoFlexible(raw, doPad) {
+            let s = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!s) return '';
+            if (/^[A-Z]/.test(s)) {
+                const letter = s[0];
+                let digits = s.slice(1).replace(/\D/g, '').slice(0, 5);
+                if (doPad) digits = digits.padStart(5, '0');
+                return letter + digits;
+            }
+            let digits = s.replace(/\D/g, '').slice(0, 6);
+            if (doPad) digits = digits.padStart(6, '0');
+            return digits;
+        }
+
+        function getSignupRoleForEmpNormalize() {
+            const roleEl = document.getElementById('signupRole');
+            return roleEl ? roleEl.value : 'branch';
+        }
+
         function formatSignupEmpNoInput() {
             const el = document.getElementById('signupEmpNo');
             if (!el) return;
-            el.value = normalizeSignupEmpNo(el.value, false);
+            const role = getSignupRoleForEmpNormalize();
+            if (usesFreePositionRole(role)) {
+                el.value = normalizeSignupEmpNoFlexible(el.value, false);
+            } else {
+                el.value = normalizeSignupEmpNo(el.value, false);
+            }
         }
 
         function padSignupEmpNo() {
             const el = document.getElementById('signupEmpNo');
             if (!el) return;
-            el.value = normalizeSignupEmpNo(el.value, true);
+            const role = getSignupRoleForEmpNormalize();
+            if (usesFreePositionRole(role)) {
+                el.value = normalizeSignupEmpNoFlexible(el.value, true);
+            } else {
+                el.value = normalizeSignupEmpNo(el.value, true);
+            }
+        }
+
+        function isValidSignupEmpNoForRole(role, empNoRaw) {
+            const r = String(role || '');
+            const compact = String(empNoRaw || '').replace(/\s/g, '');
+            if (!compact) return false;
+            if (usesFreePositionRole(r)) {
+                return /^([0-9]{6}|[A-Za-z][0-9]{5})$/.test(compact);
+            }
+            return /^[0-9]{6}$/.test(compact.replace(/\D/g, ''));
         }
 
         function normalizeDeptCode(raw, doPad) {
@@ -2083,16 +2354,18 @@
                 signupDeptName: '',
                 signupDeptCode: '',
                 signupGrade: '3급',
-                signupPosition: '대리',
                 signupRole: 'branch',
-                signupExtNo: '8-0000',
-                signupFaxNo: '02-0000-0000',
-                signupMobileNo: '010-0000-0000'
+                signupPositionFree: '',
             };
             Object.entries(formDefaults).forEach(([id, value]) => {
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             });
+            fillSignupTelSelectsOnce();
+            applySignupContactFromStored('8-0000', '02-0000-0000', '010-0000-0000');
+            populateSignupPositionOptions('3급', '부장');
+            syncSignupPositionFieldMode();
+            syncSignupEmpNoUiForRole();
             const adm = document.getElementById('signupIsAdmin');
             if (adm) adm.checked = false;
             const p1 = document.getElementById('signupAdminPin');
@@ -2143,6 +2416,7 @@
             loadSignupUsers();
             updateSignupSavedCount();
             resetSignupForm();
+            bindSignupFormControlsOnce();
             bindSignupAdminControlsOnce();
             syncSignupAdminPinSectionForUser(null);
             document.getElementById('signupModal').classList.add('active');
@@ -2179,15 +2453,20 @@
             padDeptCodeInput();
 
             const name = (document.getElementById('signupName').value || '').trim();
-            const empNo = document.getElementById('signupEmpNo').value;
+            let empNo = (document.getElementById('signupEmpNo').value || '').trim();
             const deptName = (document.getElementById('signupDeptName').value || '').trim();
             const deptCode = document.getElementById('signupDeptCode').value;
             const grade = document.getElementById('signupGrade').value;
-            const position = document.getElementById('signupPosition').value;
             const role = document.getElementById('signupRole').value;
-            const extNo = (document.getElementById('signupExtNo').value || '').trim() || '8-0000';
-            const faxNo = (document.getElementById('signupFaxNo').value || '').trim() || '02-0000-0000';
-            const mobileNo = (document.getElementById('signupMobileNo').value || '').trim() || '010-0000-0000';
+            let position = '';
+            if (usesFreePositionRole(role)) {
+                position = (document.getElementById('signupPositionFree') && document.getElementById('signupPositionFree').value || '').trim();
+            } else {
+                position = (document.getElementById('signupPosition') && document.getElementById('signupPosition').value || '').trim();
+            }
+            const extNo = composeSignupExtNo();
+            const faxNo = composeSignupFaxNo();
+            const mobileNo = composeSignupMobileNo();
             const originalEmpNo = (document.getElementById('signupOriginalEmpNo').value || '').trim();
             const wantAdmin = !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked);
             const prevUser = originalEmpNo ? signupUsers.find((u) => String(u.employeeNo) === String(originalEmpNo)) : null;
@@ -2196,8 +2475,26 @@
                 showAlert('필수 항목(이름, 직원번호, 부서명, 부서코드)을 입력해주세요.', 'error');
                 return;
             }
-            if (!extNo) {
-                showAlert('내선번호는 필수 항목입니다.', 'error');
+            if (!isValidSignupEmpNoForRole(role, empNo)) {
+                showAlert(
+                    usesFreePositionRole(role)
+                        ? '직원번호는 6자리 숫자이거나 영문 1자리와 숫자 5자리(예: A00000) 형식이어야 합니다.'
+                        : '직원번호는 6자리 숫자여야 합니다.',
+                    'error',
+                );
+                return;
+            }
+            if (usesFreePositionRole(role)) {
+                empNo = normalizeSignupEmpNoFlexible(empNo, true);
+            } else {
+                empNo = normalizeSignupEmpNo(empNo, true);
+            }
+            if (!position) {
+                showAlert('직책을 입력해주세요.', 'error');
+                return;
+            }
+            if (!/^8-\d{4}$/.test(String(extNo || '').replace(/\s/g, ''))) {
+                showAlert('내선번호 뒷자리 4자리를 입력해주세요.', 'error');
                 return;
             }
 
@@ -2240,7 +2537,12 @@
                 showAlert('직원번호 000000은 AI 시스템 계정으로 예약되어 있습니다.', 'error');
                 return;
             }
-            const duplicateIdx = signupUsers.findIndex((u) => u.employeeNo === user.employeeNo && u.employeeNo !== originalEmpNo);
+            const duplicateIdx = signupUsers.findIndex((u) => {
+                const a = String(u.employeeNo || '').toUpperCase();
+                const b = String(user.employeeNo || '').toUpperCase();
+                const o = String(originalEmpNo || '').toUpperCase();
+                return a === b && a !== o;
+            });
             if (duplicateIdx > -1) {
                 showAlert('이미 등록된 직원번호입니다.', 'error');
                 return;
@@ -2284,6 +2586,7 @@
             const target = signupUsers.find((u) => String(u.employeeNo) === String(employeeNo));
             if (!target || isAiSystemUser(target)) return;
             resetSignupForm();
+            bindSignupFormControlsOnce();
             const formValues = {
                 signupOriginalEmpNo: target.employeeNo || '',
                 signupName: target.name || '',
@@ -2291,16 +2594,16 @@
                 signupDeptName: target.deptName || '',
                 signupDeptCode: target.deptCode || '',
                 signupGrade: target.grade || '기타',
-                signupPosition: target.position || '대리',
                 signupRole: target.role || 'branch',
-                signupExtNo: target.extNo || '8-0000',
-                signupFaxNo: target.faxNo || '02-0000-0000',
-                signupMobileNo: target.mobileNo || '010-0000-0000',
             };
             Object.entries(formValues).forEach(([id, value]) => {
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             });
+            applySignupContactFromStored(target.extNo, target.faxNo, target.mobileNo);
+            syncSignupPositionFieldMode(target.position || '');
+            formatSignupEmpNoInput();
+            syncSignupEmpNoUiForRole();
             const adm = document.getElementById('signupIsAdmin');
             if (adm) adm.checked = !!resolveUserIsAdmin(target);
             bindSignupAdminControlsOnce();
@@ -2322,7 +2625,7 @@
         function updateProfileImagePreview() {
             const preview = document.getElementById('profileImagePreview');
             if (!preview) return;
-            const activeUser = currentLoginUser || roleMatrix[currentRole];
+            const activeUser = currentLoginUser || getRoleMatrixEntry(currentRole);
             const nameText = normalizeDisplayText(activeUser && activeUser.name, '사용자');
             const rawImage = pendingProfileImageData === '__REMOVE__'
                 ? ''
@@ -3546,8 +3849,8 @@
         function getDashboardPostsForCharts() {
             const posts = Array.isArray(appData.posts) ? appData.posts : [];
             const nonKnow = posts.filter(p => p && p.type && p.type !== 'KNOW');
-            if (currentRole === 'branch') {
-                const myName = roleMatrix[currentRole].name.split(' ')[0];
+            if (isBranchDashboardRole(currentRole)) {
+                const myName = getRoleMatrixEntry(currentRole).name.split(' ')[0];
                 return nonKnow.filter(p => (p.writer || '').includes(myName));
             }
             return nonKnow;
@@ -3778,8 +4081,8 @@
         });
 
         function changeRole() {
-            const activeUser = currentLoginUser || roleMatrix[currentRole];
-            const roleNameRaw = roleMatrix[currentRole].name || '';
+            const activeUser = currentLoginUser || getRoleMatrixEntry(currentRole);
+            const roleNameRaw = getRoleMatrixEntry(currentRole).name || '';
             const roleNameParts = roleNameRaw.split(' ');
             const defaultNameOnly = roleNameParts[0] || roleNameRaw;
             const defaultPosition = roleNameParts.slice(1).join(' ') || '';
@@ -3789,13 +4092,13 @@
             const activePosition = currentLoginUser
                 ? normalizeDisplayText(activeUser.position || '', '')
                 : normalizeDisplayText(defaultPosition, '');
-            const activeDept = normalizeDisplayText(activeUser.deptName || activeUser.dept || roleMatrix[currentRole].dept || '-', '-');
+            const activeDept = normalizeDisplayText(activeUser.deptName || activeUser.dept || getRoleMatrixEntry(currentRole).dept || '-', '-');
             const userDisplay = `${activeName}${activePosition ? ' ' + activePosition : ''}`;
             const deptDisplay = `${activeDept}(${normalizeDisplayText(activeUser.deptCode || '-', '-')})`;
             const mbUser = document.getElementById('mobileUserName');
             if(mbUser) mbUser.innerText = userDisplay;
             
-            const orgLabel = currentRole === 'branch' ? '영업점' : (currentRole === 'hq' ? '본부' : 'IT');
+            const orgLabel = getOrgLabelForRole(currentRole);
             const rName = currentUserHasAdminAccess() ? `${orgLabel} · 관리` : orgLabel;
             const hoverText = document.getElementById('headerProfileHoverText');
             if (hoverText) hoverText.innerText = `${userDisplay} | ${deptDisplay}`;
@@ -3843,7 +4146,7 @@
             applyDashboardWidgetOrder();
 
             document.querySelectorAll('.hq-it-only').forEach(el => {
-                if(roleMatrix[currentRole].showKnow) { el.classList.remove('hidden'); el.classList.add('flex'); }
+                if(getRoleMatrixEntry(currentRole).showKnow) { el.classList.remove('hidden'); el.classList.add('flex'); }
                 else { el.classList.add('hidden'); el.classList.remove('flex'); }
             });
 
@@ -3857,7 +4160,7 @@
                 }
             });
 
-            if (currentRole === 'branch' && currentBoardType === 'KNOW') { switchView('dashboard'); return; }
+            if (isBranchDashboardRole(currentRole) && currentBoardType === 'KNOW') { switchView('dashboard'); return; }
             const preferred = resolveInitialViewForRole();
             if (preferred) {
                 initialRouteApplied = true;
@@ -3868,7 +4171,7 @@
         }
 
         function updatePermissionsUI() {
-            const rules = roleMatrix[currentRole];
+            const rules = getRoleMatrixEntry(currentRole);
             const listWriteBtn = document.getElementById('listWriteBtn');
             if (listWriteBtn) {
                 listWriteBtn.style.display = rules.write.includes(currentBoardType) ? 'inline-flex' : 'none';
@@ -3949,7 +4252,7 @@
                 filterBoardList();
             } else if (viewId === 'write') {
                 if(!boardType) {
-                    const writes = roleMatrix[currentRole].write.filter(t => t !== 'KNOW');
+                    const writes = getRoleMatrixEntry(currentRole).write.filter(t => t !== 'KNOW');
                     if(writes.length > 0) boardType = writes[0];
                 }
                 document.getElementById('view-write').classList.add('active');
@@ -3981,7 +4284,7 @@
             }
 
             if (viewId === 'dashboard') {
-                document.getElementById('dashTitle').innerText = currentRole === 'branch' ? '나의 현황판' : '전행 종합 현황판';
+                document.getElementById('dashTitle').innerText = isBranchDashboardRole(currentRole) ? '나의 현황판' : '전행 종합 현황판';
                 updateDashStats();
                 renderDashboardLists();
                 setTimeout(renderCSSCharts, 50); 
@@ -4000,7 +4303,7 @@
             const myQs = appData.posts.filter(p => p.writer.includes(myName) && p.type !== 'KNOW');
             const totalPosts = appData.posts.filter(p => p.type !== 'KNOW');
             
-            if(currentRole === 'branch') {
+            if(isBranchDashboardRole(currentRole)) {
                 document.getElementById('dashDataBranch').classList.remove('hidden');
                 document.getElementById('dashDataHQ').classList.add('hidden');
                 
@@ -4254,7 +4557,7 @@
             const tabWait = document.getElementById('dashATabWait');
             const tabDone = document.getElementById('dashATabDone');
             if(aBox) {
-                if(currentRole === 'branch') {
+                if(isBranchDashboardRole(currentRole)) {
                     if (secondaryTitle) secondaryTitle.innerText = '추가답변 요청 내 게시물 현황';
                     let myRequested = appData.posts.filter(p => p.writer.includes(myName) && p.type !== 'KNOW' && p.status === 'moreInfo');
                     if (tabWait) tabWait.innerText = `추가요청 건 (${myRequested.length})`;
@@ -4268,7 +4571,7 @@
                     if (tabWait) tabWait.innerText = '미결/진행중';
                     if (tabDone) { tabDone.innerText = '조치완료'; tabDone.classList.remove('hidden'); }
 
-                    const canAnsTypes = roleMatrix[currentRole].answer.filter(t => t !== 'KNOW');
+                    const canAnsTypes = getRoleMatrixEntry(currentRole).answer.filter(t => t !== 'KNOW');
                     if(canAnsTypes.length === 0) {
                         aBox.innerHTML = '<div class="dash-empty">답변 권한이 없습니다.</div>';
                         return;
@@ -4698,7 +5001,7 @@
                 }
             } else {
                 // 답변 권한이 있으면 (관리자)
-                if (roleMatrix[currentRole].answer.includes(post.type)) {
+                if (getRoleMatrixEntry(currentRole).answer.includes(post.type)) {
                     formBox.classList.remove('hidden'); document.getElementById('answerInput').innerHTML = '<p><br></p>';
                     const replies = post.type === 'IT' ? ['KCB망 점검 중입니다.', '재기동 조치 완료.'] : ['추가 증빙 서류를 첨부해 주세요.', '해당 건은 처리가 불가합니다.'];
                     document.getElementById("quickReplyChips").innerHTML = replies
@@ -4841,7 +5144,7 @@
 
         function setWriteFormForNormal() {
             document.getElementById('writeCategoryLabel').innerText = '게시판 선택';
-            const rules = roleMatrix[currentRole].write.filter(t => t !== 'KNOW');
+            const rules = getRoleMatrixEntry(currentRole).write.filter(t => t !== 'KNOW');
             let html = '';
             ['IT', 'BIZ', 'SYS'].forEach(t => {
                 const isHide = rules.includes(t) ? '' : 'hidden';
