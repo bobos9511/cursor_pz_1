@@ -354,6 +354,12 @@
             return cur >= s || cur < e;
         }
 
+        /** 로그인 페이지 등 메인 앱이 아닐 때는 토스트만 보여 주고 알림센터(계정 동기화)에는 남기지 않음 */
+        function shouldPersistNotificationCenterEntry() {
+            const ac = document.getElementById('appContainer');
+            return !!(ac && ac.style.display !== 'none');
+        }
+
         function shouldDeliverUserNotification(message, type = 'success', options = {}) {
             const policy = getCurrentNotifyPolicy();
             if (policy.master === 'block') return false;
@@ -460,7 +466,11 @@
 
         function showAlert(message, type = 'success', options = {}) {
             const container = document.getElementById('toastContainer');
-            if (typeof window.recordNotificationEntry === 'function') {
+            const persistNc =
+                typeof window.recordNotificationEntry === 'function'
+                && !(options && options.skipNotificationCenter === true)
+                && shouldPersistNotificationCenterEntry();
+            if (persistNc) {
                 window.recordNotificationEntry(message, type, options);
             }
             if (!shouldDeliverUserNotification(message, type, options)) return;
