@@ -2859,43 +2859,42 @@
             const overlay = document.getElementById('aiChatLayerOverlay');
             if (!panel || !overlay || overlay.classList.contains('hidden')) return;
             const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
-            if (isMobileLayout) {
-                panel.classList.add('ai-chat-layer-panel--mobile-sheet');
-                const vv = window.visualViewport;
-                const vh = vv && vv.height > 0 ? vv.height : window.innerHeight;
-                const topReserve = 12;
-                const maxH = Math.max(300, Math.min(Math.floor(vh * 0.94), Math.floor(vh - topReserve)));
-                panel.style.bottom = '0';
-                panel.style.right = '0';
-                panel.style.left = '0';
-                panel.style.width = '100%';
-                panel.style.maxWidth = '100%';
-                panel.style.maxHeight = `${maxH}px`;
-                panel.style.transformOrigin = '50% 100%';
-                panel.style.removeProperty('--ai-layer-tail-right');
-                return;
-            }
+            const isDesktopLayout = window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
             panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
+            const vv = window.visualViewport;
+            const viewportHeight = vv && vv.height > 0 ? vv.height : window.innerHeight;
+            const gap = AI_LAYER_FAB_GAP;
             if (!fab) return;
             const fabRect = fab.getBoundingClientRect();
-            if (fabRect.width < 2 && fabRect.height < 2) return;
-            const gap = AI_LAYER_FAB_GAP;
+            if (fabRect.width < 2 && fabRect.height < 2) {
+                if (isMobileLayout) {
+                    panel.style.bottom = 'calc(176px + 56px + 12px + env(safe-area-inset-bottom, 0px))';
+                    panel.style.right = '14px';
+                    panel.style.left = 'auto';
+                    panel.style.width = 'calc(100vw - 24px)';
+                    panel.style.maxWidth = '560px';
+                    panel.style.maxHeight = `${Math.max(260, Math.floor(viewportHeight * 0.86))}px`;
+                    panel.style.setProperty('--ai-layer-tail-right', '25px');
+                    panel.style.transformOrigin = `calc(100% - 25px) calc(100% + ${gap}px)`;
+                }
+                return;
+            }
             const bottomPx = window.innerHeight - fabRect.top + gap;
             const rightPx = window.innerWidth - fabRect.right;
             panel.style.bottom = `${bottomPx}px`;
             panel.style.right = `${rightPx}px`;
             panel.style.left = 'auto';
-            const isDesktopLayout = window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
-            const marginLeft = isDesktopLayout ? 16 : 10;
+            const marginLeft = isDesktopLayout ? 16 : isMobileLayout ? 12 : 10;
             const rawMax = window.innerWidth - rightPx - marginLeft;
-            const maxPanelCap = isDesktopLayout ? 680 : 560;
+            const maxPanelCap = isDesktopLayout ? 680 : isMobileLayout ? Math.min(560, window.innerWidth - 20) : 560;
             const panelW = Math.min(maxPanelCap, Math.max(280, rawMax));
             panel.style.width = `${panelW}px`;
             panel.style.maxWidth = '';
             const topBreathing = isDesktopLayout ? 8 : 12;
-            const maxByFabTop = Math.max(isDesktopLayout ? 300 : 260, fabRect.top - gap - topBreathing);
-            const vhFraction = isDesktopLayout ? 0.9 : 0.82;
-            const maxByVh = Math.floor(window.innerHeight * vhFraction);
+            const minMain = isDesktopLayout ? 300 : isMobileLayout ? 200 : 260;
+            const maxByFabTop = Math.max(minMain, fabRect.top - gap - topBreathing);
+            const vhFraction = isDesktopLayout ? 0.9 : isMobileLayout ? 0.86 : 0.82;
+            const maxByVh = Math.floor(viewportHeight * vhFraction);
             panel.style.maxHeight = `${Math.min(maxByFabTop, maxByVh)}px`;
             const tailInset = Math.max(18, fabRect.width / 2);
             panel.style.setProperty('--ai-layer-tail-right', `${tailInset}px`);

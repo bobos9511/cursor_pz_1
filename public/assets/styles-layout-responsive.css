@@ -98,11 +98,11 @@
             .ai-chat-floating-btn::after {
                 display: none;
             }
-            /* 모바일: 시트가 FAB·말풍선 꼬리 위에 보이도록 FAB를 오버레이 아래로 */
+            /* 말풍선 패널이 FAB보다 위(z-index), FAB은 백드롭 아래에 두어 같은 축에 정렬 */
             body.ai-chat-layer-open .ai-chat-floating-btn {
                 z-index: 1190;
             }
-            /* FAB(right 14px, bottom 176px+safe, 50px) 위 말풍선형 패널 — 하단 전체 폭 고정 대신 버튼 위에 배치 */
+            /* 패널은 JS(positionAiChatLayerPanel)가 FAB 기준으로 배치 — 하단 시트(full-bleed) 미사용 */
             .ai-chat-layer-overlay {
                 display: block;
                 padding: 0;
@@ -121,7 +121,6 @@
                     0 18px 42px rgba(2, 6, 23, 0.34),
                     0 5px 16px rgba(2, 6, 23, 0.2);
             }
-            /* JS: 모바일 전체 폭 하단 시트 — 꼬리 제거·상단만 라운드·안전 영역 */
             .ai-chat-layer-panel.ai-chat-layer-panel--mobile-sheet {
                 border-radius: 16px 16px 0 0;
                 overflow: hidden;
@@ -163,7 +162,7 @@
             }
             .ai-chat-layer-host #view-ai-search .ai-search-log {
                 max-height: none;
-                min-height: 280px !important;
+                min-height: min(220px, 36vh) !important;
                 flex: 1 1 auto;
             }
             .ai-chat-layer-host #view-ai-search .ai-search-input {
