@@ -145,9 +145,12 @@
                 flex: 1 1 auto;
             }
             .ai-chat-layer-host #view-ai-search .ai-search-input {
-                height: 68px !important;
-                min-height: 68px !important;
+                height: 72px !important;
+                min-height: 72px !important;
                 max-height: 140px !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                resize: none !important;
             }
             #loginPage { padding: 12px; }
             .login-box { padding: 24px 16px; max-width: 100%; }
@@ -1259,7 +1262,12 @@
         .ai-search-input {
             height: 88px;
             min-height: 72px;
+            max-height: 220px;
             resize: vertical;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
             border: none !important;
             background: transparent !important;
             box-shadow: none !important;
@@ -1400,11 +1408,15 @@
                 gap: 8px;
             }
             #view-ai-search .ai-search-input {
-                height: 88px;
+                height: 112px;
                 min-height: 88px;
                 max-height: 160px;
                 font-size: 14px;
                 line-height: 1.4;
+                overflow-y: auto !important;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                resize: none !important;
             }
             #view-ai-search .ai-search-input-actions {
                 justify-content: flex-end;
@@ -1414,11 +1426,8 @@
                 min-height: 44px;
                 padding: 0 14px;
             }
-            #view-ai-search .ai-search-input-help {
-                margin-top: 0;
-                font-size: 11px;
-                color: #64748b;
-                text-align: left;
+            .ai-search-input-help-desktop {
+                display: none !important;
             }
         }
         body[data-theme="dark"] #view-ai-search .ai-search-input-row {

@@ -5900,11 +5900,6 @@
             background: linear-gradient(180deg, #ffffff, #f8fbff);
             box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
         }
-        .integrated-search-modal-header {
-            padding: 10px 14px;
-            background: linear-gradient(90deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%);
-            border-bottom: 1px solid rgba(255,255,255,0.18);
-        }
         .integrated-search-head {
             display: flex;
             align-items: center;
@@ -5984,6 +5979,36 @@
             color: #334155;
             line-height: 1.5;
         }
+        .integrated-search-insight-title {
+            font-weight: 800;
+            font-size: 12px;
+            color: #0f172a;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+        .integrated-search-insight-note {
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+        .integrated-search-insight-muted {
+            color: #64748b;
+            font-size: 12px;
+        }
+        .integrated-search-empty-hint,
+        .integrated-search-results-placeholder {
+            color: #64748b;
+        }
+        .integrated-search-chip-count {
+            opacity: 0.8;
+            font-weight: 700;
+        }
+        .integrated-search-chip--related {
+            margin-right: 6px;
+            margin-bottom: 4px;
+        }
         .integrated-ranking-board {
             display: grid;
             gap: 6px;
@@ -5995,8 +6020,8 @@
             gap: 8px;
             border: 1px solid #dbe7f5;
             border-radius: 8px;
-            background: linear-gradient(180deg, #0f172a, #1e293b);
-            color: #f8fafc;
+            background: linear-gradient(180deg, #ffffff, #f1f5f9);
+            color: #0f172a;
             padding: 4px 8px;
             min-height: 30px;
             transform-origin: top center;
@@ -6005,7 +6030,7 @@
         .integrated-ranking-rank {
             font-size: 11px;
             font-weight: 900;
-            color: #93c5fd;
+            color: var(--ibk-blue);
             text-align: center;
         }
         .integrated-ranking-keyword {
@@ -6018,7 +6043,7 @@
         .integrated-ranking-count {
             font-size: 11px;
             font-weight: 800;
-            color: #facc15;
+            color: #b45309;
         }
         @keyframes integratedFlipDown {
             0% { transform: perspective(360px) rotateX(-85deg); opacity: 0; }

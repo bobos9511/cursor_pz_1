@@ -5994,7 +5994,38 @@
         }
         const INTEGRATED_SEARCH_STATS_KEY = 'knock-integrated-search-stats-v1';
         let integratedSearchKeywordStats = null;
+        /** 서버(DB)에서 불러온 통합검색 키워드 통계 — 있으면 순위 표시에 우선 */
+        let integratedSearchKeywordStatsServer = null;
         let integratedSearchLastTrack = { keyword: '', at: 0 };
+        async function refreshIntegratedSearchStatsFromServer() {
+            if (!currentLoginUser) {
+                integratedSearchKeywordStatsServer = null;
+                return;
+            }
+            try {
+                const scope = encodeURIComponent(getUserSettingsScope());
+                const data = await fetchJson(`/api/db/integrated-search-stats?scope=${scope}`);
+                integratedSearchKeywordStatsServer = Array.isArray(data && data.items) ? data.items : null;
+            } catch (_) {
+                integratedSearchKeywordStatsServer = null;
+            }
+        }
+        async function postIntegratedSearchStatsTrack(rawQuery) {
+            if (!currentLoginUser) return;
+            const q = String(rawQuery || '').trim();
+            if (!q) return;
+            try {
+                const scope = encodeURIComponent(getUserSettingsScope());
+                await fetchJson(`/api/db/integrated-search-stats/track?scope=${scope}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: q }),
+                });
+                await refreshIntegratedSearchStatsFromServer();
+            } catch (_) {
+                /* 오프라인·세션 오류 시 로컬 통계만 사용 */
+            }
+        }
         function loadIntegratedSearchKeywordStats() {
             if (Array.isArray(integratedSearchKeywordStats)) return integratedSearchKeywordStats;
             try {
@@ -6062,14 +6093,29 @@
             saveIntegratedSearchKeywordStats();
         }
         function getIntegratedSearchKeywordRanking(limit = 5) {
-            return loadIntegratedSearchKeywordStats()
-                .filter((it) => {
-                    const normalized = normalizeKnowKeywordToken(it.keyword);
-                    return normalized && normalized.length >= 2 && !ragKeywordBlocklist.has(normalized);
-                })
-                .sort((a, b) => b.count - a.count || b.updatedAt - a.updatedAt)
-                .slice(0, Math.max(1, Number(limit) || 5))
-                .map((it) => [it.keyword, it.count]);
+            const lim = Math.max(1, Number(limit) || 5);
+            const server = integratedSearchKeywordStatsServer;
+            const fromServer =
+                Array.isArray(server) && server.length
+                    ? server.map((it) => ({
+                          keyword: String((it && it.keyword) || '').trim(),
+                          count: Math.max(0, Number((it && it.count) || 0)),
+                          updatedAt: Number((it && it.updatedAt) || 0),
+                      }))
+                    : null;
+            const base = fromServer && fromServer.length ? fromServer : loadIntegratedSearchKeywordStats();
+            const rankList = (list) =>
+                list
+                    .filter((it) => {
+                        const normalized = normalizeKnowKeywordToken(it.keyword);
+                        return normalized && normalized.length >= 2 && !ragKeywordBlocklist.has(normalized);
+                    })
+                    .sort((a, b) => b.count - a.count || b.updatedAt - a.updatedAt)
+                    .slice(0, lim)
+                    .map((it) => [it.keyword, it.count]);
+            let out = rankList(base);
+            if (!out.length && fromServer && fromServer.length) out = rankList(loadIntegratedSearchKeywordStats());
+            return out;
         }
         function extractIntegratedTokensFromText(text) {
             return String(text || '')
@@ -6095,7 +6141,11 @@
             if (!rankingEl || !relatedEl) return;
             const counts = buildIntegratedKeywordCounts(appData.posts || []);
             const top = getIntegratedSearchKeywordRanking(5);
-            rankingEl.innerHTML = `<div style="font-weight:800; color:var(--text-dark); margin-bottom:6px;">검색어 순위</div>${
+            const rankSourceNote =
+                Array.isArray(integratedSearchKeywordStatsServer) && integratedSearchKeywordStatsServer.length
+                    ? '<div class="integrated-search-insight-note">서버 집계 · 로그인 사용자 검색 기준</div>'
+                    : '<div class="integrated-search-insight-note">이 브라우저 로컬 집계(서버 연결 시 DB 반영)</div>';
+            rankingEl.innerHTML = `${rankSourceNote}<div class="integrated-search-insight-title">검색어 순위</div>${
                 top.length
                     ? `<div class="integrated-ranking-board">${
                           top
@@ -6109,25 +6159,42 @@
                               )
                               .join('')
                       }</div>`
-                    : '<span style="color:var(--text-light);">데이터 없음</span>'
+                    : '<span class="integrated-search-insight-muted">데이터 없음</span>'
             }`;
-            const kw = String(keyword || '').trim().toLowerCase();
-            const relatedCounts = kw && matchedPosts.length > 0 ? buildIntegratedKeywordCounts(matchedPosts) : counts;
-            const rel = kw
-                ? Array.from(relatedCounts.entries())
-                      .filter(([k]) => (k.includes(kw) || kw.includes(k)) && k !== kw)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 8)
-                : top.slice(0, 8);
-            relatedEl.innerHTML = `<div style="font-weight:800; color:var(--text-dark); margin-bottom:4px;">연관검색어</div>${
+            const queryTokens = extractIntegratedTokensFromText(String(keyword || ''));
+            const querySet = new Set(queryTokens);
+            const relatedCounts =
+                queryTokens.length && matchedPosts.length > 0 ? buildIntegratedKeywordCounts(matchedPosts) : counts;
+            let rel = [];
+            if (queryTokens.length) {
+                rel = Array.from(relatedCounts.entries())
+                    .filter(([k]) => !querySet.has(k))
+                    .filter(([k]) =>
+                        queryTokens.some((t) => {
+                            if (t.length < 2) return false;
+                            return k.includes(t) || t.includes(k);
+                        }),
+                    )
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8);
+                if (!rel.length) {
+                    rel = Array.from(counts.entries())
+                        .filter(([k]) => !querySet.has(k))
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 8);
+                }
+            } else {
+                rel = top.map(([k, c]) => [k, c]).slice(0, 8);
+            }
+            relatedEl.innerHTML = `<div class="integrated-search-insight-title">연관검색어</div>${
                 rel.length
                     ? rel
                           .map(([k, c]) => {
                               const safeJs = String(k).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-                              return `<button type="button" class="btn btn-outline integrated-search-chip" style="margin-right:6px; margin-bottom:4px;" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span style="opacity:.75;">(${c})</span></button>`;
+                              return `<button type="button" class="btn btn-outline integrated-search-chip integrated-search-chip--related" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span class="integrated-search-chip-count">(${c})</span></button>`;
                           })
                           .join('')
-                    : '<span style="color:var(--text-light);">연관 키워드 없음</span>'
+                    : '<span class="integrated-search-insight-muted">연관 키워드 없음</span>'
             }`;
         }
         let integratedSearchEnterWired = false;
@@ -6157,12 +6224,17 @@
         function showIntegratedSearchModal() {
             ensureIntegratedSearchEnterHandlers();
             document.getElementById('integratedSearchModal').classList.add('active');
-            renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', []);
-            setTimeout(() => document.getElementById('modalSearchInput').focus(), 100);
+            void refreshIntegratedSearchStatsFromServer().finally(() => {
+                renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', []);
+                setTimeout(() => {
+                    const inp = document.getElementById('modalSearchInput');
+                    if (inp) inp.focus();
+                }, 80);
+            });
         }
         function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
         let integratedSearchEnterDedupe = false;
-        function performModalSearch(trigger = 'manual') {
+        async function performModalSearch(trigger = 'manual') {
             if (trigger === 'enter') {
                 if (integratedSearchEnterDedupe) return;
                 integratedSearchEnterDedupe = true;
@@ -6176,9 +6248,10 @@
             const sort = getIntegratedSearchSortValue();
             if (kw && trigger !== 'sort' && trigger !== 'clear' && trigger !== 'init') {
                 trackIntegratedSearchKeyword(raw);
+                await postIntegratedSearchStatsTrack(raw);
             }
             renderIntegratedSearchInsights(raw, []);
-            if (!kw) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">검색어를 입력하세요.</div>'; return; }
+            if (!kw) { resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>'; return; }
             
             const results = appData.posts
                 .map((p) => {
@@ -6202,7 +6275,7 @@
                 return b.post.id - a.post.id;
             });
             renderIntegratedSearchInsights(raw, results.map((x) => x.post));
-            if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20" style="color:#999;">결과가 없습니다.</div>'; return; }
+            if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">결과가 없습니다.</div>'; return; }
 
             resContainer.innerHTML = '<ul class="integrated-search-result-list">' + results.map(({ post: p, score }) => {
                 const stripped = p.content.replace(/<[^>]*>?/gm, ''); 

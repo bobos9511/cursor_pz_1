@@ -1,10 +1,6 @@
     <!-- 통합검색 모달 -->
     <div id="integratedSearchModal" class="modal-overlay" style="align-items: flex-start; padding-top: 80px;">
-        <div class="modal-content integrated-search-modal">
-            <div class="modal-header integrated-search-modal-header">
-                <h3 style="font-size:16px;">통합검색</h3>
-                <button class="btn-icon" onclick="closeIntegratedSearchModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content integrated-search-modal" onclick="event.stopPropagation()">
             <div class="integrated-search-head">
                 <form id="integratedSearchForm" class="integrated-search-form" action="#" method="get" autocomplete="off" novalidate>
                 <div class="integrated-search-input-wrap">
@@ -13,6 +9,7 @@
                     <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()" title="검색어 지우기" aria-label="검색어 지우기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
                 </form>
+                <button type="button" class="integrated-search-close-btn" onclick="closeIntegratedSearchModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="integrated-search-controls">
                 <div class="integrated-search-chips">
@@ -34,7 +31,7 @@
                 <div id="integratedRelatedKeywords" class="integrated-search-insight-block"></div>
             </div>
             <div class="modal-body integrated-search-results-body" id="integratedSearchResults">
-                <div class="text-center" style="color:#999; padding: 60px;">검색어를 입력하고 Enter를 누르세요.</div>
+                <div class="text-center integrated-search-empty-hint integrated-search-results-placeholder">검색어를 입력하고 Enter를 누르세요.</div>
             </div>
         </div>
     </div>

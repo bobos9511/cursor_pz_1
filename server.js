@@ -80,6 +80,8 @@ function createDefaultDb() {
     notificationsByScope: {},
     /** 테스트 계정 단일 접속 세션: 직원번호 → { tokenHash, createdAt, lastSeenAt } (구형 sessionId는 무시) */
     testSessionsByEmpNo: {},
+    /** 통합검색 키워드 집계(전역, DB 파일에 저장) */
+    integratedSearchKeywordStats: [],
   };
 }
 const DEFAULT_DB = createDefaultDb();
@@ -454,6 +456,9 @@ function readDb() {
         parsed && typeof parsed.notificationsByScope === "object" ? parsed.notificationsByScope : {},
       testSessionsByEmpNo:
         parsed && typeof parsed.testSessionsByEmpNo === "object" ? parsed.testSessionsByEmpNo : {},
+      integratedSearchKeywordStats: Array.isArray(parsed && parsed.integratedSearchKeywordStats)
+        ? parsed.integratedSearchKeywordStats
+        : [],
     };
   } catch (error) {
     return createDefaultDb();
@@ -1519,6 +1524,56 @@ function pruneNotificationsByScope(db, nowMs = Date.now()) {
   return changed;
 }
 
+function tokenizeIntegratedSearchQueryForStats(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣\s]/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2)
+    .slice(0, 24);
+}
+
+function bumpIntegratedSearchKeywordStatsInDb(db, rawQuery) {
+  const tokens = tokenizeIntegratedSearchQueryForStats(rawQuery);
+  if (!tokens.length) return;
+  if (!Array.isArray(db.integratedSearchKeywordStats)) db.integratedSearchKeywordStats = [];
+  const list = db.integratedSearchKeywordStats;
+  const now = Date.now();
+  const seen = new Set();
+  tokens.forEach((keyword) => {
+    if (seen.has(keyword)) return;
+    seen.add(keyword);
+    const idx = list.findIndex((it) => it && String(it.keyword) === keyword);
+    if (idx >= 0) {
+      list[idx].count = Math.max(0, Number(list[idx].count) || 0) + 1;
+      list[idx].updatedAt = now;
+    } else {
+      list.push({ keyword, count: 1, updatedAt: now });
+    }
+  });
+  list.sort(
+    (a, b) =>
+      (Number(b.count) || 0) - (Number(a.count) || 0) ||
+      (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0),
+  );
+  db.integratedSearchKeywordStats = list.slice(0, 500);
+}
+
+function sanitizeIntegratedSearchStatsItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((it) => ({
+      keyword: String((it && it.keyword) || "")
+        .trim()
+        .slice(0, 120),
+      count: Math.max(0, Math.min(10_000_000, Math.floor(Number((it && it.count) || 0)))),
+      updatedAt: Math.max(0, Math.floor(Number((it && it.updatedAt) || 0))),
+    }))
+    .filter((it) => it.keyword.length >= 2)
+    .slice(0, 500);
+}
+
 function sanitizeUserSettings(raw) {
   const src = raw && typeof raw === "object" ? raw : {};
   const notifyPolicy = src.notifyPolicy && typeof src.notifyPolicy === "object" ? src.notifyPolicy : {};
@@ -1575,6 +1630,42 @@ async function handleDbApi(req, res, url) {
     const db = readDb();
     if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     db.appDataByScope[scope] = appData;
+    writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/api/db/integrated-search-stats") {
+    const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    const raw = Array.isArray(db.integratedSearchKeywordStats) ? db.integratedSearchKeywordStats : [];
+    const items = sanitizeIntegratedSearchStatsItems(raw).sort(
+      (a, b) => b.count - a.count || b.updatedAt - a.updatedAt,
+    );
+    sendJson(res, 200, { items });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/integrated-search-stats/track") {
+    const scope = String(url.searchParams.get("scope") || "guest").slice(0, 64);
+    if (scope === "guest" || scope === "shared") {
+      sendJson(res, 400, { error: "로그인 후 검색 통계가 기록됩니다." });
+      return true;
+    }
+    const db = readDb();
+    if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const query = String((body && body.query) || "").trim();
+    if (!query) {
+      sendJson(res, 400, { error: "query required" });
+      return true;
+    }
+    bumpIntegratedSearchKeywordStatsInDb(db, query);
     writeDb(db);
     sendJson(res, 200, { ok: true });
     return true;

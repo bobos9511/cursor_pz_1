@@ -682,6 +682,13 @@ function closeAiSearchHistoryMobileModal() {
     if (modal) modal.classList.remove("active");
 }
 
+function applyAiSearchInputPlaceholderMode() {
+    const el = document.getElementById("aiSearchInput");
+    if (!el) return;
+    const mobile = window.matchMedia && window.matchMedia("(max-width: 1024px)").matches;
+    el.placeholder = mobile ? "질문을 입력하세요." : "질문을 입력하세요. (Shift+Enter로 줄바꿈)";
+}
+
 function setAiSearchStateBadge(isLoading = aiSearchIsLoading) {
     const badgeEl = document.getElementById("aiSearchStateBadge");
     if (!badgeEl) return;
@@ -707,11 +714,24 @@ function initializeAiSearchView() {
     if (inputEl) inputEl.addEventListener("input", saveAiSearchActiveState);
     if (inputEl) {
         inputEl.addEventListener("keydown", (event) => {
+            if (window.matchMedia && window.matchMedia("(max-width: 1024px)").matches) {
+                return;
+            }
             if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
                 submitAiSearchQuestion();
             }
         });
+    }
+    applyAiSearchInputPlaceholderMode();
+    if (typeof window !== "undefined" && inputEl) {
+        window.addEventListener(
+            "resize",
+            () => {
+                applyAiSearchInputPlaceholderMode();
+            },
+            { passive: true },
+        );
     }
     if (logEl) logEl.addEventListener("click", () => setAiSearchStateBadge());
     setAiSearchStateBadge();
