@@ -564,7 +564,8 @@
         }
         let settingsMainTabsInited = false;
         function selectSettingsMainTab(tab) {
-            const key = tab === 'display' ? 'display' : tab === 'account' ? 'account' : 'notify';
+            const key =
+                tab === 'display' ? 'display' : tab === 'account' ? 'account' : tab === 'mbnav' ? 'mbnav' : 'notify';
             document.querySelectorAll('#settingsMainTabs .admin-main-tab-btn').forEach((b) => {
                 const on = b.getAttribute('data-settings-tab') === key;
                 b.classList.toggle('btn-primary', on);
@@ -572,10 +573,13 @@
             });
             const pNotify = document.getElementById('settings-panel-notify');
             const pDisplay = document.getElementById('settings-panel-display');
+            const pMbnav = document.getElementById('settings-panel-mbnav');
             const pAccount = document.getElementById('settings-panel-account');
             if (pNotify) pNotify.classList.toggle('hidden', key !== 'notify');
             if (pDisplay) pDisplay.classList.toggle('hidden', key !== 'display');
+            if (pMbnav) pMbnav.classList.toggle('hidden', key !== 'mbnav');
             if (pAccount) pAccount.classList.toggle('hidden', key !== 'account');
+            if (key === 'mbnav') renderSettingsMbnavOrderList();
         }
         function initSettingsMainTabsOnce() {
             if (settingsMainTabsInited) return;
@@ -2115,6 +2119,8 @@
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
+            applyMobileBottomNavSlotOrder();
+            bindMbnavCompactResizeOnce();
             bindDashboardWidgetPointerReorder();
             bindBoardToolbarOutsideCloseOnce();
             initSidebarNavTooltips();
@@ -3943,6 +3949,157 @@
         }
 
         let mobileNavMoreReturnSnapshot = null;
+
+        const MB_NAV_SLOT_ORDER_KEY = 'knockMobileBottomNavSlotOrderV1';
+        const MB_NAV_SLOT_IDS = [
+            'dashboard',
+            'list-it',
+            'list-biz',
+            'list-sys',
+            'integrated-search',
+            'ai-search',
+        ];
+        const MB_NAV_SLOT_LABELS = {
+            dashboard: '홈 (대시보드)',
+            'list-it': 'IT · 오류 문의',
+            'list-biz': '규정 · 상품 문의',
+            'list-sys': 'KNOCK 개선 제안',
+            'integrated-search': '통합검색',
+            'ai-search': 'AI 채팅',
+        };
+        let mbnavSettingsDragWired = false;
+        let mbnavCompactResizeBound = false;
+
+        function getMobileBottomNavSlotOrder() {
+            try {
+                const raw = localStorage.getItem(MB_NAV_SLOT_ORDER_KEY);
+                const arr = raw ? JSON.parse(raw) : null;
+                if (!Array.isArray(arr) || arr.length !== MB_NAV_SLOT_IDS.length) return MB_NAV_SLOT_IDS.slice();
+                const allowed = new Set(MB_NAV_SLOT_IDS);
+                if (arr.some((id) => !allowed.has(id)) || new Set(arr).size !== arr.length) return MB_NAV_SLOT_IDS.slice();
+                return arr;
+            } catch (_) {
+                return MB_NAV_SLOT_IDS.slice();
+            }
+        }
+        function saveMobileBottomNavSlotOrder(order) {
+            try {
+                localStorage.setItem(MB_NAV_SLOT_ORDER_KEY, JSON.stringify(order));
+            } catch (_) {}
+        }
+        function applyMobileBottomNavSlotOrder() {
+            const row = document.getElementById('mbnavSlotRow');
+            if (!row) return;
+            const order = getMobileBottomNavSlotOrder();
+            const map = new Map();
+            row.querySelectorAll('[data-mbnav-slot]').forEach((btn) => {
+                map.set(btn.getAttribute('data-mbnav-slot'), btn);
+            });
+            order.forEach((id) => {
+                const el = map.get(id);
+                if (el) row.appendChild(el);
+            });
+            updateMbnavSlotRowCompactClass();
+        }
+        function updateMbnavSlotRowCompactClass() {
+            const row = document.getElementById('mbnavSlotRow');
+            if (!row) return;
+            const compact = window.matchMedia && window.matchMedia('(max-width: 400px)').matches;
+            row.classList.toggle('mbnav-slot-row--compact', compact);
+        }
+        function bindMbnavCompactResizeOnce() {
+            if (mbnavCompactResizeBound) return;
+            mbnavCompactResizeBound = true;
+            window.addEventListener('resize', () => updateMbnavSlotRowCompactClass());
+        }
+        function syncMobileBottomNavHighlight() {
+            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
+            if (document.body.classList.contains('mobile-nav-more-open')) return;
+            document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
+            if (document.body.classList.contains('ai-chat-layer-open')) {
+                const aiMb = document.getElementById('mbnav-ai-search');
+                if (aiMb) aiMb.classList.add('active');
+                return;
+            }
+            const active = document.querySelector('.view-section.active');
+            if (!active || !active.id) return;
+            const key = active.id.replace('view-', '');
+            if (key === 'list' || key === 'detail') {
+                const suf = String(currentBoardType || 'IT').toLowerCase();
+                const el = document.getElementById(`mbnav-list-${suf}`);
+                if (el) el.classList.add('active');
+                return;
+            }
+            const mb = document.getElementById(`mbnav-${key}`);
+            if (mb) mb.classList.add('active');
+        }
+        function renderSettingsMbnavOrderList() {
+            const ul = document.getElementById('settingsMbnavOrderList');
+            if (!ul) return;
+            const order = getMobileBottomNavSlotOrder();
+            ul.innerHTML = order
+                .map((id) => {
+                    const label = escapeHtml(MB_NAV_SLOT_LABELS[id] || id);
+                    return `<li class="settings-mbnav-order-item" draggable="true" data-mbnav-slot-id="${escapeHtml(id)}"><span class="settings-mbnav-order-grip" aria-hidden="true">≡</span><span class="settings-mbnav-order-label">${label}</span><span class="settings-mbnav-order-meta">드래그</span></li>`;
+                })
+                .join('');
+            wireMbnavSettingsOrderListDragOnce();
+        }
+        function wireMbnavSettingsOrderListDragOnce() {
+            const ul = document.getElementById('settingsMbnavOrderList');
+            if (!ul || mbnavSettingsDragWired) return;
+            mbnavSettingsDragWired = true;
+            let dragEl = null;
+            ul.addEventListener('dragstart', (e) => {
+                const li = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
+                if (!li || !ul.contains(li)) return;
+                dragEl = li;
+                li.classList.add('settings-mbnav-order-item--dragging');
+                try {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', li.getAttribute('data-mbnav-slot-id') || '');
+                } catch (_) {}
+            });
+            ul.addEventListener('dragend', (e) => {
+                const li = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
+                if (li) li.classList.remove('settings-mbnav-order-item--dragging');
+                dragEl = null;
+            });
+            ul.addEventListener('dragover', (e) => {
+                if (!dragEl) return;
+                e.preventDefault();
+                const over = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
+                if (!over || over === dragEl || !ul.contains(over)) return;
+                const rect = over.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                if (after) ul.insertBefore(dragEl, over.nextSibling);
+                else ul.insertBefore(dragEl, over);
+            });
+            ul.addEventListener('drop', (e) => e.preventDefault());
+        }
+        function persistMbnavOrderFromSettingsList() {
+            const ul = document.getElementById('settingsMbnavOrderList');
+            if (!ul) return;
+            const order = Array.from(ul.querySelectorAll('[data-mbnav-slot-id]')).map((li) =>
+                String(li.getAttribute('data-mbnav-slot-id') || '').trim(),
+            );
+            if (order.length !== MB_NAV_SLOT_IDS.length) return;
+            saveMobileBottomNavSlotOrder(order);
+            applyMobileBottomNavSlotOrder();
+            showAlert('하단 메뉴 순서가 저장되었습니다.', 'success', { skipNotificationCenter: true });
+        }
+        function saveMobileBottomNavOrderFromEditor() {
+            persistMbnavOrderFromSettingsList();
+        }
+        function resetMobileBottomNavSlotOrder() {
+            saveMobileBottomNavSlotOrder(MB_NAV_SLOT_IDS.slice());
+            applyMobileBottomNavSlotOrder();
+            renderSettingsMbnavOrderList();
+            showAlert('기본 순서로 되돌렸습니다.', 'success', { skipNotificationCenter: true });
+        }
+        window.saveMobileBottomNavOrderFromEditor = saveMobileBottomNavOrderFromEditor;
+        window.resetMobileBottomNavSlotOrder = resetMobileBottomNavSlotOrder;
+
         function captureViewSnapshotForMobileNavBack() {
             const active = document.querySelector('.view-section.active');
             if (!active || !active.id || !active.id.startsWith('view-')) {
@@ -3988,6 +4145,7 @@
             }
             updateAiChatFloatingButton();
             if (snap) queueMicrotask(() => switchViewFromMobileNavSnapshot(snap));
+            else syncMobileBottomNavHighlight();
         }
         function closeMobileNavMore() {
             dismissMobileNavMoreSheet({ restoreView: false });
@@ -4061,6 +4219,7 @@
         function openMobileNavMoreSheet() {
             const el = document.getElementById('mobileNavMore');
             if (!el) return;
+            document.querySelectorAll('.mbnav-item').forEach((item) => item.classList.remove('active'));
             el.classList.remove('collapsed');
             document.body.classList.add('mobile-nav-more-open');
             const btn = document.getElementById('mbnav-more');
@@ -4335,6 +4494,11 @@
             overlay.classList.remove('closing');
             overlay.classList.remove('hidden');
             document.body.classList.add('ai-chat-layer-open');
+            if (window.matchMedia('(max-width: 1024px)').matches) {
+                document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
+                const aiMb = document.getElementById('mbnav-ai-search');
+                if (aiMb) aiMb.classList.add('active');
+            }
             updateAiChatFloatingButton();
             positionAiChatLayerPanel();
             bindAiChatLayerFabPositioning();
@@ -4366,6 +4530,7 @@
                 }
                 aiChatLayerCloseTimer = null;
                 updateAiChatFloatingButton();
+                syncMobileBottomNavHighlight();
             }, 170);
         }
 
@@ -5060,6 +5225,9 @@
                     applySidebarTooltipState();
                     updateSidebarToggleButton();
                 }
+            }
+            if (document.body.classList.contains('ai-chat-layer-open') && viewId !== 'ai-search') {
+                closeAiChatLayer();
             }
             if (boardHelpEditing) {
                 const changingListBoard = viewId === 'list' && boardType && boardType !== currentBoardType;

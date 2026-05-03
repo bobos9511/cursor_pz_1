@@ -86,11 +86,14 @@
         <!-- 모바일: 하단 글래스 내비 + 더보기 시트 -->
         <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="하단 메뉴">
             <div class="mobile-bottom-nav__glass mobile-bottom-nav__glass--six">
-                <button type="button" class="mbnav-item" id="mbnav-dashboard" onclick="switchView('dashboard')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-home"></use></svg></span><span class="mbnav-label">홈</span></button>
-                <button type="button" class="mbnav-item" id="mbnav-list-it" onclick="switchView('list', 'IT')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-info"></use></svg></span><span class="mbnav-label">IT</span></button>
-                <button type="button" class="mbnav-item" id="mbnav-list-biz" onclick="switchView('list', 'BIZ')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-book"></use></svg></span><span class="mbnav-label">규정</span></button>
-                <button type="button" class="mbnav-item" id="mbnav-list-sys" onclick="switchView('list', 'SYS')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-lightbulb"></use></svg></span><span class="mbnav-label">개선</span></button>
-                <button type="button" class="mbnav-item" id="mbnav-integrated-search" onclick="switchView('integrated-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-search"></use></svg></span><span class="mbnav-label">통합검색</span></button>
+                <div id="mbnavSlotRow" class="mobile-bottom-nav__slots" aria-label="주요 메뉴">
+                    <button type="button" class="mbnav-item" id="mbnav-dashboard" data-mbnav-slot="dashboard" onclick="switchView('dashboard')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-home"></use></svg></span><span class="mbnav-label">홈</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-list-it" data-mbnav-slot="list-it" onclick="switchView('list', 'IT')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-info"></use></svg></span><span class="mbnav-label">IT</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-list-biz" data-mbnav-slot="list-biz" onclick="switchView('list', 'BIZ')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-book"></use></svg></span><span class="mbnav-label">규정</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-list-sys" data-mbnav-slot="list-sys" onclick="switchView('list', 'SYS')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-lightbulb"></use></svg></span><span class="mbnav-label">개선</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-integrated-search" data-mbnav-slot="integrated-search" onclick="switchView('integrated-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-search"></use></svg></span><span class="mbnav-label">통합검색</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-ai-search" data-mbnav-slot="ai-search" onclick="switchView('ai-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-brain"></use></svg></span><span class="mbnav-label">AI</span></button>
+                </div>
                 <button type="button" class="mbnav-item mbnav-item--more" id="mbnav-more" onclick="toggleMobileNavMore()" aria-expanded="false" aria-controls="mobileNavMorePanel" title="더보기"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-bars"></use></svg></span><span class="mbnav-label">더보기</span></button>
             </div>
         </nav>
@@ -1015,6 +1018,7 @@
                         <div class="admin-main-tab-row" id="settingsMainTabs" style="margin-bottom:12px;">
                             <button type="button" class="admin-main-tab-btn btn btn-primary" data-settings-tab="notify">알림</button>
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="display">화면·테마</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="mbnav">하단 메뉴</button>
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="account">계정</button>
                         </div>
                         <div class="panel p-20">
@@ -1091,6 +1095,17 @@
                                 <p style="font-size:12px; color:#64748b; margin:12px 0 0 0;">
                                     알림센터에는 모든 알림이 기록됩니다. 위 설정은 사용자에게 표시되는 알림(토스트/OS 알림)만 제어합니다.
                                 </p>
+                            </div>
+
+                            <div id="settings-panel-mbnav" class="admin-settings-tab-panel hidden">
+                                <div class="panel-header settings-section-heading">모바일 하단 글래스 메뉴</div>
+                                <p class="settings-mbnav-lead">아래 순서대로 하단 바에 표시됩니다. <strong>더보기</strong>는 항상 맨 오른쪽에 고정되며 변경할 수 없습니다.</p>
+                                <ul id="settingsMbnavOrderList" class="settings-mbnav-order-list" aria-label="하단 메뉴 순서"></ul>
+                                <div class="settings-mbnav-actions flex gap-10 flex-wrap">
+                                    <button type="button" class="btn btn-outline" onclick="resetMobileBottomNavSlotOrder()">기본 순서</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveMobileBottomNavOrderFromEditor()">순서 저장</button>
+                                </div>
+                                <p class="settings-mbnav-hint">각 줄을 드래그하여 순서를 바꾼 뒤 <strong>순서 저장</strong>을 누르세요. 좁은 화면에서는 마지막 항목 하나가 자동으로 접혀 5칸만 보입니다(더보기 제외).</p>
                             </div>
 
                             <div id="settings-panel-display" class="admin-settings-tab-panel hidden">

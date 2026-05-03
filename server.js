@@ -719,7 +719,16 @@ async function handleAiChat(req, res) {
       return true; // CHAT은 양쪽 허용
     });
     if (!know.length) return "";
-    const qTokens = new Set(tokenizeForSearch(queryText));
+    let qTokens = new Set(tokenizeForSearch(queryText));
+    if (!qTokens.size && bt === "CHAT") {
+      const loose = String(queryText || "")
+        .toLowerCase()
+        .replace(/[^0-9a-z\uac00-\ud7a3]+/g, " ")
+        .split(/\s+/)
+        .filter((t) => t.length >= 1)
+        .slice(0, 80);
+      qTokens = new Set(loose);
+    }
     if (!qTokens.size) return "";
 
     const scored = know
@@ -838,12 +847,29 @@ async function handleAiChat(req, res) {
     100,
     RAG_RELATIVE_CUTOFF_PCT,
   );
-  const rag = buildRagContext([title, content].join("\n"), boardType, {
-    maxCandidates: ragMaxCandidates,
-    minOverlapTokens: ragMinOverlapTokens,
-    minScore: ragMinScore,
-    relativeCutoffPct: ragRelativeCutoffPct,
-  });
+  const isChatBoard = boardType === "CHAT";
+  const ragProfile = isChatBoard
+    ? {
+        maxCandidates: Math.max(2, ragMaxCandidates),
+        minOverlapTokens: Math.min(ragMinOverlapTokens, 1),
+        minScore: Math.min(ragMinScore, 2),
+        relativeCutoffPct: Math.min(ragRelativeCutoffPct, 38),
+      }
+    : {
+        maxCandidates: ragMaxCandidates,
+        minOverlapTokens: ragMinOverlapTokens,
+        minScore: ragMinScore,
+        relativeCutoffPct: ragRelativeCutoffPct,
+      };
+  let rag = buildRagContext([title, content].join("\n"), boardType, ragProfile);
+  if (isChatBoard && !rag) {
+    rag = buildRagContext([title, content].join("\n"), boardType, {
+      maxCandidates: Math.max(3, ragMaxCandidates),
+      minOverlapTokens: 1,
+      minScore: 1,
+      relativeCutoffPct: 28,
+    });
+  }
   const promptBase = buildAiPrompt(boardType, title, content, continueFrom, aiSettings);
   const prompt = rag ? `${rag}\n\n${promptBase}` : promptBase;
   const genCaps = {

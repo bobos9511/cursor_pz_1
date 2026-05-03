@@ -284,20 +284,8 @@
                     <h3 id="dashCountModalTitle" class="modal-inline-title" style="font-size:18px; color: var(--ibk-blue);">게시물 목록</h3>
                     <button type="button" class="btn-icon" onclick="closeDashCountModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
-                <div class="table-wrap" style="border:1px solid #e5e7eb; border-radius:8px; max-height: 470px;">
-                    <table class="table" style="min-width: 860px;">
-                        <thead>
-                            <tr>
-                                <th style="width:80px;">번호</th>
-                                <th style="width:120px;">게시판</th>
-                                <th>제목</th>
-                                <th style="width:130px;">작성자</th>
-                                <th style="width:160px;">상태</th>
-                                <th style="width:130px;">등록일</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashCountModalTbody"></tbody>
-                    </table>
+                <div class="dash-count-modal-list-wrap" style="border:1px solid #e5e7eb; border-radius:8px; max-height: min(56vh, 470px); overflow-y: auto;">
+                    <div id="dashCountModalList" class="dash-count-modal-list" role="list"></div>
                 </div>
             </div>
             <div class="modal-footer" style="justify-content: space-between;">
