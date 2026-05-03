@@ -942,13 +942,17 @@
             const write = Array.isArray(entry.write) ? entry.write : [];
             const answer = Array.isArray(entry.answer) ? entry.answer : [];
             const boards = new Set(
-                [...write, ...answer].map((b) => String(b || '').toUpperCase()).filter((b) => ['IT', 'BIZ', 'SYS'].includes(b)),
+                [...write, ...answer]
+                    .map((b) => String(b || '').toUpperCase())
+                    .filter((b) => ['IT', 'BIZ', 'SYS', 'KNOW', 'RULE'].includes(b)),
             );
             const pool = ['dashboard'];
             if (boards.has('IT')) pool.push('list-it');
             if (boards.has('BIZ')) pool.push('list-biz');
             if (boards.has('SYS')) pool.push('list-sys');
-            pool.push('integrated-search', 'notifications');
+            if (boards.has('KNOW')) pool.push('list-know');
+            if (boards.has('RULE')) pool.push('list-rule');
+            pool.push('integrated-search', 'notifications', 'settings', 'mobile-profile');
             return pool;
         }
         function isMbnavSidebarNavVisible(el) {
@@ -961,7 +965,14 @@
         /** 하단 바 편집 풀: PC 셸에서는 상단 헤더 메뉴에 실제로 보이는 항목 기준. 모바일·컴팩트 셸에서는 역할 매트릭스와 동일하게 간주. */
         function getMbnavPoolIdsForCurrentUser() {
             const role = (currentLoginUser && currentLoginUser.role) || currentRole || 'branch';
-            const fallback = getMbnavPoolIdsForRole(role);
+            const withAdminSlot = (pool) => {
+                const p = Array.isArray(pool) ? pool.slice() : [];
+                if (currentLoginUser && resolveUserIsAdmin(currentLoginUser) && !p.includes('admin-settings')) {
+                    p.push('admin-settings');
+                }
+                return p;
+            };
+            const fallback = withAdminSlot(getMbnavPoolIdsForRole(role));
             if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return fallback;
             if (knockIsMobileShellActive()) return fallback;
             const pool = [];
@@ -974,10 +985,15 @@
             addIf('list-it', ['hdr-nav-list-it']);
             addIf('list-biz', ['hdr-nav-list-biz']);
             addIf('list-sys', ['hdr-nav-list-sys']);
+            addIf('list-know', ['hdr-nav-list-know']);
+            addIf('list-rule', ['hdr-nav-list-rule']);
+            addIf('admin-settings', ['hdr-nav-admin-settings']);
+            /* PC에서 헤더 더보기로만 열리는 항목도 하단 바 편집 풀에 포함 */
+            pool.push('settings', 'mobile-profile');
             pool.push('integrated-search', 'notifications');
             const core = pool.filter((x) => x !== 'integrated-search' && x !== 'notifications');
             if (!core.length) return fallback;
-            return pool;
+            return withAdminSlot(pool);
         }
 
         function isKnowLikeBoard(t) {
@@ -4076,7 +4092,17 @@
 
             const empPadded = normalizeEmployeeNo(empNo, true);
             let accountPinGateOk = true;
-            if (currentLoginUser && currentLoginUser.hasAccountPin === true) {
+            const isAdminUser = resolveUserIsAdmin(currentLoginUser);
+            if (isAdminUser) {
+                /* 플랫폼 관리자는 관리자 PIN만 검증; 일반 계정 PIN은 요구하지 않습니다. */
+                accountPinGateOk = true;
+            } else if (sessionRestoreLogin) {
+                if (currentLoginUser && currentLoginUser.hasAccountPin === true) {
+                    accountPinGateOk = true;
+                } else {
+                    accountPinGateOk = await ensureAccountPinSetupAfterSessionForLogin(empPadded);
+                }
+            } else if (currentLoginUser && currentLoginUser.hasAccountPin === true) {
                 accountPinGateOk = await verifyAccountPinAfterSessionForLogin();
             } else {
                 accountPinGateOk = await ensureAccountPinSetupAfterSessionForLogin(empPadded);
@@ -4384,15 +4410,32 @@
         const MB_NAV_SLOT_ORDER_KEY = 'knockMobileBottomNavSlotOrderV2';
         const MB_NAV_LEGACY_ORDER_KEY = 'knockMobileBottomNavSlotOrderV1';
         const MB_NAV_SLOT_COUNT = 5;
-        const MB_NAV_POOL_IDS = ['dashboard', 'list-it', 'list-biz', 'list-sys', 'integrated-search', 'notifications'];
+        const MB_NAV_POOL_IDS = [
+            'dashboard',
+            'list-it',
+            'list-biz',
+            'list-sys',
+            'list-know',
+            'list-rule',
+            'integrated-search',
+            'notifications',
+            'settings',
+            'mobile-profile',
+            'admin-settings',
+        ];
         const MB_NAV_DEFAULT_BAR_ORDER = ['dashboard', 'list-it', 'list-biz', 'list-sys', 'integrated-search'];
         const MB_NAV_SLOT_LABELS = {
             dashboard: '홈 (대시보드)',
             'list-it': 'IT · 오류 문의',
             'list-biz': '규정 · 상품 문의',
             'list-sys': 'KNOCK 개선 제안',
+            'list-know': 'AI 지식 베이스',
+            'list-rule': '룰 엔진',
             'integrated-search': '통합검색',
             notifications: '알림센터',
+            settings: '환경설정',
+            'mobile-profile': '사용자 정보',
+            'admin-settings': '관리자 설정',
         };
         let mbnavCompactResizeBound = false;
 
@@ -4989,7 +5032,11 @@
                 return;
             }
             const bottomPx = overlayRect.bottom - fabRect.top + gap;
-            const rightPx = overlayRect.right - fabRect.right;
+            const tailInset = Math.max(18, fabRect.width / 2);
+            const fabCenterX = fabRect.left + fabRect.width / 2;
+            let rightPx = overlayRect.right - fabCenterX - tailInset;
+            const minRight = isMobileLayout ? 8 : isDesktopLayout ? 10 : 8;
+            rightPx = Math.max(minRight, rightPx);
             panel.style.bottom = `${bottomPx}px`;
             panel.style.right = `${rightPx}px`;
             panel.style.left = 'auto';
@@ -5024,7 +5071,6 @@
             } else {
                 panel.style.removeProperty('height');
             }
-            const tailInset = Math.max(18, fabRect.width / 2);
             panel.style.setProperty('--ai-layer-tail-right', `${tailInset}px`);
             panel.style.transformOrigin = `calc(100% - ${tailInset}px) calc(100% + ${gap}px)`;
         }
@@ -5081,8 +5127,14 @@
             bindAiChatLayerFabPositioning();
             requestAnimationFrame(() => {
                 positionAiChatLayerPanel();
-                requestAnimationFrame(() => positionAiChatLayerPanel());
+                requestAnimationFrame(() => {
+                    positionAiChatLayerPanel();
+                    requestAnimationFrame(() => positionAiChatLayerPanel());
+                });
             });
+            window.setTimeout(() => {
+                if (document.body.classList.contains('ai-chat-layer-open')) positionAiChatLayerPanel();
+            }, 0);
         }
         function closeAiChatLayer(event) {
             if (event && event.target && event.target.id !== 'aiChatLayerOverlay') return;
