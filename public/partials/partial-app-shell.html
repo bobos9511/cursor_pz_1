@@ -354,16 +354,18 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input board-keyword-input" onkeyup="if(event.key==='Enter') filterBoardList()">
-                                    <button id="boardSearchBtn" class="btn btn-primary" onclick="filterBoardList()"><svg class="icon"><use href="#icon-search"></use></svg> 조회</button>
+                                    <div class="board-toolbar-search-slot">
+                                        <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input board-keyword-input" onkeyup="if(event.key==='Enter') filterBoardList()">
+                                        <button id="boardSearchBtn" class="btn btn-primary board-toolbar-search-submit" type="button" onclick="filterBoardList()" aria-label="검색 조회" title="조회"><svg class="icon"><use href="#icon-search"></use></svg><span class="board-search-btn-label">조회</span></button>
+                                    </div>
                                     
                                     <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
                                     
                                     <button id="listWriteBtn" onclick="switchView('write', currentBoardType)" class="btn btn-outline" style="border-color: var(--ibk-blue); color: var(--ibk-blue);">
                                         <svg class="icon"><use href="#icon-edit"></use></svg> <span id="listWriteBtnText">신규 접수</span>
                                     </button>
-                                    <button id="boardToolsMoreBtn" class="btn btn-outline hidden" type="button" onclick="toggleBoardToolsLayer(event)">
-                                        <svg class="icon"><use href="#icon-bars"></use></svg> 도구
+                                    <button id="boardToolsMoreBtn" class="btn btn-outline board-tools-more-btn hidden" type="button" onclick="toggleBoardToolsLayer(event)" aria-label="추가 도구">
+                                        <svg class="icon"><use href="#icon-more-vert"></use></svg><span class="board-tools-more-label">도구</span>
                                     </button>
                                     <div id="boardToolsLayer" class="board-tools-layer hidden" onclick="event.stopPropagation();">
                                         <button type="button" class="btn btn-primary" onclick="closeBoardToolsLayer(); filterBoardList();">

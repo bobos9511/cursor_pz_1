@@ -2017,16 +2017,25 @@
         .board-filter-layer .board-filter-select,
         #view-list #boardStatusFilter { flex: 0 1 130px; }
         #view-list #boardKnowCategoryFilter { flex: 0 1 150px; }
-        #view-list .board-keyword-input,
-        #view-list #boardKeywordInput {
+        #view-list .board-toolbar-search-slot {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             flex: 1 1 250px;
-            min-width: 170px;
+            min-width: 0;
+        }
+        #view-list .board-toolbar-search-slot #boardKeywordInput {
+            flex: 1 1 auto;
+            min-width: 0;
         }
         #view-list #boardSearchBtn {
             flex: 0 0 auto;
             min-width: 106px;
             padding-left: 14px;
             padding-right: 14px;
+        }
+        #view-list .board-toolbar-search-slot #boardSearchBtn {
+            white-space: nowrap;
         }
         #view-list #listWriteBtn,
         #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary {
@@ -2039,6 +2048,9 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+        }
+        #boardToolsMoreBtn .board-tools-more-label {
+            white-space: nowrap;
         }
         .board-tools-layer {
             position: absolute;
@@ -2081,10 +2093,17 @@
         #view-list.board-tools-compact.board-toolbar-mobile .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr) auto;
+            grid-template-rows: auto;
             align-items: center;
             gap: 6px !important;
             flex-wrap: nowrap;
             row-gap: 0;
+        }
+        #view-list.board-tools-compact.board-toolbar-mobile .board-list-toolbar-right #boardToolsLayer {
+            grid-column: 3;
+            grid-row: 1;
+            justify-self: end;
+            width: min(200px, calc(100vw - 24px));
         }
         #view-list.board-tools-compact:not(.board-toolbar-mobile) .board-filter-layer {
             min-width: 0;
@@ -2103,11 +2122,12 @@
             width: auto !important;
         }
         #view-list.board-tools-compact:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
+        #view-list.board-tools-compact:not(.board-toolbar-mobile) .board-toolbar-search-slot #boardSearchBtn,
         #view-list.board-tools-compact #listWriteBtn,
         #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="width:1px"] {
             display: none !important;
         }
-        #view-list.board-tools-compact.board-toolbar-mobile .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary#boardSearchBtn {
+        #view-list.board-tools-compact.board-toolbar-mobile .board-toolbar-search-slot #boardSearchBtn {
             display: inline-flex !important;
         }
         #view-list.board-tools-compact #boardToolsMoreBtn {
@@ -2123,8 +2143,25 @@
             }
         }
         @media (max-width: 1024px) {
+            #view-list.board-toolbar-mobile .board-list-toolbar-right {
+                align-items: stretch;
+            }
             #view-list.board-toolbar-mobile .board-filter-toggle-btn {
                 display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                padding: 0;
+                border-radius: 14px;
+                border: 1px solid #cbd5e1;
+                background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+            }
+            #view-list.board-toolbar-mobile .board-filter-toggle-btn .icon {
+                width: 22px;
+                height: 22px;
             }
             #view-list.board-toolbar-mobile .board-filter-cluster {
                 flex: 0 0 auto;
@@ -2132,14 +2169,14 @@
             #view-list.board-toolbar-mobile .board-filter-layer {
                 position: absolute;
                 left: 0;
-                top: calc(100% + 6px);
+                top: calc(100% + 8px);
                 z-index: 14;
                 flex-direction: column;
                 align-items: stretch;
                 gap: 10px;
                 min-width: min(280px, calc(100vw - 24px));
-                padding: 10px;
-                border-radius: 12px;
+                padding: 12px;
+                border-radius: 16px;
                 border: 1px solid #dbe7f5;
                 background: #fff;
                 box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
@@ -2151,13 +2188,68 @@
                 max-width: none !important;
                 flex: 1 1 auto !important;
             }
+            #view-list.board-toolbar-mobile .board-toolbar-search-slot {
+                flex: 1 1 auto;
+                min-width: 0;
+                padding: 4px 4px 4px 14px;
+                gap: 6px;
+                border-radius: 999px;
+                border: 1px solid #e2e8f0;
+                background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(15, 23, 42, 0.06);
+            }
+            #view-list.board-toolbar-mobile .board-toolbar-search-slot #boardKeywordInput {
+                min-width: 0 !important;
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                padding-left: 0 !important;
+                padding-right: 6px !important;
+                font-size: 14px;
+            }
+            #view-list.board-toolbar-mobile .board-toolbar-search-slot #boardSearchBtn {
+                min-width: 42px !important;
+                width: 42px;
+                height: 38px;
+                padding: 0 !important;
+                border-radius: 999px;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                gap: 0;
+            }
+            #view-list.board-toolbar-mobile .board-toolbar-search-slot #boardSearchBtn .icon {
+                margin: 0;
+            }
+            #view-list.board-toolbar-mobile .board-search-btn-label,
+            #view-list.board-toolbar-mobile .board-tools-more-label {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+            #view-list.board-toolbar-mobile #boardToolsMoreBtn {
+                width: 44px;
+                height: 44px;
+                min-width: 44px !important;
+                padding: 0 !important;
+                border-radius: 14px;
+                gap: 0;
+                border: 1px solid #cbd5e1;
+                background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+            }
+            #view-list.board-toolbar-mobile #boardToolsMoreBtn .icon {
+                width: 22px;
+                height: 22px;
+            }
             #view-list.board-toolbar-mobile.board-tools-compact #boardKeywordInput {
                 min-width: 0 !important;
-            }
-            #view-list.board-toolbar-mobile.board-tools-compact #boardSearchBtn {
-                min-width: 0 !important;
-                padding-left: 10px !important;
-                padding-right: 10px !important;
             }
         }
         .table { width: 100%; border-collapse: collapse; min-width: 800px; text-align: center; }
