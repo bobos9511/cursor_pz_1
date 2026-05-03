@@ -1009,6 +1009,10 @@
             if (m === 'dark') return 'dark';
             return systemThemeMedia && systemThemeMedia.matches ? 'dark' : 'light';
         }
+        function normalizeThemeMode(raw) {
+            const s = String(raw || 'system').toLowerCase();
+            return s === 'light' || s === 'dark' || s === 'system' ? s : 'system';
+        }
         function applyThemeMode(mode) {
             const resolved = resolveThemeFromMode(mode);
             document.documentElement.setAttribute('data-theme', resolved);
@@ -1077,9 +1081,17 @@
                 updateLoginThemeFabUi();
                 return;
             }
-            // 로그인 전 기본은 시스템 테마
-            localStorage.setItem(LOGIN_THEME_MODE_KEY, 'system');
-            applyThemeMode(getLoginThemeMode());
+            /* 세션 복구(doLogin) 전에도 호출되므로, knock-theme-mode(마지막 적용 테마)를 유지한다.
+               매번 system으로 덮으면 F5 직후 initApp 전에 localStorage가 초기화되어 테마가 풀린다. */
+            try {
+                const persisted = localStorage.getItem('knock-theme-mode');
+                const mode = normalizeThemeMode(persisted || localStorage.getItem(LOGIN_THEME_MODE_KEY) || 'system');
+                localStorage.setItem(LOGIN_THEME_MODE_KEY, mode);
+                applyThemeMode(mode);
+            } catch (_) {
+                localStorage.setItem(LOGIN_THEME_MODE_KEY, 'system');
+                applyThemeMode('system');
+            }
             updateLoginThemeFabUi();
         }
         function getKnowCategoryLabel(category) {
@@ -1936,6 +1948,12 @@
             } catch (error) {
                 if (error && error.knockSessionHandled) throw error;
                 console.error('loadUserSettingsFromServer failed:', error);
+                try {
+                    const fallback = normalizeThemeMode(localStorage.getItem('knock-theme-mode'));
+                    appData.settings.themeMode = fallback;
+                } catch (_) {
+                    /* noop */
+                }
             }
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
@@ -3933,7 +3951,7 @@
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
                     /* FAB 모바일: 하단 내비(~58px) + FAB(50px) + 간격 */
-                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 58px) + 50px + 12px)';
+                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 68px) + 50px + 12px)';
                     panel.style.right = '14px';
                     panel.style.left = 'auto';
                     panel.style.width = 'calc(100vw - 24px)';
@@ -4440,6 +4458,8 @@
             if (hoverText) hoverText.innerText = `${userDisplay} | ${deptDisplay}`;
             const headerRoleChip = document.getElementById('headerRoleChip');
             if (headerRoleChip) headerRoleChip.innerText = rName;
+            const mobileHeaderRoleChip = document.getElementById('mobileHeaderRoleChip');
+            if (mobileHeaderRoleChip) mobileHeaderRoleChip.innerText = rName;
             const overlayUserDisplay = document.getElementById('overlayUserDisplay');
             if (overlayUserDisplay) overlayUserDisplay.innerText = userDisplay;
             const overlayAdminBadge = document.getElementById('overlayAdminBadge');

@@ -16,7 +16,12 @@
             --warning: #F59E0B;
             --sidebar-bg: #212529;
             --footer-bg: #1A1F27;
-            --mobile-bottom-nav-h: 58px;
+            --mobile-bottom-nav-h: 68px;
+            /* 모바일 상·하단 글래스 바 공통 치수 (높이 맞춤) */
+            --mobile-glass-pad-t: 10px;
+            --mobile-glass-pad-x: 6px;
+            --mobile-glass-pad-b: 12px;
+            --mobile-glass-row-min-h: 56px;
         }
         @supports (height: 100dvh) {
             :root {
@@ -2039,13 +2044,14 @@
         .mobile-bottom-nav__glass {
             pointer-events: auto;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: space-between;
-            gap: 2px;
+            gap: 0;
             width: 100%;
             max-width: none;
             margin: 0;
-            padding: 12px 8px 14px;
+            padding: var(--mobile-glass-pad-t) var(--mobile-glass-pad-x) var(--mobile-glass-pad-b);
+            min-height: var(--mobile-glass-row-min-h);
             border-radius: 22px 22px 0 0;
             border: 1px solid rgba(226, 232, 240, 0.95);
             border-bottom: none;
@@ -2065,11 +2071,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 2px 2px 0;
+            justify-content: flex-start;
+            gap: 6px;
+            padding: 4px 1px 2px;
             font: inherit;
-            color: #94a3b8;
+            color: #64748b;
             border-radius: 10px;
             transition: color 0.2s ease, transform 0.18s ease;
         }
@@ -2080,38 +2086,48 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2px 0 0;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            padding: 0;
             border: none;
             background: transparent;
             border-radius: 0;
             color: inherit;
+            line-height: 0;
+            box-sizing: border-box;
         }
         .mbnav-item .icon {
             width: 24px;
             height: 24px;
+            max-width: 24px;
+            max-height: 24px;
+            flex-shrink: 0;
+            display: block;
+            margin: 0;
             color: inherit;
-            opacity: 0.55;
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0.62;
+            transition: opacity 0.2s ease, color 0.2s ease;
         }
         .mbnav-label {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            line-height: 1.1;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
             text-align: center;
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             color: inherit;
-            opacity: 0.92;
+            opacity: 1;
+            -webkit-font-smoothing: antialiased;
         }
         .mbnav-item.active {
             color: #004b9b;
         }
         .mbnav-item.active .icon {
             opacity: 1;
-            transform: scale(1.1);
         }
         .mbnav-item.active .mbnav-label {
             opacity: 1;
@@ -2123,6 +2139,119 @@
         .mbnav-item--more.active,
         .mbnav-item--more.mbnav-item.active {
             color: #475569;
+        }
+
+        /* 모바일 전용 상단 바 (PC에서는 숨김) */
+        .mobile-top-bar {
+            display: none;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1150;
+            width: 100%;
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+        .mobile-top-bar__glass {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+            padding: var(--mobile-glass-pad-t) var(--mobile-glass-pad-x) var(--mobile-glass-pad-b);
+            min-height: var(--mobile-glass-row-min-h);
+            border-radius: 0 0 22px 22px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.78));
+            backdrop-filter: blur(20px) saturate(1.35);
+            -webkit-backdrop-filter: blur(20px) saturate(1.35);
+            box-shadow:
+                0 10px 36px rgba(15, 23, 42, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.88);
+        }
+        .mobile-top-bar__brand {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+        .mobile-top-bar__logo {
+            flex: 0 1 auto;
+            min-width: 0;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -0.06em;
+            line-height: 1.1;
+            color: var(--ibk-blue);
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mobile-top-bar__logo .logo-point {
+            color: var(--ibk-light);
+        }
+        .mobile-top-bar__role-chip {
+            flex: 0 1 auto;
+            max-width: 42%;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            background: linear-gradient(180deg, rgba(224, 242, 254, 0.95), rgba(186, 230, 253, 0.55));
+            color: #0c4a6e;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mobile-top-bar__actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .mobile-top-bar__icon-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.42);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(241, 245, 249, 0.62));
+            color: var(--ibk-blue);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 0;
+            cursor: pointer;
+            transition: transform 0.16s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+        .mobile-top-bar__icon-btn:active {
+            transform: scale(0.96);
+        }
+        .mobile-top-bar__icon-btn .icon {
+            width: 22px;
+            height: 22px;
+            display: block;
+            flex-shrink: 0;
+            color: inherit;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .mobile-top-bar__icon-btn:hover {
+                border-color: rgba(56, 189, 248, 0.55);
+                background: linear-gradient(180deg, #ffffff, rgba(224, 242, 254, 0.88));
+                color: #0369a1;
+            }
         }
 
         .mobile-nav-more {
@@ -2338,6 +2467,16 @@
         .ai-chat-floating-btn:hover::after {
             opacity: 1;
             transform: translateY(-50%) translateX(0);
+        }
+        @media (min-width: 1025px) {
+            .ai-chat-floating-btn {
+                width: calc(56px * 1.8);
+                height: calc(56px * 1.8);
+            }
+            .ai-chat-floating-btn .icon {
+                width: calc(24px * 1.8);
+                height: calc(24px * 1.8);
+            }
         }
         .ai-chat-layer-overlay {
             position: fixed;

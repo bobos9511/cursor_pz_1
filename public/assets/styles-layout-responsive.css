@@ -3,7 +3,7 @@
         @media (max-width: 1024px) {
             /* 하단 내비+노치 한 번만 반영 (본문 패딩·FAB·JS 위치와 동일 기준) */
             :root {
-                --mobile-bottom-nav-h: calc(60px + env(safe-area-inset-bottom, 0px));
+                --mobile-bottom-nav-h: calc(70px + env(safe-area-inset-bottom, 0px));
             }
             html,
             body {
@@ -36,6 +36,9 @@
             }
             .header.header--redesign {
                 display: none !important;
+            }
+            .mobile-top-bar {
+                display: block;
             }
             .footer-dark {
                 display: none !important;
@@ -189,7 +192,11 @@
             .board-help-editor-tools { gap: 8px; }
             .board-help-editor-actions { flex-direction: column; align-items: stretch; }
             .board-help-btn-group { width: 100%; justify-content: flex-end; }
-            .profile-overlay-panel { right: 8px; top: 12px; width: min(96vw, 360px); }
+            .profile-overlay-panel {
+                right: 8px;
+                top: calc(8px + env(safe-area-inset-top, 0px) + var(--mobile-glass-row-min-h));
+                width: min(96vw, 360px);
+            }
             #similarPostArea { width: 100% !important; }
             #view-detail .flex.justify-between.items-center.mb-10 {
                 flex-wrap: wrap;

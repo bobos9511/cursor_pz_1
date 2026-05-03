@@ -251,19 +251,20 @@ function fmtDateTime(d) {
 
 function updateNotificationBadge() {
     const badge = document.getElementById("headerNotificationBadge");
+    const mobBadge = document.getElementById("mobileHeaderNotificationBadge");
     const modal = document.getElementById("notificationCenterModal");
-    if (!badge) return;
-    if (modal && modal.classList.contains("active")) {
-        badge.classList.add("hidden");
-        return;
-    }
+    const hide = (modal && modal.classList.contains("active")) || Number(notificationCenterState.unreadCount || 0) <= 0;
     const n = Number(notificationCenterState.unreadCount || 0);
-    if (n <= 0) {
-        badge.classList.add("hidden");
-        return;
-    }
-    badge.classList.remove("hidden");
-    badge.textContent = String(Math.min(n, 99));
+    const text = String(Math.min(n, 99));
+    [badge, mobBadge].forEach((el) => {
+        if (!el) return;
+        if (hide) {
+            el.classList.add("hidden");
+            return;
+        }
+        el.classList.remove("hidden");
+        el.textContent = text;
+    });
 }
 
 function recalcNotificationUnreadCount() {
