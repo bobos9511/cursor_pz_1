@@ -2322,6 +2322,34 @@
         .btn-outline:hover:not(:disabled) { background: #f0f0f0; }
         .btn-danger { background: #fff; color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover:not(:disabled) { background: #fef2f2; }
+
+        /* 상세 본문 — 수정·삭제 (라이트: 브랜드 블루 / 위험 레드) */
+        .dtl-crud-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-height: 0;
+        }
+        .dtl-crud-btn--edit {
+            color: var(--ibk-blue);
+            border-color: var(--ibk-blue);
+            background: #fff;
+        }
+        .dtl-crud-btn--edit:hover:not(:disabled) {
+            background: #eff6ff;
+            color: #003875;
+            border-color: #003875;
+        }
+        .dtl-crud-btn--delete {
+            color: var(--danger);
+            border-color: var(--danger);
+            background: #fff;
+        }
+        .dtl-crud-btn--delete:hover:not(:disabled) {
+            background: #fef2f2;
+            color: #b91c1c;
+            border-color: #b91c1c;
+        }
+
         #boardPagination #boardPageSizeSelect,
         #boardPagination #boardPrevBtn,
         #boardPagination #boardNextBtn {

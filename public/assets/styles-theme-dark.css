@@ -188,6 +188,27 @@
             color: #f1f6ff;
             border-color: #6080a8;
         }
+        /* 상세 본문 수정·삭제: 인라인 ibk-blue/danger 대비 보강 */
+        body[data-theme="dark"] .btn.btn-outline.dtl-crud-btn--edit {
+            color: #dbeafe;
+            border-color: #3b82f6;
+            background: rgba(30, 58, 138, 0.45);
+        }
+        body[data-theme="dark"] .btn.btn-outline.dtl-crud-btn--edit:hover:not(:disabled) {
+            color: #f0f9ff;
+            border-color: #60a5fa;
+            background: rgba(37, 99, 235, 0.55);
+        }
+        body[data-theme="dark"] .btn.btn-outline.dtl-crud-btn--delete {
+            color: #fecaca;
+            border-color: #f87171;
+            background: rgba(127, 29, 29, 0.35);
+        }
+        body[data-theme="dark"] .btn.btn-outline.dtl-crud-btn--delete:hover:not(:disabled) {
+            color: #fee2e2;
+            border-color: #fca5a5;
+            background: rgba(185, 28, 28, 0.42);
+        }
         body[data-theme="dark"] .btn-primary {
             background: #2563eb;
             border-color: #3b82f6;
