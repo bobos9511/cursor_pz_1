@@ -11,8 +11,8 @@
                 </div>
                 <nav class="hdr-nav-bar" aria-label="주 메뉴">
                     <button type="button" class="hdr-nav-link" id="hdr-nav-dashboard" onclick="switchView('dashboard')">대시보드</button>
-                    <button type="button" class="hdr-nav-link" id="hdr-nav-list-it" onclick="switchView('list', 'IT')">IT/오류</button>
-                    <button type="button" class="hdr-nav-link" id="hdr-nav-list-biz" onclick="switchView('list', 'BIZ')">규정·상품</button>
+                    <button type="button" class="hdr-nav-link" id="hdr-nav-list-it" onclick="switchView('list', 'IT')">IT · 오류</button>
+                    <button type="button" class="hdr-nav-link" id="hdr-nav-list-biz" onclick="switchView('list', 'BIZ')">규정 · 상품</button>
                     <button type="button" class="hdr-nav-link" id="hdr-nav-list-sys" onclick="switchView('list', 'SYS')">KNOCK 개선</button>
                     <button type="button" class="hdr-nav-link hq-it-only hidden" id="hdr-nav-list-know" onclick="switchView('list', 'KNOW')">AI 지식</button>
                     <button type="button" class="hdr-nav-link hq-it-only hidden" id="hdr-nav-list-rule" onclick="switchView('list', 'RULE')">룰 엔진</button>
@@ -102,7 +102,7 @@
                         <span class="mobile-nav-more__app-logo" role="button" tabindex="0" onclick="closeMobileNavMore(); switchView('dashboard');">IBK KN<span class="logo-point">O</span>CK</span>
                         <span class="mobile-nav-more__app-role" id="mobileNavMoreHeaderRole">영업점</span>
                     </div>
-                    <button type="button" class="mobile-nav-more__close mobile-nav-more__close--head" onclick="closeMobileNavMore()" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                    <button type="button" class="mobile-nav-more__close mobile-nav-more__close--head" onclick="closeMobileNavMoreFromHead()" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </header>
                 <div class="mobile-nav-more__user-card" id="mobileNavMoreUserCard">
                     <div class="mobile-nav-more__user-avatar" id="mobileNavMoreUserAvatar" aria-hidden="true">홍</div>
@@ -134,17 +134,17 @@
                         <div class="mobile-nav-more__list">
                             <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('dashboard');">
                                 <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--home"><svg class="icon" aria-hidden="true"><use href="#icon-home"></use></svg></span>
-                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">홈(대시보드)</span><span class="mobile-nav-more__row-desc">현황·통계·위젯</span></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">홈</span><span class="mobile-nav-more__row-desc">현황·통계·위젯</span></span>
                                 <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
                             </button>
                             <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'IT');">
                                 <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--it"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></span>
-                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">IT/오류 문의</span><span class="mobile-nav-more__row-desc">시스템·장애 접수</span></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">IT · 오류 문의</span><span class="mobile-nav-more__row-desc">시스템·장애 접수</span></span>
                                 <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
                             </button>
                             <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'BIZ');">
                                 <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--biz"><svg class="icon" aria-hidden="true"><use href="#icon-book"></use></svg></span>
-                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">규정·상품 문의</span><span class="mobile-nav-more__row-desc">업무 규정·상품 질문</span></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">규정 · 상품 문의</span><span class="mobile-nav-more__row-desc">업무 규정·상품 질문</span></span>
                                 <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
                             </button>
                             <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'SYS');">
@@ -154,7 +154,7 @@
                             </button>
                         </div>
                     </section>
-                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreAdmin">
+                    <section id="mobileNavMoreSectionKnowledge" class="mobile-nav-more__section" aria-labelledby="mobMoreAdmin">
                         <h2 id="mobMoreAdmin" class="mobile-nav-more__group-label">지식·관리</h2>
                         <div class="mobile-nav-more__list">
                             <button type="button" class="mobile-nav-more__row hq-it-only hidden" onclick="closeMobileNavMore(); switchView('list', 'KNOW');">
@@ -258,8 +258,8 @@
                 <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
                 
                 <div class="nav-title mt-10">통합 문의 게시판</div>
-                <div class="nav-item" id="nav-list-it" onclick="switchView('list', 'IT')"><svg class="icon" style="color: #60a5fa;"><use href="#icon-info"></use></svg> <span class="nav-text">IT/오류 문의</span></div>
-                <div class="nav-item" id="nav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon" style="color: #c084fc;"><use href="#icon-book"></use></svg> <span class="nav-text">규정/상품 문의</span></div>
+                <div class="nav-item" id="nav-list-it" onclick="switchView('list', 'IT')"><svg class="icon" style="color: #60a5fa;"><use href="#icon-info"></use></svg> <span class="nav-text">IT · 오류 문의</span></div>
+                <div class="nav-item" id="nav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon" style="color: #c084fc;"><use href="#icon-book"></use></svg> <span class="nav-text">규정 · 상품 문의</span></div>
                 <div class="nav-item" id="nav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon" style="color: #2dd4bf;"><use href="#icon-lightbulb"></use></svg> <span class="nav-text">KNOCK 개선 제안</span></div>
                 
                 <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
@@ -278,9 +278,9 @@
                          [뷰 1] 대시보드
                          ========================================== -->
                     <div id="view-dashboard" class="view-section active">
-                        <div class="flex justify-between items-center mb-20 gap-10 flex-wrap">
+                            <div class="flex justify-between items-center mb-20 gap-10 flex-wrap">
                             <h2 class="page-title" style="margin-bottom: 0;" id="dashTitle">나의 현황판</h2>
-                            <div class="dashboard-edit-actions flex items-center gap-8">
+                            <div class="dashboard-edit-actions flex items-center">
                                 <button type="button" id="btnDashboardWidgetEditCancel" class="btn btn-outline hidden" style="padding: 6px 12px; font-size:13px;" onclick="cancelDashboardEditMode()">편집 취소</button>
                                 <button type="button" id="btnDashboardWidgetEdit" class="btn btn-outline" style="padding: 6px 12px; font-size:13px;" onclick="toggleDashboardEditMode()">위젯 편집</button>
                             </div>
@@ -395,9 +395,27 @@
                                 <div class="mobile-profile-card-value" id="mpUserDept">영업부(-)</div>
                             </div>
                             <div class="mobile-profile-card mobile-profile-card--contact">
-                                <div class="mobile-profile-contact-row"><span class="profile-contact-label">내선</span><span id="mpExtNo">8-0000</span></div>
-                                <div class="mobile-profile-contact-row"><span class="profile-contact-label">FAX</span><span id="mpFaxNo">02-0000-0000</span></div>
-                                <div class="mobile-profile-contact-row"><span class="profile-contact-label">휴대전화</span><span id="mpMobileNo">010-0000-0000</span></div>
+                                <div class="mobile-profile-contact-row">
+                                    <span class="profile-contact-label">내선</span>
+                                    <div class="mobile-profile-contact-main">
+                                        <span id="mpExtNo" class="mobile-profile-contact-num">8-0000</span>
+                                        <button type="button" class="mobile-profile-contact-icon-btn" aria-label="전화"><svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg></button>
+                                    </div>
+                                </div>
+                                <div class="mobile-profile-contact-row">
+                                    <span class="profile-contact-label">FAX</span>
+                                    <div class="mobile-profile-contact-main">
+                                        <span id="mpFaxNo" class="mobile-profile-contact-num">02-0000-0000</span>
+                                        <button type="button" class="mobile-profile-contact-icon-btn mobile-profile-contact-icon-btn--fax" aria-label="팩스"><svg class="icon" aria-hidden="true"><use href="#icon-print"></use></svg></button>
+                                    </div>
+                                </div>
+                                <div class="mobile-profile-contact-row">
+                                    <span class="profile-contact-label">휴대전화</span>
+                                    <div class="mobile-profile-contact-main">
+                                        <span id="mpMobileNo" class="mobile-profile-contact-num">010-0000-0000</span>
+                                        <button type="button" class="mobile-profile-contact-icon-btn" aria-label="전화"><svg class="icon" aria-hidden="true"><use href="#icon-phone"></use></svg></button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="mobile-profile-card mobile-profile-card--session">
                                 <div class="mobile-profile-session-ip" id="mpSessionInfo">IP —</div>
@@ -658,15 +676,15 @@
                                 
                                 <!-- 1. 본문 박스 -->
                                 <div class="panel" style="border-top: 4px solid var(--ibk-blue); margin-bottom: 0;" id="dtlTopBorder">
-                                    <div style="padding: 24px; border-bottom: 1px solid #eee;">
-                                        <div class="flex justify-between items-center mb-10">
+                                    <div class="detail-post-head-inner" style="padding: 24px; border-bottom: 1px solid #eee;">
+                                        <div class="detail-post-header-row flex justify-between items-center mb-10">
                                             <div class="flex items-center gap-10 flex-wrap detail-post-badges">
                                                 <div class="dtl-post-ref-wrap" id="dtlPostRefWrap"><span id="dtlPostId"></span></div>
-                                                <span id="dtlStatus" class="badge"></span>
-                                                <span id="dtlBoardTypeLabel" class="badge bg-ready"></span>
+                                                <span id="dtlStatus" class="badge detail-post-badge"></span>
+                                                <span id="dtlBoardTypeLabel" class="badge bg-ready detail-post-badge"></span>
                                             </div>
                                             <!-- 수정/삭제 버튼 -->
-                                            <div id="crudBtns" class="flex gap-10 hidden">
+                                            <div id="crudBtns" class="flex gap-10 hidden detail-post-crud">
                                                 <button type="button" class="btn btn-outline dtl-crud-btn dtl-crud-btn--edit" onclick="editPost()"><svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg> 수정</button>
                                                 <button type="button" class="btn btn-outline dtl-crud-btn dtl-crud-btn--delete" onclick="deletePost()"><svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg> 삭제</button>
                                             </div>
@@ -725,13 +743,18 @@
                                     <div class="panel-header ai-panel-head-row" style="background: var(--ibk-light); color: #fff;">
                                         <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
                                         <div class="ai-header-right">
-                                        <button id="btnAiReplyHistory" type="button" class="btn btn-outline" style="padding:5px 10px; border-color: rgba(255,255,255,0.7); color:#fff; background: rgba(255,255,255,0.08);" onclick="openAiReplyHistoryModal();">
-                                            <svg class="icon"><use href="#icon-history"></use></svg> 이력보기
-                                        </button>
-                                            <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
-                                                <button id="btnRefreshAiReply" type="button" class="btn btn-outline" onclick="refreshCurrentPostAiReply();"><svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성</button>
-                                                <button id="btnConvertAiSolved" type="button" class="btn btn-outline" onclick="convertPostToAiSolved();"><svg class="icon"><use href="#icon-magic"></use></svg> AI 답변 채택</button>
+                                            <div id="aiHeaderActionsCluster" class="ai-header-actions-cluster" role="group" aria-label="AI 패널 도구">
+                                                <button id="btnAiReplyHistory" type="button" class="btn btn-outline" style="padding:5px 10px; border-color: rgba(255,255,255,0.7); color:#fff; background: rgba(255,255,255,0.08);" onclick="closeAiPanelMobileFlyout(); openAiReplyHistoryModal();">
+                                                    <svg class="icon" aria-hidden="true"><use href="#icon-history"></use></svg><span class="ai-toolbar-btn-label">이력보기</span>
+                                                </button>
+                                                <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
+                                                    <button id="btnRefreshAiReply" type="button" class="btn btn-outline" onclick="refreshCurrentPostAiReply();"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg><span class="ai-toolbar-btn-label">새로운 답변 생성</span></button>
+                                                    <button id="btnConvertAiSolved" type="button" class="btn btn-outline" onclick="convertPostToAiSolved();"><svg class="icon" aria-hidden="true"><use href="#icon-magic"></use></svg><span class="ai-toolbar-btn-label">AI 답변 채택</span></button>
+                                                </div>
                                             </div>
+                                            <button type="button" id="aiPanelMobileToolsToggle" class="btn ai-panel-mtools-toggle" aria-expanded="false" aria-controls="aiHeaderActionsCluster" aria-haspopup="true" title="AI 도구" onclick="toggleAiPanelMobileFlyout(event);">
+                                                <svg class="icon" aria-hidden="true"><use href="#icon-more-vert"></use></svg>
+                                            </button>
                                         </div>
                                     </div>
                                     <div id="aiPanelContent" style="padding: 24px; background: #f0f9ff; font-size: 14px; line-height: 1.6;"></div>

@@ -897,8 +897,8 @@
         let initialRouteApplied = false;
 
         const boardTitles = {
-            'IT': { icon: '#icon-info', title: 'IT/오류 문의 게시판', label: 'IT/오류' },
-            'BIZ': { icon: '#icon-book', title: '규정/상품 문의 게시판', label: '규정/상품' },
+            'IT': { icon: '#icon-info', title: 'IT · 오류 문의 게시판', label: 'IT · 오류' },
+            'BIZ': { icon: '#icon-book', title: '규정 · 상품 문의 게시판', label: '규정 · 상품' },
             'SYS': { icon: '#icon-lightbulb', title: 'KNOCK 개선 제안', label: 'KNOCK 개선' },
             'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스', label: 'AI 지식 베이스' },
             'RULE': { icon: '#icon-filter', title: '룰 엔진', label: '룰 엔진' }
@@ -3440,16 +3440,16 @@
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     bumpSessionExpiryFromPingResponse(data, { fromModalConfirm: true });
-                    showAlert('세션이 연장되었습니다.', 'success');
+                    showAlert('세션이 연장되었습니다.', 'success', { skipNotificationCenter: true });
                     return;
                 }
                 if (res.status === 401 || res.status === 403) {
                     knockOnSessionUnauthorized(data);
                 } else {
-                    showAlert('세션 연장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+                    showAlert('세션 연장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error', { skipNotificationCenter: true });
                 }
             } catch (_) {
-                showAlert('세션 연장 요청에 실패했습니다. 네트워크를 확인해주세요.', 'error');
+                showAlert('세션 연장 요청에 실패했습니다. 네트워크를 확인해주세요.', 'error', { skipNotificationCenter: true });
             }
         }
 
@@ -3942,14 +3942,60 @@
             window.addEventListener('resize', onResize);
         }
 
-        function closeMobileNavMore() {
+        let mobileNavMoreReturnSnapshot = null;
+        function captureViewSnapshotForMobileNavBack() {
+            const active = document.querySelector('.view-section.active');
+            if (!active || !active.id || !active.id.startsWith('view-')) {
+                return { viewId: 'dashboard', boardType: null };
+            }
+            const key = active.id.replace('view-', '');
+            if (key === 'list') {
+                return { viewId: 'list', boardType: currentBoardType || 'IT' };
+            }
+            if (key === 'write') {
+                const writes = getRoleMatrixEntry(currentRole).write || [];
+                const fallback = writes.length ? writes[0] : 'IT';
+                return { viewId: 'write', boardType: currentBoardType || fallback };
+            }
+            if (key === 'detail') {
+                return { viewId: 'list', boardType: currentBoardType || 'IT' };
+            }
+            return { viewId: key, boardType: null };
+        }
+        function switchViewFromMobileNavSnapshot(snap) {
+            if (!snap || !snap.viewId) return;
+            if (snap.viewId === 'list' && snap.boardType) {
+                switchView('list', snap.boardType);
+                return;
+            }
+            if (snap.viewId === 'write' && snap.boardType) {
+                switchView('write', snap.boardType);
+                return;
+            }
+            switchView(snap.viewId);
+        }
+        function dismissMobileNavMoreSheet(options = {}) {
+            const restore = !!options.restoreView;
+            const snap = restore ? mobileNavMoreReturnSnapshot : null;
+            mobileNavMoreReturnSnapshot = null;
             const el = document.getElementById('mobileNavMore');
             if (el) el.classList.add('collapsed');
             document.body.classList.remove('mobile-nav-more-open');
             const btn = document.getElementById('mbnav-more');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+                btn.classList.remove('active');
+            }
             updateAiChatFloatingButton();
+            if (snap) queueMicrotask(() => switchViewFromMobileNavSnapshot(snap));
         }
+        function closeMobileNavMore() {
+            dismissMobileNavMoreSheet({ restoreView: false });
+        }
+        function closeMobileNavMoreFromHead() {
+            dismissMobileNavMoreSheet({ restoreView: true });
+        }
+        window.closeMobileNavMoreFromHead = closeMobileNavMoreFromHead;
 
         function syncMobileNavMoreUserPanel() {
             const nameEl = document.getElementById('mobileNavMoreUserName');
@@ -3996,18 +4042,44 @@
                     avatar.style.color = preset.color;
                 }
             }
+            syncMobileNavMoreKnowledgeSectionVisibility();
         }
 
+        function syncMobileNavMoreKnowledgeSectionVisibility() {
+            const section = document.getElementById('mobileNavMoreSectionKnowledge');
+            if (!section) return;
+            const list = section.querySelector('.mobile-nav-more__list');
+            if (!list) return;
+            const rows = list.querySelectorAll(':scope > .mobile-nav-more__row');
+            let anyVisible = false;
+            rows.forEach((row) => {
+                if (!row.classList.contains('hidden')) anyVisible = true;
+            });
+            section.classList.toggle('hidden', !anyVisible);
+        }
+
+        function openMobileNavMoreSheet() {
+            const el = document.getElementById('mobileNavMore');
+            if (!el) return;
+            el.classList.remove('collapsed');
+            document.body.classList.add('mobile-nav-more-open');
+            const btn = document.getElementById('mbnav-more');
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'true');
+                btn.classList.add('active');
+            }
+            mobileNavMoreReturnSnapshot = captureViewSnapshotForMobileNavBack();
+            syncMobileNavMoreUserPanel();
+            updateAiChatFloatingButton();
+        }
         function toggleMobileNavMore() {
             const el = document.getElementById('mobileNavMore');
             if (!el) return;
-            el.classList.toggle('collapsed');
-            const isOpen = !el.classList.contains('collapsed');
-            document.body.classList.toggle('mobile-nav-more-open', isOpen);
-            const btn = document.getElementById('mbnav-more');
-            if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            if (isOpen) syncMobileNavMoreUserPanel();
-            updateAiChatFloatingButton();
+            if (!el.classList.contains('collapsed')) {
+                dismissMobileNavMoreSheet({ restoreView: false });
+                return;
+            }
+            openMobileNavMoreSheet();
         }
 
         function toggleSidebarPC() {
@@ -4639,11 +4711,17 @@
             setDashboardEditChrome();
         }
         function toggleDashboardEditMode() {
+            const wasEditing = dashboardEditMode;
             dashboardEditMode = !dashboardEditMode;
             const view = document.getElementById('view-dashboard');
             if (view) view.classList.toggle('dashboard-editing', dashboardEditMode);
             setDashboardEditChrome();
-            if (!dashboardEditMode) saveDashboardWidgetOrder();
+            if (!dashboardEditMode) {
+                saveDashboardWidgetOrder();
+                if (wasEditing) {
+                    showAlert('위젯 배치가 저장되었습니다.', 'success', { skipNotificationCenter: true });
+                }
+            }
         }
         window.cancelDashboardEditMode = cancelDashboardEditMode;
 
@@ -5220,8 +5298,8 @@
         }
 
         function renderDashCountModalTable() {
-            const tbody = document.getElementById('dashCountModalTbody');
-            if (!tbody) return;
+            const listEl = document.getElementById('dashCountModalList');
+            if (!listEl) return;
 
             const totalCount = dashCountPosts.length;
             const totalPages = Math.max(1, Math.ceil(totalCount / dashCountPageSize));
@@ -5230,21 +5308,38 @@
             const paged = dashCountPosts.slice(startIdx, startIdx + dashCountPageSize);
 
             if (paged.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="padding:30px; color:#94a3b8;">해당 조건의 게시물이 없습니다.</td></tr>`;
+                listEl.innerHTML =
+                    '<div class="dash-count-empty" role="status">해당 조건의 게시물이 없습니다.</div>';
             } else {
-                tbody.innerHTML = paged.map(post => {
-                    const boardLabel = boardTitles[post.type] ? boardTitles[post.type].label : post.type;
-                    const status = post.aiSolved ? 'AI채택' : (post.status === 'wait' || post.status === 'ing' ? '접수대기' : (post.status === 'moreInfo' ? '추가답변' : '답변완료'));
-                    const dateTxt = (post.datetime || '').substring(0, 10);
-                    return `<tr onclick="openDetailFromDashCount(${post.id}, '${post.type}')">
-                        <td class="post-id-cell">${formatPostIdChipHtml(post.id)}</td>
-                        <td>${boardLabel}</td>
-                        <td class="text-left"><span class="truncate">${post.title || '-'}</span></td>
-                        <td>${post.writer || '-'}</td>
-                        <td>${status}</td>
-                        <td>${dateTxt}</td>
-                    </tr>`;
-                }).join('');
+                listEl.innerHTML = paged
+                    .map((post) => {
+                        const boardLabel = boardTitles[post.type] ? boardTitles[post.type].label : post.type;
+                        const status = post.aiSolved
+                            ? 'AI채택'
+                            : post.status === 'wait' || post.status === 'ing'
+                              ? '접수대기'
+                              : post.status === 'moreInfo'
+                                ? '추가답변'
+                                : '답변완료';
+                        const dateTxt = (post.datetime || '').substring(0, 10);
+                        const titleEsc = escapeHtml(post.title || '-');
+                        const writerEsc = escapeHtml(post.writer || '-');
+                        const statusEsc = escapeHtml(status);
+                        const boardEsc = escapeHtml(boardLabel);
+                        return `<button type="button" class="dash-count-card" role="listitem" onclick="openDetailFromDashCount(${post.id}, '${post.type}')">
+                            <div class="dash-count-card-top">
+                                <span class="dash-count-card-id">${formatPostIdChipHtml(post.id)}</span>
+                                <span class="dash-count-card-date">${escapeHtml(dateTxt)}</span>
+                            </div>
+                            <div class="dash-count-card-title">${titleEsc}</div>
+                            <div class="dash-count-card-meta">
+                                <span class="dash-count-chip dash-count-chip--board">${boardEsc}</span>
+                                <span class="dash-count-chip dash-count-chip--status">${statusEsc}</span>
+                                <span class="dash-count-card-writer">${writerEsc}</span>
+                            </div>
+                        </button>`;
+                    })
+                    .join('');
             }
 
             const pageCurrent = document.getElementById('dashCountPageCurrent');
@@ -5680,11 +5775,34 @@
             });
         }
 
+        function toggleAiPanelMobileFlyout(event) {
+            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const wrap = document.getElementById('dtlAiWrap');
+            if (!wrap) return;
+            wrap.classList.toggle('ai-tools-flyout-open');
+            const btn = document.getElementById('aiPanelMobileToolsToggle');
+            const open = wrap.classList.contains('ai-tools-flyout-open');
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        function closeAiPanelMobileFlyout() {
+            const wrap = document.getElementById('dtlAiWrap');
+            if (wrap) wrap.classList.remove('ai-tools-flyout-open');
+            const btn = document.getElementById('aiPanelMobileToolsToggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+        window.toggleAiPanelMobileFlyout = toggleAiPanelMobileFlyout;
+        window.closeAiPanelMobileFlyout = closeAiPanelMobileFlyout;
+
         // --- 상세보기 ---
         function openDetail(id, typeHint = currentBoardType, options = {}) {
             const fromHistory = !!options.fromHistory;
             const skipHistory = !!options.skipHistory;
             hideWriterPeekPopover();
+            closeAiPanelMobileFlyout();
             const post = getPostByIdAndType(id, typeHint);
             if(!post) return;
             currentPostId = Number(post.id);
@@ -5708,13 +5826,22 @@
             const badgeEl = document.getElementById('dtlStatus');
             if (isKnowLikeBoard(post.type)) {
                 const knowMeta = getKnowStatusMeta(post.status);
-                badgeEl.className = `badge ${knowMeta.badgeClass}`;
+                badgeEl.className = `badge ${knowMeta.badgeClass} detail-post-badge`;
                 badgeEl.innerText = knowMeta.label;
             } else {
-                if (post.aiSolved) { badgeEl.className = 'badge bg-ai'; badgeEl.innerText = 'AI 채택'; }
-                else if (post.status === 'wait') { badgeEl.className = 'badge bg-wait'; badgeEl.innerText = '접수대기'; }
-                else if (post.status === 'moreInfo') { badgeEl.className = 'badge bg-moreInfo'; badgeEl.innerText = '추가답변(요청)'; }
-                else { badgeEl.className = 'badge bg-done'; badgeEl.innerText = '답변완료'; }
+                if (post.aiSolved) {
+                    badgeEl.className = 'badge bg-ai detail-post-badge';
+                    badgeEl.innerText = 'AI 채택';
+                } else if (post.status === 'wait') {
+                    badgeEl.className = 'badge bg-wait detail-post-badge';
+                    badgeEl.innerText = '접수대기';
+                } else if (post.status === 'moreInfo') {
+                    badgeEl.className = 'badge bg-moreInfo detail-post-badge';
+                    badgeEl.innerText = '추가답변(요청)';
+                } else {
+                    badgeEl.className = 'badge bg-done detail-post-badge';
+                    badgeEl.innerText = '답변완료';
+                }
             }
             
             // 메타 (실제 입력·첨부가 있을 때만 표시)
@@ -5824,14 +5951,22 @@
                 const canRefresh = writerAiActions || adminCanRegenerateAi;
                 aiRefreshBtn.disabled = isRefreshing || !canRefresh;
                 aiRefreshBtn.innerHTML = isRefreshing
-                    ? '<svg class="icon"><use href="#icon-info"></use></svg> 생성 중...'
-                    : '<svg class="icon"><use href="#icon-search"></use></svg> 새로운 답변 생성';
+                    ? '<svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg><span class="ai-toolbar-btn-label">생성 중...</span>'
+                    : '<svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg><span class="ai-toolbar-btn-label">새로운 답변 생성</span>';
             }
             if (aiHistoryBtn) {
                 const hist = typeof getVisibleAiReplyHistoryEntries === 'function'
                     ? getVisibleAiReplyHistoryEntries(post)
                     : (post && post.meta && Array.isArray(post.meta.aiReplyHistory) ? post.meta.aiReplyHistory : []);
                 aiHistoryBtn.classList.toggle('hidden', !hist.length);
+            }
+            const aiToolsToggle = document.getElementById('aiPanelMobileToolsToggle');
+            if (aiToolsToggle) {
+                const histShown = aiHistoryBtn && !aiHistoryBtn.classList.contains('hidden');
+                const actionsShown = aiActionRow && !aiActionRow.classList.contains('hidden');
+                const emptyTools = !histShown && !actionsShown;
+                aiToolsToggle.classList.toggle('hidden', emptyTools);
+                if (emptyTools) closeAiPanelMobileFlyout();
             }
 
             const formBox = document.getElementById('answerFormBox');
@@ -6015,7 +6150,7 @@
             let html = '';
             ['IT', 'BIZ', 'SYS'].forEach(t => {
                 const isHide = rules.includes(t) ? '' : 'hidden';
-                const label = t==='IT' ? 'IT / 전산 오류' : t==='BIZ' ? '규정 / 업무 문의' : 'KNOCK 개선 제안';
+                const label = t==='IT' ? 'IT · 오류 문의' : t==='BIZ' ? '규정 · 상품 문의' : 'KNOCK 개선 제안';
                 html += `<div id="btn-cat-${t}" class="${isHide} btn btn-outline write-category-btn" onclick="selectWriteCategory('${t}')">${label}</div>`;
             });
             document.getElementById('writeCategoryButtons').innerHTML = html;
@@ -6917,6 +7052,7 @@
             closeHeaderActionsLayer();
             updateHeaderActionOverflow();
             if (!window.matchMedia('(max-width: 1024px)').matches) {
+                closeAiPanelMobileFlyout();
                 document.body.classList.remove('mobile-menu-open');
                 document.body.classList.remove('mobile-nav-more-open');
                 const more = document.getElementById('mobileNavMore');
@@ -6937,9 +7073,16 @@
             closeHeaderActionsLayer();
             closeBoardToolsLayer();
             closeBoardFilterLayer();
+            closeAiPanelMobileFlyout();
         });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
+            const aiWrap = document.getElementById('dtlAiWrap');
+            if (aiWrap && aiWrap.classList.contains('ai-tools-flyout-open')) {
+                closeAiPanelMobileFlyout();
+                event.preventDefault();
+                return;
+            }
             if (document.body.classList.contains('ai-chat-layer-open')) {
                 closeAiChatLayer();
                 return;

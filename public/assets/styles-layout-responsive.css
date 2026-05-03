@@ -204,13 +204,82 @@
                 width: min(96vw, 360px);
             }
             #similarPostArea { width: 100% !important; }
-            #view-detail .flex.justify-between.items-center.mb-10 {
-                flex-wrap: wrap;
-                gap: 10px;
-                align-items: flex-start;
+            #view-detail .detail-post-head-inner {
+                padding: 16px 14px !important;
             }
-            #view-detail #crudBtns {
-                margin-left: auto;
+            #view-detail .detail-post-header-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            #view-detail .detail-post-badges {
+                width: 100%;
+                align-items: center;
+                gap: 8px;
+            }
+            #view-detail .dtl-post-ref-wrap {
+                margin-bottom: 0;
+            }
+            #view-detail .post-id-chip--detail .post-id-chip__num {
+                padding: 5px 10px;
+                font-size: 11px;
+                font-weight: 800;
+                border-radius: 8px;
+                line-height: 1.25;
+            }
+            #view-detail .detail-post-badge.badge {
+                min-height: 28px;
+                padding: 0 10px;
+                font-size: 11px;
+                font-weight: 800;
+                line-height: 1.2;
+                display: inline-flex;
+                align-items: center;
+                border-radius: 8px;
+            }
+            #view-detail .detail-post-crud {
+                width: 100%;
+                justify-content: flex-end;
+                margin-left: 0 !important;
+                gap: 8px;
+            }
+            #view-detail .dtl-crud-btn {
+                min-height: 32px !important;
+                height: 32px;
+                padding: 0 12px !important;
+                font-size: 12px !important;
+                font-weight: 700;
+                border-radius: 10px !important;
+            }
+            #view-detail .dtl-crud-btn .icon {
+                width: 15px;
+                height: 15px;
+                margin-right: 4px !important;
+            }
+            #view-detail .post-detail-meta {
+                flex-direction: column;
+                align-items: stretch;
+                row-gap: 8px;
+            }
+            #view-detail .post-detail-meta-tail {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            #view-detail .post-detail-edit-history-btn {
+                padding: 4px 10px !important;
+                min-height: 30px !important;
+                height: auto;
+                font-size: 11px !important;
+                font-weight: 700;
+                border-radius: 999px;
+            }
+            #view-detail .post-detail-edit-history-btn .icon {
+                width: 14px;
+                height: 14px;
+                margin-right: 4px !important;
             }
             .table th { padding: 9px 6px; font-size: 12px; }
             .table td { padding: 10px 6px; font-size: 12px; }
@@ -242,6 +311,12 @@
             .notification-center-toolbar--page .notification-toolbar-back-btn .icon {
                 width: 18px;
                 height: 18px;
+                margin: 0 !important;
+                display: block;
+            }
+            .mobile-page-toolbar .notification-toolbar-back-btn .icon {
+                margin: 0 !important;
+                display: block;
             }
             .badge { padding: 3px 8px; font-size: 11px; }
             .ai-search-shell { grid-template-columns: 1fr; gap: 10px; }
@@ -251,6 +326,148 @@
                 max-height: none;
             }
             .ai-search-history-list { max-height: 220px; }
+
+            /* 게시물 상세: 작성자 프로필 80px, 같은 행(일시) 높이 맞춤 */
+            #view-detail .post-detail-meta-primary {
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: stretch;
+                width: 100%;
+                column-gap: 14px;
+                row-gap: 10px;
+            }
+            #view-detail .post-detail-meta-primary .post-detail-meta-item {
+                display: flex;
+                align-items: center;
+                min-height: 80px;
+            }
+            #view-detail .post-detail-meta-primary .post-detail-meta-item > .icon {
+                width: 20px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+            #view-detail .writer-cell.detail .writer-avatar.detail,
+            #view-detail .writer-avatar.detail {
+                width: 80px !important;
+                height: 80px !important;
+                min-width: 80px;
+                min-height: 80px;
+                font-size: 26px;
+            }
+            #view-detail #dtlWriter .writer-cell.detail {
+                gap: 12px;
+            }
+            #view-detail #dtlWriter .writer-name {
+                white-space: normal;
+            }
+            #view-detail .post-detail-meta-primary #dtlTime {
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+            /* AI 패널 헤더: 모바일 ⋮ + 말풍선형 액션 */
+            #dtlAiWrap .ai-panel-head-row {
+                flex-wrap: nowrap;
+            }
+            #dtlAiWrap .ai-panel-head-row #dtlAiPanelTitle {
+                min-width: 0;
+                flex: 1 1 auto;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            #dtlAiWrap .ai-panel-mtools-toggle:not(.hidden) {
+                display: inline-flex !important;
+            }
+            #dtlAiWrap .ai-header-right {
+                align-items: center;
+                flex: 0 0 auto;
+            }
+            #dtlAiWrap .ai-header-actions-cluster {
+                position: absolute;
+                right: 0;
+                top: calc(100% + 10px);
+                z-index: 24;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                min-width: min(272px, calc(100vw - 36px));
+                padding: 12px 14px;
+                border-radius: 14px;
+                background: #ffffff;
+                border: 1px solid rgba(148, 163, 184, 0.38);
+                box-shadow:
+                    0 16px 40px rgba(15, 23, 42, 0.2),
+                    0 0 0 1px rgba(255, 255, 255, 0.85) inset;
+                transform-origin: top right;
+                visibility: hidden;
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(-10px) scale(0.92);
+                transition:
+                    opacity 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    transform 0.28s cubic-bezier(0.22, 1.24, 0.36, 1),
+                    visibility 0.28s;
+            }
+            #dtlAiWrap.ai-tools-flyout-open .ai-header-actions-cluster {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateY(0) scale(1);
+            }
+            #dtlAiWrap .ai-header-actions-cluster::after {
+                content: '';
+                position: absolute;
+                top: -6px;
+                right: 14px;
+                width: 11px;
+                height: 11px;
+                background: #fff;
+                border-left: 1px solid rgba(148, 163, 184, 0.35);
+                border-top: 1px solid rgba(148, 163, 184, 0.35);
+                transform: rotate(45deg);
+                box-sizing: border-box;
+            }
+            #dtlAiWrap .ai-header-actions-cluster .btn {
+                justify-content: flex-start;
+                width: 100%;
+                min-height: 44px;
+                border-radius: 10px !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster #btnAiReplyHistory {
+                color: #0f172a !important;
+                background: #f8fafc !important;
+                border-color: #cbd5e1 !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster #btnAiReplyHistory:hover {
+                background: #f1f5f9 !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster .ai-action-row-header {
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            #dtlAiWrap .ai-header-actions-cluster #btnRefreshAiReply {
+                color: #0f172a !important;
+                background: #f8fafc !important;
+                border-color: #cbd5e1 !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster #btnRefreshAiReply:hover {
+                background: #f1f5f9 !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster #btnConvertAiSolved {
+                color: #fff !important;
+                border-color: #7e22ce !important;
+            }
+            #dtlAiWrap .ai-header-actions-cluster .ai-toolbar-btn-label {
+                margin-left: 4px;
+            }
         }
 
         @media (max-width: 640px) {
@@ -532,37 +749,24 @@
             }
             #view-list .table tbody td.hidden { display: none !important; }
 
-            /* 대시보드 카운트 모달 표 카드형 */
-            #dashCountModal .table-wrap { overflow-x: visible !important; max-height: none !important; }
-            #dashCountModal .table { min-width: 0 !important; width: 100% !important; border-collapse: separate; border-spacing: 0 10px; }
-            #dashCountModal .table thead { display: none; }
-            #dashCountModal .table tbody { display: block; }
-            #dashCountModal .table tbody tr {
-                display: block;
-                background: #fff;
-                border: 1px solid #dbe3ee;
-                border-radius: 10px;
-                box-shadow: 0 2px 8px rgba(15,23,42,0.05);
-                margin-bottom: 10px;
-                padding: 8px 10px;
+            .dash-count-modal-list {
+                max-height: min(56vh, 440px);
             }
-            #dashCountModal .table tbody td {
-                display: grid;
-                grid-template-columns: 74px 1fr;
-                align-items: center;
-                gap: 8px;
-                text-align: left !important;
-                border-bottom: 1px dashed #e2e8f0;
-                padding: 7px 2px;
-                font-size: 12px;
+            .dash-count-card-meta {
+                flex-direction: column;
+                align-items: flex-start;
             }
-            #dashCountModal .table tbody td:last-child { border-bottom: 0; }
-            #dashCountModal .table tbody td:nth-child(1)::before { content: '번호'; color:#64748b; font-weight:800; font-size:11px; }
-            #dashCountModal .table tbody td:nth-child(2)::before { content: '게시판'; color:#64748b; font-weight:800; font-size:11px; }
-            #dashCountModal .table tbody td:nth-child(3)::before { content: '제목'; color:#64748b; font-weight:800; font-size:11px; }
-            #dashCountModal .table tbody td:nth-child(4)::before { content: '작성자'; color:#64748b; font-weight:800; font-size:11px; }
-            #dashCountModal .table tbody td:nth-child(5)::before { content: '상태'; color:#64748b; font-weight:800; font-size:11px; }
-            #dashCountModal .table tbody td:nth-child(6)::before { content: '등록일'; color:#64748b; font-weight:800; font-size:11px; }
+            .dash-count-card-writer {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            .dash-count-modal-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .dash-count-modal-toolbar-right {
+                justify-content: center;
+            }
 
             /* 회원목록 모달 표 카드형 */
             #memberListContainer table { width: 100% !important; border-collapse: separate !important; border-spacing: 0 10px !important; }
