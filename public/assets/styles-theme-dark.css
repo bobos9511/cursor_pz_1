@@ -1956,3 +1956,30 @@
         body[data-theme="dark"] .top-nav-item.active .icon {
             color: #bae6fd;
         }
+
+        body[data-theme="dark"] .dash-pie-svg-wrap {
+            filter: drop-shadow(0 4px 22px rgba(0, 0, 0, 0.35));
+        }
+        body[data-theme="dark"] .dash-pie-center-pct {
+            color: #f1f5f9;
+        }
+        body[data-theme="dark"] .dash-pie-center-lbl {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .dash-pie-legend-item {
+            background: rgba(30, 41, 59, 0.45);
+            border-color: rgba(71, 85, 105, 0.55);
+        }
+        body[data-theme="dark"] .dash-pie-legend-item:hover {
+            background: rgba(51, 65, 85, 0.55);
+            border-color: rgba(125, 211, 252, 0.25);
+        }
+        body[data-theme="dark"] .dash-pie-legend-text {
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .dash-pie-legend-pct {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .dash-pie-empty-msg {
+            fill: #94a3b8;
+        }

@@ -4212,21 +4212,46 @@
             }
         }
 
+        /** SVG 도넛: 단일 100% 구간은 360° 호가 붕괴되므로 evenodd 전체 링 경로 사용 */
+        function pieFullRingEvenOdd(cx, cy, R, r) {
+            return [
+                `M ${cx + R} ${cy}`,
+                `A ${R} ${R} 0 1 1 ${cx - R} ${cy}`,
+                `A ${R} ${R} 0 1 1 ${cx + R} ${cy}`,
+                `M ${cx + r} ${cy}`,
+                `A ${r} ${r} 0 1 0 ${cx - r} ${cy}`,
+                `A ${r} ${r} 0 1 0 ${cx + r} ${cy}`,
+                'Z',
+            ].join(' ');
+        }
+
         function drawPieChart(host) {
-            host.classList.add('chart-host');
+            if (!host) return;
+            host.classList.add('chart-host', 'dash-pie-host');
+            const rect = host.getBoundingClientRect();
+            const tries = Number(host.dataset.pieLayoutTry || 0);
+            if ((rect.width < 56 || rect.height < 56) && tries < 12) {
+                host.dataset.pieLayoutTry = String(tries + 1);
+                requestAnimationFrame(() => drawPieChart(host));
+                return;
+            }
+            host.dataset.pieLayoutTry = '0';
+
             const shares = computePieShares();
             const data = [
-                { label: 'IT', value: shares.IT, color: '#005BAC' },
-                { label: '업무', value: shares.BIZ, color: '#60a5fa' },
-                { label: '개선', value: shares.SYS, color: '#c084fc' }
+                { label: 'IT', value: shares.IT, color: '#2563eb' },
+                { label: '업무', value: shares.BIZ, color: '#38bdf8' },
+                { label: '개선', value: shares.SYS, color: '#a78bfa' },
             ];
-            const total = data.reduce((sum, d) => sum + d.value, 0);
-            const size = 188;
-            const center = 94;
-            const radius = 80;
-            const innerRadius = 44;
-            const toRad = (deg) => (deg - 90) * Math.PI / 180;
+            const sumVal = data.reduce((s, d) => s + d.value, 0);
+            const { width: hostW, height: hostH } = getChartHostSize(host, 260, 200);
+            const size = Math.round(Math.min(240, Math.max(168, Math.min(hostW - 140, hostH - 8, (rect.width > 20 ? rect.width - 32 : hostW)))));
+            const center = size / 2;
+            const radius = size * 0.41;
+            const innerRadius = size * 0.235;
+            const toRad = (deg) => ((deg - 90) * Math.PI) / 180;
             const arcPath = (startDeg, endDeg) => {
+                if (endDeg - startDeg < 0.05) return '';
                 const largeArc = endDeg - startDeg > 180 ? 1 : 0;
                 const x1 = center + radius * Math.cos(toRad(startDeg));
                 const y1 = center + radius * Math.sin(toRad(startDeg));
@@ -4238,30 +4263,64 @@
                 const iy2 = center + innerRadius * Math.sin(toRad(startDeg));
                 return [
                     `M ${x1.toFixed(2)} ${y1.toFixed(2)}`,
-                    `A ${radius} ${radius} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`,
+                    `A ${radius.toFixed(2)} ${radius.toFixed(2)} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`,
                     `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
-                    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
-                    'Z'
+                    `A ${innerRadius.toFixed(2)} ${innerRadius.toFixed(2)} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
+                    'Z',
                 ].join(' ');
             };
-            let accDeg = 0;
-            const slices = data.map((d, i) => {
-                const angle = total > 0 ? (d.value / total) * 360 : 0;
-                const start = accDeg;
-                const end = accDeg + angle;
-                accDeg = end;
-                return `<path class="pie-slice js-pie-slice" data-label="${d.label}" data-value="${d.value}" d="${arcPath(start, end)}" fill="${d.color}" style="animation-delay:${(i * 0.08).toFixed(2)}s;"></path>`;
-            }).join('');
+
+            let pathsHtml = '';
+            let animIdx = 0;
+            if (sumVal <= 0) {
+                pathsHtml = `<circle class="pie-slice pie-slice--empty" cx="${center}" cy="${center}" r="${(radius + innerRadius) / 2}" fill="none" stroke="#94a3b8" stroke-width="${Math.max(10, (radius - innerRadius) * 0.45)}" stroke-dasharray="6 10" opacity="0.35" style="animation-delay:0s;"></circle>
+                    <text x="${center}" y="${center + 4}" text-anchor="middle" font-size="${Math.max(11, size * 0.068)}" class="dash-pie-empty-msg">표시할 문의 유형이 없습니다</text>`;
+            } else {
+                const positive = data.filter((d) => d.value > 0);
+                if (positive.length === 1 && positive[0].value >= 99) {
+                    const d = positive[0];
+                    pathsHtml = `<path class="pie-slice js-pie-slice" data-label="${d.label}" data-value="${d.value}" fill-rule="evenodd" fill="${d.color}" style="animation-delay:0.05s;filter:drop-shadow(0 6px 14px rgba(15,23,42,0.22));" d="${pieFullRingEvenOdd(center, center, radius, innerRadius)}"></path>`;
+                } else {
+                    let accDeg = 0;
+                    pathsHtml = data
+                        .map((d) => {
+                            const angle = (d.value / sumVal) * 360;
+                            const start = accDeg;
+                            const end = accDeg + angle;
+                            accDeg = end;
+                            if (angle < 0.2) return '';
+                            const dPath = arcPath(start, end);
+                            if (!dPath) return '';
+                            const delay = (animIdx * 0.07).toFixed(2);
+                            animIdx += 1;
+                            return `<path class="pie-slice js-pie-slice" data-label="${d.label}" data-value="${d.value}" d="${dPath}" fill="${d.color}" style="animation-delay:${delay}s;filter:drop-shadow(0 4px 12px rgba(15,23,42,0.18));"></path>`;
+                        })
+                        .join('');
+                }
+            }
+
+            const dominant = [...data].sort((a, b) => b.value - a.value)[0];
+            const centerHint =
+                sumVal > 0 && dominant.value > 0
+                    ? `<div class="dash-pie-center-hint" aria-hidden="true"><span class="dash-pie-center-pct">${dominant.value}%</span><span class="dash-pie-center-lbl">${dominant.label}</span></div>`
+                    : '';
+
             host.innerHTML = `
-                <div style="height:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:4px 10px 4px 4px;">
-                    <div style="position:relative;flex-shrink:0;width:${size}px;height:${size}px;">
-                        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="시스템 점유 비중 차트">
-                            ${slices}
+                <div class="dash-pie-chart-shell dash-pie-chart-shell--enter">
+                    <div class="dash-pie-svg-wrap">
+                        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="시스템 점유 비중" class="dash-pie-svg">
+                            ${pathsHtml}
                         </svg>
+                        ${centerHint}
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:10px;min-width:120px;">
-                        ${data.map(d => `<div class="js-pie-legend" data-label="${d.label}" data-value="${d.value}" style="display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;"><span style="width:12px;height:12px;border-radius:3px;background:${d.color};display:inline-block;"></span><b>${d.label}</b> ${d.value}%</div>`).join('')}
-                    </div>
+                    <ul class="dash-pie-legend" aria-label="범례">
+                        ${data
+                            .map(
+                                (d) =>
+                                    `<li class="dash-pie-legend-item js-pie-legend" data-label="${d.label}" data-value="${d.value}"><span class="dash-pie-legend-swatch" style="background:${d.color};"></span><span class="dash-pie-legend-text"><b>${d.label}</b><span class="dash-pie-legend-pct">${d.value}%</span></span></li>`,
+                            )
+                            .join('')}
+                    </ul>
                 </div>
                 <div class="chart-tooltip" id="pieChartTooltip"></div>
             `;
@@ -4269,13 +4328,15 @@
             const tooltip = host.querySelector('#pieChartTooltip');
             const showTooltip = (event, label, value) => {
                 if (!tooltip) return;
-                const rect = host.getBoundingClientRect();
-                tooltip.style.left = `${event.clientX - rect.left}px`;
-                tooltip.style.top = `${event.clientY - rect.top}px`;
+                const r = host.getBoundingClientRect();
+                tooltip.style.left = `${event.clientX - r.left}px`;
+                tooltip.style.top = `${event.clientY - r.top}px`;
                 tooltip.innerHTML = `<b>${label}</b><br>점유율 ${value}%`;
                 tooltip.classList.add('visible');
             };
-            const hideTooltip = () => { if (tooltip) tooltip.classList.remove('visible'); };
+            const hideTooltip = () => {
+                if (tooltip) tooltip.classList.remove('visible');
+            };
 
             host.querySelectorAll('.js-pie-slice, .js-pie-legend').forEach((el) => {
                 el.addEventListener('mousemove', (event) => {

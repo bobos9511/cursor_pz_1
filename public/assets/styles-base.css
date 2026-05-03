@@ -3485,6 +3485,147 @@
             from { opacity: 0; transform: scale(0.7); }
             to { opacity: 1; transform: scale(1); }
         }
+        @keyframes dashPieShellIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes dashPieLegendIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes dashPieCenterIn {
+            from { opacity: 0; transform: scale(0.85); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes dashPieEmptyPulse {
+            0%, 100% { opacity: 0.28; }
+            50% { opacity: 0.5; }
+        }
+
+        .dash-pie-host {
+            min-height: 0;
+            box-sizing: border-box;
+        }
+        .dash-pie-chart-shell {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(14px, 2.5vw, 28px);
+            height: 100%;
+            width: 100%;
+            min-height: 0;
+            padding: 4px 6px 4px 2px;
+            box-sizing: border-box;
+        }
+        .dash-pie-chart-shell--enter {
+            animation: dashPieShellIn 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .dash-pie-svg-wrap {
+            position: relative;
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 2px 16px rgba(15, 23, 42, 0.08));
+        }
+        .dash-pie-svg {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            vertical-align: middle;
+        }
+        .dash-pie-center-hint {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            text-align: center;
+            line-height: 1.12;
+            animation: dashPieCenterIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+        }
+        .dash-pie-center-pct {
+            font-size: clamp(1.25rem, 4.2vw, 1.85rem);
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.03em;
+        }
+        .dash-pie-center-lbl {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-top: 3px;
+        }
+        .dash-pie-legend {
+            list-style: none;
+            margin: 0;
+            padding: 4px 4px 4px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0;
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+        .dash-pie-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: default;
+            padding: 6px 10px;
+            margin: 0;
+            border-radius: 10px;
+            background: rgba(248, 250, 252, 0.65);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+            animation: dashPieLegendIn 0.42s ease both;
+        }
+        .dash-pie-legend-item:nth-child(1) { animation-delay: 0.1s; }
+        .dash-pie-legend-item:nth-child(2) { animation-delay: 0.18s; }
+        .dash-pie-legend-item:nth-child(3) { animation-delay: 0.26s; }
+        .dash-pie-legend-item:hover {
+            background: rgba(241, 245, 249, 0.95);
+            border-color: rgba(148, 163, 184, 0.55);
+            transform: translateX(-2px);
+        }
+        .dash-pie-legend-swatch {
+            width: 13px;
+            height: 13px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+            transition: transform 0.2s ease;
+        }
+        .dash-pie-legend-item:hover .dash-pie-legend-swatch {
+            transform: scale(1.12);
+        }
+        .dash-pie-legend-text {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #334155;
+            min-width: 0;
+        }
+        .dash-pie-legend-text b {
+            font-weight: 700;
+        }
+        .dash-pie-legend-pct {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #475569;
+        }
+        .pie-slice--empty {
+            animation: dashPieEmptyPulse 2.2s ease-in-out infinite;
+        }
+        .dash-pie-empty-msg {
+            font-weight: 600;
+            fill: #64748b;
+        }
+
         .chart-box { height: 280px; display: flex; align-items: flex-end; justify-content: space-around; padding-top: 20px; }
         .bar-group { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; }
         .bar { width: 30px; background: var(--ibk-blue); border-radius: 3px 3px 0 0; transition: height 0.5s ease-out; position: relative; min-height: 5px;}
