@@ -1259,6 +1259,8 @@
             if (user.isAdmin === true) out.isAdmin = true;
             else if (user.isAdmin === false) out.isAdmin = false;
             else delete out.isAdmin;
+            if (user.pendingAdminAccessRequest === true) out.pendingAdminAccessRequest = true;
+            else delete out.pendingAdminAccessRequest;
             if (typeof user.hasAdminPin === 'boolean') out.hasAdminPin = user.hasAdminPin;
             if (user.withdrawn === true) {
                 out.withdrawn = true;
@@ -2404,48 +2406,10 @@
             syncSignupPositionFieldMode();
             syncSignupEmpNoUiForRole();
             const adm = document.getElementById('signupIsAdmin');
-            if (adm) adm.checked = false;
-            const p1 = document.getElementById('signupAdminPin');
-            const p2 = document.getElementById('signupAdminPinConfirm');
-            if (p1) p1.value = '';
-            if (p2) p2.value = '';
-            const sec = document.getElementById('signupAdminPinSection');
-            if (sec) sec.classList.add('hidden');
-        }
-
-        let signupAdminControlsBound = false;
-        function bindSignupAdminControlsOnce() {
-            if (signupAdminControlsBound) return;
-            signupAdminControlsBound = true;
-            const cb = document.getElementById('signupIsAdmin');
-            if (cb) {
-                cb.addEventListener('change', () => {
-                    const orig = (document.getElementById('signupOriginalEmpNo') && document.getElementById('signupOriginalEmpNo').value) || '';
-                    const t = orig ? signupUsers.find((u) => String(u.employeeNo) === String(orig)) : null;
-                    syncSignupAdminPinSectionForUser(t);
-                });
-            }
-        }
-
-        function syncSignupAdminPinSectionForUser(targetUser) {
-            const sec = document.getElementById('signupAdminPinSection');
-            const cb = document.getElementById('signupIsAdmin');
-            const hint = document.getElementById('signupAdminPinHint');
-            if (!sec || !cb) return;
-            if (!cb.checked) {
-                sec.classList.add('hidden');
-                return;
-            }
-            if (targetUser && resolveUserIsAdmin(targetUser) && targetUser.hasAdminPin) {
-                sec.classList.add('hidden');
-                if (hint) {
-                    hint.textContent = 'PIN 변경은 관리자 설정의「내 관리자 PIN」에서 하세요.';
-                }
-            } else {
-                sec.classList.remove('hidden');
-                if (hint) {
-                    hint.textContent = '숫자 6자리. 관리자로 저장할 때 반드시 입력합니다.';
-                }
+            if (adm) {
+                adm.checked = false;
+                adm.disabled = false;
+                adm.removeAttribute('title');
             }
         }
 
@@ -2454,8 +2418,6 @@
             updateSignupSavedCount();
             resetSignupForm();
             bindSignupFormControlsOnce();
-            bindSignupAdminControlsOnce();
-            syncSignupAdminPinSectionForUser(null);
             document.getElementById('signupModal').classList.add('active');
             setTimeout(() => {
                 const first = document.getElementById('signupName');
@@ -2506,7 +2468,7 @@
             const faxNo = composeSignupFaxNo();
             const mobileNo = composeSignupMobileNo();
             const originalEmpNo = (document.getElementById('signupOriginalEmpNo').value || '').trim();
-            const wantAdmin = !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked);
+            const wantAdminRequest = !!(document.getElementById('signupIsAdmin') && document.getElementById('signupIsAdmin').checked);
             const prevUser = originalEmpNo ? signupUsers.find((u) => String(u.employeeNo) === String(originalEmpNo)) : null;
 
             if (!name || !empNo || !deptName || !deptCode) {
@@ -2536,26 +2498,6 @@
                 return;
             }
 
-            let adminPinPlain = '';
-            if (wantAdmin) {
-                const needsNewPin =
-                    !prevUser || !resolveUserIsAdmin(prevUser) || !prevUser.hasAdminPin;
-                if (needsNewPin) {
-                    const pA = normalizeAdminPinDigits(
-                        document.getElementById('signupAdminPin') && document.getElementById('signupAdminPin').value,
-                    );
-                    const pB = normalizeAdminPinDigits(
-                        document.getElementById('signupAdminPinConfirm') &&
-                            document.getElementById('signupAdminPinConfirm').value,
-                    );
-                    if (!isValidAdminPinFormatClient(pA) || pA !== pB) {
-                        showAlert('관리자 PIN은 숫자 6자리로 두 번 동일하게 입력해주세요.', 'error');
-                        return;
-                    }
-                    adminPinPlain = pA;
-                }
-            }
-
             const user = {
                 id: Date.now(),
                 name,
@@ -2568,7 +2510,6 @@
                 extNo,
                 faxNo,
                 mobileNo,
-                isAdmin: wantAdmin,
                 createdAt: getCurrentDateTime()
             };
             if (String(user.employeeNo) === AI_SYSTEM_USER_EMP_NO) {
@@ -2586,21 +2527,34 @@
                 return;
             }
             const editingIdx = signupUsers.findIndex((u) => u.employeeNo === originalEmpNo);
+            function applySignupAdminRequestFlags(merged, prev) {
+                if (prev && resolveUserIsAdmin(prev)) {
+                    delete merged.pendingAdminAccessRequest;
+                    return merged;
+                }
+                if (wantAdminRequest) {
+                    merged.pendingAdminAccessRequest = true;
+                    merged.isAdmin = false;
+                    delete merged.adminPinPlain;
+                    delete merged.adminPinHash;
+                    delete merged.hasAdminPin;
+                } else {
+                    delete merged.pendingAdminAccessRequest;
+                }
+                return merged;
+            }
             if (editingIdx > -1) {
                 const prev = signupUsers[editingIdx];
-                const merged = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
-                if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                const merged = applySignupAdminRequestFlags({ ...prev, ...user, id: prev.id, createdAt: prev.createdAt }, prev);
                 signupUsers[editingIdx] = merged;
             } else {
                 const sameEmpIdx = signupUsers.findIndex((u) => u.employeeNo === user.employeeNo);
                 if (sameEmpIdx > -1) {
                     const prev = signupUsers[sameEmpIdx];
-                    const merged = { ...prev, ...user, id: prev.id, createdAt: prev.createdAt };
-                    if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                    const merged = applySignupAdminRequestFlags({ ...prev, ...user, id: prev.id, createdAt: prev.createdAt }, prev);
                     signupUsers[sameEmpIdx] = merged;
                 } else {
-                    const merged = { ...user };
-                    if (wantAdmin && adminPinPlain) merged.adminPinPlain = adminPinPlain;
+                    const merged = applySignupAdminRequestFlags({ ...user }, null);
                     signupUsers.unshift(merged);
                 }
             }
@@ -2611,13 +2565,29 @@
                 console.error(error);
                 return;
             }
+            if (wantAdminRequest) {
+                try {
+                    await fetchJson('/api/db/admin-access-request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requesterEmpNo: empNo, requesterName: name }),
+                    });
+                } catch (err) {
+                    console.error('admin-access-request failed:', err);
+                }
+            }
             updateSignupSavedCount();
             renderMemberList();
             if (typeof renderAdminPermissionsPanel === 'function') {
                 renderAdminPermissionsPanel();
             }
             closeSignupModal();
-            showAlert('회원가입 정보가 서버에 저장되었습니다.', 'success');
+            showAlert(
+                wantAdminRequest
+                    ? '회원가입 정보가 저장되었으며, 플랫폼 관리자에게 권한 요청 알림을 보냈습니다.'
+                    : '회원가입 정보가 서버에 저장되었습니다.',
+                'success',
+            );
         }
 
         function openSignupModalForEdit(employeeNo) {
@@ -2644,9 +2614,17 @@
             formatSignupEmpNoInput();
             syncSignupEmpNoUiForRole();
             const adm = document.getElementById('signupIsAdmin');
-            if (adm) adm.checked = !!resolveUserIsAdmin(target);
-            bindSignupAdminControlsOnce();
-            syncSignupAdminPinSectionForUser(target);
+            if (adm) {
+                if (resolveUserIsAdmin(target)) {
+                    adm.checked = false;
+                    adm.disabled = true;
+                    adm.title = '이미 플랫폼 관리자인 계정입니다.';
+                } else {
+                    adm.disabled = false;
+                    adm.removeAttribute('title');
+                    adm.checked = !!target.pendingAdminAccessRequest;
+                }
+            }
             document.getElementById('signupModal').classList.add('active');
         }
         window.openSignupModalForEdit = openSignupModalForEdit;
@@ -4218,6 +4196,21 @@
                 else document.getElementById('listWriteBtnText').innerText = '신규 접수';
             }
         }
+
+        window.navigateAdminPermHighlight = function navigateAdminPermHighlight(empNo) {
+            const emp = String(empNo || '').trim().replace(/[^0-9A-Za-z]/g, '');
+            if (!emp) return;
+            if (typeof window.closeNotificationCenter === 'function') {
+                try {
+                    window.closeNotificationCenter();
+                } catch (_) {}
+            }
+            try {
+                sessionStorage.setItem('adminPermHighlightEmpNo', emp);
+            } catch (_) {}
+            switchView('admin-settings');
+        };
+
         function switchView(viewId, boardType = null, options = {}) {
             const fromHistory = !!options.fromHistory;
             const skipHistory = !!options.skipHistory;
@@ -4316,8 +4309,18 @@
                     void (async () => {
                         await loadSignupUsers();
                         await loadAdminAiSettingsView();
+                        let highlightEmp = '';
+                        try {
+                            highlightEmp = String(sessionStorage.getItem('adminPermHighlightEmpNo') || '').trim();
+                            if (highlightEmp) sessionStorage.removeItem('adminPermHighlightEmpNo');
+                        } catch (_) {}
                         renderAdminPermissionsPanel();
-                        selectAdminSettingsMainTab('ai');
+                        selectAdminSettingsMainTab(highlightEmp ? 'perms' : 'ai');
+                        if (highlightEmp && typeof window.applyAdminPermHighlightRow === 'function') {
+                            requestAnimationFrame(() => {
+                                window.applyAdminPermHighlightRow(highlightEmp);
+                            });
+                        }
                     })();
                 }
             }

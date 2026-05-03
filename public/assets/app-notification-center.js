@@ -40,21 +40,49 @@ function getNotificationScopeFromCookie() {
 function sanitizeNotificationItemsForTransport(items) {
     return pruneNotificationRetention(items)
         .slice(0, 300)
-        .map((it) => ({
-            id: String(it.id || ""),
-            message: String(it.message || ""),
-            type: String(it.type || "success"),
-            topic: String(it.topic || "일반"),
-            level: it.level === "important" ? "important" : "general",
-            at: Number(it.at || Date.now()),
-            atLabel: String(it.atLabel || ""),
-            dateLabel: String(it.dateLabel || ""),
-            timeBand: String(it.timeBand || ""),
-            pageKey: String(it.pageKey || "page:unknown"),
-            pageLabel: String(it.pageLabel || "기타"),
-            isRead: !!it.isRead,
-            actionText: String(it.actionText || "바로가기"),
-        }));
+        .map((it) => {
+            const ak = String(it.actionKind || "").trim().slice(0, 40);
+            const ae = String(it.actionEmpNo || "")
+                .trim()
+                .slice(0, 32)
+                .replace(/[^0-9A-Za-z]/g, "");
+            const o = {
+                id: String(it.id || ""),
+                message: String(it.message || ""),
+                type: String(it.type || "success"),
+                topic: String(it.topic || "일반"),
+                level: it.level === "important" ? "important" : "general",
+                at: Number(it.at || Date.now()),
+                atLabel: String(it.atLabel || ""),
+                dateLabel: String(it.dateLabel || ""),
+                timeBand: String(it.timeBand || ""),
+                pageKey: String(it.pageKey || "page:unknown"),
+                pageLabel: String(it.pageLabel || "기타"),
+                isRead: !!it.isRead,
+                actionText: String(it.actionText || "바로가기"),
+            };
+            if (ak === "adminPermRequest" && ae) {
+                o.actionKind = "adminPermRequest";
+                o.actionEmpNo = ae;
+            }
+            return o;
+        });
+}
+
+function hydrateNotificationItemFromTransport(it) {
+    const base = { ...it };
+    if (it.actionKind === "adminPermRequest" && it.actionEmpNo) {
+        const emp = String(it.actionEmpNo);
+        base.hasAction = true;
+        base.actionText = String(it.actionText || "권한 부여로 이동");
+        base.onClick = () => {
+            if (typeof window.navigateAdminPermHighlight === "function") window.navigateAdminPermHighlight(emp);
+        };
+    } else {
+        base.hasAction = !!it.hasAction && typeof it.onClick === "function";
+        base.onClick = typeof it.onClick === "function" ? it.onClick : null;
+    }
+    return base;
 }
 
 async function loadNotificationCenterStateFromServer() {
@@ -70,11 +98,7 @@ async function loadNotificationCenterStateFromServer() {
             return;
         }
         notificationCenterState.items = loaded
-            .map((it) => ({
-                ...it,
-                hasAction: false,
-                onClick: null,
-            }))
+            .map((it) => hydrateNotificationItemFromTransport(it))
             .sort((a, b) => Number(b.at || 0) - Number(a.at || 0))
             .slice(0, 300);
         recalcNotificationUnreadCount();
@@ -106,8 +130,8 @@ function scheduleNotificationCenterSync() {
 
 function persistNotificationCenterState() {
     try {
-        notificationCenterState.items = sanitizeNotificationItemsForTransport(notificationCenterState.items)
-            .map((it) => ({ ...it, hasAction: false, onClick: null }));
+        const sanitized = sanitizeNotificationItemsForTransport(notificationCenterState.items);
+        notificationCenterState.items = sanitized.map((it) => hydrateNotificationItemFromTransport(it));
         const safeItems = notificationCenterState.items.slice(0, 300);
         const se = notificationCenterState.sectionExpanded || { unread: true, read: true };
         localStorage.setItem(
@@ -140,23 +164,33 @@ function restoreNotificationCenterState() {
         if (!parsed || typeof parsed !== "object") return;
         const loaded = Array.isArray(parsed.items) ? parsed.items : [];
         notificationCenterState.items = pruneNotificationRetention(loaded)
-            .map((it) => ({
-                id: String((it && it.id) || `noti_${Date.now()}_${Math.random().toString(16).slice(2)}`),
-                message: String((it && it.message) || ""),
-                type: String((it && it.type) || "success"),
-                topic: String((it && it.topic) || "일반"),
-                level: (it && it.level) === "important" ? "important" : "general",
-                at: Number((it && it.at) || Date.now()),
-                atLabel: String((it && it.atLabel) || ""),
-                dateLabel: String((it && it.dateLabel) || ""),
-                timeBand: String((it && it.timeBand) || ""),
-                pageKey: String((it && it.pageKey) || "page:unknown"),
-                pageLabel: String((it && it.pageLabel) || "기타"),
-                isRead: !!(it && it.isRead),
-                hasAction: false,
-                onClick: null,
-                actionText: String((it && it.actionText) || "바로가기"),
-            }))
+            .map((it) => {
+                const raw = {
+                    id: String((it && it.id) || `noti_${Date.now()}_${Math.random().toString(16).slice(2)}`),
+                    message: String((it && it.message) || ""),
+                    type: String((it && it.type) || "success"),
+                    topic: String((it && it.topic) || "일반"),
+                    level: (it && it.level) === "important" ? "important" : "general",
+                    at: Number((it && it.at) || Date.now()),
+                    atLabel: String((it && it.atLabel) || ""),
+                    dateLabel: String((it && it.dateLabel) || ""),
+                    timeBand: String((it && it.timeBand) || ""),
+                    pageKey: String((it && it.pageKey) || "page:unknown"),
+                    pageLabel: String((it && it.pageLabel) || "기타"),
+                    isRead: !!(it && it.isRead),
+                    actionText: String((it && it.actionText) || "바로가기"),
+                };
+                const ak = String((it && it.actionKind) || "").trim();
+                const ae = String((it && it.actionEmpNo) || "")
+                    .trim()
+                    .slice(0, 32)
+                    .replace(/[^0-9A-Za-z]/g, "");
+                if (ak === "adminPermRequest" && ae) {
+                    raw.actionKind = "adminPermRequest";
+                    raw.actionEmpNo = ae;
+                }
+                return hydrateNotificationItemFromTransport(raw);
+            })
             .sort((a, b) => Number(b.at || 0) - Number(a.at || 0))
             .slice(0, 300);
         notificationCenterState.seq = Math.max(1, Number(parsed.seq || notificationCenterState.items.length + 1));
@@ -706,6 +740,8 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
 restoreNotificationCenterState();
 void loadNotificationCenterStateFromServer();
 updateNotificationBadge();
+
+window.closeNotificationCenter = closeNotificationCenter;
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {

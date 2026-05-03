@@ -1231,15 +1231,18 @@ function toggleSignupUserAdminFlag(empNo, checked) {
                     }
                     pendingAdminPinByEmp.set(empStr, pin);
                     u.isAdmin = true;
+                    delete u.pendingAdminAccessRequest;
                 },
             });
             return;
         }
         u.isAdmin = true;
+        delete u.pendingAdminAccessRequest;
     } else {
         pendingAdminPinByEmp.delete(empStr);
         u.isAdmin = false;
         u.hasAdminPin = false;
+        delete u.pendingAdminAccessRequest;
     }
 }
 
@@ -1275,10 +1278,16 @@ function renderAdminPermissionsPanel() {
                     ${visibleUsers
                         .map((u) => {
                             const emp = escapeHtml(String(u.employeeNo || ""));
+                            const empData = String(u.employeeNo || "").replace(/[^a-zA-Z0-9]/g, "");
                             const checked = resolveUserIsAdmin(u) ? " checked" : "";
-                            return `<tr>
+                            const pending = !!(u.pendingAdminAccessRequest && !resolveUserIsAdmin(u));
+                            const rowClass = pending ? "admin-perm-row--pending" : "";
+                            const pendingChip = pending
+                                ? ' <span class="admin-perm-pending-chip" title="관리자 권한 요청됨">요청</span>'
+                                : "";
+                            return `<tr data-admin-perm-emp="${empData}"${rowClass ? ` class="${rowClass}"` : ""}>
                                     <td>${escapeHtml(String(u.name || ""))}</td>
-                                    <td>${emp}</td>
+                                    <td>${emp}${pendingChip}</td>
                                     <td>${escapeHtml(getRoleDisplayName(u.role))}</td>
                                     <td>${escapeHtml(String(u.extNo || "8-0000"))}</td>
                                     <td>${escapeHtml(String(u.faxNo || "02-0000-0000"))}</td>
@@ -1349,8 +1358,9 @@ async function saveAdminPermissionsToServer() {
             return o;
         }
         const pin = pendingAdminPinByEmp.get(String(u.employeeNo));
-        if (pin) return { ...u, adminPinPlain: pin };
-        return { ...u };
+        const next = pin ? { ...u, adminPinPlain: pin } : { ...u };
+        delete next.pendingAdminAccessRequest;
+        return next;
     });
     try {
         await saveSignupUsers({ rethrow: true });
@@ -1786,3 +1796,21 @@ window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
 window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;
 window.closeAdminAiSettingsHistoryModal = closeAdminAiSettingsHistoryModal;
 window.restoreAdminAiSettingsVersion = restoreAdminAiSettingsVersion;
+
+window.applyAdminPermHighlightRow = function applyAdminPermHighlightRow(empNo) {
+    const emp = String(empNo || "")
+        .trim()
+        .replace(/[^a-zA-Z0-9]/g, "");
+    if (!emp) return;
+    const row = document.querySelector(`tr[data-admin-perm-emp="${emp}"]`);
+    if (!row) return;
+    try {
+        row.scrollIntoView({ block: "center", behavior: "smooth" });
+    } catch (_) {
+        row.scrollIntoView(true);
+    }
+    row.classList.add("admin-perm-row-highlight");
+    setTimeout(() => {
+        row.classList.remove("admin-perm-row-highlight");
+    }, 4500);
+};

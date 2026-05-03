@@ -121,25 +121,11 @@
                 <div class="signup-admin-card signup-admin-grant">
                     <input type="checkbox" id="signupIsAdmin" class="signup-admin-checkbox">
                     <div class="signup-admin-copy">
-                        <label for="signupIsAdmin" class="signup-admin-label">플랫폼 관리자 권한 부여</label>
-                        <p class="signup-admin-desc">관리자 설정(AI·권한) 접근 및 저장이 가능합니다. 관리자로 저장 시 숫자 PIN을 반드시 설정합니다.</p>
+                        <label for="signupIsAdmin" class="signup-admin-label">플랫폼 관리자 권한 요청</label>
+                        <p class="signup-admin-desc">체크 시 플랫폼 관리자 계정으로 알림이 전송되며, 관리자가 관리자 설정의 권한 탭에서 승인·PIN을 지정할 때까지 관리자 메뉴는 열리지 않습니다.</p>
                     </div>
                 </div>
-                <div id="signupAdminPinSection" class="signup-modal-section hidden" style="margin-top:12px;">
-                    <h4 class="signup-modal-section-title">관리자 PIN (숫자 6자리)</h4>
-                    <div class="signup-modal-grid">
-                        <div class="signup-field">
-                            <label class="signup-field-label" for="signupAdminPin">PIN</label>
-                            <input type="password" id="signupAdminPin" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="6자리 숫자">
-                        </div>
-                        <div class="signup-field">
-                            <label class="signup-field-label" for="signupAdminPinConfirm">PIN 확인</label>
-                            <input type="password" id="signupAdminPinConfirm" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password">
-                        </div>
-                    </div>
-                    <p id="signupAdminPinHint" class="signup-modal-hint" style="margin-top:8px;"></p>
-                </div>
-                <p class="signup-modal-hint">영업점·본부 계정에도 필요 시 부여할 수 있습니다.</p>
+                <p class="signup-modal-hint">실제 권한 부여는 관리자가 권한 설정에서 처리합니다.</p>
                 <footer class="signup-modal-footer">
                     <span id="signupSavedCount" class="signup-saved-pill">저장된 회원: 0명</span>
                     <div class="signup-modal-actions">

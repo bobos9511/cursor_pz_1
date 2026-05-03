@@ -1209,6 +1209,18 @@
             accent-color: #60a5fa;
             filter: saturate(1.1);
         }
+        body[data-theme="dark"] .admin-perm-row--pending {
+            box-shadow: inset 4px 0 0 0 #fbbf24;
+            background: linear-gradient(90deg, rgba(120, 53, 15, 0.35) 0%, #13233a 14px);
+        }
+        body[data-theme="dark"] .admin-perm-pending-chip {
+            color: #fde68a;
+            background: rgba(120, 53, 15, 0.55);
+            border-color: rgba(251, 191, 36, 0.45);
+        }
+        body[data-theme="dark"] .admin-perm-row-highlight {
+            outline-color: #60a5fa;
+        }
         body[data-theme="dark"] .admin-help-hero {
             border-color: #3f5475;
             background: linear-gradient(135deg, #1b2c47 0%, #15243b 100%);

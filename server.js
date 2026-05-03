@@ -1450,7 +1450,12 @@ function sanitizeNotificationCenterItems(raw, nowMs = Date.now()) {
     if (!it || typeof it !== "object") continue;
     const at = Number(it.at || 0);
     if (!Number.isFinite(at) || at < minAt) continue;
-    out.push({
+    const actionKind = String(it.actionKind || "").trim().slice(0, 40);
+    const actionEmpNo = String(it.actionEmpNo || "")
+      .trim()
+      .slice(0, 32)
+      .replace(/[^0-9A-Za-z]/g, "");
+    const entry = {
       id: String(it.id || `noti_${at}_${i}`).slice(0, 160),
       message: String(it.message || "").slice(0, 2000),
       type: String(it.type || "success").slice(0, 40),
@@ -1464,10 +1469,30 @@ function sanitizeNotificationCenterItems(raw, nowMs = Date.now()) {
       pageLabel: String(it.pageLabel || "기타").slice(0, 120),
       isRead: !!it.isRead,
       actionText: String(it.actionText || "바로가기").slice(0, 80),
-    });
+    };
+    if (actionKind === "adminPermRequest" && actionEmpNo) {
+      entry.actionKind = "adminPermRequest";
+      entry.actionEmpNo = actionEmpNo;
+    }
+    out.push(entry);
   }
   out.sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
   return out.slice(0, 300);
+}
+
+function fmtNotificationAtLabel(nowMs) {
+  const d = new Date(nowMs);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(
+    d.getHours(),
+  ).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function resolveNotiTimeBandFromDate(d) {
+  const h = d.getHours();
+  if (h < 6) return "야간";
+  if (h < 12) return "오전";
+  if (h < 18) return "오후";
+  return "야간";
 }
 
 function pruneNotificationsByScope(db, nowMs = Date.now()) {
@@ -1626,6 +1651,60 @@ async function handleDbApi(req, res, url) {
     pruneNotificationsByScope(db);
     writeDb(db);
     sendJson(res, 200, { ok: true, count: db.notificationsByScope[scope].length });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/admin-access-request") {
+    if (!applyRateLimit(req, res)) return true;
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const requesterEmpNo = normalizeAiChatHistoryScope(body && body.requesterEmpNo);
+    const requesterName = String(body && body.requesterName || "")
+      .trim()
+      .slice(0, 80);
+    if (!requesterEmpNo || requesterEmpNo === "guest") {
+      sendJson(res, 400, { error: "requesterEmpNo is required." });
+      return true;
+    }
+    const db = readDb();
+    const users = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+    const admins = users.filter((u) => u && u.isAdmin === true);
+    const now = Date.now();
+    const d = new Date(now);
+    if (!db.notificationsByScope || typeof db.notificationsByScope !== "object") db.notificationsByScope = {};
+    let notified = 0;
+    for (const a of admins) {
+      const scope = normalizeAiChatHistoryScope(a && a.employeeNo);
+      if (!scope || scope === "guest") continue;
+      const noti = {
+        id: `noti_${now}_${crypto.randomBytes(6).toString("hex")}`,
+        message: `[${requesterName || "이름 없음"}] (${requesterEmpNo}) 님이 플랫폼 관리자 권한 부여를 요청했습니다.`,
+        type: "success",
+        topic: "권한",
+        level: "important",
+        at: now,
+        atLabel: fmtNotificationAtLabel(now),
+        dateLabel: d.toLocaleDateString("ko-KR"),
+        timeBand: resolveNotiTimeBandFromDate(d),
+        pageKey: "page:admin-perms",
+        pageLabel: "관리자 설정",
+        isRead: false,
+        actionText: "권한 부여로 이동",
+        actionKind: "adminPermRequest",
+        actionEmpNo: requesterEmpNo,
+      };
+      const arr = Array.isArray(db.notificationsByScope[scope]) ? db.notificationsByScope[scope] : [];
+      arr.unshift(noti);
+      db.notificationsByScope[scope] = sanitizeNotificationCenterItems(arr);
+      notified += 1;
+    }
+    pruneNotificationsByScope(db);
+    writeDb(db);
+    sendJson(res, 200, { ok: true, notified });
     return true;
   }
   if (req.method === "GET" && url.pathname === "/api/db/user-settings") {
