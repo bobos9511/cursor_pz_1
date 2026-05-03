@@ -743,12 +743,37 @@ function migrateNotificationPageToDesktopModal() {
     updateNotificationFilterButton();
 }
 
+/** PC에서 알림 모달만 열린 채로 창을 줄여 모바일이 되면: 모달 닫고 전체화면 알림 페이지로 */
+function migrateNotificationModalToMobilePage() {
+    const modal = document.getElementById("notificationCenterModal");
+    if (!modal || !modal.classList.contains("active")) return;
+    const page = document.getElementById("view-notifications");
+    modal.classList.remove("active");
+    closeNotificationFilterModal();
+    if (page && page.classList.contains("active")) {
+        renderNotificationCenterBody();
+        updateNotificationFilterButton();
+        updateNotificationBadge();
+        return;
+    }
+    captureNotificationCenterReturnRoute();
+    if (typeof switchView === "function") {
+        switchView("notifications");
+    }
+    renderNotificationCenterBody();
+    updateNotificationFilterButton();
+    updateNotificationBadge();
+}
+
 function onWindowResizeNotificationCenterLayout() {
     if (typeof window.matchMedia !== "function") return;
     clearTimeout(notificationCenterResizeTimer);
     notificationCenterResizeTimer = setTimeout(() => {
-        if (!window.matchMedia("(min-width: 1025px)").matches) return;
-        migrateNotificationPageToDesktopModal();
+        if (window.matchMedia("(min-width: 1025px)").matches) {
+            migrateNotificationPageToDesktopModal();
+        } else {
+            migrateNotificationModalToMobilePage();
+        }
     }, 100);
 }
 
