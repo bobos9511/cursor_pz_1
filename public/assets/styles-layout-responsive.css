@@ -194,7 +194,7 @@
             .board-help-btn-group { width: 100%; justify-content: flex-end; }
             .profile-overlay-panel {
                 right: 8px;
-                top: calc(8px + env(safe-area-inset-top, 0px) + var(--mobile-glass-row-min-h));
+                top: calc(8px + env(safe-area-inset-top, 0px) + var(--mobile-top-bar-min-h));
                 width: min(96vw, 360px);
             }
             #similarPostArea { width: 100% !important; }

@@ -22,6 +22,7 @@
             --mobile-glass-pad-x: 6px;
             --mobile-glass-pad-b: 12px;
             --mobile-glass-row-min-h: 56px;
+            --mobile-top-bar-min-h: 64px;
         }
         @supports (height: 100dvh) {
             :root {
@@ -931,7 +932,7 @@
             top: 0;
             z-index: 40;
             flex-shrink: 0;
-            min-height: 60px;
+            min-height: 64px;
             padding: 0 18px 0 22px;
             display: flex;
             align-items: center;
@@ -973,6 +974,36 @@
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
             }
+            .header.header--redesign {
+                min-height: 72px;
+                padding: 0 22px 0 26px;
+            }
+            .header__inner {
+                min-height: 72px;
+                gap: 14px;
+            }
+            .header--redesign .logo {
+                font-size: 24px;
+            }
+            .header--redesign .header-role-chip {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+            .header--redesign .header-action-btn,
+            .header--redesign .header-profile-btn,
+            .header--redesign .header-search-mobile-btn {
+                width: 42px;
+                height: 42px;
+                min-width: 42px;
+                min-height: 42px;
+                max-width: 42px;
+                max-height: 42px;
+            }
+            .header--redesign .header-action-btn .icon,
+            .header--redesign .header-profile-btn .icon,
+            .header--redesign .header-search-mobile-btn .icon {
+                font-size: 20px !important;
+            }
         }
         .header__inner {
             display: flex;
@@ -980,7 +1011,7 @@
             gap: 12px;
             width: 100%;
             min-width: 0;
-            min-height: 60px;
+            min-height: 64px;
         }
         .header-brand {
             display: flex;
@@ -2160,8 +2191,8 @@
             min-width: 0;
             margin: 0;
             padding: var(--mobile-glass-pad-t) var(--mobile-glass-pad-x) var(--mobile-glass-pad-b);
-            min-height: var(--mobile-glass-row-min-h);
-            border-radius: 0 0 22px 22px;
+            min-height: var(--mobile-top-bar-min-h);
+            border-radius: 0;
             border: 1px solid rgba(226, 232, 240, 0.95);
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.78));
             backdrop-filter: blur(20px) saturate(1.35);
@@ -2173,14 +2204,14 @@
         .mobile-top-bar__brand {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             min-width: 0;
             flex: 1 1 auto;
         }
         .mobile-top-bar__logo {
             flex: 0 1 auto;
             min-width: 0;
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.06em;
             line-height: 1.1;
@@ -2196,13 +2227,13 @@
         }
         .mobile-top-bar__role-chip {
             flex: 0 1 auto;
-            max-width: 42%;
-            padding: 3px 8px;
+            max-width: 48%;
+            padding: 4px 10px;
             border-radius: 999px;
             border: 1px solid rgba(56, 189, 248, 0.5);
             background: linear-gradient(180deg, rgba(224, 242, 254, 0.95), rgba(186, 230, 253, 0.55));
             color: #0c4a6e;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
             letter-spacing: -0.02em;
             line-height: 1.2;
@@ -2215,15 +2246,15 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 6px;
+            gap: 10px;
             flex-shrink: 0;
         }
         .mobile-top-bar__icon-btn {
             position: relative;
-            width: 40px;
-            height: 40px;
-            min-width: 40px;
-            min-height: 40px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
             padding: 0;
             border-radius: 999px;
             border: 1px solid rgba(148, 163, 184, 0.42);
@@ -2240,8 +2271,8 @@
             transform: scale(0.96);
         }
         .mobile-top-bar__icon-btn .icon {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             display: block;
             flex-shrink: 0;
             color: inherit;
@@ -2430,6 +2461,18 @@
             color: rgba(240, 249, 255, 0.97);
             filter: drop-shadow(0 1px 3px rgba(2, 6, 23, 0.45));
         }
+        body[data-theme="light"] .ai-chat-floating-btn {
+            border-color: rgba(2, 132, 199, 0.55);
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.52), rgba(14, 165, 233, 0.48));
+            box-shadow:
+                0 10px 26px rgba(2, 132, 199, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.42);
+            color: #ffffff;
+        }
+        body[data-theme="light"] .ai-chat-floating-btn .icon {
+            color: #ffffff;
+            filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35)) drop-shadow(0 0 1px rgba(15, 23, 42, 0.2));
+        }
         @media (hover: hover) and (pointer: fine) {
             .ai-chat-floating-btn:hover {
                 transform: translateY(-2px);
@@ -2438,6 +2481,13 @@
                     0 14px 30px rgba(2, 132, 199, 0.26),
                     inset 0 1px 0 rgba(255, 255, 255, 0.32);
                 filter: saturate(1.06);
+            }
+            body[data-theme="light"] .ai-chat-floating-btn:hover {
+                background: linear-gradient(135deg, rgba(2, 132, 199, 0.62), rgba(14, 165, 233, 0.56));
+                box-shadow:
+                    0 14px 30px rgba(2, 132, 199, 0.28),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+                filter: saturate(1.04);
             }
         }
         .ai-chat-floating-btn:active {
@@ -2470,12 +2520,12 @@
         }
         @media (min-width: 1025px) {
             .ai-chat-floating-btn {
-                width: calc(56px * 1.8);
-                height: calc(56px * 1.8);
+                width: 66px;
+                height: 66px;
             }
             .ai-chat-floating-btn .icon {
-                width: calc(24px * 1.8);
-                height: calc(24px * 1.8);
+                width: 28px;
+                height: 28px;
             }
         }
         .ai-chat-layer-overlay {
