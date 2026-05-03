@@ -897,7 +897,8 @@
             'IT': { icon: '#icon-info', title: 'IT/오류 문의 게시판', label: 'IT/오류' },
             'BIZ': { icon: '#icon-book', title: '규정/상품 문의 게시판', label: '규정/상품' },
             'SYS': { icon: '#icon-lightbulb', title: 'KNOCK 개선 제안', label: 'KNOCK 개선' },
-            'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스', label: 'AI 지식 베이스' }
+            'KNOW': { icon: '#icon-history', title: 'AI 지식 베이스', label: 'AI 지식 베이스' },
+            'RULE': { icon: '#icon-filter', title: '룰 엔진', label: '룰 엔진' }
         };
         const KNOW_CATEGORY_LABEL = { IT: 'IT 매뉴얼', BIZ: '업무 매뉴얼' };
         const KNOW_STATUS = {
@@ -909,8 +910,8 @@
         const roleMatrix = {
             'branch': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '홍길동 대리', dept: '영업부', showKnow: false },
             'callcenter': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '고객센터 직원', dept: '고객센터', showKnow: false },
-            'hq': { write: ['IT', 'SYS', 'KNOW'], answer: ['BIZ', 'KNOW'], name: '이본부 차장', dept: '여신기획부', showKnow: true },
-            'it': { write: ['BIZ', 'SYS', 'KNOW'], answer: ['IT', 'SYS', 'KNOW'], name: '김전산 책임', dept: 'IT금융개발부', showKnow: true },
+            'hq': { write: ['IT', 'SYS', 'KNOW', 'RULE'], answer: ['BIZ', 'KNOW', 'RULE'], name: '이본부 차장', dept: '여신기획부', showKnow: true },
+            'it': { write: ['BIZ', 'SYS', 'KNOW', 'RULE'], answer: ['IT', 'SYS', 'KNOW', 'RULE'], name: '김전산 책임', dept: 'IT금융개발부', showKnow: true },
             'outsourced': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '외주 직원', dept: '외주', showKnow: false },
             'ibk_sub': { write: ['IT', 'BIZ', 'SYS'], answer: [], name: '자회사 직원', dept: 'IBK자회사', showKnow: false },
         };
@@ -918,6 +919,11 @@
         function getRoleMatrixEntry(role) {
             const r = String(role || '');
             return roleMatrix[r] || roleMatrix.branch;
+        }
+
+        function isKnowLikeBoard(t) {
+            const x = String(t || '').toUpperCase();
+            return x === 'KNOW' || x === 'RULE';
         }
 
         function isBranchDashboardRole(role) {
@@ -1116,7 +1122,7 @@
         function normalizeKnowPostStatuses(posts) {
             if (!Array.isArray(posts)) return;
             posts.forEach((p) => {
-                if (!p || p.type !== 'KNOW') return;
+                if (!p || !isKnowLikeBoard(p.type)) return;
                 p.status = normalizeKnowStatus(p.status);
             });
         }
@@ -1141,7 +1147,7 @@
         }
         function getBoardDisplayLabel(post) {
             if (!post) return '-';
-            if (post.type === 'KNOW') return getKnowCategoryLabel(post.knowCategory);
+            if (isKnowLikeBoard(post.type)) return getKnowCategoryLabel(post.knowCategory);
             return boardTitles[post.type] ? boardTitles[post.type].label : post.type;
         }
         function getCurrentActorName() {
@@ -1164,6 +1170,13 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+        function escapeAttr(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;');
         }
         /** 게시물 번호 표시용 칩(목록·상세·검색 등 공통) */
         function formatPostIdChipHtml(rawId, variant = 'compact') {
@@ -1230,7 +1243,7 @@
         }
         function shouldDeletePostForWithdrawal(post) {
             if (!post) return false;
-            if (post.type === 'KNOW') {
+            if (isKnowLikeBoard(post.type)) {
                 return normalizeKnowStatus(post.status) === KNOW_STATUS.PENDING;
             }
             if (post.aiSolved === true || post.status === 'done') return false;
@@ -1250,6 +1263,7 @@
         }
         function renderWriterWithAvatar(writerRaw, options = {}) {
             const writerText = normalizeDisplayText(writerRaw, '-');
+            const writerPeek = !!options.writerPeek && writerText !== '탈퇴회원';
             if (writerText === '탈퇴회원') {
                 const wrapperClass = String(options.wrapperClass || 'writer-cell');
                 const avCls = options.avatarClassName || 'writer-avatar';
@@ -1259,7 +1273,119 @@
             const user = findSignupUserByWriter(writerText);
             const avatarMarkup = getUserAvatarMarkup(user, writerText, { className: options.avatarClassName || 'writer-avatar' });
             const wrapperClass = String(options.wrapperClass || 'writer-cell');
-            return `<span class="${wrapperClass}">${avatarMarkup}<span class="writer-name">${escapeHtml(writerText)}</span></span>`;
+            const nameClass = writerPeek ? 'writer-name writer-name--peek' : 'writer-name';
+            const peekAttr = writerPeek ? ` data-writer-display="${escapeAttr(writerText)}"` : '';
+            return `<span class="${wrapperClass}">${avatarMarkup}<span class="${nameClass}"${peekAttr}>${escapeHtml(writerText)}</span></span>`;
+        }
+
+        let writerPeekScrollCloseBound = false;
+        let writerPeekEscBound = false;
+        let writerPeekInteractionsWired = false;
+        function hideWriterPeekPopover() {
+            const pop = document.getElementById('writerPeekPopover');
+            if (pop) {
+                pop.classList.add('hidden');
+                pop.style.left = '';
+                pop.style.top = '';
+            }
+        }
+        window.hideWriterPeekPopover = hideWriterPeekPopover;
+        function buildWriterPeekCardHtml(displayRaw) {
+            const label = String(displayRaw || '').trim();
+            const user = findSignupUserByWriter(label);
+            if (!user) {
+                return `<div class="writer-peek-card"><div class="writer-peek-card__body"><div class="writer-peek-card__name">${escapeHtml(label)}</div><p class="writer-peek-card__empty">등록된 프로필 상세가 없습니다. 표시 이름만 확인할 수 있습니다.</p></div></div>`;
+            }
+            const name = escapeHtml(normalizeDisplayText(user.name, '-'));
+            const pos = escapeHtml(normalizeDisplayText(user.position, ''));
+            const grade = escapeHtml(normalizeDisplayText(user.grade, ''));
+            const dept = escapeHtml(normalizeDisplayText(user.deptName, '-'));
+            const deptCode = escapeHtml(normalizeDisplayText(user.deptCode, '-'));
+            const emp = escapeHtml(normalizeDisplayText(user.employeeNo, '-'));
+            const ext = escapeHtml(normalizeDisplayText(user.extNo, '-'));
+            const mobile = escapeHtml(normalizeDisplayText(user.mobileNo, '-'));
+            const role = escapeHtml(normalizeDisplayText(user.role, '-'));
+            const img = normalizeProfileImageData(user.profileImage);
+            const initial = escapeHtml(getUserInitial(user.name || label));
+            const grad = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(user.employeeNo || user.name || label)];
+            const avInner = img
+                ? `<img src="${img}" alt="">`
+                : `<span style="background:${grad.gradient};color:${grad.color};width:100%;height:100%;display:inline-flex;align-items:center;justify-content:center;">${initial}</span>`;
+            const roleLine = [pos, grade].filter(Boolean).join(' ').trim();
+            const deptSuffix = deptCode && deptCode !== '-' ? ` (${deptCode})` : '';
+            return `<div class="writer-peek-card">
+                    <div class="writer-peek-card__avatar">${avInner}</div>
+                    <div class="writer-peek-card__body">
+                        <div class="writer-peek-card__name">${name}</div>
+                        <div class="writer-peek-card__role">${roleLine || '직책 미등록'}</div>
+                        <div class="writer-peek-card__grid">
+                            <div class="writer-peek-card__row"><span class="writer-peek-card__k">부서</span><span class="writer-peek-card__v">${dept}${deptSuffix}</span></div>
+                            <div class="writer-peek-card__row"><span class="writer-peek-card__k">사번</span><span class="writer-peek-card__v">${emp}</span></div>
+                            <div class="writer-peek-card__row"><span class="writer-peek-card__k">내선</span><span class="writer-peek-card__v">${ext}</span></div>
+                            <div class="writer-peek-card__row"><span class="writer-peek-card__k">휴대폰</span><span class="writer-peek-card__v">${mobile}</span></div>
+                            <div class="writer-peek-card__row"><span class="writer-peek-card__k">역할</span><span class="writer-peek-card__v">${role}</span></div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        function positionWriterPeekPopover(anchor) {
+            const pop = document.getElementById('writerPeekPopover');
+            if (!pop || !anchor) return;
+            const r = anchor.getBoundingClientRect();
+            const margin = 10;
+            const w = pop.offsetWidth || 280;
+            const h = pop.offsetHeight || 120;
+            const left = Math.min(Math.max(margin, r.left), Math.max(margin, window.innerWidth - w - margin));
+            let top = r.bottom + 10;
+            if (top + h > window.innerHeight - margin) {
+                top = Math.max(margin, r.top - h - 10);
+            }
+            pop.style.left = `${left}px`;
+            pop.style.top = `${top}px`;
+            const tip = r.left + r.width / 2 - left;
+            pop.style.setProperty('--writer-peek-arrow-x', `${Math.max(14, Math.min(tip, w - 20))}px`);
+        }
+        function showWriterPeekFromAnchor(anchor, displayRaw) {
+            if (!window.matchMedia('(min-width: 1025px)').matches) return;
+            const pop = document.getElementById('writerPeekPopover');
+            const inner = document.getElementById('writerPeekPopoverInner');
+            if (!pop || !inner) return;
+            inner.innerHTML = buildWriterPeekCardHtml(displayRaw);
+            pop.classList.remove('hidden');
+            requestAnimationFrame(() => positionWriterPeekPopover(anchor));
+        }
+        function initWriterPeekInteractions() {
+            if (writerPeekInteractionsWired) return;
+            writerPeekInteractionsWired = true;
+            document.addEventListener(
+                'click',
+                (e) => {
+                    if (!window.matchMedia('(min-width: 1025px)').matches) return;
+                    const t = e.target;
+                    if (t && t.closest && t.closest('.writer-peek-popover__close')) return;
+                    const peekEl = t && t.closest ? t.closest('.writer-name--peek') : null;
+                    if (peekEl) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const raw = peekEl.getAttribute('data-writer-display') || (peekEl.textContent || '').trim();
+                        showWriterPeekFromAnchor(peekEl, raw);
+                        return;
+                    }
+                    if (!t.closest || !t.closest('#writerPeekPopover')) hideWriterPeekPopover();
+                },
+                true,
+            );
+            if (!writerPeekEscBound) {
+                writerPeekEscBound = true;
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') hideWriterPeekPopover();
+                });
+            }
+            const scrollHost = document.getElementById('mainScrollArea');
+            if (scrollHost && !writerPeekScrollCloseBound) {
+                writerPeekScrollCloseBound = true;
+                scrollHost.addEventListener('scroll', () => hideWriterPeekPopover(), { passive: true });
+            }
         }
         function sanitizeSignupUserRecord(user) {
             if (!user || typeof user !== 'object') return null;
@@ -1834,6 +1960,9 @@
             const keywords = meta.knowKeywords || '-';
             const source = meta.knowSource || '-';
             const domain = getKnowCategoryLabel(post.knowCategory);
+            const isRule = post.type === 'RULE';
+            const ragChipClass = isRule ? 'rag-chip know-detail-rag-chip know-detail-rag-chip--rule' : 'rag-chip know-detail-rag-chip';
+            const ragChipLabel = isRule ? '룰 엔진' : 'RAG 학습 데이터';
             const attachmentHtml = Array.isArray(post.attachments) && post.attachments.length > 0
                 ? post.attachments.map(att => `<li class="know-detail-attach-item">${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})</li>`).join('')
                 : '<li class="know-detail-attach-empty">첨부파일 없음</li>';
@@ -1842,7 +1971,7 @@
                 <div class="know-detail-stack">
                     <div class="know-detail-banner">
                         <span class="badge bg-ready know-detail-domain-badge">${domain}</span>
-                        <span class="rag-chip know-detail-rag-chip">RAG 학습 데이터</span>
+                        <span class="${ragChipClass}">${ragChipLabel}</span>
                     </div>
                     <div class="know-detail-card">
                         <div class="know-detail-card-label">요약</div>
@@ -1991,6 +2120,7 @@
             initMainHeaderScrollState();
             setupEditorPasteAsPlainText();
             initializeAiSearchView();
+            initWriterPeekInteractions();
             
             changeRole(); 
         }
@@ -4226,7 +4356,7 @@
 
         function getDashboardPostsForCharts() {
             const posts = Array.isArray(appData.posts) ? appData.posts : [];
-            const nonKnow = posts.filter(p => p && p.type && p.type !== 'KNOW');
+            const nonKnow = posts.filter((p) => p && p.type && !isKnowLikeBoard(p.type));
             if (isBranchDashboardRole(currentRole)) {
                 const myName = getRoleMatrixEntry(currentRole).name.split(' ')[0];
                 return nonKnow.filter(p => (p.writer || '').includes(myName));
@@ -4685,7 +4815,7 @@
 
             syncMobileNavMoreUserPanel();
 
-            if (isBranchDashboardRole(currentRole) && currentBoardType === 'KNOW') {
+            if (isBranchDashboardRole(currentRole) && isKnowLikeBoard(currentBoardType)) {
                 switchView('dashboard');
                 scheduleHeaderActionOverflow();
                 return;
@@ -4706,7 +4836,8 @@
             const listWriteBtn = document.getElementById('listWriteBtn');
             if (listWriteBtn) {
                 listWriteBtn.style.display = rules.write.includes(currentBoardType) ? 'inline-flex' : 'none';
-                if(currentBoardType === 'KNOW') document.getElementById('listWriteBtnText').innerText = '지식 등록';
+                if (currentBoardType === 'KNOW') document.getElementById('listWriteBtnText').innerText = '지식 등록';
+                else if (currentBoardType === 'RULE') document.getElementById('listWriteBtnText').innerText = '룰 등록';
                 else document.getElementById('listWriteBtnText').innerText = '신규 접수';
             }
         }
@@ -4753,6 +4884,7 @@
             }
             closeBoardToolsLayer();
             closeBoardFilterLayer();
+            hideWriterPeekPopover();
             if (viewId === 'ai-search') {
                 openAiChatLayerFromFloating();
                 return;
@@ -4778,9 +4910,12 @@
                 const mbList = document.getElementById(`mbnav-list-${suf}`);
                 if (mbList) mbList.classList.add('active');
                 
-                const knowRagBadge = currentBoardType === 'KNOW'
-                    ? '<span class="board-rag-badge">RAG 학습</span>'
-                    : '';
+                const knowRagBadge =
+                    currentBoardType === 'KNOW'
+                        ? '<span class="board-rag-badge">RAG 학습</span>'
+                        : currentBoardType === 'RULE'
+                          ? '<span class="board-rag-badge board-rag-badge--rule">룰 엔진</span>'
+                          : '';
                 document.getElementById('boardMainTitle').innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><svg class="icon"><use href="${boardTitles[currentBoardType].icon}"></use></svg><span>${boardTitles[currentBoardType].title}</span>${knowRagBadge}</span>`;
                 boardHelpEditing = false;
                 boardHelpCollapsed = !!(getBoardHelpUiState().collapsedByType[currentBoardType]);
@@ -4788,20 +4923,20 @@
                 
                 const filterSelect = document.getElementById('boardStatusFilter');
                 const knowFilter = document.getElementById('boardKnowCategoryFilter');
-                if (currentBoardType === 'KNOW') filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="pending">미승인</option><option value="approved">승인</option><option value="rejected">불승인</option>';
+                if (isKnowLikeBoard(currentBoardType)) filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="pending">미승인</option><option value="approved">승인</option><option value="rejected">불승인</option>';
                 else if (currentBoardType === 'SYS') filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="wait">접수대기</option><option value="moreInfo">추가답변</option><option value="done">답변완료</option>';
                 else filterSelect.innerHTML = '<option value="all">상태 전체</option><option value="wait">접수대기</option><option value="moreInfo">추가답변</option><option value="done">답변완료</option><option value="aiSolved">AI채택</option>';
 
                 document.getElementById('boardStatusFilter').value = 'all'; document.getElementById('boardKeywordInput').value = '';
                 if (knowFilter) {
                     knowFilter.value = 'all';
-                    if (currentBoardType === 'KNOW') knowFilter.classList.remove('hidden');
+                    if (isKnowLikeBoard(currentBoardType)) knowFilter.classList.remove('hidden');
                     else knowFilter.classList.add('hidden');
                 }
                 filterBoardList();
             } else if (viewId === 'write') {
                 if(!boardType) {
-                    const writes = getRoleMatrixEntry(currentRole).write.filter(t => t !== 'KNOW');
+                    const writes = getRoleMatrixEntry(currentRole).write.filter((t) => !isKnowLikeBoard(t));
                     if(writes.length > 0) boardType = writes[0];
                 }
                 document.getElementById('view-write').classList.add('active');
@@ -4866,8 +5001,8 @@
         // --- Dashboard Update ---
         function updateDashStats() {
             const myName = getCurrentActorNameToken();
-            const myQs = appData.posts.filter(p => p.writer.includes(myName) && p.type !== 'KNOW');
-            const totalPosts = appData.posts.filter(p => p.type !== 'KNOW');
+            const myQs = appData.posts.filter((p) => p.writer.includes(myName) && !isKnowLikeBoard(p.type));
+            const totalPosts = appData.posts.filter((p) => !isKnowLikeBoard(p.type));
             
             if(isBranchDashboardRole(currentRole)) {
                 document.querySelectorAll('.dash-tile-stat-branch').forEach((el) => el.classList.remove('hidden'));
@@ -4909,8 +5044,8 @@
             const today = new Date();
             const todayKey = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
             const myName = getCurrentActorNameToken();
-            const baseMine = appData.posts.filter(p => p.type !== 'KNOW' && p.writer.includes(myName));
-            const baseAll = appData.posts.filter(p => p.type !== 'KNOW');
+            const baseMine = appData.posts.filter((p) => !isKnowLikeBoard(p.type) && p.writer.includes(myName));
+            const baseAll = appData.posts.filter((p) => !isKnowLikeBoard(p.type));
             const map = {
                 branchWait: { title: '접수/대기 문의 목록', posts: baseMine.filter(p => p.status === 'wait' || p.status === 'ing' || p.status === 'moreInfo') },
                 branchDone: { title: '조치/해결 완료 목록', posts: baseMine.filter(p => p.status === 'done' || p.aiSolved) },
@@ -5106,9 +5241,13 @@
             }
             return `${meta.custVal1 || ''} ${meta.custVal2 || ''}`.trim() || '-';
         }
+        function metaFieldHasText(v) {
+            if (v == null) return false;
+            return String(v).replace(/\s+/g, ' ').trim().length > 0;
+        }
         function renderDashboardLists() {
             const myName = getCurrentActorNameToken();
-            let myQs = appData.posts.filter(p => p.writer.includes(myName) && p.type !== 'KNOW');
+            let myQs = appData.posts.filter((p) => p.writer.includes(myName) && !isKnowLikeBoard(p.type));
             if(dashQStatus === 'wait') myQs = myQs.filter(p => p.status === 'wait' || p.status === 'ing' || p.status === 'moreInfo');
             else myQs = myQs.filter(p => p.status === 'done' || p.aiSolved);
             
@@ -5125,7 +5264,7 @@
             if(aBox) {
                 if(isBranchDashboardRole(currentRole)) {
                     if (secondaryTitle) secondaryTitle.innerText = '추가답변 요청 내 게시물 현황';
-                    let myRequested = appData.posts.filter(p => p.writer.includes(myName) && p.type !== 'KNOW' && p.status === 'moreInfo');
+                    let myRequested = appData.posts.filter((p) => p.writer.includes(myName) && !isKnowLikeBoard(p.type) && p.status === 'moreInfo');
                     if (tabWait) tabWait.innerText = `추가요청 건 (${myRequested.length})`;
                     if (tabDone) tabDone.classList.add('hidden');
                     dashAStatus = 'wait';
@@ -5137,7 +5276,7 @@
                     if (tabWait) tabWait.innerText = '미결/진행중';
                     if (tabDone) { tabDone.innerText = '조치완료'; tabDone.classList.remove('hidden'); }
 
-                    const canAnsTypes = getRoleMatrixEntry(currentRole).answer.filter(t => t !== 'KNOW');
+                    const canAnsTypes = getRoleMatrixEntry(currentRole).answer.filter((t) => !isKnowLikeBoard(t));
                     if(canAnsTypes.length === 0) {
                         aBox.innerHTML = '<div class="dash-empty">답변 권한이 없습니다.</div>';
                         return;
@@ -5243,7 +5382,7 @@
             if (!toolbar || !rightTools || !moreBtn || !layer) return;
             const compact = window.innerWidth <= 1180;
             viewList.classList.toggle('board-tools-compact', compact);
-            viewList.classList.toggle('board-tools-know', currentBoardType === 'KNOW');
+            viewList.classList.toggle('board-tools-know', isKnowLikeBoard(currentBoardType));
             if (!compact) {
                 moreBtn.classList.add('hidden');
                 layer.classList.add('hidden');
@@ -5285,11 +5424,11 @@
             let filtered = appData.posts.filter(p => p.type === currentBoardType).sort((a,b) => b.id - a.id);
 
             if (st !== 'all') {
-                if (currentBoardType === 'KNOW') filtered = filtered.filter((p) => normalizeKnowStatus(p.status) === st);
+                if (isKnowLikeBoard(currentBoardType)) filtered = filtered.filter((p) => normalizeKnowStatus(p.status) === st);
                 else if (st === 'aiSolved') filtered = filtered.filter(p => p.aiSolved);
                 else filtered = filtered.filter(p => p.status === st && !p.aiSolved);
             }
-            if (currentBoardType === 'KNOW' && knowCategory !== 'all') {
+            if (isKnowLikeBoard(currentBoardType) && knowCategory !== 'all') {
                 filtered = filtered.filter(p => (p.knowCategory || '') === knowCategory);
             }
             if (kw) filtered = filtered.filter(p => p.title.toLowerCase().includes(kw) || p.content.toLowerCase().includes(kw) || p.writer.toLowerCase().includes(kw));
@@ -5340,7 +5479,7 @@
 
             tbody.innerHTML = pageItems.map(item => {
                 let badge = '';
-                if (currentBoardType === 'KNOW') {
+                if (isKnowLikeBoard(currentBoardType)) {
                     const knowMeta = getKnowStatusMeta(item.status);
                     badge = `<span class="badge ${knowMeta.badgeClass}">${knowMeta.label}</span>`;
                 } else {
@@ -5351,10 +5490,10 @@
                 }
                 
                 let chkTd = isIT ? `<td class="mobile-check-cell" onclick="event.stopPropagation();"><input type="checkbox" class="chk-box post-chk" value="${item.id}" onchange="updateDeleteBtnState()"></td>` : '';
-                const knowCatBadge = currentBoardType === 'KNOW'
+                const knowCatBadge = isKnowLikeBoard(currentBoardType)
                     ? `<span class="badge bg-ready badge-domain">${getKnowCategoryLabel(item.knowCategory)}</span>`
                     : '';
-                return `<tr onclick="openDetail(${item.id})"><td class="post-id-cell">${formatPostIdChipHtml(item.id)}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer)}</td><td>${item.datetime}</td></tr>`;
+                return `<tr onclick="openDetail(${item.id})"><td class="post-id-cell">${formatPostIdChipHtml(item.id)}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer, { writerPeek: true })}</td><td>${item.datetime}</td></tr>`;
             }).join('');
             setTimeout(syncBoardLayoutModes, 0);
             setTimeout(scheduleAiChatFloatingOverlapLayout, 0);
@@ -5398,6 +5537,7 @@
         function openDetail(id, typeHint = currentBoardType, options = {}) {
             const fromHistory = !!options.fromHistory;
             const skipHistory = !!options.skipHistory;
+            hideWriterPeekPopover();
             const post = getPostByIdAndType(id, typeHint);
             if(!post) return;
             currentPostId = Number(post.id);
@@ -5410,12 +5550,16 @@
             document.getElementById('dtlTitle').innerText = post.title;
             const dtlPostIdEl = document.getElementById('dtlPostId');
             if (dtlPostIdEl) dtlPostIdEl.innerHTML = formatPostIdChipHtml(post.id, 'detail');
-            document.getElementById('dtlWriter').innerHTML = renderWriterWithAvatar(post.writer, { avatarClassName: 'writer-avatar detail', wrapperClass: 'writer-cell detail' });
+            document.getElementById('dtlWriter').innerHTML = renderWriterWithAvatar(post.writer, {
+                avatarClassName: 'writer-avatar detail',
+                wrapperClass: 'writer-cell detail',
+                writerPeek: true,
+            });
             document.getElementById('dtlTime').innerText = post.datetime;
             document.getElementById('dtlIp').innerText = `IP: ${post.ip}`;
             
             const badgeEl = document.getElementById('dtlStatus');
-            if (post.type === 'KNOW') {
+            if (isKnowLikeBoard(post.type)) {
                 const knowMeta = getKnowStatusMeta(post.status);
                 badgeEl.className = `badge ${knowMeta.badgeClass}`;
                 badgeEl.innerText = knowMeta.label;
@@ -5426,40 +5570,55 @@
                 else { badgeEl.className = 'badge bg-done'; badgeEl.innerText = '답변완료'; }
             }
             
-            // 메타
+            // 메타 (실제 입력·첨부가 있을 때만 표시)
             const metaBox = document.getElementById('dtlMetaBox');
-            const hasMeta = !!(
-                (post.meta && (post.meta.gid || post.meta.custType || post.meta.custVal1 || post.meta.custVal2 || post.meta.errCode || post.meta.errMsg || post.meta.knowErrorMemo || post.meta.knowQuestion || post.meta.knowAnswer || post.meta.knowMemo))
-                || (Array.isArray(post.attachments) && post.attachments.length > 0)
-            );
-            if (post.type === 'KNOW') {
+            const m = post.meta && typeof post.meta === 'object' ? post.meta : {};
+            const custRowHas = metaFieldHasText(m.custVal1) || metaFieldHasText(m.custVal2);
+            const custFormatted = custRowHas ? formatCustomerValue(m) : '';
+            const attachCount = Array.isArray(post.attachments) ? post.attachments.length : 0;
+            const metaPieces = [];
+            if (metaFieldHasText(m.gid)) {
+                metaPieces.push(
+                    `<div class="meta-item"><div class="meta-item-label">표준 글로벌ID</div><div class="meta-item-value">${escapeHtml(m.gid)}</div></div>`,
+                );
+            }
+            if (custRowHas) {
+                const custTypeText = escapeHtml(m.custType || '고객정보');
+                metaPieces.push(
+                    `<div class="meta-item"><div class="meta-item-label">${custTypeText}</div><div class="meta-item-value">${escapeHtml(custFormatted)}</div></div>`,
+                );
+            }
+            if (metaFieldHasText(m.errCode)) {
+                metaPieces.push(
+                    `<div class="meta-item"><div class="meta-item-label">오류코드</div><div class="meta-item-value code">${escapeHtml(m.errCode)}</div></div>`,
+                );
+            }
+            if (metaFieldHasText(m.errMsg)) {
+                metaPieces.push(
+                    `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">오류내용</div><div class="meta-item-value">${escapeHtml(m.errMsg)}</div></div>`,
+                );
+            }
+            if (metaFieldHasText(m.knowErrorMemo)) {
+                metaPieces.push(
+                    `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">불승인 관리자 의견</div><div class="meta-item-value">${escapeHtml(m.knowErrorMemo)}</div></div>`,
+                );
+            }
+            if (attachCount > 0) {
+                metaPieces.push(
+                    `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">첨부파일</div><div class="meta-item-value">${post.attachments
+                        .map((att) => `${escapeHtml(att.name || '첨부파일')} (${escapeHtml(String(formatAttachmentSize(att.size)))})`)
+                        .join('<br>')}</div></div>`,
+                );
+            }
+            const hasMeta = metaPieces.length > 0;
+            if (isKnowLikeBoard(post.type)) {
                 metaBox.classList.add('hidden');
-            } else if(hasMeta) {
+            } else if (hasMeta) {
                 metaBox.classList.remove('hidden');
-                let mHtml = '<div class="meta-field-title">추가 입력 정보</div><div class="meta-grid">';
-                if(post.meta.gid) {
-                    mHtml += `<div class="meta-item"><div class="meta-item-label">표준 글로벌ID</div><div class="meta-item-value">${post.meta.gid}</div></div>`;
-                }
-                if(post.meta.custType || post.meta.custVal1 || post.meta.custVal2) {
-                    const custTypeText = post.meta.custType || '고객정보';
-                    const custFormatted = formatCustomerValue(post.meta);
-                    mHtml += `<div class="meta-item"><div class="meta-item-label">${custTypeText}</div><div class="meta-item-value">${custFormatted}</div></div>`;
-                }
-                if(post.meta.errCode) {
-                    mHtml += `<div class="meta-item"><div class="meta-item-label">오류코드</div><div class="meta-item-value code">${post.meta.errCode}</div></div>`;
-                }
-                if(post.meta.errMsg) {
-                    mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">오류내용</div><div class="meta-item-value">${post.meta.errMsg}</div></div>`;
-                }
-                if(post.type === 'KNOW' && post.meta.knowErrorMemo) {
-                    mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">불승인 관리자 의견</div><div class="meta-item-value">${post.meta.knowErrorMemo}</div></div>`;
-                }
-                if (Array.isArray(post.attachments) && post.attachments.length > 0) {
-                    mHtml += `<div class="meta-item" style="grid-column: 1 / -1;"><div class="meta-item-label">첨부파일</div><div class="meta-item-value">${post.attachments.map(att => `${att.name || '첨부파일'} (${formatAttachmentSize(att.size)})`).join('<br>')}</div></div>`;
-                }
-                mHtml += '</div>';
-                metaBox.innerHTML = mHtml;
-            } else { metaBox.classList.add('hidden'); }
+                metaBox.innerHTML = `<div class="meta-field-title">추가 입력 정보</div><div class="meta-grid">${metaPieces.join('')}</div>`;
+            } else {
+                metaBox.classList.add('hidden');
+            }
             const editHistoryBtn = document.getElementById('dtlEditHistoryBtn');
             const editHistoryBadge = document.getElementById('dtlEditHistoryBadge');
             const editHistoryCount = Array.isArray(post.editHistory) ? post.editHistory.length : 0;
@@ -5470,7 +5629,7 @@
             }
 
             // 본문 + 추가질의/답변 이력
-            if (post.type === 'KNOW') {
+            if (isKnowLikeBoard(post.type)) {
                 document.getElementById('dtlContent').innerHTML = renderKnowDetailTemplate(post);
             } else {
                 let fullContent = post.content;
@@ -5480,7 +5639,7 @@
             
             // AI 패널
             const aiWrap = document.getElementById('dtlAiWrap');
-            if(post.type === 'SYS' || post.type === 'KNOW') { aiWrap.classList.add('hidden'); } 
+            if (post.type === 'SYS' || isKnowLikeBoard(post.type)) { aiWrap.classList.add('hidden'); } 
             else { 
                 aiWrap.classList.remove('hidden'); 
                 document.getElementById('aiPanelContent').innerHTML = renderAiContentWithToggle(post.aiContent, `detail-${post.id}`);
@@ -5535,7 +5694,7 @@
             formBox.classList.add('hidden'); doneWrap.classList.add('hidden'); addInfoBox.classList.add('hidden');
             if (knowStatusBox) knowStatusBox.classList.add('hidden');
 
-            if (post.type === 'KNOW') {
+            if (isKnowLikeBoard(post.type)) {
                 if (currentRole === 'it' && knowStatusBox) {
                     knowStatusBox.classList.remove('hidden');
                     const sel = document.getElementById('knowStatusSelect');
@@ -5623,12 +5782,12 @@
             document.getElementById('writePageTitle').innerText = '수정 모드';
             document.getElementById('editPostId').value = post.id;
             
-            if(post.type === 'KNOW') setWriteFormForKNOW(post.knowCategory);
+            if (isKnowLikeBoard(post.type)) setWriteFormForKNOW(post.knowCategory);
             else selectWriteCategory(post.type);
 
             document.getElementById('writeTitle').value = post.title.replace('[AI채택] ', '');
             document.getElementById('writeContent').innerHTML = post.content;
-            if (post.type === 'KNOW') {
+            if (isKnowLikeBoard(post.type)) {
                 document.getElementById('writeKnowDomain').value = post.knowCategory || '';
                 document.getElementById('writeKnowQuestion').value = (post.meta && post.meta.knowQuestion) || post.title || '';
                 document.getElementById('writeKnowAnswer').value = (post.meta && post.meta.knowAnswer) || (post.content || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '');
@@ -5686,7 +5845,8 @@
             const kw = document.getElementById('writeKnowKeywords'); if (kw) kw.value = '';
             const src = document.getElementById('writeKnowSource'); if (src) src.value = '';
             const sum = document.getElementById('writeKnowSummary'); if (sum) sum.value = '';
-            document.getElementById('writePageTitle').innerText = boardType === 'KNOW' ? '지식정보 등록요청' : '문의 접수';
+            document.getElementById('writePageTitle').innerText =
+                boardType === 'KNOW' ? '지식정보 등록요청' : boardType === 'RULE' ? '룰 엔진 등록' : '문의 접수';
             document.getElementById('writeCategoryArea').style.pointerEvents = 'auto';
             document.getElementById('writeCategoryArea').style.opacity = '1';
             
@@ -5704,13 +5864,13 @@
             changeCustType();
 
             currentBoardType = boardType;
-            if (boardType === 'KNOW') setWriteFormForKNOW('');
+            if (isKnowLikeBoard(boardType)) setWriteFormForKNOW('');
             else { setWriteFormForNormal(); selectWriteCategory(boardType); }
         }
 
         function setWriteFormForNormal() {
             document.getElementById('writeCategoryLabel').innerText = '게시판 선택';
-            const rules = getRoleMatrixEntry(currentRole).write.filter(t => t !== 'KNOW');
+            const rules = getRoleMatrixEntry(currentRole).write.filter((t) => !isKnowLikeBoard(t));
             let html = '';
             ['IT', 'BIZ', 'SYS'].forEach(t => {
                 const isHide = rules.includes(t) ? '' : 'hidden';
@@ -5795,7 +5955,7 @@
             if (idx < 0) return;
             if (currentRole !== 'it') { showAlert('IT 관리자만 상태를 변경할 수 있습니다.', 'error'); return; }
             const post = appData.posts[idx];
-            if (post.type !== 'KNOW') return;
+            if (!isKnowLikeBoard(post.type)) return;
             const status = normalizeKnowStatus(document.getElementById('knowStatusSelect').value);
             const memo = document.getElementById('knowErrorMemoInput').value.trim();
             if (status === KNOW_STATUS.REJECTED && !memo) { showAlert('불승인 사유(관리자 의견)를 입력해주세요.', 'error'); return; }
@@ -5812,7 +5972,7 @@
                 });
             }
             saveData();
-            showAlert('지식베이스 상태가 변경되었습니다.', 'success');
+            showAlert(post.type === 'RULE' ? '룰 엔진 상태가 변경되었습니다.' : '지식베이스 상태가 변경되었습니다.', 'success');
             openDetail(currentPostId);
         }
 
@@ -5872,7 +6032,7 @@
         async function triggerSubmit() {
             let title = document.getElementById('writeTitle').value.trim();
             let content = document.getElementById('writeContent').innerHTML.trim();
-            if (currentBoardType === 'KNOW') {
+            if (isKnowLikeBoard(currentBoardType)) {
                 const knowDomain = document.getElementById('writeKnowDomain').value;
                 const q = document.getElementById('writeKnowQuestion').value.trim();
                 const a = document.getElementById('writeKnowAnswer').value.trim();
@@ -5892,7 +6052,7 @@
                 return;
             }
             
-            if(document.getElementById('editPostId').value || currentBoardType === 'SYS' || currentBoardType === 'KNOW') {
+            if (document.getElementById('editPostId').value || currentBoardType === 'SYS' || isKnowLikeBoard(currentBoardType)) {
                 savePost(false); return;
             }
 
@@ -5917,7 +6077,7 @@
                 meta.custVal1 = document.getElementById('writeCustVal1').value;
                 meta.custVal2 = document.getElementById('writeCustVal2').value;
             }
-            if (currentBoardType === 'KNOW') {
+            if (isKnowLikeBoard(currentBoardType)) {
                 const knowDomain = document.getElementById('writeKnowDomain').value;
                 const q = document.getElementById('writeKnowQuestion').value.trim();
                 const a = document.getElementById('writeKnowAnswer').value.trim();
@@ -5972,17 +6132,22 @@
                 const newId = getNextPostIdByType(currentBoardType);
                 const dt = getCurrentDateTime(); const ipStr = getDummyIp();
                 
-                if (currentBoardType === 'KNOW') {
+                if (isKnowLikeBoard(currentBoardType)) {
                     const knowCat = (document.getElementById('writeKnowDomain').value || '').trim();
                     if (!knowCat) {
                         showAlert('학습분류(도메인)를 선택해주세요.', 'error');
                         return;
                     }
                     appData.posts.unshift({
-                        id: newId, type: 'KNOW', knowCategory: knowCat, title: title, writer: getCurrentActorName(), 
+                        id: newId, type: currentBoardType, knowCategory: knowCat, title: title, writer: getCurrentActorName(), 
                         datetime: dt, ip: ipStr, status: KNOW_STATUS.PENDING, content: content, aiContent: '', answer: '', meta: meta, addInfoList: [], thread: [], attachments
                     });
-                    showAlert('미승인 상태로 지식베이스에 등록되었습니다.', 'success');
+                    showAlert(
+                        currentBoardType === 'RULE'
+                            ? '미승인 상태로 룰 엔진에 등록되었습니다.'
+                            : '미승인 상태로 지식베이스에 등록되었습니다.',
+                        'success',
+                    );
                 } else if (isAiSolved) {
                     const aiSolvedContentText = stripHtmlForRag(content || '');
                     const aiSolvedAnswerText = stripHtmlForRag(AI_FALLBACK_HTML);
@@ -6134,6 +6299,8 @@
         /** 서버(DB)에서 불러온 통합검색 키워드 통계 — 있으면 순위 표시에 우선 */
         let integratedSearchKeywordStatsServer = null;
         let integratedSearchLastTrack = { keyword: '', at: 0 };
+        /** 연관검색어: 실제 검색 실행 후에만 표시 */
+        let integratedSearchRelatedUnlocked = false;
         async function refreshIntegratedSearchStatsFromServer() {
             if (!currentLoginUser) {
                 integratedSearchKeywordStatsServer = null;
@@ -6272,11 +6439,10 @@
             });
             return counts;
         }
-        function renderIntegratedSearchInsights(keyword, matchedPosts = []) {
+        function renderIntegratedSearchInsights(keyword, matchedPosts = [], options = {}) {
             const rankingEl = document.getElementById('integratedKeywordRanking');
             const relatedEl = document.getElementById('integratedRelatedKeywords');
             if (!rankingEl || !relatedEl) return;
-            const counts = buildIntegratedKeywordCounts(appData.posts || []);
             const top = getIntegratedSearchKeywordRanking(5);
             const rankSourceNote =
                 Array.isArray(integratedSearchKeywordStatsServer) && integratedSearchKeywordStatsServer.length
@@ -6298,10 +6464,14 @@
                       }</div>`
                     : '<span class="integrated-search-insight-muted">데이터 없음</span>'
             }`;
+            const showRelated = !!options.showRelatedAfterSearch;
+            if (!showRelated) {
+                relatedEl.innerHTML = `<div class="integrated-search-insight-title">연관검색어</div><span class="integrated-search-insight-muted">검색 실행 후, 검색 결과 게시물을 기준으로 연관어가 표시됩니다.</span>`;
+                return;
+            }
             const queryTokens = extractIntegratedTokensFromText(String(keyword || ''));
             const querySet = new Set(queryTokens);
-            const relatedCounts =
-                queryTokens.length && matchedPosts.length > 0 ? buildIntegratedKeywordCounts(matchedPosts) : counts;
+            const relatedCounts = buildIntegratedKeywordCounts(matchedPosts || []);
             let rel = [];
             if (queryTokens.length) {
                 rel = Array.from(relatedCounts.entries())
@@ -6314,14 +6484,6 @@
                     )
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 8);
-                if (!rel.length) {
-                    rel = Array.from(counts.entries())
-                        .filter(([k]) => !querySet.has(k))
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 8);
-                }
-            } else {
-                rel = top.map(([k, c]) => [k, c]).slice(0, 8);
             }
             relatedEl.innerHTML = `<div class="integrated-search-insight-title">연관검색어</div>${
                 rel.length
@@ -6360,9 +6522,12 @@
         }
         function showIntegratedSearchModal() {
             ensureIntegratedSearchEnterHandlers();
+            integratedSearchRelatedUnlocked = false;
             document.getElementById('integratedSearchModal').classList.add('active');
             void refreshIntegratedSearchStatsFromServer().finally(() => {
-                renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', []);
+                renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', [], {
+                    showRelatedAfterSearch: false,
+                });
                 setTimeout(() => {
                     const inp = document.getElementById('modalSearchInput');
                     if (inp) inp.focus();
@@ -6383,13 +6548,23 @@
             const kw = raw.toLowerCase().trim();
             const resContainer = document.getElementById('integratedSearchResults');
             const sort = getIntegratedSearchSortValue();
+            if (trigger === 'clear') {
+                integratedSearchRelatedUnlocked = false;
+                renderIntegratedSearchInsights('', [], { showRelatedAfterSearch: false });
+                resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>';
+                return;
+            }
+            if (!kw) {
+                integratedSearchRelatedUnlocked = false;
+                renderIntegratedSearchInsights(raw, [], { showRelatedAfterSearch: false });
+                resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>';
+                return;
+            }
+            if (trigger !== 'sort') integratedSearchRelatedUnlocked = true;
             if (kw && trigger !== 'sort' && trigger !== 'clear' && trigger !== 'init') {
                 trackIntegratedSearchKeyword(raw);
                 await postIntegratedSearchStatsTrack(raw);
             }
-            renderIntegratedSearchInsights(raw, []);
-            if (!kw) { resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>'; return; }
-            
             const results = appData.posts
                 .map((p) => {
                     const title = String(p.title || '').toLowerCase();
@@ -6411,13 +6586,15 @@
                 if (sort === 'relevance') return b.score - a.score || b.post.id - a.post.id;
                 return b.post.id - a.post.id;
             });
-            renderIntegratedSearchInsights(raw, results.map((x) => x.post));
+            renderIntegratedSearchInsights(raw, results.map((x) => x.post), {
+                showRelatedAfterSearch: integratedSearchRelatedUnlocked,
+            });
             if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">결과가 없습니다.</div>'; return; }
 
             resContainer.innerHTML = '<ul class="integrated-search-result-list">' + results.map(({ post: p, score }) => {
                 const stripped = p.content.replace(/<[^>]*>?/gm, ''); 
                 let badge = '';
-                if (p.type === 'KNOW') {
+                if (isKnowLikeBoard(p.type)) {
                     const knowMeta = getKnowStatusMeta(p.status);
                     badge = `<span class="badge ${knowMeta.badgeClass}" style="font-size:10px; padding:2px 6px;">${knowMeta.label}</span>`;
                 } else {

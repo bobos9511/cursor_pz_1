@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { PROMPT_LABELS } = require("./server-ai-prompt-labels.ko.cjs");
 
-const POST_AI_BOARD_KEYS = ["IT", "BIZ", "SYS", "KNOW"];
+const POST_AI_BOARD_KEYS = ["IT", "BIZ", "SYS", "KNOW", "RULE"];
 const DEFAULT_RAG_KEYWORD_BLOCKLIST = [
   "대해",
   "대한",
@@ -75,6 +75,7 @@ const DEFAULT_AI_SETTINGS = {
     BIZ: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
     SYS: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
     KNOW: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
+    RULE: { systemPrompt: "", temperature: 0.1, topP: 0.8 },
   },
   runtime: {
     chatMaxOutputTokens: null,
