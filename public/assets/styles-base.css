@@ -317,8 +317,8 @@
             padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
         }
         .login-share-modal-shell {
-            width: min(96vw, 328px);
-            max-width: min(96vw, 328px);
+            width: min(94vw, 250px);
+            max-width: min(94vw, 250px);
             max-height: min(92dvh, 92vh);
             overflow: hidden;
             display: flex;
@@ -329,7 +329,7 @@
             max-height: none;
             overflow-x: hidden;
             overflow-y: auto;
-            padding: 7px 10px 10px;
+            padding: 7px 8px 10px;
             gap: 5px;
             align-items: stretch;
             text-align: center;
@@ -377,24 +377,45 @@
             position: relative;
             z-index: 1;
             border-radius: 10px;
-            padding: 6px;
-            background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1);
+            padding: 5px;
+            background: linear-gradient(168deg, #e8f1fb 0%, #ffffff 42%, #f0f9ff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.95),
+                0 1px 3px rgba(15, 23, 42, 0.06);
             overflow: hidden;
+        }
+        .login-share-qr-board::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                radial-gradient(ellipse 120% 70% at 8% 0%, rgba(59, 130, 246, 0.14) 0%, transparent 52%),
+                radial-gradient(circle at 92% 88%, rgba(14, 165, 233, 0.11) 0%, transparent 46%),
+                repeating-linear-gradient(
+                    -18deg,
+                    transparent,
+                    transparent 9px,
+                    rgba(148, 163, 184, 0.045) 9px,
+                    rgba(148, 163, 184, 0.045) 10px
+                );
         }
         .login-share-qr-mount {
             position: relative;
             z-index: 2;
-            width: 220px;
-            height: 220px;
+            width: 210px;
+            height: 210px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+            box-shadow:
+                0 0 0 1px rgba(226, 232, 240, 0.9),
+                0 2px 8px rgba(15, 23, 42, 0.07);
             background: #ffffff;
         }
         .login-share-qr-mount svg,
@@ -405,8 +426,8 @@
         }
         .login-share-qr-fallback {
             display: block;
-            width: 220px;
-            height: 220px;
+            width: 210px;
+            height: 210px;
             border-radius: 6px;
         }
         .login-share-url-wrap {
