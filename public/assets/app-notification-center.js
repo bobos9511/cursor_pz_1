@@ -252,8 +252,7 @@ function fmtDateTime(d) {
 function updateNotificationBadge() {
     const badge = document.getElementById("headerNotificationBadge");
     const mobBadge = document.getElementById("mobileHeaderNotificationBadge");
-    const modal = document.getElementById("notificationCenterModal");
-    const hide = (modal && modal.classList.contains("active")) || Number(notificationCenterState.unreadCount || 0) <= 0;
+    const hide = isNotificationCenterUiOpen() || Number(notificationCenterState.unreadCount || 0) <= 0;
     const n = Number(notificationCenterState.unreadCount || 0);
     const text = String(Math.min(n, 99));
     [badge, mobBadge].forEach((el) => {
@@ -279,13 +278,14 @@ function getNotificationActiveFilterCount() {
 }
 
 function updateNotificationFilterButton() {
-    const btn = document.getElementById("notiFilterBtn");
-    if (!btn) return;
     const active = getNotificationActiveFilterCount();
-    btn.innerHTML =
+    const html =
         active > 0
             ? `<svg class="icon"><use href="#icon-cog"></use></svg> 필터 (${active})`
             : `<svg class="icon"><use href="#icon-cog"></use></svg> 필터`;
+    document.querySelectorAll(".js-noti-filter-btn").forEach((btn) => {
+        btn.innerHTML = html;
+    });
 }
 
 function syncNotificationFilterModalButtons() {
@@ -516,16 +516,42 @@ function buildNotificationGroupedRows(list) {
         .join("");
 }
 
+function isNotificationCenterUiOpen() {
+    const modal = document.getElementById("notificationCenterModal");
+    const page = document.getElementById("view-notifications");
+    return !!(modal && modal.classList.contains("active")) || !!(page && page.classList.contains("active"));
+}
+
+function getNotificationCenterBodyTargets() {
+    const page = document.getElementById("view-notifications");
+    const modal = document.getElementById("notificationCenterModal");
+    if (page && page.classList.contains("active")) {
+        const b = document.getElementById("notificationCenterPageBody");
+        return b ? [b] : [];
+    }
+    if (modal && modal.classList.contains("active")) {
+        const b = document.getElementById("notificationCenterBody");
+        return b ? [b] : [];
+    }
+    const bModal = document.getElementById("notificationCenterBody");
+    if (bModal) return [bModal];
+    const bPage = document.getElementById("notificationCenterPageBody");
+    return bPage ? [bPage] : [];
+}
+
 function renderNotificationCenterBody() {
-    const body = document.getElementById("notificationCenterBody");
-    if (!body) return;
+    const bodies = getNotificationCenterBodyTargets();
+    if (!bodies.length) return;
     const items = notificationCenterState.items.filter((it) => {
         if (notificationCenterState.levelMode === "important") return it.level === "important";
         if (notificationCenterState.levelMode === "general") return it.level !== "important";
         return true;
     });
     if (!items.length) {
-        body.innerHTML = '<div class="noti-empty">표시할 알림이 없습니다.</div>';
+        const emptyHtml = '<div class="noti-empty">표시할 알림이 없습니다.</div>';
+        bodies.forEach((body) => {
+            body.innerHTML = emptyHtml;
+        });
         return;
     }
 
@@ -578,7 +604,10 @@ function renderNotificationCenterBody() {
         );
     }
 
-    body.innerHTML = sections.length ? sections.join("") : '<div class="noti-empty">표시할 알림이 없습니다.</div>';
+    const inner = sections.length ? sections.join("") : '<div class="noti-empty">표시할 알림이 없습니다.</div>';
+    bodies.forEach((body) => {
+        body.innerHTML = inner;
+    });
 }
 
 function setNotificationViewMode(mode) {
@@ -657,7 +686,18 @@ function resetNotificationFilters() {
 }
 
 function openNotificationCenter() {
+    const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1024px)").matches;
     const modal = document.getElementById("notificationCenterModal");
+    if (isMobile) {
+        if (modal) modal.classList.remove("active");
+        if (typeof switchView === "function") {
+            switchView("notifications");
+        }
+        renderNotificationCenterBody();
+        updateNotificationFilterButton();
+        updateNotificationBadge();
+        return;
+    }
     if (!modal) return;
     modal.classList.add("active");
     renderNotificationCenterBody();
@@ -673,6 +713,13 @@ function closeNotificationCenter() {
         it.isRead = true;
     });
     recalcNotificationUnreadCount();
+    const page = document.getElementById("view-notifications");
+    if (page && page.classList.contains("active")) {
+        const next = typeof getPreferredInitialView === "function" ? getPreferredInitialView() : "dashboard";
+        if (typeof switchView === "function") {
+            switchView(next, null, {});
+        }
+    }
     updateNotificationBadge();
     persistNotificationCenterState();
 }

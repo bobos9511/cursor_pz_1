@@ -93,12 +93,9 @@
     </div>
     <div id="notificationCenterModal" class="modal-overlay" style="z-index: 1012;">
         <div class="modal-content notification-center-modal">
-            <div class="notification-center-toolbar">
-                <div class="notification-toolbar-left">
-                    <span class="notification-toolbar-caption">카드형 알림 보기</span>
-                </div>
+            <div class="notification-center-toolbar notification-center-toolbar--modal">
                 <div class="notification-toolbar-right">
-                    <button type="button" id="notiFilterBtn" class="btn btn-outline" onclick="openNotificationFilterModal()">
+                    <button type="button" id="notiFilterBtn" class="btn btn-outline js-noti-filter-btn" onclick="openNotificationFilterModal()">
                         <svg class="icon"><use href="#icon-cog"></use></svg> 필터
                     </button>
                     <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>

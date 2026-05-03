@@ -4673,6 +4673,11 @@
                         }
                     })();
                 }
+                if (viewId === 'notifications') {
+                    if (typeof renderNotificationCenterBody === 'function') renderNotificationCenterBody();
+                    if (typeof updateNotificationFilterButton === 'function') updateNotificationFilterButton();
+                    if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+                }
             }
 
             if (viewId === 'dashboard') {
