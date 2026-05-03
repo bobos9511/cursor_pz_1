@@ -1011,10 +1011,16 @@
                 font-size: 14px;
                 padding: 8px 13px;
             }
+            .header--redesign .hdr-nav-bar {
+                gap: 10px;
+            }
+            .header--redesign .header-search-mobile-btn {
+                display: none !important;
+            }
             .header--redesign .header-right > .header-search-wrap--in-actions {
-                flex: 1 1 240px;
+                flex: 0 1 clamp(200px, 26vw, 360px);
                 min-width: 0;
-                max-width: 400px;
+                max-width: 380px;
                 margin: 0;
             }
         }
@@ -1123,7 +1129,7 @@
         .header--redesign .header-right {
             width: auto;
             flex-shrink: 0;
-            gap: 10px;
+            gap: 8px;
         }
         .sidebar-toggle-btn {
             color: #fff;
