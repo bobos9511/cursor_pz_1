@@ -319,6 +319,17 @@
         body[data-theme="dark"] .ai-search-msg-time {
             color: #9fb0c8;
         }
+        body[data-theme="dark"] .ai-search-retry-label {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .ai-search-retry-textarea {
+            background: #0f172a;
+            border-color: #4a5f7f;
+            color: #e6edf8;
+        }
+        body[data-theme="dark"] .ai-search-error-retry {
+            border-top-color: rgba(148, 163, 184, 0.28);
+        }
         body[data-theme="dark"] .ai-search-msg-prefer-outside .ai-prefer-btn {
             box-shadow: 0 2px 8px rgba(2, 8, 24, 0.4);
         }

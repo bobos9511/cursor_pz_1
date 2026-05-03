@@ -396,6 +396,12 @@ function saveAiSearchActiveState() {
     saveJsonToStorage(keys.activeKey, aiSearchActive);
 }
 
+function isAiSearchErrorMessageText(text) {
+    const plain = stripHtmlForRag(String(text || "")).replace(/\s+/g, " ").trim();
+    if (!plain) return false;
+    return /^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패");
+}
+
 function renderAiSearchMessages() {
     const logEl = document.getElementById("aiSearchLog");
     if (!logEl) return;
@@ -405,11 +411,6 @@ function renderAiSearchMessages() {
         const compact = typeof window !== "undefined" && window.innerWidth <= 520;
         if (preferred) return compact ? "선호됨" : "도움이 됐음";
         return compact ? "답변선호" : "도움이 됐어요";
-    };
-    const isErrorAiMessage = (text) => {
-        const plain = stripHtmlForRag(String(text || "")).replace(/\s+/g, " ").trim();
-        if (!plain) return false;
-        return /^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패");
     };
     const isRefusalOrNeedsConfirmationMessage = (text) => {
         const normalized = stripHtmlForRag(String(text || "")).replace(/\s+/g, " ").trim().toLowerCase();
@@ -446,7 +447,7 @@ function renderAiSearchMessages() {
         // 추가정보 요청 안내 성격 메시지에는 선호 버튼을 표시하지 않음
         if (normalized.includes("추가 정보") && normalized.includes("요청")) return true;
         // AI 오류 메시지에는 선호 버튼을 표시하지 않음
-        if (isErrorAiMessage(text)) return true;
+        if (isAiSearchErrorMessageText(text)) return true;
         // 사용자가 원하는 직접 답변 대신 확인/거절 성격인 메시지에는 선호 버튼 숨김
         if (isRefusalOrNeedsConfirmationMessage(text)) return true;
         return false;
@@ -490,7 +491,22 @@ function renderAiSearchMessages() {
             const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
-            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>`;
+            let retryHtml = "";
+            if (!isLoadingMsg && isAiSearchErrorMessageText(text)) {
+                const qPlain = getNearestAiSearchQuestion(idx);
+                const qEsc = escapeHtml(qPlain);
+                retryHtml = `
+                    <div class="ai-search-error-retry" onclick="event.stopPropagation();">
+                        <label class="ai-search-retry-label" for="ai-search-retry-q-${idx}">질문 수정 후 다시 시도</label>
+                        <textarea id="ai-search-retry-q-${idx}" class="ai-search-retry-textarea" rows="3" autocomplete="off">${qEsc}</textarea>
+                        <button type="button" class="ai-search-retry-btn btn btn-primary" onclick="retryAiSearchQuestion(${idx})" title="다시 시도">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+                            <span>다시 시도</span>
+                        </button>
+                    </div>`;
+                item.classList.add("ai-search-msg-has-retry");
+            }
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${retryHtml}`;
             row.insertAdjacentHTML("beforeend", avatarHtml);
             row.appendChild(item);
             row.insertAdjacentHTML("beforeend", timeHtml);
@@ -517,8 +533,7 @@ function toggleAiSearchPreferred(messageIndex) {
     const msg = aiSearchActive.messages[idx];
     if (!msg || msg.role !== "ai") return;
     if (String(msg.text || "").includes("ai-search-loading")) return;
-    const plain = stripHtmlForRag(String(msg.text || "")).replace(/\s+/g, " ").trim();
-    if (/^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패")) return;
+    if (isAiSearchErrorMessageText(msg.text)) return;
     if (
         plain.includes("답변할 수 없습니다") ||
         plain.includes("도와드릴 수 없습니다") ||
@@ -827,6 +842,88 @@ async function continueAiSearchAnswer() {
     setAiSearchStateBadge();
     if (aiSearchActive) aiSearchActive.dirty = true;
     upsertAiSearchHistoryFromActive();
+}
+
+async function retryAiSearchQuestion(aiMessageIndex) {
+    const idx = Number(aiMessageIndex);
+    if (!Number.isFinite(idx) || idx < 0) return;
+    if (!aiSearchActive || !Array.isArray(aiSearchActive.messages)) return;
+    if (aiSearchIsLoading) {
+        showAlert("다른 답변을 생성 중입니다. 잠시 후 다시 시도해 주세요.", "error");
+        return;
+    }
+    const userIdx = idx - 1;
+    if (userIdx < 0 || !aiSearchActive.messages[userIdx] || aiSearchActive.messages[userIdx].role !== "user") return;
+    const aiMsg = aiSearchActive.messages[idx];
+    if (!aiMsg || aiMsg.role !== "ai") return;
+    if (!isAiSearchErrorMessageText(String(aiMsg.text || ""))) return;
+    const ta = document.getElementById(`ai-search-retry-q-${idx}`);
+    const q = ta ? String(ta.value || "").trim() : String(aiSearchActive.messages[userIdx].text || "").trim();
+    if (!q) {
+        showAlert("질문을 입력해 주세요.", "error");
+        return;
+    }
+    aiSearchActive.messages[userIdx].text = q;
+    if (!aiSearchActive.title || aiSearchActive.title === "새 대화") aiSearchActive.title = q.slice(0, 28);
+    aiSearchActive.boardType = "CHAT";
+    aiSearchActive.dirty = true;
+    aiMsg.text =
+        '<span class="ai-search-loading">AI 답변 생성 중입니다<span class="ai-search-loading-dots"><i>.</i><i>.</i><i>.</i></span></span>';
+    delete aiMsg.preferred;
+    saveAiSearchActiveState();
+    renderAiSearchMessages();
+
+    const sendBtn = document.getElementById("aiSearchSendBtn");
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerText = "생성중...";
+    }
+    aiSearchIsLoading = true;
+    setAiSearchStateBadge();
+    let delayNotified = false;
+    const delayTimer = setTimeout(() => {
+        delayNotified = true;
+        showAlert("AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.", "error");
+    }, AI_CHAT_REQUEST_TIMEOUT_MS);
+    try {
+        const result = await requestAiPreview({
+            title: `AI Chat: ${q.slice(0, 45)}`,
+            content: q,
+            boardType: "CHAT",
+            timeoutMs: 0,
+            abortOnTimeout: false,
+        });
+        const replyHtml = result.ok
+            ? result.replyHtml
+            : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || "AI 요청 실패")}</span>`;
+        if (idx >= 0 && aiSearchActive.messages[idx] && aiSearchActive.messages[idx].role === "ai") {
+            aiSearchActive.messages[idx].text = replyHtml;
+        }
+        saveAiSearchActiveState();
+        upsertAiSearchHistoryFromActive();
+        renderAiSearchMessages();
+        if (result && result.ok && result.truncated) {
+            showAlert("답변이 길어 핵심만 표시했습니다. 질문을 더 구체화하면 빠르게 이어서 받을 수 있습니다.", "success");
+        } else if (delayNotified && result && result.ok) {
+            showAlert("지연된 AI 응답이 도착했습니다.", "success", { noticeLevel: "important" });
+        }
+    } catch (error) {
+        const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(error && error.message ? error.message : "AI 요청 실패")}</span>`;
+        if (idx >= 0 && aiSearchActive.messages[idx] && aiSearchActive.messages[idx].role === "ai") {
+            aiSearchActive.messages[idx].text = failHtml;
+        }
+        saveAiSearchActiveState();
+        upsertAiSearchHistoryFromActive();
+        renderAiSearchMessages();
+    } finally {
+        clearTimeout(delayTimer);
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerText = "질문하기";
+        }
+        aiSearchIsLoading = false;
+        setAiSearchStateBadge();
+    }
 }
 
 async function submitAiSearchQuestion() {
