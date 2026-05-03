@@ -1,9 +1,16 @@
 * { box-sizing: border-box; }
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
   margin: 0;
-  font-family: "Segoe UI", "Noto Sans KR", sans-serif;
+  font-family: "Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
   background: #f5f8fc;
   color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .page {
   min-height: 100vh;
@@ -39,6 +46,11 @@ body {
   border-radius: 8px;
   padding: 7px 11px;
   font-size: 13px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  font-family: inherit;
 }
 .link-btn.primary {
   background: rgba(255, 255, 255, 0.14);
@@ -101,6 +113,11 @@ body {
   padding: 7px 10px;
   font-size: 12px;
   cursor: pointer;
+  min-height: 40px;
+  box-sizing: border-box;
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .suggestion-btn:hover {
   border-color: #93c5fd;
@@ -214,6 +231,11 @@ body {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  min-height: 40px;
+  box-sizing: border-box;
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .chat-form button:disabled {
   opacity: 0.6;

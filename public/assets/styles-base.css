@@ -2,6 +2,7 @@
            1. RESET & BASE
            ========================================== */
         :root {
+            --font-sans: "Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
             --ibk-blue: #004B9B;
             --ibk-light: #00A4E3;
             --bg-color: #F4F6F9;
@@ -27,13 +28,37 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; height: 100vh; overflow: hidden; font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif; background-color: var(--bg-color); color: var(--text-dark); font-size: 14px; letter-spacing: -0.3px;}
+        html {
+            -webkit-text-size-adjust: 100%;
+            -moz-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: var(--font-sans);
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            font-size: 14px;
+            letter-spacing: -0.3px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
         * { scrollbar-width: none; -ms-overflow-style: none; }
         *::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
         
         a { text-decoration: none; color: inherit; }
         ul { list-style: none; }
-        button { background: transparent; border: none; cursor: pointer; font-family: inherit; outline: none; }
+        button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
         input, select, textarea { font-family: inherit; }
         input[type="range"] {
             appearance: none;
@@ -1260,7 +1285,7 @@
             from { opacity: 0; transform: translateY(-8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; cursor: pointer; }
+        .logo { font-family: var(--font-sans); font-size: 24px; font-weight: 900; letter-spacing: -1px; cursor: pointer; }
         .logo .logo-point { color: var(--ibk-light); }
         .header-title { margin-left: 15px; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.3); font-size: 15px; font-weight: bold; color: #d1d9e6; opacity: 0.65; }
         .header-role-chip {
@@ -1865,7 +1890,7 @@
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
 
-        .btn { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; white-space: nowrap; outline: none; }
+        .btn { padding: 10px 20px; min-height: 40px; line-height: 1.25; border-radius: 4px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; white-space: nowrap; outline: none; }
         .btn:disabled { cursor: not-allowed; }
         .btn .icon { margin-right: 6px; }
         .btn-primary { background: var(--ibk-blue); color: #fff; border-color: var(--ibk-blue); }
@@ -3951,4 +3976,4 @@
 
         /* 푸터 스타일 */
         .footer-dark { background: linear-gradient(180deg, #1f2937, #1f252f); color: #94a3b8; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-top: auto; border-top: 1px solid rgba(148,163,184,0.2); }
-        .engraved-logo { font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }
+        .engraved-logo { font-family: var(--font-sans); font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }
