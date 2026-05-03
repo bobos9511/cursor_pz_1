@@ -2470,8 +2470,8 @@
             if (!mount) return;
             mount.innerHTML = '';
             const fallbackImg =
-                '<img class="login-share-qr-fallback" alt="" width="118" height="118" src="' +
-                'https://api.qrserver.com/v1/create-qr-code/?size=118x118&margin=1&color=005bac&bgcolor=ffffff&ecc=H&data=' +
+                '<img class="login-share-qr-fallback" alt="" width="220" height="220" src="' +
+                'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&color=0a0a0a&bgcolor=ffffff&ecc=H&data=' +
                 encodeURIComponent(url) +
                 '"/>';
             try {
@@ -2480,45 +2480,22 @@
                     (typeof window.QRCodeStyling === 'function' && window.QRCodeStyling) ||
                     (window.QRCodeStyling && window.QRCodeStyling.default);
                 if (typeof QRCodeStyling !== 'function') throw new Error('QRCodeStyling missing');
-                const logoSvg =
-                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
-                    '<rect width="64" height="64" rx="14" fill="#ffffff"/>' +
-                    '<path fill="#005bac" d="M18 46V18h12l8 14V18h8v28H34l-8-14v14z"/>' +
-                    '</svg>';
-                const image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(logoSvg);
                 const qr = new QRCodeStyling({
-                    width: 118,
-                    height: 118,
+                    width: 220,
+                    height: 220,
                     type: 'svg',
                     data: url,
-                    margin: 0,
+                    margin: 3,
                     qrOptions: { errorCorrectionLevel: 'H' },
-                    image,
-                    imageOptions: { hideBackgroundDots: true, imageSize: 0.3, margin: 3 },
                     dotsOptions: {
-                        type: 'rounded',
-                        gradient: {
-                            type: 'linear',
-                            rotation: 0.55,
-                            colorStops: [
-                                { offset: 0, color: '#003f85' },
-                                { offset: 0.55, color: '#005bac' },
-                                { offset: 1, color: '#00a4e3' },
-                            ],
-                        },
+                        type: 'square',
+                        color: '#0a0a0a',
                     },
                     cornersSquareOptions: {
-                        type: 'extra-rounded',
-                        gradient: {
-                            type: 'linear',
-                            rotation: 0,
-                            colorStops: [
-                                { offset: 0, color: '#00264d' },
-                                { offset: 1, color: '#005bac' },
-                            ],
-                        },
+                        type: 'square',
+                        color: '#0a0a0a',
                     },
-                    cornersDotOptions: { type: 'dot', color: '#00a4e3' },
+                    cornersDotOptions: { type: 'square', color: '#0a0a0a' },
                     backgroundOptions: { color: '#ffffff' },
                 });
                 qr.append(mount);

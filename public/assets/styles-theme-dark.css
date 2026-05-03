@@ -1568,12 +1568,12 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         body[data-theme="dark"] .login-share-qr-board {
-            background: linear-gradient(165deg, #152238 0%, #121b2d 55%, #0f172a 100%);
-            border-color: rgba(96, 165, 250, 0.35);
+            background: #ffffff;
+            border-color: #cbd5e1;
         }
         body[data-theme="dark"] .login-share-qr-mount {
-            box-shadow: 0 2px 12px rgba(2, 8, 24, 0.45);
-            background: #0f172a;
+            box-shadow: 0 1px 4px rgba(2, 8, 24, 0.35);
+            background: #ffffff;
         }
         body[data-theme="dark"] .login-share-qr-fallback {
             box-shadow: none;
