@@ -173,6 +173,37 @@
             #loginPage { padding: 12px; }
             .login-box { padding: 24px 16px; max-width: 100%; }
             .main-area { padding: 14px; }
+            /* 모바일: 초슬림 푸터(높이·패딩 최소화) */
+            .footer-dark {
+                padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px));
+                gap: 6px 8px;
+                align-items: center;
+                flex-wrap: nowrap;
+            }
+            .footer-dark .engraved-logo {
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: -0.04em;
+                line-height: 1.05;
+                flex-shrink: 0;
+            }
+            .footer-dark > div:last-child {
+                min-width: 0;
+                flex: 1;
+                text-align: right;
+            }
+            .footer-dark > div:last-child p {
+                margin: 0;
+                font-size: 8px;
+                line-height: 1.15;
+                letter-spacing: -0.02em;
+                color: #94a3b8 !important;
+            }
+            .footer-dark > div:last-child p:first-child {
+                font-size: 9px;
+                font-weight: 700;
+                margin-bottom: 1px !important;
+            }
             .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 12px; }
             .panel-header { padding: 12px 14px; font-size: 14px; }
             .panel-body { padding: 14px; }
