@@ -204,18 +204,46 @@
                 width: min(96vw, 360px);
             }
             #similarPostArea { width: 100% !important; }
-            #view-detail .detail-post-head-inner {
+            #view-detail .view-detail-main-col {
+                padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+            }
+            #view-detail > .flex.justify-between.items-center.mb-20 {
+                margin-bottom: 12px !important;
+                padding-bottom: 8px !important;
+            }
+            #view-detail .detail-post-body {
                 padding: 16px 14px !important;
+                font-size: 14px !important;
+                line-height: 1.75 !important;
+            }
+            #view-detail .detail-post-head-inner {
+                padding: 14px 14px 12px !important;
             }
             #view-detail .detail-post-header-row {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+                column-gap: 10px;
+                row-gap: 6px;
+                margin-bottom: 2px !important;
             }
             #view-detail .detail-post-badges {
-                width: 100%;
+                grid-column: 1;
+                grid-row: 1;
+                width: auto;
+                min-width: 0;
+                display: flex;
+                flex-wrap: wrap;
                 align-items: center;
-                gap: 8px;
+                gap: 6px 8px;
+            }
+            #view-detail .detail-post-crud {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: center;
+                margin-left: 0 !important;
+                justify-content: flex-end;
+                gap: 6px;
             }
             #view-detail .dtl-post-ref-wrap {
                 margin-bottom: 0;
@@ -237,32 +265,12 @@
                 align-items: center;
                 border-radius: 8px;
             }
-            #view-detail .detail-post-header-row {
-                flex-wrap: wrap;
-                align-items: flex-start;
-                gap: 8px 10px;
-                margin-bottom: 6px !important;
-            }
-            #view-detail .detail-post-badges {
-                flex: 1 1 auto;
-                min-width: 0;
-            }
-            #view-detail .detail-post-head-inner {
-                padding: 16px !important;
-            }
-            #view-detail #dtlTitle {
-                margin-top: 2px !important;
-                margin-bottom: 6px !important;
-                font-size: 19px !important;
-                line-height: 1.35 !important;
-            }
-            #view-detail .detail-post-crud {
-                width: auto;
-                flex: 0 0 auto;
-                margin-left: auto !important;
-                align-self: center;
-                justify-content: flex-end;
-                gap: 8px;
+            #view-detail #dtlTitle.detail-post-title,
+            #view-detail .detail-post-title {
+                margin-top: 6px !important;
+                margin-bottom: 2px !important;
+                font-size: 18px !important;
+                line-height: 1.38 !important;
             }
             #view-detail .dtl-crud-btn {
                 min-height: 32px !important;
@@ -281,6 +289,7 @@
                 flex-direction: column;
                 align-items: stretch;
                 row-gap: 8px;
+                margin-top: 0 !important;
             }
             #view-detail .post-detail-meta-tail {
                 margin-left: 0;
@@ -352,10 +361,10 @@
             #view-detail .post-detail-meta-primary {
                 flex-direction: row;
                 flex-wrap: wrap;
-                align-items: stretch;
+                align-items: center;
                 width: 100%;
-                column-gap: 14px;
-                row-gap: 10px;
+                column-gap: 12px;
+                row-gap: 4px;
             }
             #view-detail .post-detail-meta-primary .post-detail-meta-item {
                 display: flex;
@@ -376,7 +385,7 @@
                 font-size: 16px;
             }
             #view-detail #dtlWriter .writer-cell.detail {
-                gap: 12px;
+                gap: 8px;
             }
             #view-detail #dtlWriter .writer-name {
                 white-space: normal;

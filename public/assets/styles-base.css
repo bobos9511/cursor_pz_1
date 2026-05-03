@@ -4867,6 +4867,14 @@
             background: #E2E8F0;
             border: 1px solid #CBD5E1;
         }
+        .detail-post-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            line-height: 1.35;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
         .detail-post-badges .dtl-post-ref-wrap {
             margin-bottom: 0;
         }
