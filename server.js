@@ -1717,15 +1717,22 @@ function sanitizeUserSettings(raw) {
           .filter(Boolean),
       ),
     ).slice(0, 50);
+  const layoutPrefRaw = String(src.uiLayoutPreference || "").trim().toLowerCase();
+  const uiLayoutPreference =
+    layoutPrefRaw === "mobile" || layoutPrefRaw === "desktop" ? layoutPrefRaw : "auto";
   const out = {
     osNotify: src.osNotify !== false,
     themeMode: src.themeMode === "dark" || src.themeMode === "light" || src.themeMode === "system" ? src.themeMode : "system",
+    uiLayoutPreference,
     initialView: src.initialView === "dashboard" ? "dashboard" : "ai-search",
     notifyPolicy: {
       master: notifyPolicy.master === "block" ? "block" : "allow",
       level: notifyPolicy.level === "important" ? "important" : "all",
       timeMode:
-        notifyPolicy.timeMode === "all" || notifyPolicy.timeMode === "night" || notifyPolicy.timeMode === "custom"
+        notifyPolicy.timeMode === "all" ||
+        notifyPolicy.timeMode === "night" ||
+        notifyPolicy.timeMode === "custom" ||
+        notifyPolicy.timeMode === "work"
           ? notifyPolicy.timeMode
           : "all",
       customStart: /^\d{2}:\d{2}$/.test(String(notifyPolicy.customStart || "")) ? String(notifyPolicy.customStart) : "09:00",
@@ -2263,6 +2270,59 @@ async function handleDbApi(req, res, url) {
     users[idx] = { ...user, accountPinHash: hashUserAccountPin(emp, newPin) };
     db.signupUsers = users;
     writeDb(db);
+    touchEmployeeSession(db, emp);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/account-pin/verify") {
+    if (!applyRateLimit(req, res)) return true;
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const token = extractBearerToken(req);
+    if (!token) {
+      sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
+      return true;
+    }
+    const db = readDb();
+    const r = resolveSessionToken(db, token);
+    if (r.kind === "expired") {
+      sendJson(res, 401, { error: "세션이 만료되었습니다.", code: "session_expired" });
+      return true;
+    }
+    if (r.kind !== "ok") {
+      sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+      return true;
+    }
+    const emp = normalizeAiChatHistoryScope(r.emp);
+    if (!emp || emp === "guest" || emp === "000000") {
+      sendJson(res, 403, { error: "이 계정으로는 PIN을 확인할 수 없습니다." });
+      return true;
+    }
+    const pin = normalizeAdminPinDigitsServer(body && body.pin);
+    if (!isValidAdminPinFormatServer(pin)) {
+      sendJson(res, 400, { error: "PIN은 숫자 6자리만 가능합니다." });
+      return true;
+    }
+    const users = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+    const user = users.find((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === emp);
+    if (!user || user.withdrawn === true) {
+      sendJson(res, 404, { error: "사용자를 찾을 수 없습니다." });
+      return true;
+    }
+    const prevHash = user && user.accountPinHash;
+    if (!prevHash) {
+      sendJson(res, 400, { error: "등록된 계정 PIN이 없습니다." });
+      return true;
+    }
+    if (prevHash !== hashUserAccountPin(emp, pin)) {
+      sendJson(res, 401, { error: "PIN이 일치하지 않습니다." });
+      return true;
+    }
     touchEmployeeSession(db, emp);
     sendJson(res, 200, { ok: true });
     return true;

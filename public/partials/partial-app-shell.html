@@ -185,15 +185,6 @@
                             </button>
                         </div>
                     </section>
-                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreMbnav">
-                        <h2 id="mobMoreMbnav" class="mobile-nav-more__group-label">하단 바 메뉴</h2>
-                        <p class="mobile-nav-more-mbnav-lead">접근 가능한 메뉴만 선택할 수 있습니다. 저장하면 즉시 하단 바에 반영됩니다.</p>
-                        <div id="mobileNavMoreMbnavSlotEditor" class="settings-mbnav-slot-editor mobile-nav-more-mbnav-editor settings-mbnav-editor-host" aria-label="하단 바 메뉴 구성"></div>
-                        <div class="mobile-nav-more-mbnav-actions">
-                            <button type="button" class="btn btn-outline mobile-nav-more-mbnav-btn" onclick="resetMobileBottomNavSlotOrder()">기본값</button>
-                            <button type="button" class="btn btn-primary mobile-nav-more-mbnav-btn" onclick="saveMbnavFromGlassMenu()">하단 바에 적용</button>
-                        </div>
-                    </section>
                     <section class="mobile-nav-more__section mobile-nav-more__section--foot" aria-labelledby="mobMoreProfile">
                         <h2 id="mobMoreProfile" class="mobile-nav-more__group-label">계정</h2>
                         <div class="mobile-nav-more__list">
@@ -1049,9 +1040,21 @@
                         <div class="panel p-20">
                             <div id="settings-panel-notify" class="admin-settings-tab-panel">
                                 <div class="panel-header settings-section-heading">알림 수신 설정</div>
-                                <label class="theme-mode-item" style="margin-bottom:14px;">
-                                    <input type="checkbox" id="setOsNotify" checked>
-                                    <span>시스템(OS) 알림 사용</span>
+                                <label class="settings-os-notify-card" for="setOsNotify">
+                                    <input type="checkbox" id="setOsNotify" class="settings-os-notify-card__input" checked>
+                                    <span class="settings-os-notify-card__visual" aria-hidden="true">
+                                        <span class="settings-os-notify-card__bell-ring"></span>
+                                        <span class="settings-os-notify-card__bell-body">
+                                            <svg class="icon settings-os-notify-card__bell-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2Z"/></svg>
+                                        </span>
+                                        <span class="settings-os-notify-card__toggle-track">
+                                            <span class="settings-os-notify-card__toggle-thumb"></span>
+                                        </span>
+                                    </span>
+                                    <span class="settings-os-notify-card__text">
+                                        <span class="settings-os-notify-card__title">시스템(OS) 알림 사용</span>
+                                        <span class="settings-os-notify-card__desc">브라우저 알림으로 중요 알림을 받습니다. 꺼 두면 앱 안의 토스트·알림센터만 사용합니다.</span>
+                                    </span>
                                 </label>
                                 <div class="flex-col gap-15">
                                     <div class="notification-policy-box">
@@ -1133,6 +1136,36 @@
                             </div>
 
                             <div id="settings-panel-display" class="admin-settings-tab-panel hidden">
+                                <div class="settings-layout-pref-wide-only panel mb-20" id="settingsLayoutPrefPanel">
+                                    <div class="panel-header settings-section-heading">화면 레이아웃 (넓은 화면)</div>
+                                    <p class="settings-mbnav-lead" style="margin-top:0;">가로가 넓은 태블릿·PC에서 모바일형 상·하단 바를 쓸지, PC형 헤더·사이드바를 쓸지 선택합니다. 좁은 화면(1024px 이하)에서는 항상 모바일형입니다.</p>
+                                    <div class="settings-layout-pref-grid" role="radiogroup" aria-label="화면 레이아웃">
+                                        <label class="settings-layout-pref-card">
+                                            <input type="radio" name="uiLayoutPreference" value="auto" checked>
+                                            <span class="settings-layout-pref-card__box">
+                                                <span class="settings-layout-pref-card__badge">자동</span>
+                                                <span class="settings-layout-pref-card__title">화면 너비에 맞춤</span>
+                                                <span class="settings-layout-pref-card__desc">넓으면 PC, 좁으면 모바일 레이아웃</span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-layout-pref-card">
+                                            <input type="radio" name="uiLayoutPreference" value="mobile">
+                                            <span class="settings-layout-pref-card__box">
+                                                <span class="settings-layout-pref-card__badge">모바일형</span>
+                                                <span class="settings-layout-pref-card__title">상단·하단 글래스 바</span>
+                                                <span class="settings-layout-pref-card__desc">큰 화면에서도 터치 중심 UI</span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-layout-pref-card">
+                                            <input type="radio" name="uiLayoutPreference" value="desktop">
+                                            <span class="settings-layout-pref-card__box">
+                                                <span class="settings-layout-pref-card__badge">PC형</span>
+                                                <span class="settings-layout-pref-card__title">헤더·사이드 메뉴</span>
+                                                <span class="settings-layout-pref-card__desc">넓은 화면에서 전통적인 레이아웃</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="panel-header settings-section-heading">테마 모드</div>
                                 <div class="flex-col gap-10">
                                     <label class="theme-mode-item">
@@ -1151,16 +1184,34 @@
                             </div>
 
                             <div id="settings-panel-account" class="admin-settings-tab-panel hidden">
-                                <div class="settings-account-pin-card panel mb-20">
-                                    <div class="panel-header">계정 PIN</div>
-                                    <div class="p-20">
-                                        <p class="admin-settings-hint" style="margin-top:0;">숫자 6자리. 최초 설정 시 현재 PIN 칸은 비워 두세요.</p>
-                                        <div class="admin-self-pin-grid">
-                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfCurrent">현재 PIN</label><input type="password" id="accountPinSelfCurrent" class="input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="변경 시 입력"></div>
-                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfNew">새 PIN</label><input type="password" id="accountPinSelfNew" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="6자리"></div>
-                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfNew2">새 PIN 확인</label><input type="password" id="accountPinSelfNew2" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password"></div>
+                                <div class="settings-account-pin-shell mb-20">
+                                    <div class="settings-account-pin-shell__glow" aria-hidden="true"></div>
+                                    <div class="settings-account-pin-shell__inner">
+                                        <div class="settings-account-pin-shell__head">
+                                            <div class="settings-account-pin-shell__icon-wrap" aria-hidden="true">
+                                                <svg class="icon"><use href="#icon-lock"></use></svg>
+                                            </div>
+                                            <div>
+                                                <h3 class="settings-account-pin-shell__title">계정 PIN</h3>
+                                                <p class="settings-account-pin-shell__lead">플랫폼 관리자 PIN과 별개인 <strong>본인 계정 PIN</strong>입니다. 숫자 6자리이며, 로그인 직후 확인에 사용됩니다.</p>
+                                            </div>
                                         </div>
-                                        <button type="button" class="btn btn-primary" style="margin-top:12px;" onclick="submitAccountSelfPinFromSettings()">PIN 저장</button>
+                                        <div class="settings-account-pin-shell__grid">
+                                            <div class="settings-account-pin-field">
+                                                <label class="settings-account-pin-label" for="accountPinSelfCurrent">현재 PIN</label>
+                                                <input type="password" id="accountPinSelfCurrent" class="input settings-account-pin-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="변경 시에만 입력">
+                                            </div>
+                                            <div class="settings-account-pin-field">
+                                                <label class="settings-account-pin-label" for="accountPinSelfNew">새 PIN</label>
+                                                <input type="password" id="accountPinSelfNew" class="input settings-account-pin-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="● ● ● ● ● ●">
+                                            </div>
+                                            <div class="settings-account-pin-field settings-account-pin-field--wide">
+                                                <label class="settings-account-pin-label" for="accountPinSelfNew2">새 PIN 확인</label>
+                                                <input type="password" id="accountPinSelfNew2" class="input settings-account-pin-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="한 번 더 입력">
+                                            </div>
+                                        </div>
+                                        <p class="settings-account-pin-footnote">최초 등록 시에는 <strong>현재 PIN</strong> 칸을 비워 두세요.</p>
+                                        <button type="button" class="btn btn-primary settings-account-pin-submit" onclick="submitAccountSelfPinFromSettings()">PIN 저장</button>
                                     </div>
                                 </div>
                                 <div class="settings-withdraw-card">

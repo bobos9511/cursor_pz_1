@@ -524,7 +524,10 @@
             const out = { ...base, ...src };
             out.master = out.master === 'block' ? 'block' : 'allow';
             out.level = out.level === 'important' ? 'important' : 'all';
-            out.timeMode = out.timeMode === 'all' || out.timeMode === 'night' || out.timeMode === 'custom' ? out.timeMode : 'all';
+            out.timeMode =
+                out.timeMode === 'all' || out.timeMode === 'night' || out.timeMode === 'custom' || out.timeMode === 'work'
+                    ? out.timeMode
+                    : 'all';
             out.customStart = /^\d{2}:\d{2}$/.test(String(out.customStart || '')) ? String(out.customStart) : '09:00';
             out.customEnd = /^\d{2}:\d{2}$/.test(String(out.customEnd || '')) ? String(out.customEnd) : '18:00';
             out.excludeKeywords = Array.isArray(out.excludeKeywords) ? normalizeKeywordList(out.excludeKeywords.join(',')) : normalizeKeywordList(out.excludeKeywords);
@@ -566,7 +569,7 @@
         function selectSettingsMainTab(tab) {
             let key =
                 tab === 'display' ? 'display' : tab === 'account' ? 'account' : tab === 'mbnav' ? 'mbnav' : 'notify';
-            if (key === 'mbnav' && window.matchMedia && !window.matchMedia('(max-width: 1024px)').matches) {
+            if (key === 'mbnav' && !knockIsMobileShellActive()) {
                 key = 'notify';
             }
             document.querySelectorAll('#settingsMainTabs .admin-main-tab-btn').forEach((b) => {
@@ -933,21 +936,48 @@
             return roleMatrix[r] || roleMatrix.branch;
         }
 
-        /** 모바일 하단 바·글래스 메뉴 편집에 쓸 수 있는 슬롯 ID(현재 역할의 게시판 쓰기 권한 기준). */
+        /** 하단 바 편집 풀: 역할 기준 게시판은 쓰기·답변 권한 합집합(노출 메뉴와 동일하게 간주). */
         function getMbnavPoolIdsForRole(role) {
             const entry = getRoleMatrixEntry(role);
             const write = Array.isArray(entry.write) ? entry.write : [];
+            const answer = Array.isArray(entry.answer) ? entry.answer : [];
+            const boards = new Set(
+                [...write, ...answer].map((b) => String(b || '').toUpperCase()).filter((b) => ['IT', 'BIZ', 'SYS'].includes(b)),
+            );
             const pool = ['dashboard'];
-            if (write.includes('IT')) pool.push('list-it');
-            if (write.includes('BIZ')) pool.push('list-biz');
-            if (write.includes('SYS')) pool.push('list-sys');
-            pool.push('integrated-search');
-            pool.push('notifications');
+            if (boards.has('IT')) pool.push('list-it');
+            if (boards.has('BIZ')) pool.push('list-biz');
+            if (boards.has('SYS')) pool.push('list-sys');
+            pool.push('integrated-search', 'notifications');
             return pool;
         }
+        function isMbnavSidebarNavVisible(el) {
+            if (!el || !(el instanceof Element)) return false;
+            if (el.classList.contains('hidden')) return false;
+            const st = window.getComputedStyle(el);
+            if (!st || st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) return false;
+            return true;
+        }
+        /** 하단 바 편집 풀: PC 셸에서는 사이드바에 실제로 보이는 메뉴 기준. 모바일·컴팩트 셸에서는 사이드가 숨겨져 역할 매트릭스와 동일하게 간주. */
         function getMbnavPoolIdsForCurrentUser() {
             const role = (currentLoginUser && currentLoginUser.role) || currentRole || 'branch';
-            return getMbnavPoolIdsForRole(role);
+            const fallback = getMbnavPoolIdsForRole(role);
+            if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return fallback;
+            if (knockIsMobileShellActive()) return fallback;
+            const pool = [];
+            const addIf = (id, domIds) => {
+                const ids = Array.isArray(domIds) ? domIds : [domIds];
+                const hit = ids.some((did) => isMbnavSidebarNavVisible(document.getElementById(did)));
+                if (hit) pool.push(id);
+            };
+            addIf('dashboard', ['nav-dashboard']);
+            addIf('list-it', ['nav-list-it']);
+            addIf('list-biz', ['nav-list-biz']);
+            addIf('list-sys', ['nav-list-sys']);
+            pool.push('integrated-search', 'notifications');
+            const core = pool.filter((x) => x !== 'integrated-search' && x !== 'notifications');
+            if (!core.length) return fallback;
+            return pool;
         }
 
         function isKnowLikeBoard(t) {
@@ -1816,6 +1846,42 @@
             const cookieScope = getCookie(USER_SCOPE_COOKIE);
             return cookieScope || 'guest';
         }
+        function normalizeUiLayoutPreference(raw) {
+            const v = String(raw || '').trim().toLowerCase();
+            if (v === 'mobile' || v === 'desktop') return v;
+            return 'auto';
+        }
+        function syncKnockShellLayoutAttribute() {
+            if (typeof document === 'undefined') return;
+            const w = window.innerWidth || 0;
+            const pref = normalizeUiLayoutPreference(appData && appData.settings && appData.settings.uiLayoutPreference);
+            if (w <= 1024) {
+                document.documentElement.removeAttribute('data-knock-shell');
+            } else if (pref === 'mobile') {
+                document.documentElement.setAttribute('data-knock-shell', 'compact');
+            } else {
+                document.documentElement.removeAttribute('data-knock-shell');
+            }
+        }
+        function knockIsMobileShellActive() {
+            if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+            const w = window.innerWidth || 0;
+            if (w <= 1024) return true;
+            return document.documentElement.getAttribute('data-knock-shell') === 'compact';
+        }
+        let knockShellLayoutResizeBound = false;
+        function bindKnockShellLayoutResizeOnce() {
+            if (knockShellLayoutResizeBound) return;
+            knockShellLayoutResizeBound = true;
+            const onResize = () => {
+                syncKnockShellLayoutAttribute();
+                updateMbnavSlotRowCompactClass();
+                syncMobileIntegratedSearchVisibility();
+                if (typeof updateAiChatFloatingButton === 'function') updateAiChatFloatingButton();
+                if (typeof positionAiChatLayerPanel === 'function') positionAiChatLayerPanel();
+            };
+            window.addEventListener('resize', onResize, { passive: true });
+        }
         async function loadUserSettingsFromServer() {
             const scope = encodeURIComponent(getUserSettingsScope());
             const data = await fetchJson(`/api/db/user-settings?scope=${scope}`);
@@ -1830,6 +1896,9 @@
                 notifyPolicy: normalizeNotifyPolicy(appData && appData.settings ? appData.settings.notifyPolicy : getDefaultNotifyPolicy()),
             };
             settingsPayload.mobileBottomNavSlots = getMobileBottomNavSlotOrder();
+            settingsPayload.uiLayoutPreference = normalizeUiLayoutPreference(
+                appData && appData.settings && appData.settings.uiLayoutPreference,
+            );
             fetchJson(`/api/db/user-settings?scope=${scope}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -2134,6 +2203,9 @@
                     appData.settings.osNotify = userSettings.osNotify !== false;
                     appData.settings.themeMode = normalizeThemeMode(userSettings.themeMode || appData.settings.themeMode || 'system');
                     appData.settings.notifyPolicy = normalizeNotifyPolicy(userSettings.notifyPolicy || appData.settings.notifyPolicy);
+                    appData.settings.uiLayoutPreference = normalizeUiLayoutPreference(
+                        userSettings.uiLayoutPreference || appData.settings.uiLayoutPreference,
+                    );
                     tryHydrateMobileBottomNavSlotsFromServer(userSettings);
                 }
             } catch (error) {
@@ -2146,6 +2218,7 @@
                     /* noop */
                 }
             }
+            if (!appData.settings.uiLayoutPreference) appData.settings.uiLayoutPreference = 'auto';
             if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== 'object') appData.settings.boardHelp = {};
             const sharedBoardHelp = await loadSharedBoardHelpMap();
             const localBoardHelp = appData.settings.boardHelp || {};
@@ -2174,6 +2247,10 @@
             renderNotifyKeywordListsFromPolicy();
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
+            const uiLayoutEl = document.querySelector(`input[name="uiLayoutPreference"][value="${appData.settings.uiLayoutPreference}"]`);
+            if (uiLayoutEl) uiLayoutEl.checked = true;
+            syncKnockShellLayoutAttribute();
+            bindKnockShellLayoutResizeOnce();
             applyDashboardWidgetOrder();
             applyMobileBottomNavSlotOrder();
             bindMbnavCompactResizeOnce();
@@ -3745,6 +3822,79 @@
         }
         window.submitAccountSelfPinFromSettings = submitAccountSelfPinFromSettings;
 
+        let accountPinLoginVerifyModalResolve = null;
+
+        function closeAccountPinLoginVerifyModal() {
+            const m = document.getElementById('accountPinLoginVerifyModal');
+            if (m) m.classList.remove('active');
+        }
+
+        function finishAccountPinLoginVerifyModal(ok) {
+            closeAccountPinLoginVerifyModal();
+            const fn = accountPinLoginVerifyModalResolve;
+            accountPinLoginVerifyModalResolve = null;
+            if (typeof fn === 'function') fn(!!ok);
+        }
+
+        function openAccountPinLoginVerifyModalAsync() {
+            return new Promise((resolve) => {
+                accountPinLoginVerifyModalResolve = resolve;
+                const m = document.getElementById('accountPinLoginVerifyModal');
+                const inp = document.getElementById('accountPinLoginVerifyInput');
+                const err = document.getElementById('accountPinLoginVerifyError');
+                if (inp) inp.value = '';
+                if (err) err.textContent = '';
+                if (m) m.classList.add('active');
+                setTimeout(() => {
+                    if (inp) inp.focus();
+                }, 80);
+            });
+        }
+
+        async function submitAccountPinLoginVerifyFromModal() {
+            const inp = document.getElementById('accountPinLoginVerifyInput');
+            const err = document.getElementById('accountPinLoginVerifyError');
+            const pin = normalizeAdminPinDigits(String(inp && inp.value ? inp.value : ''));
+            if (!isValidAdminPinFormatClient(pin)) {
+                if (err) err.textContent = '숫자 6자리 PIN을 입력해 주세요.';
+                return;
+            }
+            const token = getStoredSessionToken();
+            if (!token) {
+                if (err) err.textContent = '세션이 없습니다. 다시 로그인해 주세요.';
+                finishAccountPinLoginVerifyModal(false);
+                return;
+            }
+            try {
+                const res = await fetch('/api/db/account-pin/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ pin }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    if (err) err.textContent = String((data && data.error) || 'PIN이 일치하지 않습니다.');
+                    return;
+                }
+                finishAccountPinLoginVerifyModal(true);
+            } catch (e) {
+                console.error(e);
+                if (err) err.textContent = '확인 중 오류가 발생했습니다.';
+            }
+        }
+        window.submitAccountPinLoginVerifyFromModal = submitAccountPinLoginVerifyFromModal;
+        window.cancelAccountPinLoginVerifyModal = function cancelAccountPinLoginVerifyModal() {
+            finishAccountPinLoginVerifyModal(false);
+        };
+
+        async function verifyAccountPinAfterSessionForLogin() {
+            if (!currentLoginUser || isAiSystemUser(currentLoginUser)) return true;
+            if (currentLoginUser.hasAccountPin !== true) return true;
+            const ok = await openAccountPinLoginVerifyModalAsync();
+            if (!ok) return false;
+            return true;
+        }
+
         async function ensureAccountPinSetupAfterSessionForLogin(resolvedEmpNo) {
             if (!currentLoginUser || isAiSystemUser(currentLoginUser)) return true;
             if (currentLoginUser.hasAccountPin === true) return true;
@@ -3884,7 +4034,12 @@
             }
 
             const empPadded = normalizeEmployeeNo(empNo, true);
-            const accountPinGateOk = await ensureAccountPinSetupAfterSessionForLogin(empPadded);
+            let accountPinGateOk = true;
+            if (currentLoginUser && currentLoginUser.hasAccountPin === true) {
+                accountPinGateOk = await verifyAccountPinAfterSessionForLogin();
+            } else {
+                accountPinGateOk = await ensureAccountPinSetupAfterSessionForLogin(empPadded);
+            }
             if (!accountPinGateOk) return;
 
             await markSignupUserLoginState(currentLoginUser.employeeNo, true);
@@ -3967,7 +4122,12 @@
                 excludeKeywords: readNotifyKeywordArrayFromList('exclude'),
                 includeKeywords: readNotifyKeywordArrayFromList('include'),
             });
+            const uiLayoutPrefEl = document.querySelector('input[name="uiLayoutPreference"]:checked');
+            appData.settings.uiLayoutPreference = normalizeUiLayoutPreference(
+                uiLayoutPrefEl ? uiLayoutPrefEl.value : appData.settings.uiLayoutPreference,
+            );
             applyThemeMode(appData.settings.themeMode);
+            syncKnockShellLayoutAttribute();
             commitMobileBottomNavFromSettingsEditor();
             saveUserSettingsToServer();
             showAlert('설정이 저장되었습니다.', 'success');
@@ -4295,13 +4455,13 @@
             updateMbnavSlotRowCompactClass();
         }
         function isIntegratedSearchVisibleInMbnavSlots() {
-            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return true;
+            if (!knockIsMobileShellActive()) return true;
             return getMobileBottomNavSlotOrder().includes('integrated-search');
         }
         function syncMobileIntegratedSearchVisibility() {
             const btn = document.getElementById('mobileHeaderIntegratedSearchBtn');
             if (!btn) return;
-            const mobile = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+            const mobile = knockIsMobileShellActive();
             if (!mobile) {
                 btn.classList.add('hidden');
                 return;
@@ -4311,7 +4471,7 @@
         function updateMbnavSlotRowCompactClass() {
             const row = document.getElementById('mbnavSlotRow');
             if (!row) return;
-            const mobile = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+            const mobile = knockIsMobileShellActive();
             row.classList.toggle('mbnav-slot-row--compact', mobile);
             syncMobileIntegratedSearchVisibility();
         }
@@ -4321,7 +4481,7 @@
             window.addEventListener('resize', () => updateMbnavSlotRowCompactClass());
         }
         function syncMobileBottomNavHighlight() {
-            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
+            if (!knockIsMobileShellActive()) return;
             if (document.body.classList.contains('mobile-nav-more-open')) return;
             document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
             if (document.body.classList.contains('ai-chat-layer-open')) return;
@@ -4363,7 +4523,7 @@
             const hintGlass =
                 hostKey === 'glass'
                     ? '변경 후 <strong>하단 바에 적용</strong>을 누르면 즉시 반영되며, 서버에는 환경 설정의 <strong>설정 저장</strong> 시 함께 저장됩니다.'
-                    : '칸을 바꾸면 서로 교체됩니다. <strong>설정 저장</strong>을 눌러 반영하세요.';
+                    : '지금 계정에 <strong>노출 중인 메뉴</strong>만 선택할 수 있습니다. 칸을 바꾸면 서로 교체됩니다. <strong>설정 저장</strong>을 눌러 반영하세요.';
             let html = '';
             for (let i = 0; i < MB_NAV_SLOT_COUNT; i += 1) {
                 const cur = order[i];
@@ -4456,21 +4616,6 @@
             applyMobileBottomNavSlotOrder();
             syncMobileIntegratedSearchVisibility();
         }
-        function saveMbnavFromGlassMenu() {
-            const order = readMbnavOrderFromSettingsEditorDom('mobileNavMoreMbnavSlotEditor');
-            if (!order) {
-                showAlert('하단 바 구성을 읽을 수 없습니다.', 'error');
-                return;
-            }
-            saveMobileBottomNavSlotOrder(order);
-            applyMobileBottomNavSlotOrder();
-            syncMobileIntegratedSearchVisibility();
-            renderBothMbnavSlotEditors(order);
-            void saveUserSettingsToServer();
-            showAlert('하단 바 메뉴를 저장했습니다.', 'success', { skipNotificationCenter: true });
-            closeMobileNavMore();
-        }
-        window.saveMbnavFromGlassMenu = saveMbnavFromGlassMenu;
         function resetMobileBottomNavSlotOrder() {
             const allowed = getMbnavPoolIdsForCurrentUser();
             const norm = normalizeMobileBottomNavSlots(MB_NAV_DEFAULT_BAR_ORDER.slice(), allowed);
@@ -4612,10 +4757,6 @@
             }
             mobileNavMoreReturnSnapshot = captureViewSnapshotForMobileNavBack();
             syncMobileNavMoreUserPanel();
-            const mbnavGlass = document.getElementById('mobileNavMoreMbnavSlotEditor');
-            if (mbnavGlass) {
-                renderMbnavSlotEditorInto(mbnavGlass, getMobileBottomNavSlotOrder(), getMbnavPoolIdsForCurrentUser(), 'glass');
-            }
             updateAiChatFloatingButton();
         }
         function toggleMobileNavMore() {
@@ -4629,7 +4770,7 @@
         }
 
         function toggleSidebarPC() {
-            if (window.matchMedia('(max-width: 1024px)').matches) {
+            if (knockIsMobileShellActive()) {
                 return;
             }
             const sidebar = document.getElementById('sidebar');
@@ -4651,7 +4792,7 @@
             const btn = document.getElementById('sidebarToggleBtn');
             const iconUse = document.querySelector('#sidebarToggleIcon use');
             if (!btn || !iconUse) return;
-            if (window.matchMedia('(max-width: 1024px)').matches) return;
+            if (knockIsMobileShellActive()) return;
             const sidebar = document.getElementById('sidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.contains('collapsed');
@@ -4688,7 +4829,7 @@
                 btn.style.removeProperty('--ai-fab-extra-right');
                 return;
             }
-            if (document.body.classList.contains('ai-chat-layer-open') && window.matchMedia && window.matchMedia('(max-width: 1024px)').matches) {
+            if (document.body.classList.contains('ai-chat-layer-open') && knockIsMobileShellActive()) {
                 btn.style.setProperty('--ai-fab-extra-bottom', '0px');
                 btn.style.setProperty('--ai-fab-extra-right', '0px');
                 positionAiChatLayerPanel();
@@ -4770,8 +4911,8 @@
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
             const overlay = document.getElementById('aiChatLayerOverlay');
             if (!panel || !overlay || overlay.classList.contains('hidden')) return;
-            const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
-            const isDesktopLayout = window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
+            const isMobileLayout = knockIsMobileShellActive();
+            const isDesktopLayout = !isMobileLayout && window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
             panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
             const vv = window.visualViewport;
             const viewportHeight = vv && vv.height > 0 ? vv.height : window.innerHeight;
@@ -4883,7 +5024,7 @@
             overlay.classList.remove('closing');
             overlay.classList.remove('hidden');
             document.body.classList.add('ai-chat-layer-open');
-            if (window.matchMedia('(max-width: 1024px)').matches) {
+            if (knockIsMobileShellActive()) {
                 document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
             }
             updateAiChatFloatingButton();
@@ -5602,7 +5743,7 @@
         function switchView(viewId, boardType = null, options = {}) {
             const fromHistory = !!options.fromHistory;
             const skipHistory = !!options.skipHistory;
-            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+            const isMobile = knockIsMobileShellActive();
             if (isMobile) {
                 closeMobileNavMore();
             } else {
@@ -5639,11 +5780,11 @@
                 showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;
             }
-            if (viewId === 'mobile-profile' && !window.matchMedia('(max-width: 1024px)').matches) {
+            if (viewId === 'mobile-profile' && !knockIsMobileShellActive()) {
                 toggleHeaderProfileOverlay();
                 return;
             }
-            if (viewId === 'integrated-search' && !window.matchMedia('(max-width: 1024px)').matches) {
+            if (viewId === 'integrated-search' && !knockIsMobileShellActive()) {
                 showIntegratedSearchModal();
                 return;
             }
@@ -6340,7 +6481,7 @@
         }
 
         function toggleAiPanelMobileFlyout(event) {
-            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
+            if (!knockIsMobileShellActive()) return;
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -7451,7 +7592,7 @@
             '<p class="integrated-search-start-title">결과가 없습니다</p>' +
             '<p class="integrated-search-start-hint">조건을 바꿔 다시 검색해 보세요.</p></div>';
         function showIntegratedSearchModal() {
-            if (window.matchMedia('(max-width: 1024px)').matches) {
+            if (knockIsMobileShellActive()) {
                 syncIntegratedSearchPageFromModal();
                 switchView('integrated-search');
                 return;
@@ -7634,9 +7775,10 @@
             return true;
         }
         window.addEventListener('resize', () => {
+            syncKnockShellLayoutAttribute();
             closeHeaderActionsLayer();
             updateHeaderActionOverflow();
-            if (!window.matchMedia('(max-width: 1024px)').matches) {
+            if (!knockIsMobileShellActive()) {
                 closeAiPanelMobileFlyout();
                 document.body.classList.remove('mobile-menu-open');
                 document.body.classList.remove('mobile-nav-more-open');

@@ -3389,9 +3389,6 @@
             transform: translate(12px, -50%);
         }
         .sidebar.collapsed .user-info-panel { display: none; }
-        @media (min-width: 1025px) {
-            .sidebar { display: none !important; }
-        }
 
         .nav-title { padding: 20px 24px 10px; font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; white-space: nowrap; }
         .nav-item { padding: 14px 24px; display: flex; align-items: center; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; font-size: 15px; white-space: nowrap;}
@@ -5758,9 +5755,436 @@
             line-height: 1.55;
         }
         @media (min-width: 1025px) {
-            #settingsMainTabs .settings-main-tab--mobile-only {
+            html:not([data-knock-shell="compact"]) #settingsMainTabs .settings-main-tab--mobile-only {
                 display: none !important;
             }
+        }
+        .settings-layout-pref-wide-only {
+            display: none;
+        }
+        @media (min-width: 1025px) {
+            .settings-layout-pref-wide-only {
+                display: block;
+            }
+        }
+        .settings-layout-pref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .settings-layout-pref-card {
+            display: block;
+            cursor: pointer;
+            margin: 0;
+        }
+        .settings-layout-pref-card input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .settings-layout-pref-card__box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 100%;
+            padding: 14px 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+            transition:
+                border-color 0.18s ease,
+                box-shadow 0.18s ease,
+                transform 0.18s ease;
+        }
+        .settings-layout-pref-card:hover .settings-layout-pref-card__box {
+            border-color: #93c5fd;
+            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12);
+        }
+        .settings-layout-pref-card input:focus-visible + .settings-layout-pref-card__box {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+        .settings-layout-pref-card input:checked + .settings-layout-pref-card__box {
+            border-color: #2563eb;
+            box-shadow:
+                0 0 0 1px rgba(37, 99, 235, 0.35),
+                0 10px 28px rgba(37, 99, 235, 0.18);
+            background: linear-gradient(165deg, #eff6ff 0%, #f8fafc 100%);
+        }
+        .settings-layout-pref-card__badge {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #e0e7ff;
+            color: #312e81;
+        }
+        .settings-layout-pref-card input:checked + .settings-layout-pref-card__box .settings-layout-pref-card__badge {
+            background: #1d4ed8;
+            color: #f8fafc;
+        }
+        .settings-layout-pref-card__title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .settings-layout-pref-card__desc {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #64748b;
+        }
+        .settings-os-notify-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 16px 18px;
+            margin-bottom: 16px;
+            border-radius: 16px;
+            border: 1px solid #dbeafe;
+            background: linear-gradient(125deg, #f0f9ff 0%, #ffffff 55%, #eef2ff 100%);
+            box-shadow: 0 8px 26px rgba(15, 23, 42, 0.08);
+            cursor: pointer;
+            user-select: none;
+        }
+        .settings-os-notify-card__input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .settings-os-notify-card__visual {
+            position: relative;
+            flex: 0 0 auto;
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+        }
+        .settings-os-notify-card__bell-body {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+        .settings-os-notify-card__bell-icon {
+            width: 22px;
+            height: 22px;
+        }
+        .settings-os-notify-card__bell-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 18px;
+            border: 2px solid rgba(56, 189, 248, 0.35);
+            animation: settings-os-notify-pulse 2.4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .settings-os-notify-card__toggle-track {
+            position: absolute;
+            right: -6px;
+            bottom: -6px;
+            width: 36px;
+            height: 20px;
+            border-radius: 999px;
+            background: #cbd5e1;
+            border: 1px solid #94a3b8;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+        }
+        .settings-os-notify-card__toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+            transition: transform 0.22s ease;
+        }
+        .settings-os-notify-card__input:checked + .settings-os-notify-card__visual .settings-os-notify-card__toggle-track {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            border-color: #15803d;
+        }
+        .settings-os-notify-card__input:checked + .settings-os-notify-card__visual .settings-os-notify-card__toggle-thumb {
+            transform: translateX(16px);
+        }
+        .settings-os-notify-card__input:checked + .settings-os-notify-card__visual .settings-os-notify-card__bell-body {
+            border-color: #38bdf8;
+            color: #0c4a6e;
+        }
+        .settings-os-notify-card__text {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .settings-os-notify-card__title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .settings-os-notify-card__desc {
+            font-size: 13px;
+            line-height: 1.55;
+            color: #475569;
+        }
+        @keyframes settings-os-notify-pulse {
+            0%,
+            100% {
+                opacity: 0.45;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.04);
+            }
+        }
+        body[data-theme="dark"] .settings-os-notify-card {
+            border-color: rgba(59, 130, 246, 0.45);
+            background: linear-gradient(125deg, #0f172a 0%, #1e293b 100%);
+        }
+        body[data-theme="dark"] .settings-os-notify-card__title {
+            color: #f1f5f9;
+        }
+        body[data-theme="dark"] .settings-os-notify-card__desc {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .settings-os-notify-card__bell-body {
+            background: linear-gradient(180deg, #1e293b, #0f172a);
+            border-color: #334155;
+            color: #38bdf8;
+        }
+        .settings-account-pin-shell {
+            position: relative;
+            overflow: hidden;
+            border-radius: 18px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+        }
+        .settings-account-pin-shell__glow {
+            position: absolute;
+            inset: -40% -20% auto;
+            height: 55%;
+            background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.28), transparent 55%);
+            pointer-events: none;
+        }
+        .settings-account-pin-shell__inner {
+            position: relative;
+            padding: 20px 20px 22px;
+        }
+        .settings-account-pin-shell__head {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+        .settings-account-pin-shell__icon-wrap {
+            flex: 0 0 auto;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, #eef2ff, #e0e7ff);
+            border: 1px solid #c7d2fe;
+            color: #3730a3;
+        }
+        .settings-account-pin-shell__icon-wrap .icon {
+            width: 24px;
+            height: 24px;
+        }
+        .settings-account-pin-shell__title {
+            margin: 0 0 6px;
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+        .settings-account-pin-shell__lead {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #64748b;
+        }
+        .settings-account-pin-shell__grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px 14px;
+        }
+        .settings-account-pin-field--wide {
+            grid-column: 1 / -1;
+        }
+        @media (min-width: 720px) {
+            .settings-account-pin-shell__grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .settings-account-pin-field--wide {
+                grid-column: auto;
+            }
+        }
+        .settings-account-pin-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .settings-account-pin-input {
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            text-align: center;
+        }
+        .settings-account-pin-footnote {
+            margin: 12px 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .settings-account-pin-submit {
+            margin-top: 16px;
+            width: 100%;
+            min-height: 46px;
+            font-weight: 900;
+            border-radius: 12px;
+        }
+        body[data-theme="dark"] .settings-account-pin-shell {
+            background: #0f172a;
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+        body[data-theme="dark"] .settings-account-pin-shell__title {
+            color: #f8fafc;
+        }
+        body[data-theme="dark"] .settings-account-pin-shell__lead,
+        body[data-theme="dark"] .settings-account-pin-footnote {
+            color: #94a3b8;
+        }
+        .account-pin-login-verify-overlay {
+            z-index: 205;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .account-pin-login-verify-shell {
+            max-width: 400px;
+            width: calc(100vw - 32px);
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+            background: #fff;
+        }
+        .account-pin-login-verify-hero {
+            position: relative;
+            padding: 24px 22px 18px;
+            text-align: center;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        }
+        .account-pin-login-verify-hero__glow {
+            position: absolute;
+            inset: -50% -30% auto;
+            height: 120%;
+            background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.22), transparent 60%);
+            pointer-events: none;
+        }
+        .account-pin-login-verify-hero__icon-wrap {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, #dbeafe, #eff6ff);
+            border: 1px solid #93c5fd;
+            color: #1d4ed8;
+        }
+        .account-pin-login-verify-hero__lock {
+            width: 26px;
+            height: 26px;
+        }
+        .account-pin-login-verify-title {
+            position: relative;
+            margin: 0 0 8px;
+            font-size: 19px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+        .account-pin-login-verify-lead {
+            position: relative;
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #475569;
+        }
+        .account-pin-login-verify-body {
+            padding: 0 22px 22px;
+        }
+        .account-pin-login-verify-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .account-pin-login-verify-input {
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 20px;
+            letter-spacing: 0.35em;
+            font-weight: 800;
+            padding: 14px 12px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+        }
+        .account-pin-login-verify-error {
+            min-height: 1.25em;
+            margin: 8px 0 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #b91c1c;
+        }
+        .account-pin-login-verify-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .account-pin-login-verify-btn {
+            min-height: 46px;
+            font-weight: 800;
+            border-radius: 12px;
+        }
+        .account-pin-login-verify-hint {
+            margin: 12px 0 0;
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+        }
+        body[data-theme="dark"] .account-pin-login-verify-shell {
+            background: #0f172a;
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+        body[data-theme="dark"] .account-pin-login-verify-hero {
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+        }
+        body[data-theme="dark"] .account-pin-login-verify-title {
+            color: #f8fafc;
+        }
+        body[data-theme="dark"] .account-pin-login-verify-lead {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .account-pin-login-verify-input {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f8fafc;
         }
         .settings-form-save-row {
             position: relative;

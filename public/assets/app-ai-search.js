@@ -354,23 +354,57 @@ function renderAiSearchSuggestions() {
 
 function buildAiSearchGreeting() {
     const d = new Date();
-    const hour = d.getHours();
-    const activeUser = currentLoginUser || roleMatrix[currentRole];
+    const tm = d.getHours() * 60 + d.getMinutes();
+    const rm = roleMatrix && currentRole ? roleMatrix[currentRole] : null;
+    const roleNameRaw = rm ? String(rm.name || "") : "";
+    const roleParts = roleNameRaw.split(/\s+/).filter(Boolean);
+    const defaultNameOnly = roleParts[0] || roleNameRaw || "고객";
+    const defaultPosition = roleParts.slice(1).join(" ") || "";
+    const activeUser = currentLoginUser || rm;
     const rawName = activeUser ? String(activeUser.name || "") : "";
     const rawPosition = activeUser ? String(activeUser.position || "") : "";
-    const name = normalizeDisplayText(rawName, getCurrentActorNameToken() || "고객");
-    const position = normalizeDisplayText(rawPosition, "");
+    const name = normalizeDisplayText(rawName, getCurrentActorNameToken() || defaultNameOnly || "고객");
+    const position = normalizeDisplayText(rawPosition, defaultPosition);
     const dept = normalizeDisplayText((activeUser && (activeUser.deptName || activeUser.dept)) || "", "");
-    const who = `${name}${position ? ` ${position}` : ""}`.trim();
-    const dayPart = hour < 6 ? "이른 시간" : hour < 12 ? "오전" : hour < 18 ? "오후" : "저녁";
-    const mood = [
-        `${dayPart}에도 접속해 주셔서 반갑습니다, <b>${escapeHtml(who)}</b>님.`,
-        `${dayPart} 업무도 힘내세요, <b>${escapeHtml(who)}</b>님.`,
-        `${dayPart}에 도움이 필요하시면 바로 정리해드릴게요, <b>${escapeHtml(who)}</b>님.`,
-    ];
+    const who = `${escapeHtml(name)}${position ? ` ${escapeHtml(position)}` : ""}님`;
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const fill = (s) => s.replace(/\{\{who\}\}/g, who);
+    let line1 = "";
+    if (tm >= 0 && tm < 360) {
+        line1 = pick([
+            "모두가 잠든 시간에도 열중하고 계시네요. 늦은 시간까지 정말 고생 많으십니다, {{who}}!",
+            "{{who}}, 이른 새벽부터 업무를 시작하셨군요! 고요한 시간, 온전히 집중하실 수 있도록 돕겠습니다.",
+            "새벽 시간까지 수고가 많으십니다, {{who}}. 무리하지 마시고 따뜻한 차 한 잔과 함께 쉬어가며 일하시길 바랍니다.",
+            "{{who}}, 야간 작업 중이시군요. 필요한 자료를 신속하게 찾아 퇴근 시간을 조금이라도 앞당겨 드릴게요!",
+            "늦은 시간까지 회사를 위해 애써주셔서 감사합니다, {{who}}. 어떤 긴급한 업무를 도와드릴까요?",
+        ]);
+    } else if (tm >= 360 && tm < 690) {
+        line1 = pick([
+            "좋은 아침입니다, {{who}}! 오늘 하루도 기분 좋게 시작하시길 바랍니다. 어떤 업무부터 도와드릴까요?",
+            "활기찬 아침입니다, {{who}}! 오늘 하루도 원활하게 업무가 풀리도록 제가 돕겠습니다.",
+            "{{who}}, 상쾌한 아침이네요! 따뜻한 커피 한 잔과 함께 오늘 하루도 화이팅입니다.",
+            "안녕하십니까, {{who}}. 간밤에 평안하셨나요? 오늘의 주요 업무를 확인해 드릴까요?",
+            "{{who}}, 출근을 환영합니다! 오늘도 완벽한 하루가 될 수 있도록 든든하게 지원하겠습니다.",
+        ]);
+    } else if (tm >= 690 && tm < 1020) {
+        line1 = pick([
+            "점심 식사는 맛있게 하셨나요, {{who}}? 오후 업무도 힘내시길 바랍니다!",
+            "나른해지기 쉬운 오후입니다, {{who}}! 가벼운 스트레칭과 함께 남은 시간도 화이팅하세요.",
+            "{{who}}, 벌써 오후네요! 진행 중인 업무에 필요한 자료나 정보가 있다면 언제든 말씀해 주세요.",
+            "오후 업무도 순조롭게 진행되길 바랍니다, {{who}}! 제가 어떤 부분을 도와드릴까요?",
+            "바쁜 오후 시간, {{who}}의 업무 효율을 높여드릴 준비가 되어 있습니다. 무엇을 찾아드릴까요?",
+        ]);
+    } else {
+        line1 = pick([
+            "오늘 하루도 정말 수고 많으셨습니다, {{who}}! 남은 업무도 무사히 마무리하시길 바랍니다.",
+            "퇴근 시간이 다가오네요, {{who}}. 오늘 하루도 업무하시느라 대단히 고생하셨습니다!",
+            "{{who}}, 늦은 시간까지 수고가 많으십니다. 마무리 작업에 필요한 정보가 있으신가요?",
+            "오늘의 목표는 다 달성하셨나요, {{who}}? 편안한 저녁 시간이 되시기를 바랍니다.",
+            "열심히 달려온 오늘 하루, {{who}} 덕분에 회사가 한 걸음 더 나아갔습니다. 수고하셨습니다!",
+        ]);
+    }
     const ctx = dept ? ` <span style="color:#64748b;">(${escapeHtml(dept)})</span>` : "";
-    const idx = Math.floor(Math.random() * mood.length);
-    return `${mood[idx]}${ctx}<br><span style="color:#475569;">질문을 입력하면 핵심만 간단히 정리해 드립니다. 필요한 정보가 부족하면 추가로 물어볼게요.</span>`;
+    return `${fill(line1)}${ctx}<br><span style="color:#475569;">질문을 입력하면 핵심만 간단히 정리해 드립니다. 필요한 정보가 부족하면 추가로 물어볼게요.</span>`;
 }
 
 function makeDefaultAiSearchState() {

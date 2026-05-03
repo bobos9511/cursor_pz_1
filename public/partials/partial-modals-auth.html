@@ -177,6 +177,30 @@
         </div>
     </div>
 
+    <!-- 로그인 직후: 계정 PIN 확인 (이미 등록된 경우) -->
+    <div id="accountPinLoginVerifyModal" class="modal-overlay account-pin-login-verify-overlay" style="z-index: 205;" aria-modal="true" role="dialog" aria-labelledby="accountPinLoginVerifyTitle" onclick="if(event.target===this) cancelAccountPinLoginVerifyModal()">
+        <div class="modal-content account-pin-login-verify-shell" onclick="event.stopPropagation()">
+            <div class="account-pin-login-verify-hero">
+                <div class="account-pin-login-verify-hero__glow" aria-hidden="true"></div>
+                <div class="account-pin-login-verify-hero__icon-wrap" aria-hidden="true">
+                    <svg class="icon account-pin-login-verify-hero__lock"><use href="#icon-lock"></use></svg>
+                </div>
+                <h3 id="accountPinLoginVerifyTitle" class="account-pin-login-verify-title">계정 PIN 확인</h3>
+                <p class="account-pin-login-verify-lead">등록해 두신 <strong>6자리 계정 PIN</strong>을 입력해 주세요. 관리자 PIN과는 별도입니다.</p>
+            </div>
+            <div class="account-pin-login-verify-body">
+                <label class="account-pin-login-verify-label" for="accountPinLoginVerifyInput">PIN</label>
+                <input type="password" id="accountPinLoginVerifyInput" class="input account-pin-login-verify-input" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="● ● ● ● ● ●" aria-describedby="accountPinLoginVerifyError" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitAccountPinLoginVerifyFromModal();}">
+                <p id="accountPinLoginVerifyError" class="account-pin-login-verify-error" role="alert"></p>
+                <div class="account-pin-login-verify-actions">
+                    <button type="button" class="btn btn-outline account-pin-login-verify-btn" onclick="cancelAccountPinLoginVerifyModal()">취소</button>
+                    <button type="button" class="btn btn-primary account-pin-login-verify-btn" onclick="submitAccountPinLoginVerifyFromModal()">확인</button>
+                </div>
+                <p class="account-pin-login-verify-hint">숫자 키패드·붙여넣기 모두 사용할 수 있습니다.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- 테스트용 회원목록 관리 모달 -->
     <div id="memberListModal" class="modal-overlay member-list-modal-overlay" style="z-index: 121;">
         <div class="modal-content member-list-modal-shell modal-content--no-header-bar">
