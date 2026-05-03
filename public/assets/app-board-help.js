@@ -54,7 +54,7 @@ function getBoardHelpConfigByType(type) {
 
 function getBoardHelpUiState() {
     if (!appData.settings || typeof appData.settings !== "object") {
-        appData.settings = { osNotify: true, initialView: "ai-search", notifyPolicy: getDefaultNotifyPolicy() };
+        appData.settings = { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() };
     }
     if (!appData.settings.boardHelpUi || typeof appData.settings.boardHelpUi !== "object") appData.settings.boardHelpUi = {};
     const ui = appData.settings.boardHelpUi;
@@ -280,7 +280,7 @@ function cancelBoardHelpEditor() {
 function saveBoardHelpEditor() {
     if (currentRole !== "it") return;
     if (!appData.settings || typeof appData.settings !== "object") {
-        appData.settings = { osNotify: true, initialView: "ai-search", notifyPolicy: getDefaultNotifyPolicy() };
+        appData.settings = { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() };
     }
     if (!appData.settings.boardHelp || typeof appData.settings.boardHelp !== "object") appData.settings.boardHelp = {};
     const sharedMap = loadSharedBoardHelpMap();

@@ -841,7 +841,7 @@
         // ==========================================
         const MOCK_INITIAL_DATA = [];
 
-        let appData = { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
+        let appData = { posts: [], settings: { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() } };
         let currentRole = 'branch'; let currentBoardType = 'IT'; let currentPostId = null;
         let currentSessionIp = '';
         let boardCurrentPage = 1;
@@ -949,8 +949,7 @@
             return null;
         }
         function getPreferredInitialView() {
-            const v = appData && appData.settings ? String(appData.settings.initialView || 'ai-search') : 'ai-search';
-            return v === 'dashboard' ? 'dashboard' : 'ai-search';
+            return 'dashboard';
         }
 
         function buildRouteState(viewId, boardType = null, postId = null) {
@@ -1770,7 +1769,7 @@
         async function loadAppDataFromServer() {
             const scope = encodeURIComponent(getAppDataUserScope());
             const data = await fetchJson(`/api/db/app-data?scope=${scope}`);
-            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
+            const sharedAppData = data && data.appData ? data.appData : { posts: [], settings: { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() } };
             const hasSharedPosts = Array.isArray(sharedAppData.posts) && sharedAppData.posts.length > 0;
             if (hasSharedPosts) return sharedAppData;
 
@@ -1932,17 +1931,15 @@
                 applyRuntimeRagKeywordBlocklist([]);
             }
             normalizeKnowPostStatuses(appData.posts);
-            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() };
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() };
             if (typeof appData.settings.osNotify !== 'boolean') appData.settings.osNotify = true;
             if (!appData.settings.themeMode) appData.settings.themeMode = 'system';
-            if (appData.settings.initialView !== 'dashboard' && appData.settings.initialView !== 'ai-search') appData.settings.initialView = 'ai-search';
             appData.settings.notifyPolicy = normalizeNotifyPolicy(appData.settings.notifyPolicy);
             try {
                 const userSettings = await loadUserSettingsFromServer();
                 if (userSettings && typeof userSettings === 'object') {
                     appData.settings.osNotify = userSettings.osNotify !== false;
                     appData.settings.themeMode = normalizeThemeMode(userSettings.themeMode || appData.settings.themeMode || 'system');
-                    appData.settings.initialView = userSettings.initialView === 'dashboard' ? 'dashboard' : 'ai-search';
                     appData.settings.notifyPolicy = normalizeNotifyPolicy(userSettings.notifyPolicy || appData.settings.notifyPolicy);
                 }
             } catch (error) {
@@ -1981,8 +1978,6 @@
             if (notifyTimeStartEl) notifyTimeStartEl.value = notifyPolicy.customStart;
             if (notifyTimeEndEl) notifyTimeEndEl.value = notifyPolicy.customEnd;
             renderNotifyKeywordListsFromPolicy();
-            const initialViewEl = document.querySelector(`input[name="initialView"][value="${getPreferredInitialView()}"]`);
-            if (initialViewEl) initialViewEl.checked = true;
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
@@ -3526,18 +3521,10 @@
                 if (e && e.knockSessionHandled) return;
                 throw e;
             }
-            const preferredInitialView = getPreferredInitialView();
-            if (preferredInitialView === 'dashboard') {
-                switchView('dashboard');
-                scheduleHeaderActionOverflow();
-                setupHistoryNavigation();
-                syncHistoryRoute('dashboard', null, null, true);
-            } else {
-                goToAiSearchPage();
-                scheduleHeaderActionOverflow();
-                setupHistoryNavigation();
-                syncHistoryRoute('ai-search', null, null, true);
-            }
+            switchView('dashboard');
+            scheduleHeaderActionOverflow();
+            setupHistoryNavigation();
+            syncHistoryRoute('dashboard', null, null, true);
             requestAnimationFrame(() => { appContainer.style.visibility = 'visible'; });
             startTestSessionHeartbeat(sessionClaim.data);
         }
@@ -3572,7 +3559,6 @@
         function saveSettings() {
             const osNotifyEl = document.getElementById('setOsNotify');
             const themeEl = document.querySelector('input[name="themeMode"]:checked');
-            const initialViewEl = document.querySelector('input[name="initialView"]:checked');
             const notifyMasterEl = document.querySelector('input[name="notifyMasterMode"]:checked');
             const notifyLevelEl = document.querySelector('input[name="notifyLevelMode"]:checked');
             const notifyTimeEl = document.querySelector('input[name="notifyTimeMode"]:checked');
@@ -3581,7 +3567,6 @@
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.osNotify = !(osNotifyEl && !osNotifyEl.checked);
             appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
-            appData.settings.initialView = initialViewEl && initialViewEl.value === 'dashboard' ? 'dashboard' : 'ai-search';
             appData.settings.notifyPolicy = normalizeNotifyPolicy({
                 master: notifyMasterEl && notifyMasterEl.value === 'block' ? 'block' : 'allow',
                 level: notifyLevelEl && notifyLevelEl.value === 'important' ? 'important' : 'all',
@@ -3605,7 +3590,7 @@
             fetchJson('/api/db/reset', { method: 'POST' })
                 .then(() => {
                     clearCookie(USER_SCOPE_COOKIE);
-                    appData = { posts: [], settings: { osNotify: true, initialView: 'ai-search', notifyPolicy: getDefaultNotifyPolicy() } };
+                    appData = { posts: [], settings: { osNotify: true, notifyPolicy: getDefaultNotifyPolicy() } };
                     signupUsers = [];
                     currentSessionIp = '';
                     doLogout();
@@ -3890,6 +3875,12 @@
                 btn.style.removeProperty('--ai-fab-extra-right');
                 return;
             }
+            if (document.body.classList.contains('ai-chat-layer-open') && window.matchMedia && window.matchMedia('(max-width: 1024px)').matches) {
+                btn.style.setProperty('--ai-fab-extra-bottom', '0px');
+                btn.style.setProperty('--ai-fab-extra-right', '0px');
+                positionAiChatLayerPanel();
+                return;
+            }
             btn.style.setProperty('--ai-fab-extra-bottom', '0px');
             btn.style.setProperty('--ai-fab-extra-right', '0px');
             void btn.offsetHeight;
@@ -3930,8 +3921,10 @@
             if (!btn) return;
             const appContainer = document.getElementById('appContainer');
             const aiView = document.getElementById('view-ai-search');
+            const aiHost = document.getElementById('aiChatLayerHost');
             const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
-            const aiSearchActive = !!aiView && aiView.classList.contains('active');
+            const aiInLayerHost = !!(aiView && aiHost && aiView.parentElement === aiHost);
+            const aiSearchActive = !!(aiView && aiView.classList.contains('active') && !aiInLayerHost);
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open')
                 || document.body.classList.contains('mobile-nav-more-open');
             btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
@@ -3942,12 +3935,14 @@
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
             if (!panel) return;
             panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
+            panel.classList.remove('ai-chat-layer-panel--mobile-fab-dock');
             panel.style.bottom = '';
             panel.style.right = '';
             panel.style.left = '';
             panel.style.width = '';
             panel.style.maxWidth = '';
             panel.style.maxHeight = '';
+            panel.style.removeProperty('height');
             panel.style.transformOrigin = '';
             panel.style.removeProperty('--ai-layer-tail-right');
         }
@@ -3963,6 +3958,8 @@
             const viewportHeight = vv && vv.height > 0 ? vv.height : window.innerHeight;
             const gap = AI_LAYER_FAB_GAP;
             if (!fab) return;
+            if (isMobileLayout) panel.classList.add('ai-chat-layer-panel--mobile-fab-dock');
+            else panel.classList.remove('ai-chat-layer-panel--mobile-fab-dock');
             const fabRect = fab.getBoundingClientRect();
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
@@ -3972,7 +3969,9 @@
                     panel.style.left = 'auto';
                     panel.style.width = 'calc(100vw - 24px)';
                     panel.style.maxWidth = '560px';
-                    panel.style.maxHeight = `${Math.max(260, Math.floor(viewportHeight * 0.86))}px`;
+                    const mh = Math.max(260, Math.floor(viewportHeight * 0.86));
+                    panel.style.maxHeight = `${mh}px`;
+                    panel.style.height = `${mh}px`;
                     panel.style.setProperty('--ai-layer-tail-right', '25px');
                     panel.style.transformOrigin = `calc(100% - 25px) calc(100% + ${gap}px)`;
                 }
@@ -3998,7 +3997,24 @@
                 : Math.max(isDesktopLayout ? 300 : 260, spaceAboveFab);
             const vhFraction = isDesktopLayout ? 0.9 : isMobileLayout ? 0.86 : 0.82;
             const maxByVh = Math.floor(viewportHeight * vhFraction);
-            panel.style.maxHeight = `${Math.min(maxByFabTop, maxByVh)}px`;
+            let maxH = Math.min(maxByFabTop, maxByVh);
+            if (isMobileLayout && fabRect.height >= 2) {
+                const mbDock = document.getElementById('mobileBottomNav');
+                const navH = mbDock && mbDock.getBoundingClientRect().height > 4
+                    ? mbDock.getBoundingClientRect().height
+                    : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-bottom-nav-h')) || 68;
+                const fabH = fabRect.height;
+                const dockGap = 12;
+                const reservedFromTop = topBreathing + gap + fabH + dockGap + navH;
+                const stableCap = Math.max(200, Math.floor(viewportHeight - reservedFromTop));
+                maxH = Math.min(maxH, stableCap);
+            }
+            panel.style.maxHeight = `${maxH}px`;
+            if (isMobileLayout) {
+                panel.style.height = `${maxH}px`;
+            } else {
+                panel.style.removeProperty('height');
+            }
             const tailInset = Math.max(18, fabRect.width / 2);
             panel.style.setProperty('--ai-layer-tail-right', `${tailInset}px`);
             panel.style.transformOrigin = `calc(100% - ${tailInset}px) calc(100% + ${gap}px)`;
@@ -6359,8 +6375,7 @@
             if (history && history.state && history.state.page === 'app') {
                 applyHistoryRoute(history.state);
             } else {
-                const preferredInitialView = getPreferredInitialView();
-                syncHistoryRoute(preferredInitialView === 'dashboard' ? 'dashboard' : 'ai-search', null, null, true);
+                syncHistoryRoute('dashboard', null, null, true);
             }
         }
 

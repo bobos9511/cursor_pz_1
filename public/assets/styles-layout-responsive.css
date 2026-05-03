@@ -74,9 +74,12 @@
             .ai-chat-floating-btn::after {
                 display: none;
             }
-            /* 말풍선 패널이 FAB보다 위(z-index), FAB은 백드롭 아래에 두어 같은 축에 정렬 */
+            /* 레이어 열림: FAB을 하단 내비 바로 위에 고정해 패널 높이 기준을 안정화 */
             body.ai-chat-layer-open .ai-chat-floating-btn {
                 z-index: 1190;
+                --ai-fab-extra-bottom: 0px !important;
+                bottom: calc(12px + var(--mobile-bottom-nav-h)) !important;
+                right: 14px !important;
             }
             /* 패널은 JS(positionAiChatLayerPanel)가 FAB 기준으로 배치 — 하단 시트(full-bleed) 미사용 */
             .ai-chat-layer-overlay {

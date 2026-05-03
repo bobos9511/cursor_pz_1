@@ -89,8 +89,8 @@
         <!-- 모바일: 하단 글래스 내비 + 더보기 시트 -->
         <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="하단 메뉴">
             <div class="mobile-bottom-nav__glass">
+                <button type="button" class="mbnav-item" id="mbnav-dashboard" onclick="switchView('dashboard')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-home"></use></svg></span><span class="mbnav-label">홈</span></button>
                 <button type="button" class="mbnav-item" id="mbnav-ai-search" onclick="switchView('ai-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-magic"></use></svg></span><span class="mbnav-label">AI</span></button>
-                <button type="button" class="mbnav-item" id="mbnav-dashboard" onclick="switchView('dashboard')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-list"></use></svg></span><span class="mbnav-label">홈</span></button>
                 <button type="button" class="mbnav-item" id="mbnav-list-it" onclick="switchView('list', 'IT')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-info"></use></svg></span><span class="mbnav-label">IT</span></button>
                 <button type="button" class="mbnav-item" id="mbnav-list-biz" onclick="switchView('list', 'BIZ')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-book"></use></svg></span><span class="mbnav-label">규정</span></button>
                 <button type="button" class="mbnav-item" id="mbnav-list-sys" onclick="switchView('list', 'SYS')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-lightbulb"></use></svg></span><span class="mbnav-label">개선</span></button>
@@ -911,17 +911,6 @@
                                     <label class="theme-mode-item">
                                         <input type="radio" name="themeMode" value="system">
                                         <span>시스템 모드 (운영체제 설정 따름)</span>
-                                    </label>
-                                </div>
-                                <div class="panel-header" style="border:none; padding:20px 0 12px 0;">초기 화면 설정</div>
-                                <div class="flex-col gap-10">
-                                    <label class="theme-mode-item">
-                                        <input type="radio" name="initialView" value="ai-search">
-                                        <span>AI채팅 (기본)</span>
-                                    </label>
-                                    <label class="theme-mode-item">
-                                        <input type="radio" name="initialView" value="dashboard">
-                                        <span>대시보드</span>
                                     </label>
                                 </div>
                             </div>
