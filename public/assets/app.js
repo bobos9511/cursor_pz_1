@@ -2483,7 +2483,7 @@
             if (!mount) return;
             mount.innerHTML = '';
             const dark = isLoginShareThemeDark();
-            const qrPx = 220;
+            const qrPx = 208;
             const fallbackImg = dark
                 ? '<img class="login-share-qr-fallback" alt="" width="' +
                   qrPx +
@@ -2494,7 +2494,7 @@
                   qrPx +
                   'x' +
                   qrPx +
-                  '&margin=2&color=e2e8f0&bgcolor=0b1120&ecc=H&data=' +
+                  '&margin=2&color=c8d5e8&bgcolor=121a2d&ecc=H&data=' +
                   encodeURIComponent(url) +
                   '"/>'
                 : '<img class="login-share-qr-fallback" alt="" width="' +
@@ -2506,7 +2506,7 @@
                   qrPx +
                   'x' +
                   qrPx +
-                  '&margin=2&color=0a1628&bgcolor=ffffff&ecc=H&data=' +
+                  '&margin=2&color=0f172a&bgcolor=ffffff&ecc=H&data=' +
                   encodeURIComponent(url) +
                   '"/>';
             try {
@@ -2521,17 +2521,17 @@
                           height: qrPx,
                           type: 'svg',
                           data: url,
-                          margin: 3,
+                          margin: 4,
                           qrOptions: { errorCorrectionLevel: 'H' },
                           dotsOptions: {
-                              type: 'rounded',
+                              type: 'classy-rounded',
                               gradient: {
                                   type: 'linear',
-                                  rotation: 0.45,
+                                  rotation: 0.42,
                                   colorStops: [
-                                      { offset: 0, color: '#f8fafc' },
-                                      { offset: 0.55, color: '#e2e8f0' },
-                                      { offset: 1, color: '#94a3b8' },
+                                      { offset: 0, color: '#eef2f9' },
+                                      { offset: 0.48, color: '#b8c8dc' },
+                                      { offset: 1, color: '#5f6f86' },
                                   ],
                               },
                           },
@@ -2539,32 +2539,33 @@
                               type: 'extra-rounded',
                               gradient: {
                                   type: 'linear',
-                                  rotation: 0,
+                                  rotation: 0.85,
                                   colorStops: [
-                                      { offset: 0, color: '#ffffff' },
-                                      { offset: 1, color: '#cbd5e1' },
+                                      { offset: 0, color: '#7dd3fc' },
+                                      { offset: 0.45, color: '#38bdf8' },
+                                      { offset: 1, color: '#0369a1' },
                                   ],
                               },
                           },
-                          cornersDotOptions: { type: 'dot', color: '#e2e8f0' },
-                          backgroundOptions: { color: '#0b1120' },
+                          cornersDotOptions: { type: 'rounded', color: '#f0f9ff' },
+                          backgroundOptions: { color: '#121a2d' },
                       }
                     : {
                           width: qrPx,
                           height: qrPx,
                           type: 'svg',
                           data: url,
-                          margin: 3,
+                          margin: 4,
                           qrOptions: { errorCorrectionLevel: 'H' },
                           dotsOptions: {
-                              type: 'rounded',
+                              type: 'classy-rounded',
                               gradient: {
                                   type: 'linear',
-                                  rotation: 0.5,
+                                  rotation: 0.52,
                                   colorStops: [
-                                      { offset: 0, color: '#0a1628' },
-                                      { offset: 0.5, color: '#1e3a8a' },
-                                      { offset: 1, color: '#0369a1' },
+                                      { offset: 0, color: '#0f172a' },
+                                      { offset: 0.42, color: '#1e3a8a' },
+                                      { offset: 1, color: '#0f766e' },
                                   ],
                               },
                           },
@@ -2574,12 +2575,12 @@
                                   type: 'linear',
                                   rotation: 0,
                                   colorStops: [
-                                      { offset: 0, color: '#0f172a' },
-                                      { offset: 1, color: '#1d4ed8' },
+                                      { offset: 0, color: '#075985' },
+                                      { offset: 1, color: '#38bdf8' },
                                   ],
                               },
                           },
-                          cornersDotOptions: { type: 'dot', color: '#0284c7' },
+                          cornersDotOptions: { type: 'rounded', color: '#0369a1' },
                           backgroundOptions: { color: '#ffffff' },
                       };
                 const qr = new QRCodeStyling(opts);
