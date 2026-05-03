@@ -1295,6 +1295,16 @@
 
         let knockSessionForcedLogout = false;
 
+        function formatSessionReplacementDetail(info) {
+            if (!info || typeof info !== 'object') return '';
+            const ip = String(info.clientIp || '').trim();
+            const bl = String(info.browserLabel || '').trim();
+            const lines = [];
+            if (ip) lines.push(`신규 접속 IP: ${ip}`);
+            if (bl) lines.push(`브라우저·환경: ${bl}`);
+            return lines.length ? '\n\n' + lines.join('\n') : '';
+        }
+
         function knockOnSessionUnauthorized(payload) {
             if (!currentLoginUser) return;
             const code = payload && payload.code;
@@ -1307,6 +1317,8 @@
             } else {
                 msg = (payload && payload.error) || '로그인 세션이 종료되었습니다.';
             }
+            const detail = formatSessionReplacementDetail(payload && payload.replacementInfo);
+            if (detail) msg += detail;
             showAlert(msg, 'error');
             doLogout();
         }
@@ -2355,7 +2367,9 @@
                         'Content-Type': 'application/json',
                         Authorization: 'Bearer ' + token,
                     },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify({
+                        employeeNo: currentLoginUser && currentLoginUser.employeeNo ? String(currentLoginUser.employeeNo) : '',
+                    }),
                 });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
@@ -2418,7 +2432,11 @@
                             'Content-Type': 'application/json',
                             Authorization: 'Bearer ' + token,
                         },
-                        body: JSON.stringify({}),
+                        body: JSON.stringify({
+                            employeeNo: currentLoginUser && currentLoginUser.employeeNo
+                                ? String(currentLoginUser.employeeNo)
+                                : '',
+                        }),
                     });
                     const pingData = await res.json().catch(() => ({}));
                     if (res.ok) {

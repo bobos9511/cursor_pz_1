@@ -1092,6 +1092,63 @@ function extractBearerToken(req) {
   return m ? String(m[1]).trim().slice(0, 200) : "";
 }
 
+function getRequestClientIp(req) {
+  try {
+    const xf = req.headers && req.headers["x-forwarded-for"];
+    if (xf && typeof xf === "string") {
+      const first = xf.split(",")[0].trim();
+      if (first) return first.slice(0, 128);
+    }
+    const rip = req.headers && req.headers["x-real-ip"];
+    if (rip && typeof rip === "string") return String(rip).trim().slice(0, 128);
+    if (req.socket && req.socket.remoteAddress) return String(req.socket.remoteAddress).slice(0, 128);
+  } catch (_) {}
+  return "";
+}
+
+function formatBrowserLabelFromUa(ua) {
+  const s = String(ua || "");
+  let browser = "브라우저";
+  if (/Edg\//i.test(s)) browser = "Microsoft Edge";
+  else if (/Chrome\//i.test(s) && !/Edg\//i.test(s)) browser = "Chrome";
+  else if (/Firefox\//i.test(s)) browser = "Firefox";
+  else if (/Safari/i.test(s) && !/Chrome/i.test(s)) browser = "Safari";
+  let os = "";
+  if (/Windows NT 10\.0/i.test(s)) os = "Windows";
+  else if (/Windows NT/i.test(s)) os = "Windows";
+  else if (/Mac OS X/i.test(s)) os = "macOS";
+  else if (/Android/i.test(s)) os = "Android";
+  else if (/iPhone|iPad/i.test(s)) os = "iOS";
+  return os ? `${browser} (${os})` : browser;
+}
+
+function sessionMetaFromRequest(req) {
+  const clientUa = String((req.headers && req.headers["user-agent"]) || "").slice(0, 500);
+  return {
+    clientIp: getRequestClientIp(req),
+    clientUa,
+    browserLabel: formatBrowserLabelFromUa(clientUa),
+  };
+}
+
+function mergeSessionClientMeta(rec, req) {
+  if (!rec || typeof rec !== "object" || !req) return rec;
+  const m = sessionMetaFromRequest(req);
+  rec.clientIp = m.clientIp;
+  rec.clientUa = m.clientUa;
+  rec.browserLabel = m.browserLabel;
+  return rec;
+}
+
+function replacementInfoFromRecord(rec) {
+  if (!rec || typeof rec !== "object") return null;
+  const clientIp = String(rec.clientIp || "").trim();
+  const browserLabel = String(rec.browserLabel || "").trim();
+  const clientUa = String(rec.clientUa || "").trim().slice(0, 220);
+  if (!clientIp && !browserLabel && !clientUa) return null;
+  return { clientIp, browserLabel, clientUa };
+}
+
 function isSessionRecordExpired(rec) {
   if (!rec || typeof rec !== "object") return true;
   const last =
@@ -1165,7 +1222,20 @@ function ensureEmployeeScopeSession(req, res, db, scopeRaw) {
     return false;
   }
   if (r.kind !== "ok") {
-    sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+    let replacementInfo = null;
+    if (r.kind === "invalid" && wantEmp) {
+      const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+      const cur = by[wantEmp];
+      if (cur && hasActiveTestSessionRecord(cur) && !isSessionRecordExpired(cur)) {
+        replacementInfo = replacementInfoFromRecord(cur);
+      }
+    }
+    sendJson(res, 401, {
+      error: "세션이 유효하지 않습니다.",
+      code: "invalid_session",
+      reason: replacementInfo ? "session_revoked_or_replaced" : undefined,
+      ...(replacementInfo ? { replacementInfo } : {}),
+    });
     return false;
   }
   if (r.emp !== wantEmp) {
@@ -1616,6 +1686,7 @@ async function handleDbApi(req, res, url) {
       const r = resolveSessionToken(db, clientRenewToken);
       if (r.kind === "ok" && r.emp === emp) {
         r.rec.lastSeenAt = now;
+        mergeSessionClientMeta(r.rec, req);
         db.testSessionsByEmpNo[emp] = r.rec;
         writeDb(db);
         sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken });
@@ -1626,7 +1697,8 @@ async function handleDbApi(req, res, url) {
     const existing = db.testSessionsByEmpNo[emp];
     if (!hasActiveTestSessionRecord(existing)) {
       const sessionToken = crypto.randomBytes(32).toString("hex");
-      db.testSessionsByEmpNo[emp] = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
+      const rec = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
+      db.testSessionsByEmpNo[emp] = mergeSessionClientMeta(rec, req);
       writeDb(db);
       sendJson(res, 200, { ok: true, sessionToken });
       return true;
@@ -1642,7 +1714,8 @@ async function handleDbApi(req, res, url) {
     }
 
     const sessionToken = crypto.randomBytes(32).toString("hex");
-    db.testSessionsByEmpNo[emp] = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
+    const recNew = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
+    db.testSessionsByEmpNo[emp] = mergeSessionClientMeta(recNew, req);
     writeDb(db);
     sendJson(res, 200, { ok: true, takeover: true, sessionToken });
     return true;
@@ -1660,15 +1733,30 @@ async function handleDbApi(req, res, url) {
       sendJson(res, 400, { error: "sessionToken is required." });
       return true;
     }
+    const empHint = normalizeAiChatHistoryScope(body && body.employeeNo);
     const db = readDb();
     const r = resolveSessionToken(db, token);
     if (r.kind !== "ok") {
       const code = r.kind === "expired" ? "session_expired" : "invalid_session";
       const reason = r.kind === "expired" ? "session_expired" : "session_revoked_or_replaced";
-      sendJson(res, 401, { valid: false, reason, code });
+      let replacementInfo = null;
+      if (r.kind === "invalid" && empHint && empHint !== "guest") {
+        const by = db.testSessionsByEmpNo && typeof db.testSessionsByEmpNo === "object" ? db.testSessionsByEmpNo : {};
+        const cur = by[empHint];
+        if (cur && hasActiveTestSessionRecord(cur) && !isSessionRecordExpired(cur)) {
+          replacementInfo = replacementInfoFromRecord(cur);
+        }
+      }
+      sendJson(res, 401, {
+        valid: false,
+        reason,
+        code,
+        ...(replacementInfo ? { replacementInfo } : {}),
+      });
       return true;
     }
     r.rec.lastSeenAt = Date.now();
+    mergeSessionClientMeta(r.rec, req);
     db.testSessionsByEmpNo[r.emp] = r.rec;
     writeDb(db);
     sendJson(res, 200, { ok: true, ttlMs: SESSION_TTL_MS });
