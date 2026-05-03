@@ -206,6 +206,7 @@
             #similarPostArea { width: 100% !important; }
             #view-detail .view-detail-main-col {
                 padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+                gap: 14px !important;
             }
             #view-detail > .flex.justify-between.items-center.mb-20 {
                 margin-bottom: 12px !important;
@@ -217,18 +218,18 @@
                 line-height: 1.75 !important;
             }
             #view-detail .detail-post-head-inner {
-                padding: 14px 14px 12px !important;
+                padding: 12px 12px 10px !important;
             }
             #view-detail .detail-post-header-row {
                 display: grid !important;
                 grid-template-columns: minmax(0, 1fr) auto;
                 align-items: center;
                 column-gap: 10px;
-                row-gap: 6px;
-                margin-bottom: 2px !important;
+                row-gap: 4px;
+                margin-bottom: 0 !important;
             }
             #view-detail .detail-post-header-row.mb-10 {
-                margin-bottom: 6px !important;
+                margin-bottom: 4px !important;
             }
             #view-detail .detail-post-badges {
                 grid-column: 1;
@@ -270,10 +271,10 @@
             }
             #view-detail #dtlTitle.detail-post-title,
             #view-detail .detail-post-title {
-                margin-top: 2px !important;
-                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                margin-bottom: 6px !important;
                 font-size: 18px !important;
-                line-height: 1.38 !important;
+                line-height: 1.32 !important;
             }
             #view-detail .dtl-crud-btn {
                 min-height: 32px !important;
@@ -291,15 +292,24 @@
             #view-detail .post-detail-meta {
                 flex-direction: column;
                 align-items: stretch;
-                row-gap: 4px !important;
-                margin-top: 2px !important;
+                margin-top: 0 !important;
+                gap: 2px !important;
             }
             #view-detail .post-detail-meta-tail {
                 margin-left: 0;
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-start;
                 flex-wrap: wrap;
-                gap: 8px;
+                gap: 6px;
+                margin-top: 2px;
+            }
+            /* 작성자 셀에 이미 아바타가 있어 앞쪽 사용자 아이콘은 생략(높이·이중 표현 완화) */
+            #view-detail .post-detail-meta-primary .post-detail-meta-item:first-child > .icon {
+                display: none;
+            }
+            #view-detail .post-detail-meta-ip {
+                display: inline-flex !important;
+                max-width: 100%;
             }
             #view-detail .post-detail-edit-history-btn {
                 padding: 4px 10px !important;
@@ -360,41 +370,42 @@
             }
             .ai-search-history-list { max-height: 220px; }
 
-            /* 게시물 상세: 작성자 프로필 80px, 같은 행(일시) 높이 맞춤 */
+            /* 게시물 상세: 작성자·일시 한 덩어리로 촘촘하게 */
             #view-detail .post-detail-meta-primary {
                 flex-direction: row;
                 flex-wrap: wrap;
                 align-items: center;
                 width: 100%;
-                column-gap: 12px;
-                row-gap: 4px;
+                column-gap: 10px;
+                row-gap: 2px;
             }
             #view-detail .post-detail-meta-primary .post-detail-meta-item {
                 display: flex;
                 align-items: center;
                 min-height: 0;
+                gap: 4px;
             }
             #view-detail .post-detail-meta-primary .post-detail-meta-item > .icon {
-                width: 20px;
-                height: 20px;
+                width: 16px;
+                height: 16px;
                 flex-shrink: 0;
             }
             #view-detail .writer-cell.detail .writer-avatar.detail,
             #view-detail .writer-avatar.detail {
-                width: 44px !important;
-                height: 44px !important;
-                min-width: 44px;
-                min-height: 44px;
-                font-size: 16px;
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px;
+                min-height: 32px;
+                font-size: 13px;
             }
             #view-detail #dtlWriter .writer-cell.detail {
-                gap: 8px;
+                gap: 6px;
             }
             #view-detail #dtlWriter .writer-name {
                 white-space: normal;
             }
             #view-detail .post-detail-meta-primary #dtlTime {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 700;
             }
 
