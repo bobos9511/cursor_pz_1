@@ -40,6 +40,12 @@ const RATE_LIMIT_MAX = 20;
 const rateLimitMap = new Map();
 /** 테스트 세션 유효 시간(기본 1시간, 마지막 활동 기준). 환경변수 SESSION_TTL_MS 로 조정 가능. */
 const SESSION_TTL_MS = Math.max(60_000, Number(process.env.SESSION_TTL_MS || 60 * 60 * 1000));
+function sessionTimingPayload(rec) {
+  const lastSeen = rec && typeof rec.lastSeenAt === "number" ? rec.lastSeenAt : Date.now();
+  const sessionExpiresAtMs = lastSeen + SESSION_TTL_MS;
+  const remainingMs = Math.max(0, sessionExpiresAtMs - Date.now());
+  return { ttlMs: SESSION_TTL_MS, remainingMs, sessionExpiresAtMs };
+}
 const ADMIN_PIN_PEPPER = String(process.env.ADMIN_PIN_PEPPER || "knock-admin-pin-v1");
 const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -1689,7 +1695,7 @@ async function handleDbApi(req, res, url) {
         mergeSessionClientMeta(r.rec, req);
         db.testSessionsByEmpNo[emp] = r.rec;
         writeDb(db);
-        sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken });
+        sendJson(res, 200, { ok: true, renewed: true, sessionToken: clientRenewToken, ...sessionTimingPayload(r.rec) });
         return true;
       }
     }
@@ -1700,7 +1706,7 @@ async function handleDbApi(req, res, url) {
       const rec = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
       db.testSessionsByEmpNo[emp] = mergeSessionClientMeta(rec, req);
       writeDb(db);
-      sendJson(res, 200, { ok: true, sessionToken });
+      sendJson(res, 200, { ok: true, sessionToken, ...sessionTimingPayload(rec) });
       return true;
     }
 
@@ -1717,7 +1723,7 @@ async function handleDbApi(req, res, url) {
     const recNew = { tokenHash: hashSessionToken(sessionToken), createdAt: now, lastSeenAt: now };
     db.testSessionsByEmpNo[emp] = mergeSessionClientMeta(recNew, req);
     writeDb(db);
-    sendJson(res, 200, { ok: true, takeover: true, sessionToken });
+    sendJson(res, 200, { ok: true, takeover: true, sessionToken, ...sessionTimingPayload(recNew) });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/ping") {
@@ -1759,7 +1765,7 @@ async function handleDbApi(req, res, url) {
     mergeSessionClientMeta(r.rec, req);
     db.testSessionsByEmpNo[r.emp] = r.rec;
     writeDb(db);
-    sendJson(res, 200, { ok: true, ttlMs: SESSION_TTL_MS });
+    sendJson(res, 200, { ok: true, ...sessionTimingPayload(r.rec) });
     return true;
   }
   if (req.method === "POST" && url.pathname === "/api/db/test-session/logout") {

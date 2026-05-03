@@ -2306,10 +2306,19 @@
         }
 
         function bumpSessionExpiryFromPingResponse(payload, options = {}) {
-            const raw = payload && payload.ttlMs;
-            const ttl =
-                Number(raw) > 0 ? Number(raw) : SESSION_CLIENT_TTL_MS_DEFAULT;
-            sessionExpiryDeadlineMs = Date.now() + ttl;
+            const p = payload && typeof payload === 'object' ? payload : {};
+            const rem = Number(p.remainingMs);
+            const exp = Number(p.sessionExpiresAtMs);
+            const ttl = Number(p.ttlMs);
+            if (Number.isFinite(rem) && rem >= 0) {
+                sessionExpiryDeadlineMs = Date.now() + rem;
+            } else if (Number.isFinite(exp) && exp > 0) {
+                sessionExpiryDeadlineMs = exp;
+            } else if (Number.isFinite(ttl) && ttl > 0) {
+                sessionExpiryDeadlineMs = Date.now() + ttl;
+            } else {
+                sessionExpiryDeadlineMs = Date.now() + SESSION_CLIENT_TTL_MS_DEFAULT;
+            }
             const modal = document.getElementById('appDialogModal');
             if (modal && modal.classList.contains('active') && sessionWarnAlreadyShown && !options.fromModalConfirm) {
                 closeAppDialog();
@@ -2418,9 +2427,13 @@
             clearSessionExpiryWatch();
         }
 
-        function startTestSessionHeartbeat() {
+        function startTestSessionHeartbeat(initialClaimPayload) {
             stopTestSessionHeartbeat();
-            bumpSessionExpiryFromPingResponse({ ttlMs: SESSION_CLIENT_TTL_MS_DEFAULT });
+            if (initialClaimPayload && typeof initialClaimPayload === 'object') {
+                bumpSessionExpiryFromPingResponse(initialClaimPayload);
+            } else {
+                bumpSessionExpiryFromPingResponse({ ttlMs: SESSION_CLIENT_TTL_MS_DEFAULT });
+            }
             testSessionHeartbeatTimer = setInterval(async () => {
                 if (!currentLoginUser || !currentLoginUser.employeeNo) return;
                 const token = getStoredSessionToken();
@@ -2615,7 +2628,7 @@
                 syncHistoryRoute('ai-search', null, null, true);
             }
             requestAnimationFrame(() => { appContainer.style.visibility = 'visible'; });
-            startTestSessionHeartbeat();
+            startTestSessionHeartbeat(sessionClaim.data);
         }
         function doLogout() {
             hideServerErrorPage();
