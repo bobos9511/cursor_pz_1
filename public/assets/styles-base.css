@@ -4847,9 +4847,7 @@
             flex-direction: column;
             min-height: 0;
         }
-        .notification-center-modal > .modal-header,
-        .notification-center-modal > .notification-center-toolbar,
-        .notification-center-modal > .modal-footer {
+        .notification-center-modal > .notification-center-toolbar {
             flex-shrink: 0;
         }
         .notification-center-modal > .modal-body.notification-center-body {
@@ -4861,7 +4859,14 @@
             -webkit-overflow-scrolling: touch;
             padding-bottom: 16px;
         }
-        .notification-center-head { background: linear-gradient(130deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%); }
+        .notification-center-close-btn {
+            min-width: 40px;
+            padding-left: 10px;
+            padding-right: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .notification-center-toolbar {
             padding: 12px 18px;
             border-bottom: 1px solid #e2e8f0;

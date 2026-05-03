@@ -93,10 +93,6 @@
     </div>
     <div id="notificationCenterModal" class="modal-overlay" style="z-index: 1012;">
         <div class="modal-content notification-center-modal">
-            <div class="modal-header notification-center-head">
-                <span><svg class="icon"><use href="#icon-history"></use></svg> 알림센터</span>
-                <button onclick="closeNotificationCenter()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
             <div class="notification-center-toolbar">
                 <div class="notification-toolbar-left">
                     <span class="notification-toolbar-caption">카드형 알림 보기</span>
@@ -107,12 +103,12 @@
                     </button>
                     <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>
                     <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
+                    <button type="button" class="btn btn-outline notification-center-close-btn" onclick="closeNotificationCenter()" title="닫기" aria-label="알림센터 닫기">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-close"></use></svg>
+                    </button>
                 </div>
             </div>
             <div id="notificationCenterBody" class="modal-body notification-center-body"></div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeNotificationCenter()">닫기</button>
-            </div>
         </div>
     </div>
     <div id="notificationFilterModal" class="modal-overlay" style="z-index: 1013;">
