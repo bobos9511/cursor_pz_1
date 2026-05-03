@@ -1505,6 +1505,9 @@ function sanitizeNotificationCenterItems(raw, nowMs = Date.now()) {
       entry.actionKind = "adminPermRequest";
       entry.actionEmpNo = actionEmpNo;
     }
+    const source = String(it.source || "").trim().slice(0, 40);
+    if (source) entry.source = source;
+    if (it.adminBroadcastImportant === true) entry.adminBroadcastImportant = true;
     out.push(entry);
   }
   out.sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
@@ -1600,6 +1603,28 @@ function sanitizeIntegratedSearchStatsItems(items) {
     .slice(0, 500);
 }
 
+function sanitizeMobileBottomNavSlots(raw) {
+  const pool = ["dashboard", "list-it", "list-biz", "list-sys", "integrated-search", "notifications"];
+  const allowed = new Set(pool);
+  const arr = Array.isArray(raw) ? raw.map((x) => String(x || "").trim()).filter((id) => allowed.has(id)) : [];
+  const out = [];
+  const seen = new Set();
+  for (let i = 0; i < arr.length; i += 1) {
+    const id = arr[i];
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= 5) break;
+  }
+  for (let p = 0; p < pool.length && out.length < 5; p += 1) {
+    const id = pool[p];
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out.slice(0, 5);
+}
+
 function sanitizeUserSettings(raw) {
   const src = raw && typeof raw === "object" ? raw : {};
   const notifyPolicy = src.notifyPolicy && typeof src.notifyPolicy === "object" ? src.notifyPolicy : {};
@@ -1611,7 +1636,7 @@ function sanitizeUserSettings(raw) {
           .filter(Boolean),
       ),
     ).slice(0, 50);
-  return {
+  const out = {
     osNotify: src.osNotify !== false,
     themeMode: src.themeMode === "dark" || src.themeMode === "light" || src.themeMode === "system" ? src.themeMode : "system",
     initialView: src.initialView === "dashboard" ? "dashboard" : "ai-search",
@@ -1628,6 +1653,10 @@ function sanitizeUserSettings(raw) {
       includeKeywords: normKeywords(notifyPolicy.includeKeywords),
     },
   };
+  if (Object.prototype.hasOwnProperty.call(src, "mobileBottomNavSlots") && src.mobileBottomNavSlots != null) {
+    out.mobileBottomNavSlots = sanitizeMobileBottomNavSlots(src.mobileBottomNavSlots);
+  }
+  return out;
 }
 
 async function handleDbApi(req, res, url) {
@@ -1824,6 +1853,84 @@ async function handleDbApi(req, res, url) {
     sendJson(res, 200, { ok: true, notified });
     return true;
   }
+  if (req.method === "POST" && url.pathname === "/api/db/admin-notify-user") {
+    if (!applyRateLimit(req, res)) return true;
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const token = extractBearerToken(req);
+    if (!token) {
+      sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
+      return true;
+    }
+    const db = readDb();
+    const r = resolveSessionToken(db, token);
+    if (r.kind === "expired") {
+      sendJson(res, 401, { error: "세션이 만료되었습니다.", code: "session_expired" });
+      return true;
+    }
+    if (r.kind !== "ok") {
+      sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+      return true;
+    }
+    const users = Array.isArray(db.signupUsers) ? db.signupUsers : [];
+    const adminUser = users.find((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === r.emp);
+    if (!adminUser || adminUser.isAdmin !== true) {
+      sendJson(res, 403, { error: "플랫폼 관리자만 전송할 수 있습니다." });
+      return true;
+    }
+    touchEmployeeSession(db, r.emp);
+    const targetEmp = normalizeAiChatHistoryScope(body && body.targetEmployeeNo);
+    if (!targetEmp || targetEmp === "guest") {
+      sendJson(res, 400, { error: "targetEmployeeNo가 필요합니다." });
+      return true;
+    }
+    const targetUser = users.find((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === targetEmp);
+    if (!targetUser) {
+      sendJson(res, 404, { error: "대상 사용자를 찾을 수 없습니다." });
+      return true;
+    }
+    const message = String(body && body.message || "")
+      .trim()
+      .slice(0, 2000);
+    if (!message) {
+      sendJson(res, 400, { error: "메시지를 입력하세요." });
+      return true;
+    }
+    const levelRaw = String(body && body.level || "general").toLowerCase();
+    const important = levelRaw === "important";
+    const now = Date.now();
+    const d = new Date(now);
+    const noti = {
+      id: `noti_${now}_${crypto.randomBytes(6).toString("hex")}`,
+      message: important ? `[중요·관리자] ${message}` : `[관리자 알림] ${message}`,
+      type: important ? "success" : "success",
+      topic: "플랫폼",
+      level: important ? "important" : "general",
+      at: now,
+      atLabel: fmtNotificationAtLabel(now),
+      dateLabel: d.toLocaleDateString("ko-KR"),
+      timeBand: resolveNotiTimeBandFromDate(d),
+      pageKey: "page:admin-broadcast",
+      pageLabel: "관리자 알림",
+      isRead: false,
+      actionText: "알림센터",
+      source: "admin_broadcast",
+      adminBroadcastImportant: important,
+    };
+    if (!db.notificationsByScope || typeof db.notificationsByScope !== "object") db.notificationsByScope = {};
+    const arr = Array.isArray(db.notificationsByScope[targetEmp]) ? db.notificationsByScope[targetEmp] : [];
+    arr.unshift(noti);
+    db.notificationsByScope[targetEmp] = sanitizeNotificationCenterItems(arr);
+    pruneNotificationsByScope(db);
+    writeDb(db);
+    sendJson(res, 200, { ok: true, id: noti.id });
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/api/db/user-settings") {
     const scope = normalizeAiChatHistoryScope(url.searchParams.get("scope"));
     if (scope === "guest") {
@@ -1853,7 +1960,9 @@ async function handleDbApi(req, res, url) {
     const db = readDb();
     if (!ensureEmployeeScopeSession(req, res, db, scope)) return true;
     if (!db.userSettingsByScope || typeof db.userSettingsByScope !== "object") db.userSettingsByScope = {};
-    db.userSettingsByScope[scope] = sanitizeUserSettings(body && body.settings);
+    const prev = db.userSettingsByScope[scope] && typeof db.userSettingsByScope[scope] === "object" ? db.userSettingsByScope[scope] : {};
+    const incoming = body && body.settings && typeof body.settings === "object" ? body.settings : {};
+    db.userSettingsByScope[scope] = sanitizeUserSettings({ ...prev, ...incoming });
     writeDb(db);
     sendJson(res, 200, { ok: true });
     return true;

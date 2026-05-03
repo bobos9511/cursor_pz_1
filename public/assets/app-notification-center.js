@@ -64,6 +64,9 @@ function sanitizeNotificationItemsForTransport(items) {
                 isRead: !!it.isRead,
                 actionText: String(it.actionText || "바로가기"),
             };
+            const src = String(it.source || "").trim().slice(0, 40);
+            if (src) o.source = src;
+            if (it.adminBroadcastImportant === true) o.adminBroadcastImportant = true;
             if (ak === "adminPermRequest" && ae) {
                 o.actionKind = "adminPermRequest";
                 o.actionEmpNo = ae;
@@ -88,6 +91,49 @@ function hydrateNotificationItemFromTransport(it) {
     return base;
 }
 
+const ADMIN_IMPORTANT_TOAST_MAX_AGE_MS = 10 * 60 * 1000;
+const ADMIN_IMPORTANT_TOAST_SEEN_KEY = "knockAdminImportantToastIds";
+
+function adminImportantToastAlreadySeen(id) {
+    try {
+        const arr = JSON.parse(sessionStorage.getItem(ADMIN_IMPORTANT_TOAST_SEEN_KEY) || "[]");
+        return Array.isArray(arr) && arr.some((x) => String(x) === String(id));
+    } catch (_) {
+        return false;
+    }
+}
+
+function markAdminImportantToastSeen(id) {
+    try {
+        const arr = JSON.parse(sessionStorage.getItem(ADMIN_IMPORTANT_TOAST_SEEN_KEY) || "[]");
+        const next = (Array.isArray(arr) ? arr : []).filter((x) => String(x) !== String(id));
+        next.push(String(id));
+        sessionStorage.setItem(ADMIN_IMPORTANT_TOAST_SEEN_KEY, JSON.stringify(next.slice(-400)));
+    } catch (_) {
+        /* no-op */
+    }
+}
+
+function maybeToastFreshAdminImportantNotifications(loaded) {
+    if (!Array.isArray(loaded) || !loaded.length) return;
+    const now = Date.now();
+    for (const it of loaded) {
+        if (!it || !it.adminBroadcastImportant) continue;
+        const id = String(it.id || "");
+        if (!id || adminImportantToastAlreadySeen(id)) continue;
+        const at = Number(it.at || 0);
+        if (!Number.isFinite(at) || now - at > ADMIN_IMPORTANT_TOAST_MAX_AGE_MS) continue;
+        markAdminImportantToastSeen(id);
+        if (typeof showAlert === "function") {
+            showAlert(String(it.message || ""), it.type === "error" ? "error" : "success", {
+                skipNotificationCenter: true,
+                noticeLevel: "important",
+                bypassNotifyPolicy: true,
+            });
+        }
+    }
+}
+
 async function loadNotificationCenterStateFromServer() {
     const scope = getNotificationScopeFromCookie();
     if (!scope || scope === "guest") return;
@@ -96,6 +142,7 @@ async function loadNotificationCenterStateFromServer() {
         if (!res.ok) return;
         const data = await res.json().catch(() => ({}));
         const loaded = sanitizeNotificationItemsForTransport(data && data.items);
+        maybeToastFreshAdminImportantNotifications(loaded);
         if (!loaded.length) {
             notificationServerLoaded = true;
             return;
@@ -794,7 +841,8 @@ function onWindowResizeNotificationCenterLayout() {
     }, 100);
 }
 
-function openNotificationCenter() {
+async function openNotificationCenter() {
+    await loadNotificationCenterStateFromServer();
     const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1024px)").matches;
     const modal = document.getElementById("notificationCenterModal");
     if (isMobile) {
@@ -899,6 +947,17 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
 restoreNotificationCenterState();
 void loadNotificationCenterStateFromServer();
 updateNotificationBadge();
+
+setInterval(() => {
+    try {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+        const scope = getNotificationScopeFromCookie();
+        if (!scope || scope === "guest") return;
+        void loadNotificationCenterStateFromServer();
+    } catch (_) {
+        /* no-op */
+    }
+}, 120000);
 
 window.closeNotificationCenter = closeNotificationCenter;
 

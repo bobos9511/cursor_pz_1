@@ -289,6 +289,14 @@
             color: #475569;
             line-height: 1.55;
         }
+        /* Temperature / Top-P: 스크롤·터치 오조작 방지 — 체크 시에만 조작 가능 */
+        #admin-settings-panel-ai.admin-ai--slider-locked .admin-ai-gen-range,
+        #admin-settings-panel-ai.admin-ai--slider-locked .admin-ai-gen-num {
+            pointer-events: none;
+            opacity: 0.74;
+            touch-action: none;
+            user-select: none;
+        }
         .admin-runtime-grid {
             margin-top: 14px;
             display: grid;

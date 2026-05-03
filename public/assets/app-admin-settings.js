@@ -706,6 +706,20 @@ function wireAdminAiGenControlsOnce() {
         num.addEventListener("input", syncFromNum);
         num.addEventListener("change", syncFromNum);
     });
+    wireAdminAiSliderLockOnce();
+}
+
+function wireAdminAiSliderLockOnce() {
+    const cb = document.getElementById("adminAiSliderUnlockCheckbox");
+    const panel = document.getElementById("admin-settings-panel-ai");
+    if (!cb || !panel) return;
+    if (cb.dataset.knockSliderLockWired === "1") return;
+    cb.dataset.knockSliderLockWired = "1";
+    const sync = () => {
+        panel.classList.toggle("admin-ai--slider-locked", !cb.checked);
+    };
+    cb.addEventListener("change", sync);
+    sync();
 }
 
 function wireAdminRuntimeValidationOnce() {
@@ -1796,6 +1810,34 @@ window.resetAdminAiSettingsToDefault = resetAdminAiSettingsToDefault;
 window.openAdminAiSettingsHistoryModal = openAdminAiSettingsHistoryModal;
 window.closeAdminAiSettingsHistoryModal = closeAdminAiSettingsHistoryModal;
 window.restoreAdminAiSettingsVersion = restoreAdminAiSettingsVersion;
+
+async function sendAdminUserNotification() {
+    const empEl = document.getElementById("adminNotifyTargetEmp");
+    const msgEl = document.getElementById("adminNotifyMessage");
+    const targetEmployeeNo = String(empEl && empEl.value ? empEl.value : "")
+        .trim()
+        .replace(/\s+/g, "");
+    const message = String(msgEl && msgEl.value ? msgEl.value : "").trim();
+    const levelEl = document.querySelector('input[name="adminNotifyLevel"]:checked');
+    const level = levelEl && levelEl.value === "general" ? "general" : "important";
+    if (!targetEmployeeNo || !message) {
+        showAlert("대상 직원번호와 메시지를 입력하세요.", "error");
+        return;
+    }
+    try {
+        await fetchJson("/api/db/admin-notify-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetEmployeeNo, message, level }),
+        });
+        showAlert("대상 계정 알림센터에 반영되었습니다.", "success", { skipNotificationCenter: true });
+        if (msgEl) msgEl.value = "";
+    } catch (err) {
+        showAlert(String(err && err.message ? err.message : "전송에 실패했습니다."), "error");
+    }
+}
+
+window.sendAdminUserNotification = sendAdminUserNotification;
 
 window.applyAdminPermHighlightRow = function applyAdminPermHighlightRow(empNo) {
     const emp = String(empNo || "")

@@ -237,10 +237,31 @@
                 align-items: center;
                 border-radius: 8px;
             }
+            #view-detail .detail-post-header-row {
+                flex-wrap: wrap;
+                align-items: flex-start;
+                gap: 8px 10px;
+                margin-bottom: 6px !important;
+            }
+            #view-detail .detail-post-badges {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            #view-detail .detail-post-head-inner {
+                padding: 16px !important;
+            }
+            #view-detail #dtlTitle {
+                margin-top: 2px !important;
+                margin-bottom: 6px !important;
+                font-size: 19px !important;
+                line-height: 1.35 !important;
+            }
             #view-detail .detail-post-crud {
-                width: 100%;
+                width: auto;
+                flex: 0 0 auto;
+                margin-left: auto !important;
+                align-self: center;
                 justify-content: flex-end;
-                margin-left: 0 !important;
                 gap: 8px;
             }
             #view-detail .dtl-crud-btn {
@@ -339,7 +360,7 @@
             #view-detail .post-detail-meta-primary .post-detail-meta-item {
                 display: flex;
                 align-items: center;
-                min-height: 80px;
+                min-height: 0;
             }
             #view-detail .post-detail-meta-primary .post-detail-meta-item > .icon {
                 width: 20px;
@@ -348,11 +369,11 @@
             }
             #view-detail .writer-cell.detail .writer-avatar.detail,
             #view-detail .writer-avatar.detail {
-                width: 80px !important;
-                height: 80px !important;
-                min-width: 80px;
-                min-height: 80px;
-                font-size: 26px;
+                width: 44px !important;
+                height: 44px !important;
+                min-width: 44px;
+                min-height: 44px;
+                font-size: 16px;
             }
             #view-detail #dtlWriter .writer-cell.detail {
                 gap: 12px;
@@ -431,6 +452,11 @@
                 border-top: 1px solid rgba(148, 163, 184, 0.35);
                 transform: rotate(45deg);
                 box-sizing: border-box;
+                z-index: 0;
+            }
+            #dtlAiWrap .ai-header-actions-cluster > * {
+                position: relative;
+                z-index: 1;
             }
             #dtlAiWrap .ai-header-actions-cluster .btn {
                 justify-content: flex-start;

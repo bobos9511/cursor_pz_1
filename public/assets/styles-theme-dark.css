@@ -862,10 +862,10 @@
             background: #121a2a;
         }
         body[data-theme="dark"] .noti-stack .noti-item.noti-item-compact {
-            background: #151f30;
-            border: none;
-            border-top: 1px solid #2a3a52;
-            box-shadow: none;
+            background: linear-gradient(180deg, #1a2438 0%, #151f30 100%);
+            border: 1px solid #334155;
+            border-top: 1px solid #334155;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
         }
         body[data-theme="dark"] .noti-item-msg,
         body[data-theme="dark"] .notification-filter-label {
@@ -1258,12 +1258,14 @@
             color: #c4b5fd;
             opacity: 0.95;
         }
-        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory {
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory.ai-toolbar-header-btn,
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnRefreshAiReply.ai-toolbar-header-btn {
             border-color: rgba(167, 139, 250, 0.45) !important;
             color: #f3e8ff !important;
             background: rgba(36, 26, 56, 0.55) !important;
         }
-        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory:hover {
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnAiReplyHistory.ai-toolbar-header-btn:hover,
+        body[data-theme="dark"] #view-detail #dtlAiWrap #btnRefreshAiReply.ai-toolbar-header-btn:hover {
             background: rgba(58, 42, 86, 0.65) !important;
             border-color: rgba(196, 181, 253, 0.55) !important;
         }

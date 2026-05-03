@@ -73,6 +73,9 @@
                     <span class="mobile-top-bar__role-chip" id="mobileHeaderRoleChip">영업점</span>
                 </div>
                 <div class="mobile-top-bar__actions">
+                    <button type="button" class="mobile-top-bar__icon-btn hidden" id="mobileHeaderIntegratedSearchBtn" onclick="switchView('integrated-search')" title="통합검색" aria-label="통합검색">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+                    </button>
                     <button type="button" class="mobile-top-bar__icon-btn" id="mobileHeaderNotificationBtn" onclick="openNotificationCenter()" title="알림센터" aria-label="알림센터">
                         <svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg>
                         <span id="mobileHeaderNotificationBadge" class="header-noti-badge hidden" aria-live="polite">0</span>
@@ -85,14 +88,14 @@
         </header>
         <!-- 모바일: 하단 글래스 내비 + 더보기 시트 -->
         <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="하단 메뉴">
-            <div class="mobile-bottom-nav__glass mobile-bottom-nav__glass--six">
+            <div class="mobile-bottom-nav__glass mobile-bottom-nav__glass--five">
                 <div id="mbnavSlotRow" class="mobile-bottom-nav__slots" aria-label="주요 메뉴">
                     <button type="button" class="mbnav-item" id="mbnav-dashboard" data-mbnav-slot="dashboard" onclick="switchView('dashboard')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-home"></use></svg></span><span class="mbnav-label">홈</span></button>
                     <button type="button" class="mbnav-item" id="mbnav-list-it" data-mbnav-slot="list-it" onclick="switchView('list', 'IT')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-info"></use></svg></span><span class="mbnav-label">IT</span></button>
                     <button type="button" class="mbnav-item" id="mbnav-list-biz" data-mbnav-slot="list-biz" onclick="switchView('list', 'BIZ')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-book"></use></svg></span><span class="mbnav-label">규정</span></button>
                     <button type="button" class="mbnav-item" id="mbnav-list-sys" data-mbnav-slot="list-sys" onclick="switchView('list', 'SYS')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-lightbulb"></use></svg></span><span class="mbnav-label">개선</span></button>
                     <button type="button" class="mbnav-item" id="mbnav-integrated-search" data-mbnav-slot="integrated-search" onclick="switchView('integrated-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-search"></use></svg></span><span class="mbnav-label">통합검색</span></button>
-                    <button type="button" class="mbnav-item" id="mbnav-ai-search" data-mbnav-slot="ai-search" onclick="switchView('ai-search')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-brain"></use></svg></span><span class="mbnav-label">AI</span></button>
+                    <button type="button" class="mbnav-item" id="mbnav-notifications" data-mbnav-slot="notifications" onclick="switchView('notifications')"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-bell"></use></svg></span><span class="mbnav-label">알림</span></button>
                 </div>
                 <button type="button" class="mbnav-item mbnav-item--more" id="mbnav-more" onclick="toggleMobileNavMore()" aria-expanded="false" aria-controls="mobileNavMorePanel" title="더보기"><span class="mbnav-icon-wrap"><svg class="icon"><use href="#icon-bars"></use></svg></span><span class="mbnav-label">더보기</span></button>
             </div>
@@ -128,6 +131,11 @@
                             <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); openNotificationCenter();">
                                 <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--bell"><svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg></span>
                                 <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">알림센터</span><span class="mobile-nav-more__row-desc">읽지 않은 알림 확인</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('integrated-search');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--search"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">통합검색</span><span class="mobile-nav-more__row-desc">전체 게시판 검색</span></span>
                                 <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
                             </button>
                         </div>
@@ -747,12 +755,12 @@
                                         <span id="dtlAiPanelTitle"><svg class="icon"><use href="#icon-magic"></use></svg> AI 어시스턴트 레포트</span>
                                         <div class="ai-header-right">
                                             <div id="aiHeaderActionsCluster" class="ai-header-actions-cluster" role="group" aria-label="AI 패널 도구">
-                                                <button id="btnAiReplyHistory" type="button" class="btn btn-outline" style="padding:5px 10px; border-color: rgba(255,255,255,0.7); color:#fff; background: rgba(255,255,255,0.08);" onclick="closeAiPanelMobileFlyout(); openAiReplyHistoryModal();">
+                                                <button id="btnAiReplyHistory" type="button" class="btn btn-outline ai-toolbar-header-btn" onclick="closeAiPanelMobileFlyout(); openAiReplyHistoryModal();">
                                                     <svg class="icon" aria-hidden="true"><use href="#icon-history"></use></svg><span class="ai-toolbar-btn-label">이력보기</span>
                                                 </button>
                                                 <div id="aiActionRow" class="hidden ai-action-row ai-action-row-header">
-                                                    <button id="btnRefreshAiReply" type="button" class="btn btn-outline" onclick="refreshCurrentPostAiReply();"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg><span class="ai-toolbar-btn-label">새로운 답변 생성</span></button>
-                                                    <button id="btnConvertAiSolved" type="button" class="btn btn-outline" onclick="convertPostToAiSolved();"><svg class="icon" aria-hidden="true"><use href="#icon-magic"></use></svg><span class="ai-toolbar-btn-label">AI 답변 채택</span></button>
+                                                    <button id="btnRefreshAiReply" type="button" class="btn btn-outline ai-toolbar-header-btn" onclick="refreshCurrentPostAiReply();"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg><span class="ai-toolbar-btn-label">새로운 답변 생성</span></button>
+                                                    <button id="btnConvertAiSolved" type="button" class="btn btn-outline ai-toolbar-header-btn" onclick="convertPostToAiSolved();"><svg class="icon" aria-hidden="true"><use href="#icon-magic"></use></svg><span class="ai-toolbar-btn-label">AI 답변 채택</span></button>
                                                 </div>
                                             </div>
                                             <button type="button" id="aiPanelMobileToolsToggle" class="btn ai-panel-mtools-toggle" aria-expanded="false" aria-controls="aiHeaderActionsCluster" aria-haspopup="true" title="AI 도구" onclick="toggleAiPanelMobileFlyout(event);">
@@ -1018,7 +1026,7 @@
                         <div class="admin-main-tab-row" id="settingsMainTabs" style="margin-bottom:12px;">
                             <button type="button" class="admin-main-tab-btn btn btn-primary" data-settings-tab="notify">알림</button>
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="display">화면·테마</button>
-                            <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="mbnav">하단 메뉴</button>
+                            <button type="button" class="admin-main-tab-btn btn btn-outline settings-main-tab--mobile-only" data-settings-tab="mbnav">하단 메뉴</button>
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-settings-tab="account">계정</button>
                         </div>
                         <div class="panel p-20">
@@ -1099,13 +1107,12 @@
 
                             <div id="settings-panel-mbnav" class="admin-settings-tab-panel hidden">
                                 <div class="panel-header settings-section-heading">모바일 하단 글래스 메뉴</div>
-                                <p class="settings-mbnav-lead">아래 순서대로 하단 바에 표시됩니다. <strong>더보기</strong>는 항상 맨 오른쪽에 고정되며 변경할 수 없습니다.</p>
-                                <ul id="settingsMbnavOrderList" class="settings-mbnav-order-list" aria-label="하단 메뉴 순서"></ul>
+                                <p class="settings-mbnav-lead">모바일에서 하단 바에 <strong>5칸</strong>이 표시됩니다(오른쪽 <strong>더보기</strong>는 항상 고정). 칸마다 메뉴를 고르고 위·아래로 순서를 바꿀 수 있습니다. AI 채팅은 우측 하단 플로팅 버튼으로만 열립니다.</p>
+                                <div id="settingsMbnavSlotEditor" class="settings-mbnav-slot-editor" aria-label="하단 메뉴 구성"></div>
                                 <div class="settings-mbnav-actions flex gap-10 flex-wrap">
-                                    <button type="button" class="btn btn-outline" onclick="resetMobileBottomNavSlotOrder()">기본 순서</button>
-                                    <button type="button" class="btn btn-primary" onclick="saveMobileBottomNavOrderFromEditor()">순서 저장</button>
+                                    <button type="button" class="btn btn-outline" onclick="resetMobileBottomNavSlotOrder()">기본 구성</button>
                                 </div>
-                                <p class="settings-mbnav-hint">각 줄을 드래그하여 순서를 바꾼 뒤 <strong>순서 저장</strong>을 누르세요. 좁은 화면에서는 마지막 항목 하나가 자동으로 접혀 5칸만 보입니다(더보기 제외).</p>
+                                <p class="settings-mbnav-hint">변경 후 화면 하단의 <strong>설정 저장</strong>을 눌러야 반영됩니다. 통합검색을 빼면 상단 바에 검색 버튼이 나타납니다.</p>
                             </div>
 
                             <div id="settings-panel-display" class="admin-settings-tab-panel hidden">
@@ -1146,7 +1153,7 @@
                                 </div>
                             </div>
 
-                            <div class="text-right mt-20" style="border-top: 1px solid #eee; padding-top: 20px;">
+                            <div id="settingsFormSaveRow" class="text-right mt-20 settings-form-save-row" style="border-top: 1px solid #eee; padding-top: 20px;">
                                 <button type="button" class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
                             </div>
                         </div>
@@ -1168,13 +1175,17 @@
                             <button type="button" class="admin-main-tab-btn btn btn-outline" data-admin-tab="system">시스템</button>
                         </div>
 
-                        <div id="admin-settings-panel-ai" class="admin-settings-tab-panel">
+                        <div id="admin-settings-panel-ai" class="admin-settings-tab-panel admin-ai--slider-locked">
                         <div class="admin-settings-card">
                             <div class="admin-settings-card-head">
                                 <span class="admin-settings-badge">CHAT</span>
                                 <h3 class="admin-settings-card-title">AI 채팅</h3>
                             </div>
                             <p class="admin-settings-hint">저장된 값이 비어 있으면 기본 시스템 프롬프트가 그대로 사용됩니다.</p>
+                            <label class="theme-mode-item admin-ai-slider-guard" style="margin:8px 0 14px 0;">
+                                <input type="checkbox" id="adminAiSliderUnlockCheckbox" autocomplete="off">
+                                <span>Temperature·Top-P 슬라이더 조작 허용 (스크롤·드래그 오조작 방지: 체크 시 잠금 해제)</span>
+                            </label>
                             <details class="admin-help-details">
                                 <summary class="admin-help-details-summary">설명·권장값 보기</summary>
                                 <div class="admin-help-details-body">
@@ -1522,6 +1533,31 @@
                         </div>
 
                         <div id="admin-settings-panel-system" class="admin-settings-tab-panel hidden">
+                            <div class="admin-settings-card">
+                                <div class="admin-settings-card-head">
+                                    <span class="admin-settings-badge" style="background:linear-gradient(90deg,#6366f1,#4f46e5);">NTF</span>
+                                    <h3 class="admin-settings-card-title">개별 계정 알림 전송</h3>
+                                </div>
+                                <p class="admin-settings-hint">대상 직원의 알림센터에 메시지를 남깁니다. <strong>중요</strong>는 사용자 알림 설정·시간대와 관계없이 토스트/OS 알림까지 전달되며, <strong>일반</strong>은 기존 수신 설정을 따릅니다.</p>
+                                <div class="flex-col gap-10" style="max-width:520px;">
+                                    <div>
+                                        <label class="admin-field-label" for="adminNotifyTargetEmp">대상 직원번호</label>
+                                        <input type="text" id="adminNotifyTargetEmp" class="input" placeholder="예: 123456" maxlength="32" autocomplete="off">
+                                    </div>
+                                    <div>
+                                        <label class="admin-field-label" for="adminNotifyMessage">메시지</label>
+                                        <textarea id="adminNotifyMessage" class="input admin-settings-textarea" rows="4" maxlength="2000" placeholder="전달할 내용을 입력하세요."></textarea>
+                                    </div>
+                                    <div class="flex flex-wrap gap-15 items-center">
+                                        <span class="admin-field-label" style="margin:0;">중요도</span>
+                                        <label class="theme-mode-item" style="margin:0;"><input type="radio" name="adminNotifyLevel" value="important" checked> <span>중요 (설정 무시·즉시 알림)</span></label>
+                                        <label class="theme-mode-item" style="margin:0;"><input type="radio" name="adminNotifyLevel" value="general"> <span>일반 (사용자 알림 설정 적용)</span></label>
+                                    </div>
+                                    <div class="admin-settings-actions" style="justify-content:flex-start;">
+                                        <button type="button" class="btn btn-primary" onclick="sendAdminUserNotification()">알림 보내기</button>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="admin-settings-card">
                                 <div class="admin-settings-card-head">
                                     <span class="admin-settings-badge" style="background:linear-gradient(90deg,#f97316,#ea580c);">SYS</span>

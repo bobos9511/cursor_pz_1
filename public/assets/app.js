@@ -564,8 +564,11 @@
         }
         let settingsMainTabsInited = false;
         function selectSettingsMainTab(tab) {
-            const key =
+            let key =
                 tab === 'display' ? 'display' : tab === 'account' ? 'account' : tab === 'mbnav' ? 'mbnav' : 'notify';
+            if (key === 'mbnav' && window.matchMedia && !window.matchMedia('(max-width: 1024px)').matches) {
+                key = 'notify';
+            }
             document.querySelectorAll('#settingsMainTabs .admin-main-tab-btn').forEach((b) => {
                 const on = b.getAttribute('data-settings-tab') === key;
                 b.classList.toggle('btn-primary', on);
@@ -579,7 +582,7 @@
             if (pDisplay) pDisplay.classList.toggle('hidden', key !== 'display');
             if (pMbnav) pMbnav.classList.toggle('hidden', key !== 'mbnav');
             if (pAccount) pAccount.classList.toggle('hidden', key !== 'account');
-            if (key === 'mbnav') renderSettingsMbnavOrderList();
+            if (key === 'mbnav') renderSettingsMbnavSlotEditor();
         }
         function initSettingsMainTabsOnce() {
             if (settingsMainTabsInited) return;
@@ -666,6 +669,7 @@
         }
 
         function shouldDeliverUserNotification(message, type = 'success', options = {}) {
+            if (options && options.bypassNotifyPolicy === true) return true;
             const policy = getCurrentNotifyPolicy();
             if (policy.master === 'block') return false;
             const level = resolveNoticeLevelLocal(message, type, options);
@@ -931,6 +935,30 @@
         function isKnowLikeBoard(t) {
             const x = String(t || '').toUpperCase();
             return x === 'KNOW' || x === 'RULE';
+        }
+
+        /** IT/BIZ/SYS 등 데스크 티켓 상태 문자열 정규화(표기·대소문자 차이로 카운트/모달 불일치 방지) */
+        function normalizeDeskTicketStatus(raw) {
+            const s = String(raw == null ? '' : raw)
+                .trim()
+                .toLowerCase();
+            if (!s) return '';
+            if (s === 'wait' || s === '접수' || s === '대기' || s === '접수대기') return 'wait';
+            if (s === 'ing' || s === '진행' || s === '진행중' || s === '처리중' || s === '처리 중' || s === 'progress') return 'ing';
+            if (s === 'moreinfo' || s === 'more_info' || s === '추가정보' || s === '추가답변') return 'moreInfo';
+            if (s === 'done' || s === '완료' || s === '조치완료' || s === '답변완료') return 'done';
+            return s;
+        }
+        function isDeskStatusWaitOrIng(post) {
+            const s = normalizeDeskTicketStatus(post && post.status);
+            return s === 'wait' || s === 'ing';
+        }
+        function isDeskStatusMoreInfo(post) {
+            return normalizeDeskTicketStatus(post && post.status) === 'moreInfo';
+        }
+        function isDeskStatusWaitIngOrMoreInfo(post) {
+            const s = normalizeDeskTicketStatus(post && post.status);
+            return s === 'wait' || s === 'ing' || s === 'moreInfo';
         }
 
         function isBranchDashboardRole(role) {
@@ -1311,7 +1339,7 @@
             const emp = escapeHtml(normalizeDisplayText(user.employeeNo, '-'));
             const ext = escapeHtml(normalizeDisplayText(user.extNo, '-'));
             const mobile = escapeHtml(normalizeDisplayText(user.mobileNo, '-'));
-            const role = escapeHtml(normalizeDisplayText(user.role, '-'));
+            const role = escapeHtml(getRoleDisplayName(user.role));
             const img = normalizeProfileImageData(user.profileImage);
             const initial = escapeHtml(getUserInitial(user.name || label));
             const grad = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(user.employeeNo || user.name || label)];
@@ -1775,6 +1803,7 @@
                 initialView: getPreferredInitialView(),
                 notifyPolicy: normalizeNotifyPolicy(appData && appData.settings ? appData.settings.notifyPolicy : getDefaultNotifyPolicy()),
             };
+            settingsPayload.mobileBottomNavSlots = getMobileBottomNavSlotOrder();
             fetchJson(`/api/db/user-settings?scope=${scope}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -2079,6 +2108,7 @@
                     appData.settings.osNotify = userSettings.osNotify !== false;
                     appData.settings.themeMode = normalizeThemeMode(userSettings.themeMode || appData.settings.themeMode || 'system');
                     appData.settings.notifyPolicy = normalizeNotifyPolicy(userSettings.notifyPolicy || appData.settings.notifyPolicy);
+                    tryHydrateMobileBottomNavSlotsFromServer(userSettings);
                 }
             } catch (error) {
                 if (error && error.knockSessionHandled) throw error;
@@ -2223,12 +2253,15 @@
         }
 
         function getRoleDisplayName(role) {
-            if (role === 'branch') return '영업점';
-            if (role === 'callcenter') return '고객센터';
-            if (role === 'hq') return '본부';
-            if (role === 'it') return 'IT';
-            if (role === 'outsourced') return '외주인력';
-            if (role === 'ibk_sub') return 'IBK자회사';
+            const r = String(role || '')
+                .trim()
+                .toLowerCase();
+            if (r === 'branch') return '영업점';
+            if (r === 'callcenter') return '고객센터';
+            if (r === 'hq') return '본부';
+            if (r === 'it') return 'IT';
+            if (r === 'outsourced') return '외주인력';
+            if (r === 'ibk_sub') return 'IBK자회사';
             return String(role || '-');
         }
 
@@ -3739,6 +3772,7 @@
                 includeKeywords: readNotifyKeywordArrayFromList('include'),
             });
             applyThemeMode(appData.settings.themeMode);
+            commitMobileBottomNavFromSettingsEditor();
             saveUserSettingsToServer();
             showAlert('설정이 저장되었습니다.', 'success');
         }
@@ -3950,62 +3984,136 @@
 
         let mobileNavMoreReturnSnapshot = null;
 
-        const MB_NAV_SLOT_ORDER_KEY = 'knockMobileBottomNavSlotOrderV1';
-        const MB_NAV_SLOT_IDS = [
-            'dashboard',
-            'list-it',
-            'list-biz',
-            'list-sys',
-            'integrated-search',
-            'ai-search',
-        ];
+        const MB_NAV_SLOT_ORDER_KEY = 'knockMobileBottomNavSlotOrderV2';
+        const MB_NAV_LEGACY_ORDER_KEY = 'knockMobileBottomNavSlotOrderV1';
+        const MB_NAV_SLOT_COUNT = 5;
+        const MB_NAV_POOL_IDS = ['dashboard', 'list-it', 'list-biz', 'list-sys', 'integrated-search', 'notifications'];
+        const MB_NAV_DEFAULT_BAR_ORDER = ['dashboard', 'list-it', 'list-biz', 'list-sys', 'integrated-search'];
         const MB_NAV_SLOT_LABELS = {
             dashboard: '홈 (대시보드)',
             'list-it': 'IT · 오류 문의',
             'list-biz': '규정 · 상품 문의',
             'list-sys': 'KNOCK 개선 제안',
             'integrated-search': '통합검색',
-            'ai-search': 'AI 채팅',
+            notifications: '알림센터',
         };
-        let mbnavSettingsDragWired = false;
         let mbnavCompactResizeBound = false;
 
+        function normalizeMobileBottomNavSlots(raw) {
+            const allowed = new Set(MB_NAV_POOL_IDS);
+            const arr = Array.isArray(raw) ? raw.map((x) => String(x || '').trim()).filter((id) => allowed.has(id)) : [];
+            const out = [];
+            const seen = new Set();
+            for (let i = 0; i < arr.length; i += 1) {
+                const id = arr[i];
+                if (seen.has(id)) continue;
+                seen.add(id);
+                out.push(id);
+                if (out.length >= MB_NAV_SLOT_COUNT) break;
+            }
+            for (let p = 0; p < MB_NAV_POOL_IDS.length && out.length < MB_NAV_SLOT_COUNT; p += 1) {
+                const id = MB_NAV_POOL_IDS[p];
+                if (seen.has(id)) continue;
+                seen.add(id);
+                out.push(id);
+            }
+            return out.slice(0, MB_NAV_SLOT_COUNT);
+        }
+        function migrateLegacyMobileBottomNavLocalStorage() {
+            try {
+                if (localStorage.getItem(MB_NAV_SLOT_ORDER_KEY)) return;
+                const raw = localStorage.getItem(MB_NAV_LEGACY_ORDER_KEY);
+                const arr = raw ? JSON.parse(raw) : null;
+                if (!Array.isArray(arr)) return;
+                const filtered = arr.filter((id) => MB_NAV_POOL_IDS.includes(String(id || '').trim()));
+                const noAi = filtered.filter((id) => String(id).trim() !== 'ai-search');
+                const norm = normalizeMobileBottomNavSlots(noAi);
+                if (norm.length === MB_NAV_SLOT_COUNT) localStorage.setItem(MB_NAV_SLOT_ORDER_KEY, JSON.stringify(norm));
+            } catch (_) {
+                /* noop */
+            }
+        }
+        function tryHydrateMobileBottomNavSlotsFromServer(userSettings) {
+            if (!userSettings || typeof userSettings !== 'object') return;
+            if (!Object.prototype.hasOwnProperty.call(userSettings, 'mobileBottomNavSlots')) return;
+            const norm = normalizeMobileBottomNavSlots(userSettings.mobileBottomNavSlots);
+            if (!norm || norm.length !== MB_NAV_SLOT_COUNT) return;
+            if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
+            appData.settings.mobileBottomNavSlots = norm;
+            saveMobileBottomNavSlotOrder(norm);
+        }
         function getMobileBottomNavSlotOrder() {
+            migrateLegacyMobileBottomNavLocalStorage();
+            const fromApp =
+                appData && appData.settings && Array.isArray(appData.settings.mobileBottomNavSlots)
+                    ? normalizeMobileBottomNavSlots(appData.settings.mobileBottomNavSlots)
+                    : null;
+            if (fromApp && fromApp.length === MB_NAV_SLOT_COUNT) return fromApp;
             try {
                 const raw = localStorage.getItem(MB_NAV_SLOT_ORDER_KEY);
                 const arr = raw ? JSON.parse(raw) : null;
-                if (!Array.isArray(arr) || arr.length !== MB_NAV_SLOT_IDS.length) return MB_NAV_SLOT_IDS.slice();
-                const allowed = new Set(MB_NAV_SLOT_IDS);
-                if (arr.some((id) => !allowed.has(id)) || new Set(arr).size !== arr.length) return MB_NAV_SLOT_IDS.slice();
-                return arr;
+                const norm = normalizeMobileBottomNavSlots(arr);
+                if (norm.length === MB_NAV_SLOT_COUNT) return norm;
             } catch (_) {
-                return MB_NAV_SLOT_IDS.slice();
+                /* noop */
             }
+            return MB_NAV_DEFAULT_BAR_ORDER.slice();
         }
         function saveMobileBottomNavSlotOrder(order) {
+            const norm = normalizeMobileBottomNavSlots(order);
+            if (norm.length !== MB_NAV_SLOT_COUNT) return;
             try {
-                localStorage.setItem(MB_NAV_SLOT_ORDER_KEY, JSON.stringify(order));
-            } catch (_) {}
+                localStorage.setItem(MB_NAV_SLOT_ORDER_KEY, JSON.stringify(norm));
+            } catch (_) {
+                /* noop */
+            }
+            if (appData && appData.settings && typeof appData.settings === 'object') appData.settings.mobileBottomNavSlots = norm;
         }
         function applyMobileBottomNavSlotOrder() {
             const row = document.getElementById('mbnavSlotRow');
             if (!row) return;
             const order = getMobileBottomNavSlotOrder();
+            const shown = new Set(order);
             const map = new Map();
             row.querySelectorAll('[data-mbnav-slot]').forEach((btn) => {
                 map.set(btn.getAttribute('data-mbnav-slot'), btn);
             });
             order.forEach((id) => {
                 const el = map.get(id);
-                if (el) row.appendChild(el);
+                if (!el) return;
+                el.classList.remove('hidden');
+                row.appendChild(el);
+            });
+            MB_NAV_POOL_IDS.forEach((id) => {
+                if (shown.has(id)) return;
+                const el = map.get(id);
+                if (el) {
+                    el.classList.add('hidden');
+                    row.appendChild(el);
+                }
             });
             updateMbnavSlotRowCompactClass();
+        }
+        function isIntegratedSearchVisibleInMbnavSlots() {
+            if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return true;
+            return getMobileBottomNavSlotOrder().includes('integrated-search');
+        }
+        function syncMobileIntegratedSearchVisibility() {
+            const btn = document.getElementById('mobileHeaderIntegratedSearchBtn');
+            if (!btn) return;
+            const mobile = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+            if (!mobile) {
+                btn.classList.add('hidden');
+                return;
+            }
+            btn.classList.toggle('hidden', isIntegratedSearchVisibleInMbnavSlots());
         }
         function updateMbnavSlotRowCompactClass() {
             const row = document.getElementById('mbnavSlotRow');
             if (!row) return;
-            const compact = window.matchMedia && window.matchMedia('(max-width: 400px)').matches;
-            row.classList.toggle('mbnav-slot-row--compact', compact);
+            const mobile = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+            row.classList.toggle('mbnav-slot-row--compact', mobile);
+            syncMobileIntegratedSearchVisibility();
         }
         function bindMbnavCompactResizeOnce() {
             if (mbnavCompactResizeBound) return;
@@ -4016,11 +4124,7 @@
             if (!window.matchMedia || !window.matchMedia('(max-width: 1024px)').matches) return;
             if (document.body.classList.contains('mobile-nav-more-open')) return;
             document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
-            if (document.body.classList.contains('ai-chat-layer-open')) {
-                const aiMb = document.getElementById('mbnav-ai-search');
-                if (aiMb) aiMb.classList.add('active');
-                return;
-            }
+            if (document.body.classList.contains('ai-chat-layer-open')) return;
             const active = document.querySelector('.view-section.active');
             if (!active || !active.id) return;
             const key = active.id.replace('view-', '');
@@ -4033,71 +4137,104 @@
             const mb = document.getElementById(`mbnav-${key}`);
             if (mb) mb.classList.add('active');
         }
-        function renderSettingsMbnavOrderList() {
-            const ul = document.getElementById('settingsMbnavOrderList');
-            if (!ul) return;
-            const order = getMobileBottomNavSlotOrder();
-            ul.innerHTML = order
-                .map((id) => {
-                    const label = escapeHtml(MB_NAV_SLOT_LABELS[id] || id);
-                    return `<li class="settings-mbnav-order-item" draggable="true" data-mbnav-slot-id="${escapeHtml(id)}"><span class="settings-mbnav-order-grip" aria-hidden="true">≡</span><span class="settings-mbnav-order-label">${label}</span><span class="settings-mbnav-order-meta">드래그</span></li>`;
-                })
-                .join('');
-            wireMbnavSettingsOrderListDragOnce();
+        function readMbnavOrderFromSettingsEditorDom() {
+            const box = document.getElementById('settingsMbnavSlotEditor');
+            if (!box) return null;
+            const selects = Array.from(box.querySelectorAll('select[data-mbnav-slot-idx]'));
+            if (selects.length !== MB_NAV_SLOT_COUNT) return null;
+            selects.sort((a, b) => Number(a.getAttribute('data-mbnav-slot-idx')) - Number(b.getAttribute('data-mbnav-slot-idx')));
+            const vals = selects.map((s) => String(s.value || '').trim());
+            const norm = normalizeMobileBottomNavSlots(vals);
+            return norm.length === MB_NAV_SLOT_COUNT ? norm : null;
         }
-        function wireMbnavSettingsOrderListDragOnce() {
-            const ul = document.getElementById('settingsMbnavOrderList');
-            if (!ul || mbnavSettingsDragWired) return;
-            mbnavSettingsDragWired = true;
-            let dragEl = null;
-            ul.addEventListener('dragstart', (e) => {
-                const li = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
-                if (!li || !ul.contains(li)) return;
-                dragEl = li;
-                li.classList.add('settings-mbnav-order-item--dragging');
-                try {
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', li.getAttribute('data-mbnav-slot-id') || '');
-                } catch (_) {}
-            });
-            ul.addEventListener('dragend', (e) => {
-                const li = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
-                if (li) li.classList.remove('settings-mbnav-order-item--dragging');
-                dragEl = null;
-            });
-            ul.addEventListener('dragover', (e) => {
-                if (!dragEl) return;
-                e.preventDefault();
-                const over = e.target && e.target.closest ? e.target.closest('[data-mbnav-slot-id]') : null;
-                if (!over || over === dragEl || !ul.contains(over)) return;
-                const rect = over.getBoundingClientRect();
-                const after = e.clientY > rect.top + rect.height / 2;
-                if (after) ul.insertBefore(dragEl, over.nextSibling);
-                else ul.insertBefore(dragEl, over);
-            });
-            ul.addEventListener('drop', (e) => e.preventDefault());
+        function renderSettingsMbnavSlotEditor(presetOrder) {
+            const box = document.getElementById('settingsMbnavSlotEditor');
+            if (!box) return;
+            const order =
+                Array.isArray(presetOrder) && presetOrder.length === MB_NAV_SLOT_COUNT
+                    ? normalizeMobileBottomNavSlots(presetOrder)
+                    : getMobileBottomNavSlotOrder();
+            const unused = MB_NAV_POOL_IDS.filter((id) => !order.includes(id))[0] || '';
+            const unusedLabel = unused ? MB_NAV_SLOT_LABELS[unused] || unused : '';
+            let html = '';
+            for (let i = 0; i < MB_NAV_SLOT_COUNT; i += 1) {
+                const cur = order[i];
+                const opts = MB_NAV_POOL_IDS.map(
+                    (id) =>
+                        `<option value="${escapeHtml(id)}"${id === cur ? ' selected' : ''}>${escapeHtml(
+                            MB_NAV_SLOT_LABELS[id] || id,
+                        )}</option>`,
+                ).join('');
+                html += `<div class="settings-mbnav-slot-row">
+                    <span class="settings-mbnav-slot-num" aria-hidden="true">${i + 1}</span>
+                    <select class="input settings-mbnav-slot-select" data-mbnav-slot-idx="${i}" aria-label="하단 바 ${
+                    i + 1
+                }번 칸 메뉴" onchange="onSettingsMbnavSlotSelectChange(this)">${opts}</select>
+                    <div class="settings-mbnav-slot-move">
+                        <button type="button" class="btn btn-outline settings-mbnav-move-btn" ${
+                            i === 0 ? 'disabled' : ''
+                        } onclick="moveSettingsMbnavSlotRow(${i}, -1)">위</button>
+                        <button type="button" class="btn btn-outline settings-mbnav-move-btn" ${
+                            i === MB_NAV_SLOT_COUNT - 1 ? 'disabled' : ''
+                        } onclick="moveSettingsMbnavSlotRow(${i}, 1)">아래</button>
+                    </div>
+                </div>`;
+            }
+            html += `<p class="settings-mbnav-pool-hint">하단 바에 빠진 메뉴는 <strong>${
+                unusedLabel ? escapeHtml(unusedLabel) : '—'
+            }</strong> 입니다. 칸을 바꾸면 서로 교체됩니다. <strong>설정 저장</strong>을 눌러 반영하세요.</p>`;
+            box.innerHTML = html;
         }
-        function persistMbnavOrderFromSettingsList() {
-            const ul = document.getElementById('settingsMbnavOrderList');
-            if (!ul) return;
-            const order = Array.from(ul.querySelectorAll('[data-mbnav-slot-id]')).map((li) =>
-                String(li.getAttribute('data-mbnav-slot-id') || '').trim(),
+        function onSettingsMbnavSlotSelectChange(sel) {
+            const box = document.getElementById('settingsMbnavSlotEditor');
+            if (!box || !sel) return;
+            const idx = Number(sel.getAttribute('data-mbnav-slot-idx'));
+            if (Number.isNaN(idx) || idx < 0 || idx >= MB_NAV_SLOT_COUNT) return;
+            const selects = Array.from(box.querySelectorAll('select[data-mbnav-slot-idx]')).sort(
+                (a, b) => Number(a.getAttribute('data-mbnav-slot-idx')) - Number(b.getAttribute('data-mbnav-slot-idx')),
             );
-            if (order.length !== MB_NAV_SLOT_IDS.length) return;
+            let vals = selects.map((s) => String(s.value || '').trim());
+            const newVal = String(sel.value || '').trim();
+            const dupAt = vals.findIndex((v, i) => i !== idx && v === newVal);
+            if (dupAt >= 0) vals[dupAt] = vals[idx];
+            vals[idx] = newVal;
+            vals = normalizeMobileBottomNavSlots(vals);
+            renderSettingsMbnavSlotEditor(vals);
+        }
+        window.onSettingsMbnavSlotSelectChange = onSettingsMbnavSlotSelectChange;
+        function moveSettingsMbnavSlotRow(idx, delta) {
+            const box = document.getElementById('settingsMbnavSlotEditor');
+            if (!box) return;
+            const j = idx + delta;
+            if (j < 0 || j >= MB_NAV_SLOT_COUNT) return;
+            const selects = Array.from(box.querySelectorAll('select[data-mbnav-slot-idx]')).sort(
+                (a, b) => Number(a.getAttribute('data-mbnav-slot-idx')) - Number(b.getAttribute('data-mbnav-slot-idx')),
+            );
+            const vals = selects.map((s) => String(s.value || '').trim());
+            const t = vals[idx];
+            vals[idx] = vals[j];
+            vals[j] = t;
+            const norm = normalizeMobileBottomNavSlots(vals);
+            renderSettingsMbnavSlotEditor(norm);
+        }
+        window.moveSettingsMbnavSlotRow = moveSettingsMbnavSlotRow;
+        function commitMobileBottomNavFromSettingsEditor() {
+            const panel = document.getElementById('settings-panel-mbnav');
+            if (!panel || panel.classList.contains('hidden')) return;
+            const order = readMbnavOrderFromSettingsEditorDom();
+            if (!order) return;
             saveMobileBottomNavSlotOrder(order);
             applyMobileBottomNavSlotOrder();
-            showAlert('하단 메뉴 순서가 저장되었습니다.', 'success', { skipNotificationCenter: true });
-        }
-        function saveMobileBottomNavOrderFromEditor() {
-            persistMbnavOrderFromSettingsList();
+            syncMobileIntegratedSearchVisibility();
         }
         function resetMobileBottomNavSlotOrder() {
-            saveMobileBottomNavSlotOrder(MB_NAV_SLOT_IDS.slice());
+            saveMobileBottomNavSlotOrder(MB_NAV_DEFAULT_BAR_ORDER.slice());
             applyMobileBottomNavSlotOrder();
-            renderSettingsMbnavOrderList();
-            showAlert('기본 순서로 되돌렸습니다.', 'success', { skipNotificationCenter: true });
+            renderSettingsMbnavSlotEditor();
+            showAlert('기본 구성으로 되돌렸습니다. 화면 상단의 설정 저장을 눌러 서버에 반영하세요.', 'success', {
+                skipNotificationCenter: true,
+            });
         }
-        window.saveMobileBottomNavOrderFromEditor = saveMobileBottomNavOrderFromEditor;
         window.resetMobileBottomNavSlotOrder = resetMobileBottomNavSlotOrder;
 
         function captureViewSnapshotForMobileNavBack() {
@@ -4321,6 +4458,8 @@
             });
             const mbDock = document.getElementById('mobileBottomNav');
             if (mbDock) candidates.push(mbDock);
+            const settingsSaveRow = document.getElementById('settingsFormSaveRow');
+            if (settingsSaveRow) candidates.push(settingsSaveRow);
             let extra = 0;
             for (let i = 0; i < candidates.length; i += 1) {
                 const el = candidates[i];
@@ -4496,8 +4635,6 @@
             document.body.classList.add('ai-chat-layer-open');
             if (window.matchMedia('(max-width: 1024px)').matches) {
                 document.querySelectorAll('.mbnav-item').forEach((el) => el.classList.remove('active'));
-                const aiMb = document.getElementById('mbnav-ai-search');
-                if (aiMb) aiMb.classList.add('active');
             }
             updateAiChatFloatingButton();
             positionAiChatLayerPanel();
@@ -5349,6 +5486,7 @@
                     })();
                 }
                 if (viewId === 'notifications') {
+                    if (typeof loadNotificationCenterStateFromServer === 'function') void loadNotificationCenterStateFromServer();
                     if (typeof renderNotificationCenterBody === 'function') renderNotificationCenterBody();
                     if (typeof updateNotificationFilterButton === 'function') updateNotificationFilterButton();
                     if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
@@ -5386,8 +5524,8 @@
                 const elTotal = document.getElementById('statTotal');
                 const elAiRate = document.getElementById('statAiAdoptRate');
                 
-                if(elWait) elWait.innerText = myQs.filter(p => p.status === 'wait' || p.status === 'ing' || p.status === 'moreInfo').length;
-                if(elDone) elDone.innerText = myQs.filter(p => p.status === 'done' || p.aiSolved).length;
+                if(elWait) elWait.innerText = myQs.filter((p) => isDeskStatusWaitIngOrMoreInfo(p)).length;
+                if(elDone) elDone.innerText = myQs.filter(p => normalizeDeskTicketStatus(p.status) === 'done' || p.aiSolved).length;
                 if(elTotal) elTotal.innerText = myQs.length;
                 if(elAiRate) {
                     const myAiRate = myQs.length > 0 ? ((myQs.filter(p => p.aiSolved).length / myQs.length) * 100).toFixed(1) : '0.0';
@@ -5396,11 +5534,13 @@
             } else {
                 document.querySelectorAll('.dash-tile-stat-branch').forEach((el) => el.classList.add('hidden'));
                 document.querySelectorAll('.dash-tile-stat-hq').forEach((el) => el.classList.remove('hidden'));
-                const hqWait = totalPosts.filter(p => p.status === 'wait' || p.status === 'ing').length;
-                const hqMore = totalPosts.filter(p => p.status === 'moreInfo').length;
+                const hqWait = totalPosts.filter((p) => isDeskStatusWaitOrIng(p)).length;
+                const hqMore = totalPosts.filter((p) => isDeskStatusMoreInfo(p)).length;
                 const today = new Date();
                 const todayKey = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
-                const hqDoneToday = totalPosts.filter(p => (p.status === 'done' || p.aiSolved) && (p.datetime || '').startsWith(todayKey)).length;
+                const hqDoneToday = totalPosts.filter(
+                    (p) => (normalizeDeskTicketStatus(p.status) === 'done' || p.aiSolved) && (p.datetime || '').startsWith(todayKey),
+                ).length;
                 const hqAiRate = totalPosts.length > 0 ? ((totalPosts.filter(p => p.aiSolved).length / totalPosts.length) * 100).toFixed(1) : '0.0';
                 const elHqWait = document.getElementById('hqStatWait');
                 const elHqMore = document.getElementById('hqStatMoreInfo');
@@ -5420,12 +5560,17 @@
             const baseMine = appData.posts.filter((p) => !isKnowLikeBoard(p.type) && p.writer.includes(myName));
             const baseAll = appData.posts.filter((p) => !isKnowLikeBoard(p.type));
             const map = {
-                branchWait: { title: '접수/대기 문의 목록', posts: baseMine.filter(p => p.status === 'wait' || p.status === 'ing' || p.status === 'moreInfo') },
-                branchDone: { title: '조치/해결 완료 목록', posts: baseMine.filter(p => p.status === 'done' || p.aiSolved) },
+                branchWait: { title: '접수/대기 문의 목록', posts: baseMine.filter((p) => isDeskStatusWaitIngOrMoreInfo(p)) },
+                branchDone: { title: '조치/해결 완료 목록', posts: baseMine.filter((p) => normalizeDeskTicketStatus(p.status) === 'done' || p.aiSolved) },
                 branchTotal: { title: '나의 문의 누적 목록', posts: baseMine },
-                hqWait: { title: '전행 미결/접수 목록', posts: baseAll.filter(p => p.status === 'wait' || p.status === 'ing') },
-                hqMoreInfo: { title: '추가정보 요청(대기) 목록', posts: baseAll.filter(p => p.status === 'moreInfo') },
-                hqDoneToday: { title: '금일 조치 완료 목록', posts: baseAll.filter(p => (p.status === 'done' || p.aiSolved) && (p.datetime || '').startsWith(todayKey)) }
+                hqWait: { title: '전행 미결/접수 목록', posts: baseAll.filter((p) => isDeskStatusWaitOrIng(p)) },
+                hqMoreInfo: { title: '추가정보 요청(대기) 목록', posts: baseAll.filter((p) => isDeskStatusMoreInfo(p)) },
+                hqDoneToday: {
+                    title: '금일 조치 완료 목록',
+                    posts: baseAll.filter(
+                        (p) => (normalizeDeskTicketStatus(p.status) === 'done' || p.aiSolved) && (p.datetime || '').startsWith(todayKey),
+                    ),
+                },
             };
             return map[metricKey] || null;
         }
@@ -5482,11 +5627,12 @@
                 listEl.innerHTML = paged
                     .map((post) => {
                         const boardLabel = boardTitles[post.type] ? boardTitles[post.type].label : post.type;
+                        const st = normalizeDeskTicketStatus(post.status);
                         const status = post.aiSolved
                             ? 'AI채택'
-                            : post.status === 'wait' || post.status === 'ing'
+                            : st === 'wait' || st === 'ing'
                               ? '접수대기'
-                              : post.status === 'moreInfo'
+                              : st === 'moreInfo'
                                 ? '추가답변'
                                 : '답변완료';
                         const dateTxt = (post.datetime || '').substring(0, 10);
