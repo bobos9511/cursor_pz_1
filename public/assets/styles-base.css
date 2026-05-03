@@ -317,8 +317,8 @@
             padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
         }
         .login-share-modal-shell {
-            width: min(92vw, 238px);
-            max-width: min(92vw, 238px);
+            width: min(94vw, 255px);
+            max-width: min(94vw, 255px);
             max-height: min(92dvh, 92vh);
             overflow: hidden;
             display: flex;
@@ -416,8 +416,8 @@
         .login-share-qr-mount {
             position: relative;
             z-index: 2;
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -446,8 +446,8 @@
         }
         .login-share-qr-fallback {
             display: block;
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             border-radius: 6px;
         }
         .login-share-url-wrap {
@@ -3450,8 +3450,8 @@
         .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
         .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; }
         #loginShareModal .login-share-modal-shell.modal-content {
-            width: min(92vw, 238px);
-            max-width: min(92vw, 238px);
+            width: min(94vw, 255px);
+            max-width: min(94vw, 255px);
             box-sizing: border-box;
         }
         .modal-header { padding: 15px 20px; font-size: 16px; font-weight: bold; color: #fff; background: var(--ibk-blue); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }

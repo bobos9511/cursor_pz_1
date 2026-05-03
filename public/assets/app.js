@@ -1019,6 +1019,15 @@
             radios.forEach((el) => {
                 el.checked = el.value === String(mode || 'system');
             });
+            const loginShareModal = document.getElementById('loginShareModal');
+            if (loginShareModal && loginShareModal.classList.contains('active')) {
+                try {
+                    const u = getKnockPublicSiteUrl();
+                    if (u) void renderLoginShareStyledQr(u);
+                } catch (_) {
+                    /* noop */
+                }
+            }
         }
         function bindSystemThemeListenerOnce() {
             if (systemThemeListenerBound || !systemThemeMedia) return;
@@ -2465,39 +2474,115 @@
             return window.__knockLoginShareQrLib;
         }
 
+        function isLoginShareThemeDark() {
+            return document.body.getAttribute('data-theme') === 'dark';
+        }
+
         async function renderLoginShareStyledQr(url) {
             const mount = document.getElementById('loginShareQrMount');
             if (!mount) return;
             mount.innerHTML = '';
-            const fallbackImg =
-                '<img class="login-share-qr-fallback" alt="" width="200" height="200" src="' +
-                'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&color=0a0a0a&bgcolor=ffffff&ecc=H&data=' +
-                encodeURIComponent(url) +
-                '"/>';
+            const dark = isLoginShareThemeDark();
+            const qrPx = 220;
+            const fallbackImg = dark
+                ? '<img class="login-share-qr-fallback" alt="" width="' +
+                  qrPx +
+                  '" height="' +
+                  qrPx +
+                  '" src="' +
+                  'https://api.qrserver.com/v1/create-qr-code/?size=' +
+                  qrPx +
+                  'x' +
+                  qrPx +
+                  '&margin=2&color=e2e8f0&bgcolor=0b1120&ecc=H&data=' +
+                  encodeURIComponent(url) +
+                  '"/>'
+                : '<img class="login-share-qr-fallback" alt="" width="' +
+                  qrPx +
+                  '" height="' +
+                  qrPx +
+                  '" src="' +
+                  'https://api.qrserver.com/v1/create-qr-code/?size=' +
+                  qrPx +
+                  'x' +
+                  qrPx +
+                  '&margin=2&color=0a1628&bgcolor=ffffff&ecc=H&data=' +
+                  encodeURIComponent(url) +
+                  '"/>';
             try {
                 await loadLoginShareQrStylingLib();
                 const QRCodeStyling =
                     (typeof window.QRCodeStyling === 'function' && window.QRCodeStyling) ||
                     (window.QRCodeStyling && window.QRCodeStyling.default);
                 if (typeof QRCodeStyling !== 'function') throw new Error('QRCodeStyling missing');
-                const qr = new QRCodeStyling({
-                    width: 200,
-                    height: 200,
-                    type: 'svg',
-                    data: url,
-                    margin: 3,
-                    qrOptions: { errorCorrectionLevel: 'H' },
-                    dotsOptions: {
-                        type: 'square',
-                        color: '#0a0a0a',
-                    },
-                    cornersSquareOptions: {
-                        type: 'square',
-                        color: '#0a0a0a',
-                    },
-                    cornersDotOptions: { type: 'square', color: '#0a0a0a' },
-                    backgroundOptions: { color: '#ffffff' },
-                });
+                const opts = dark
+                    ? {
+                          width: qrPx,
+                          height: qrPx,
+                          type: 'svg',
+                          data: url,
+                          margin: 3,
+                          qrOptions: { errorCorrectionLevel: 'H' },
+                          dotsOptions: {
+                              type: 'rounded',
+                              gradient: {
+                                  type: 'linear',
+                                  rotation: 0.45,
+                                  colorStops: [
+                                      { offset: 0, color: '#f8fafc' },
+                                      { offset: 0.55, color: '#e2e8f0' },
+                                      { offset: 1, color: '#94a3b8' },
+                                  ],
+                              },
+                          },
+                          cornersSquareOptions: {
+                              type: 'extra-rounded',
+                              gradient: {
+                                  type: 'linear',
+                                  rotation: 0,
+                                  colorStops: [
+                                      { offset: 0, color: '#ffffff' },
+                                      { offset: 1, color: '#cbd5e1' },
+                                  ],
+                              },
+                          },
+                          cornersDotOptions: { type: 'dot', color: '#e2e8f0' },
+                          backgroundOptions: { color: '#0b1120' },
+                      }
+                    : {
+                          width: qrPx,
+                          height: qrPx,
+                          type: 'svg',
+                          data: url,
+                          margin: 3,
+                          qrOptions: { errorCorrectionLevel: 'H' },
+                          dotsOptions: {
+                              type: 'rounded',
+                              gradient: {
+                                  type: 'linear',
+                                  rotation: 0.5,
+                                  colorStops: [
+                                      { offset: 0, color: '#0a1628' },
+                                      { offset: 0.5, color: '#1e3a8a' },
+                                      { offset: 1, color: '#0369a1' },
+                                  ],
+                              },
+                          },
+                          cornersSquareOptions: {
+                              type: 'extra-rounded',
+                              gradient: {
+                                  type: 'linear',
+                                  rotation: 0,
+                                  colorStops: [
+                                      { offset: 0, color: '#0f172a' },
+                                      { offset: 1, color: '#1d4ed8' },
+                                  ],
+                              },
+                          },
+                          cornersDotOptions: { type: 'dot', color: '#0284c7' },
+                          backgroundOptions: { color: '#ffffff' },
+                      };
+                const qr = new QRCodeStyling(opts);
                 qr.append(mount);
             } catch (_) {
                 mount.innerHTML = fallbackImg;

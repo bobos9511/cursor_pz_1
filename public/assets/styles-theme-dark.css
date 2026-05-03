@@ -1601,9 +1601,9 @@
         }
         body[data-theme="dark"] .login-share-qr-mount {
             box-shadow:
-                0 0 0 1px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(56, 189, 248, 0.15),
                 0 2px 14px rgba(0, 0, 0, 0.45);
-            background: #ffffff;
+            background: #0b1120;
         }
         body[data-theme="dark"] .login-share-qr-mount::after {
             box-shadow:
