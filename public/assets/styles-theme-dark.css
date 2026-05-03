@@ -1319,6 +1319,18 @@
             border-color: #7c6aa3;
             color: #f5f3ff;
         }
+        /* 접기 페이드: #aiPanelContent 배경(보라 계열)과 동일 톤 — 전역 slate(17,28,48) 오버레이 제거 */
+        body[data-theme="dark"] #view-detail #aiPanelContent .ai-content-text.collapsed::after {
+            background: linear-gradient(
+                180deg,
+                rgba(20, 15, 28, 0) 0%,
+                rgba(17, 12, 24, 0.55) 42%,
+                rgba(14, 10, 20, 1) 100%
+            );
+        }
+        body[data-theme="dark"] #similarPostModal #simAiContent .ai-content-text.collapsed::after {
+            background: linear-gradient(180deg, rgba(19, 35, 58, 0), rgba(19, 35, 58, 1));
+        }
         body[data-theme="dark"] #similarPostModal .modal-body > div[style*="background: #fff"],
         body[data-theme="dark"] #similarPostModal details[style*="background: #fff"] {
             background: #13233a !important;
