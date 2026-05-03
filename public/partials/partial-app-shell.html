@@ -130,11 +130,16 @@
         </div>
 
         <div id="headerProfileOverlay" class="profile-overlay" onclick="closeHeaderProfileOverlay()">
-            <div class="profile-overlay-panel" onclick="event.stopPropagation()">
+            <div class="profile-overlay-panel profile-overlay-panel--bubble" onclick="event.stopPropagation()">
                 <div class="profile-overlay-head">
                     <div class="profile-cover-deco" id="overlayGreetingText">좋은 하루 되세요</div>
                     <div class="profile-main">
-                        <div class="profile-photo-main" id="overlayProfileInitial">홍길</div>
+                        <div class="profile-photo-wrap">
+                            <div class="profile-photo-main" id="overlayProfileInitial">홍길</div>
+                            <button type="button" class="profile-photo-edit-btn" onclick="openProfileImageModal()" title="프로필 사진 변경" aria-label="프로필 사진 변경">
+                                <svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                            </button>
+                        </div>
                         <div class="profile-overlay-identity">
                             <div class="profile-overlay-title" id="overlayUserDisplay">홍길동 대리</div>
                             <span id="overlayAdminBadge" class="profile-admin-badge hidden" role="status">
@@ -166,10 +171,7 @@
                         </div>
                     </div>
                     <div class="profile-foot-actions">
-                        <button onclick="openProfileImageModal()" class="logout-btn profile-mini-btn profile-side-btn" type="button">
-                            <span>프로필 사진</span>
-                        </button>
-                        <button onclick="doLogout()" class="logout-btn profile-mini-btn profile-side-btn" type="button">
+                        <button type="button" onclick="doLogout()" class="profile-logout-btn">
                             <span>로그아웃</span>
                         </button>
                     </div>

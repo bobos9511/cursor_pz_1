@@ -111,31 +111,38 @@
         </div>
     </div>
     <div id="notificationFilterModal" class="modal-overlay" style="z-index: 1013;">
-        <div class="modal-content notification-filter-modal">
-            <div class="modal-header notification-center-head">
-                <span><svg class="icon"><use href="#icon-cog"></use></svg> 알림 필터</span>
-                <button onclick="closeNotificationFilterModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
-            <div class="modal-body" style="background:#f8fafc;">
-                <div class="notification-filter-group">
-                    <div class="notification-filter-label">보기 방식</div>
-                    <div class="notification-view-tabs">
-                        <button type="button" id="notiFilterViewTime" class="btn btn-outline" onclick="setNotificationFilterViewMode('time')">시간대별</button>
-                        <button type="button" id="notiFilterViewTopic" class="btn btn-outline" onclick="setNotificationFilterViewMode('topic')">주제별</button>
+        <div class="modal-content notification-filter-modal" onclick="event.stopPropagation()">
+            <div class="notification-filter-sheet">
+                <div class="notification-filter-top">
+                    <div class="notification-filter-title">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg>
+                        알림 필터
+                    </div>
+                    <button type="button" class="notification-filter-close" onclick="closeNotificationFilterModal()" aria-label="닫기">
+                        <span class="notification-filter-close__x" aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="notification-filter-body">
+                    <div class="notification-filter-group">
+                        <div class="notification-filter-label">보기 방식</div>
+                        <div class="notification-view-tabs">
+                            <button type="button" id="notiFilterViewTime" class="btn notification-filter-option-btn btn-primary" onclick="setNotificationFilterViewMode('time')">시간대별</button>
+                            <button type="button" id="notiFilterViewTopic" class="btn notification-filter-option-btn btn-outline" onclick="setNotificationFilterViewMode('topic')">주제별</button>
+                        </div>
+                    </div>
+                    <div class="notification-filter-group">
+                        <div class="notification-filter-label">알림 유형</div>
+                        <div class="notification-view-tabs notification-view-tabs--wrap">
+                            <button type="button" id="notiFilterLevelAll" class="btn notification-filter-option-btn btn-primary" onclick="setNotificationFilterLevelMode('all')">전체</button>
+                            <button type="button" id="notiFilterLevelImportant" class="btn notification-filter-option-btn btn-outline" onclick="setNotificationFilterLevelMode('important')">중요알림</button>
+                            <button type="button" id="notiFilterLevelGeneral" class="btn notification-filter-option-btn btn-outline" onclick="setNotificationFilterLevelMode('general')">일반알림</button>
+                        </div>
                     </div>
                 </div>
-                <div class="notification-filter-group" style="margin-top:14px;">
-                    <div class="notification-filter-label">알림 유형</div>
-                    <div class="notification-view-tabs" style="flex-wrap:wrap;">
-                        <button type="button" id="notiFilterLevelAll" class="btn btn-outline" onclick="setNotificationFilterLevelMode('all')">전체</button>
-                        <button type="button" id="notiFilterLevelImportant" class="btn btn-outline" onclick="setNotificationFilterLevelMode('important')">중요알림</button>
-                        <button type="button" id="notiFilterLevelGeneral" class="btn btn-outline" onclick="setNotificationFilterLevelMode('general')">일반알림</button>
-                    </div>
+                <div class="notification-filter-actions">
+                    <button type="button" class="btn notification-filter-reset-btn" onclick="resetNotificationFilters()">초기화</button>
+                    <button type="button" class="btn notification-filter-apply-btn" onclick="applyNotificationFilters()">적용</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">초기화</button>
-                <button type="button" class="btn btn-primary" onclick="applyNotificationFilters()">적용</button>
             </div>
         </div>
     </div>
