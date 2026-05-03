@@ -2083,6 +2083,34 @@
             return role === 'outsourced' || role === 'ibk_sub';
         }
 
+        /** 외주·자회사는 항상 수기 직책; 고객센터는 직급이 「기타」일 때만 수기 직책(예: 상담전담). */
+        function usesSignupFreePositionInput(role, grade) {
+            const g = String(grade || '').trim();
+            if (usesFreePositionRole(role)) return true;
+            if (role === 'callcenter' && g === '기타') return true;
+            return false;
+        }
+
+        function shouldSignupForceGradeGita(role) {
+            return role === 'outsourced' || role === 'ibk_sub';
+        }
+
+        function syncSignupGradeLockedForRole() {
+            const roleEl = document.getElementById('signupRole');
+            const gradeEl = document.getElementById('signupGrade');
+            if (!roleEl || !gradeEl) return;
+            const role = roleEl.value;
+            const locked = shouldSignupForceGradeGita(role);
+            if (locked) {
+                gradeEl.value = '기타';
+                gradeEl.disabled = true;
+                gradeEl.title = '외주인력·IBK자회사는 직급이 기타로 고정됩니다.';
+            } else {
+                gradeEl.disabled = false;
+                gradeEl.removeAttribute('title');
+            }
+        }
+
         let signupTelSelectsFilled = false;
         function fillSignupTelSelectsOnce() {
             if (signupTelSelectsFilled) return;
@@ -2210,16 +2238,20 @@
             const gradeEl = document.getElementById('signupGrade');
             const sel = document.getElementById('signupPosition');
             const free = document.getElementById('signupPositionFree');
-            if (!roleEl || !sel || !free) return;
+            if (!roleEl || !sel || !free || !gradeEl) return;
             const role = roleEl.value;
-            if (usesFreePositionRole(role)) {
+            const grade = String((gradeEl && gradeEl.value) || '').trim();
+            const useFree = usesSignupFreePositionInput(role, grade);
+            if (useFree) {
                 sel.classList.add('hidden');
                 free.classList.remove('hidden');
-                if (preferredPosition != null) free.value = String(preferredPosition);
+                if (preferredPosition != null && String(preferredPosition).trim() !== '') {
+                    free.value = String(preferredPosition);
+                }
             } else {
                 free.classList.add('hidden');
                 sel.classList.remove('hidden');
-                populateSignupPositionOptions((gradeEl && gradeEl.value) || '3급', preferredPosition);
+                populateSignupPositionOptions(grade || '3급', preferredPosition);
             }
         }
 
@@ -2259,13 +2291,17 @@
             const roleEl = document.getElementById('signupRole');
             if (gradeEl) {
                 gradeEl.addEventListener('change', () => {
-                    const rSel = document.getElementById('signupRole');
-                    const r = rSel ? rSel.value : 'branch';
-                    if (!usesFreePositionRole(r)) populateSignupPositionOptions(gradeEl.value);
+                    syncSignupGradeLockedForRole();
+                    syncSignupPositionFieldMode();
                 });
             }
             if (roleEl) {
                 roleEl.addEventListener('change', () => {
+                    if (shouldSignupForceGradeGita(roleEl.value)) {
+                        const g = document.getElementById('signupGrade');
+                        if (g) g.value = '기타';
+                    }
+                    syncSignupGradeLockedForRole();
                     syncSignupPositionFieldMode();
                     syncSignupEmpNoUiForRole();
                     formatSignupEmpNoInput();
@@ -2364,6 +2400,7 @@
             fillSignupTelSelectsOnce();
             applySignupContactFromStored('8-0000', '02-0000-0000', '010-0000-0000');
             populateSignupPositionOptions('3급', '부장');
+            syncSignupGradeLockedForRole();
             syncSignupPositionFieldMode();
             syncSignupEmpNoUiForRole();
             const adm = document.getElementById('signupIsAdmin');
@@ -2456,10 +2493,11 @@
             let empNo = (document.getElementById('signupEmpNo').value || '').trim();
             const deptName = (document.getElementById('signupDeptName').value || '').trim();
             const deptCode = document.getElementById('signupDeptCode').value;
-            const grade = document.getElementById('signupGrade').value;
             const role = document.getElementById('signupRole').value;
+            let grade = document.getElementById('signupGrade').value;
+            if (shouldSignupForceGradeGita(role)) grade = '기타';
             let position = '';
-            if (usesFreePositionRole(role)) {
+            if (usesSignupFreePositionInput(role, grade)) {
                 position = (document.getElementById('signupPositionFree') && document.getElementById('signupPositionFree').value || '').trim();
             } else {
                 position = (document.getElementById('signupPosition') && document.getElementById('signupPosition').value || '').trim();
@@ -2601,6 +2639,7 @@
                 if (el) el.value = value;
             });
             applySignupContactFromStored(target.extNo, target.faxNo, target.mobileNo);
+            syncSignupGradeLockedForRole();
             syncSignupPositionFieldMode(target.position || '');
             formatSignupEmpNoInput();
             syncSignupEmpNoUiForRole();
