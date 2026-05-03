@@ -796,16 +796,16 @@
                         <h2 class="page-title">알림센터</h2>
                         <div class="notification-center-toolbar notification-center-toolbar--page">
                             <div class="notification-toolbar-left">
-                                <button type="button" class="btn btn-outline notification-center-back-btn" onclick="closeNotificationCenter()" aria-label="뒤로">
+                                <button type="button" class="btn notification-toolbar-back-btn" onclick="closeNotificationCenter()" aria-label="뒤로">
                                     <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
                                 </button>
                             </div>
                             <div class="notification-toolbar-right">
-                                <button type="button" class="btn btn-outline js-noti-filter-btn" onclick="openNotificationFilterModal()">
-                                    <svg class="icon"><use href="#icon-cog"></use></svg> 필터
+                                <button type="button" class="btn notification-toolbar-action-btn js-noti-filter-btn" onclick="openNotificationFilterModal()">
+                                    <svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg> 필터
                                 </button>
-                                <button type="button" class="btn btn-outline" onclick="resetNotificationFilters()">필터 초기화</button>
-                                <button type="button" class="btn btn-outline" onclick="clearAllNotifications()">전체 삭제</button>
+                                <button type="button" class="btn notification-toolbar-action-btn" onclick="resetNotificationFilters()">필터 초기화</button>
+                                <button type="button" class="btn notification-toolbar-action-btn notification-toolbar-action-btn--danger" onclick="clearAllNotifications()">전체 삭제</button>
                             </div>
                         </div>
                         <div id="notificationCenterPageBody" class="notification-center-page-body notification-center-body"></div>

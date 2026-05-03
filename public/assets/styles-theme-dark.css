@@ -549,6 +549,22 @@
             color: #fecaca !important;
             background: linear-gradient(180deg, #352026 0%, #281a1f 100%) !important;
         }
+        body[data-theme="dark"] .notification-toolbar-back-btn {
+            border-color: rgba(96, 165, 250, 0.4) !important;
+            color: #bfdbfe !important;
+            background: linear-gradient(180deg, #1c2d47 0%, #152238 100%) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.06),
+                0 4px 14px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .notification-toolbar-back-btn:hover {
+            border-color: rgba(147, 197, 253, 0.52) !important;
+            color: #e0f2fe !important;
+            background: linear-gradient(180deg, #243652 0%, #1a2840 100%) !important;
+        }
+        body[data-theme="dark"] .notification-toolbar-back-btn:focus-visible {
+            outline-color: #38bdf8;
+        }
         body[data-theme="dark"] .notification-center-close-btn {
             color: #94a3b8;
         }
@@ -2117,15 +2133,34 @@
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
         body[data-theme="dark"] .mobile-top-bar__icon-btn {
-            border-color: rgba(71, 85, 105, 0.75);
-            background: linear-gradient(180deg, rgba(51, 65, 85, 0.55), rgba(30, 41, 59, 0.72));
-            color: #7dd3fc;
+            border-color: rgba(71, 85, 105, 0.5);
+            background: linear-gradient(
+                165deg,
+                rgba(55, 73, 104, 0.55) 0%,
+                rgba(30, 45, 72, 0.82) 48%,
+                rgba(19, 32, 54, 0.94) 100%
+            );
+            color: #cbd5e1;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.07),
+                0 2px 10px rgba(2, 6, 23, 0.45);
+        }
+        body[data-theme="dark"] .mobile-top-bar__icon-btn .icon {
+            opacity: 0.92;
         }
         @media (hover: hover) and (pointer: fine) {
             body[data-theme="dark"] .mobile-top-bar__icon-btn:hover {
-                border-color: rgba(56, 189, 248, 0.45);
-                background: linear-gradient(180deg, rgba(71, 85, 105, 0.65), rgba(30, 41, 59, 0.88));
-                color: #bae6fd;
+                border-color: rgba(56, 189, 248, 0.42);
+                background: linear-gradient(
+                    165deg,
+                    rgba(62, 92, 128, 0.5) 0%,
+                    rgba(36, 58, 88, 0.88) 50%,
+                    rgba(24, 40, 64, 0.98) 100%
+                );
+                color: #f1f5f9;
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 4px 14px rgba(2, 132, 199, 0.18);
             }
         }
         body[data-theme="dark"] .mbnav-item {
