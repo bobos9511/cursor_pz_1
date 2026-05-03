@@ -2537,11 +2537,6 @@
                 textEl.title = url;
             }
             void renderLoginShareStyledQr(url);
-            const quickBtn = document.getElementById('loginShareQuickBtn');
-            if (quickBtn) {
-                if (typeof navigator.share === 'function') quickBtn.removeAttribute('hidden');
-                else quickBtn.setAttribute('hidden', '');
-            }
             modal.classList.add('active');
         }
 
@@ -2550,10 +2545,10 @@
             if (modal) modal.classList.remove('active');
         }
 
-        async function shareKnockSiteViaQuickShare() {
+        async function shareKnockSiteLinkShare() {
             const url = getKnockPublicSiteUrl();
             if (typeof navigator.share !== 'function') {
-                showAlert('이 기기에서는 퀵 쉐어를 사용할 수 없습니다.', 'error');
+                showAlert('이 브라우저에서는 시스템 링크 공유를 지원하지 않습니다.「클립보드 복사」로 주소를 보낼 수 있습니다.', 'success');
                 return;
             }
             try {
@@ -2566,38 +2561,6 @@
                 if (err && err.name === 'AbortError') return;
                 showAlert('공유를 완료하지 못했습니다.', 'error');
             }
-        }
-
-        function shareKnockSiteToKakaoTalk() {
-            const url = getKnockPublicSiteUrl();
-            const text = 'IBK 스마트 업무지식센터 (KNOCK)\n' + url;
-            const ua = navigator.userAgent || '';
-            if (/Android|iPhone|iPad|iPod/i.test(ua)) {
-                window.location.href = 'kakaotalk://send?text=' + encodeURIComponent(text);
-            } else {
-                window.open(
-                    'https://story.kakao.com/share?url=' + encodeURIComponent(url),
-                    '_blank',
-                    'noopener,noreferrer',
-                );
-            }
-        }
-
-        function shareKnockSiteToLine() {
-            const url = encodeURIComponent(getKnockPublicSiteUrl());
-            window.open('https://social-plugins.line.me/lineit/share?url=' + url, '_blank', 'noopener,noreferrer');
-        }
-
-        function shareKnockSiteToNaver() {
-            const url = getKnockPublicSiteUrl();
-            window.open(
-                'https://share.naver.com/web/shareView?url=' +
-                    encodeURIComponent(url) +
-                    '&title=' +
-                    encodeURIComponent('IBK 스마트 업무지식센터 (KNOCK)'),
-                '_blank',
-                'noopener,noreferrer',
-            );
         }
 
         function shareKnockSiteByEmail() {
