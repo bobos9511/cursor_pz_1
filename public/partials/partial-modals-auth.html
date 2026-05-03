@@ -190,7 +190,7 @@
             </div>
             <div class="account-pin-login-verify-body">
                 <label class="account-pin-login-verify-label" for="accountPinLoginVerifyInput">PIN</label>
-                <input type="password" id="accountPinLoginVerifyInput" class="input account-pin-login-verify-input" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="● ● ● ● ● ●" aria-describedby="accountPinLoginVerifyError" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitAccountPinLoginVerifyFromModal();}">
+                <input type="password" id="accountPinLoginVerifyInput" class="input account-pin-login-verify-input" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="● ● ● ● ● ●" aria-describedby="accountPinLoginVerifyError" onkeydown="if(event.key==='Enter'){event.preventDefault();submitAccountPinLoginVerifyFromModal();}">
                 <p id="accountPinLoginVerifyError" class="account-pin-login-verify-error" role="alert"></p>
                 <div class="account-pin-login-verify-actions">
                     <button type="button" class="btn btn-outline account-pin-login-verify-btn" onclick="cancelAccountPinLoginVerifyModal()">취소</button>

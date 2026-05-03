@@ -958,7 +958,7 @@
             if (!st || st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) return false;
             return true;
         }
-        /** 하단 바 편집 풀: PC 셸에서는 사이드바에 실제로 보이는 메뉴 기준. 모바일·컴팩트 셸에서는 사이드가 숨겨져 역할 매트릭스와 동일하게 간주. */
+        /** 하단 바 편집 풀: PC 셸에서는 상단 헤더 메뉴에 실제로 보이는 항목 기준. 모바일·컴팩트 셸에서는 역할 매트릭스와 동일하게 간주. */
         function getMbnavPoolIdsForCurrentUser() {
             const role = (currentLoginUser && currentLoginUser.role) || currentRole || 'branch';
             const fallback = getMbnavPoolIdsForRole(role);
@@ -970,10 +970,10 @@
                 const hit = ids.some((did) => isMbnavSidebarNavVisible(document.getElementById(did)));
                 if (hit) pool.push(id);
             };
-            addIf('dashboard', ['nav-dashboard']);
-            addIf('list-it', ['nav-list-it']);
-            addIf('list-biz', ['nav-list-biz']);
-            addIf('list-sys', ['nav-list-sys']);
+            addIf('dashboard', ['hdr-nav-dashboard']);
+            addIf('list-it', ['hdr-nav-list-it']);
+            addIf('list-biz', ['hdr-nav-list-biz']);
+            addIf('list-sys', ['hdr-nav-list-sys']);
             pool.push('integrated-search', 'notifications');
             const core = pool.filter((x) => x !== 'integrated-search' && x !== 'notifications');
             if (!core.length) return fallback;
@@ -2256,6 +2256,7 @@
             bindMbnavCompactResizeOnce();
             bindDashboardWidgetPointerReorder();
             bindBoardToolbarOutsideCloseOnce();
+            bindAccountPinSixDigitAutoSubmitOnce();
             initSidebarNavTooltips();
             bindSidebarHoverTooltipEvents();
             applySidebarTooltipState();
@@ -2268,7 +2269,9 @@
             changeRole(); 
         }
         function initSidebarNavTooltips() {
-            document.querySelectorAll('#sidebar .nav-item').forEach((item) => {
+            const items = document.querySelectorAll('#sidebar .nav-item');
+            if (!items.length) return;
+            items.forEach((item) => {
                 const label = (item.querySelector('.nav-text')?.innerText || '').trim();
                 item.setAttribute('data-tooltip', label);
             });
@@ -2286,7 +2289,9 @@
         function bindSidebarHoverTooltipEvents() {
             const tooltip = ensureSidebarHoverTooltip();
             const sidebar = document.getElementById('sidebar');
-            document.querySelectorAll('#sidebar .nav-item').forEach((item) => {
+            const items = document.querySelectorAll('#sidebar .nav-item');
+            if (!sidebar || !items.length) return;
+            items.forEach((item) => {
                 if (item.dataset.tooltipBound === '1') return;
                 item.dataset.tooltipBound = '1';
 
@@ -2309,9 +2314,40 @@
             const isCollapsed = !!sidebar && sidebar.classList.contains('collapsed');
             const hoverTooltip = ensureSidebarHoverTooltip();
             if (!isCollapsed) hoverTooltip.classList.remove('visible');
-            document.querySelectorAll('#sidebar .nav-item').forEach((item) => {
+            const items = document.querySelectorAll('#sidebar .nav-item');
+            if (!items.length) return;
+            items.forEach((item) => {
                 item.removeAttribute('title');
             });
+        }
+
+        let accountPinSixDigitSubmitBound = false;
+        function bindAccountPinSixDigitAutoSubmitOnce() {
+            if (accountPinSixDigitSubmitBound) return;
+            accountPinSixDigitSubmitBound = true;
+            document.addEventListener(
+                'input',
+                (e) => {
+                    const el = e.target;
+                    if (!el || !el.id) return;
+                    if (
+                        el.id !== 'accountPinLoginVerifyInput' &&
+                        el.id !== 'accountPinSetupInput2' &&
+                        el.id !== 'accountPinSelfNew2'
+                    ) {
+                        return;
+                    }
+                    const v = String(el.value || '')
+                        .replace(/\D/g, '')
+                        .slice(0, 6);
+                    if (v !== el.value) el.value = v;
+                    if (v.length !== 6) return;
+                    if (el.id === 'accountPinLoginVerifyInput') void submitAccountPinLoginVerifyFromModal();
+                    else if (el.id === 'accountPinSetupInput2') void submitAccountPinSetupFromModal();
+                    else if (el.id === 'accountPinSelfNew2') void submitAccountSelfPinFromSettings();
+                },
+                true,
+            );
         }
 
         // --- 테스트용 회원가입 ---
@@ -3823,6 +3859,7 @@
         window.submitAccountSelfPinFromSettings = submitAccountSelfPinFromSettings;
 
         let accountPinLoginVerifyModalResolve = null;
+        let accountPinLoginVerifySubmitting = false;
 
         function closeAccountPinLoginVerifyModal() {
             const m = document.getElementById('accountPinLoginVerifyModal');
@@ -3852,6 +3889,7 @@
         }
 
         async function submitAccountPinLoginVerifyFromModal() {
+            if (accountPinLoginVerifySubmitting) return;
             const inp = document.getElementById('accountPinLoginVerifyInput');
             const err = document.getElementById('accountPinLoginVerifyError');
             const pin = normalizeAdminPinDigits(String(inp && inp.value ? inp.value : ''));
@@ -3865,6 +3903,7 @@
                 finishAccountPinLoginVerifyModal(false);
                 return;
             }
+            accountPinLoginVerifySubmitting = true;
             try {
                 const res = await fetch('/api/db/account-pin/verify', {
                     method: 'POST',
@@ -3880,6 +3919,8 @@
             } catch (e) {
                 console.error(e);
                 if (err) err.textContent = '확인 중 오류가 발생했습니다.';
+            } finally {
+                accountPinLoginVerifySubmitting = false;
             }
         }
         window.submitAccountPinLoginVerifyFromModal = submitAccountPinLoginVerifyFromModal;
@@ -5754,13 +5795,6 @@
             const isMobile = knockIsMobileShellActive();
             if (isMobile) {
                 closeMobileNavMore();
-            } else {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar && !sidebar.classList.contains('collapsed')) {
-                    sidebar.classList.add('collapsed');
-                    applySidebarTooltipState();
-                    updateSidebarToggleButton();
-                }
             }
             if (document.body.classList.contains('ai-chat-layer-open') && viewId !== 'ai-search') {
                 closeAiChatLayer();

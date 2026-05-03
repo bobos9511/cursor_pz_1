@@ -263,24 +263,6 @@
         </div>
 
         <div class="body-wrapper">
-            <!-- 사이드바 -->
-            <aside class="sidebar" id="sidebar">
-                <div class="nav-title mt-10">메인메뉴</div>
-                <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')"><svg class="icon"><use href="#icon-list"></use></svg> <span class="nav-text">대시보드</span></div>
-                
-                <div class="nav-title mt-10">통합 문의 게시판</div>
-                <div class="nav-item" id="nav-list-it" onclick="switchView('list', 'IT')"><svg class="icon" style="color: #60a5fa;"><use href="#icon-info"></use></svg> <span class="nav-text">IT · 오류 문의</span></div>
-                <div class="nav-item" id="nav-list-biz" onclick="switchView('list', 'BIZ')"><svg class="icon" style="color: #c084fc;"><use href="#icon-book"></use></svg> <span class="nav-text">규정 · 상품 문의</span></div>
-                <div class="nav-item" id="nav-list-sys" onclick="switchView('list', 'SYS')"><svg class="icon" style="color: #2dd4bf;"><use href="#icon-lightbulb"></use></svg> <span class="nav-text">KNOCK 개선 제안</span></div>
-                
-                <!-- 본부/IT 전용: AI 지식/매뉴얼 관리 -->
-                <div class="nav-title mt-10 hq-it-only hidden" style="color:#a5b4fc;">AI 지식/학습 관리</div>
-                <div class="nav-item hq-it-only hidden" id="nav-list-know" onclick="switchView('list', 'KNOW')"><svg class="icon" style="color:#818cf8;"><use href="#icon-history"></use></svg> <span class="nav-text">AI 지식 베이스</span></div>
-                <div class="nav-item hq-it-only hidden" id="nav-list-rule" onclick="switchView('list', 'RULE')"><svg class="icon" style="color:#14b8a6;"><use href="#icon-filter"></use></svg> <span class="nav-text">룰 엔진</span></div>
-                <div class="nav-title mt-10 platform-admin-only hidden" style="color:#93c5fd;">관리</div>
-                <div class="nav-item platform-admin-only hidden" id="nav-admin-settings" onclick="switchView('admin-settings')"><svg class="icon" style="color:#38bdf8;"><use href="#icon-admin-settings"></use></svg> <span class="nav-text">관리자 설정</span></div>
-            </aside>
-
             <!-- 메인 콘텐츠 영역 (푸터 포함) -->
             <div class="main-area-wrapper">
                 <main class="main-area" id="mainScrollArea">
@@ -1160,8 +1142,8 @@
                                             <input type="radio" name="uiLayoutPreference" value="desktop">
                                             <span class="settings-layout-pref-card__box">
                                                 <span class="settings-layout-pref-card__badge">PC형</span>
-                                                <span class="settings-layout-pref-card__title">헤더·사이드 메뉴</span>
-                                                <span class="settings-layout-pref-card__desc">넓은 화면에서 전통적인 레이아웃</span>
+                                                <span class="settings-layout-pref-card__title">상단 헤더·본문 넓게</span>
+                                                <span class="settings-layout-pref-card__desc">넓은 화면에서 상단 메뉴와 본문 중심 레이아웃</span>
                                             </span>
                                         </label>
                                     </div>
