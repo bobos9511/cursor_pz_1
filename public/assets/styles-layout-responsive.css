@@ -98,6 +98,10 @@
             .ai-chat-floating-btn::after {
                 display: none;
             }
+            /* 모바일: 시트가 FAB·말풍선 꼬리 위에 보이도록 FAB를 오버레이 아래로 */
+            body.ai-chat-layer-open .ai-chat-floating-btn {
+                z-index: 1190;
+            }
             /* FAB(right 14px, bottom 176px+safe, 50px) 위 말풍선형 패널 — 하단 전체 폭 고정 대신 버튼 위에 배치 */
             .ai-chat-layer-overlay {
                 display: block;
@@ -116,6 +120,18 @@
                 box-shadow:
                     0 18px 42px rgba(2, 6, 23, 0.34),
                     0 5px 16px rgba(2, 6, 23, 0.2);
+            }
+            /* JS: 모바일 전체 폭 하단 시트 — 꼬리 제거·상단만 라운드·안전 영역 */
+            .ai-chat-layer-panel.ai-chat-layer-panel--mobile-sheet {
+                border-radius: 16px 16px 0 0;
+                overflow: hidden;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+                box-shadow:
+                    0 -8px 36px rgba(2, 6, 23, 0.28),
+                    0 12px 40px rgba(2, 6, 23, 0.22);
+            }
+            .ai-chat-layer-panel.ai-chat-layer-panel--mobile-sheet::after {
+                display: none !important;
             }
             .ai-chat-layer-panel::after {
                 content: '';

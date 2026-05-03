@@ -2830,10 +2830,12 @@
         function clearAiChatLayerPanelGeometry() {
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
             if (!panel) return;
+            panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
             panel.style.bottom = '';
             panel.style.right = '';
             panel.style.left = '';
             panel.style.width = '';
+            panel.style.maxWidth = '';
             panel.style.maxHeight = '';
             panel.style.transformOrigin = '';
             panel.style.removeProperty('--ai-layer-tail-right');
@@ -2842,7 +2844,26 @@
             const fab = document.getElementById('aiChatFloatingBtn');
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
             const overlay = document.getElementById('aiChatLayerOverlay');
-            if (!fab || !panel || !overlay || overlay.classList.contains('hidden')) return;
+            if (!panel || !overlay || overlay.classList.contains('hidden')) return;
+            const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+            if (isMobileLayout) {
+                panel.classList.add('ai-chat-layer-panel--mobile-sheet');
+                const vv = window.visualViewport;
+                const vh = vv && vv.height > 0 ? vv.height : window.innerHeight;
+                const topReserve = 12;
+                const maxH = Math.max(300, Math.min(Math.floor(vh * 0.94), Math.floor(vh - topReserve)));
+                panel.style.bottom = '0';
+                panel.style.right = '0';
+                panel.style.left = '0';
+                panel.style.width = '100%';
+                panel.style.maxWidth = '100%';
+                panel.style.maxHeight = `${maxH}px`;
+                panel.style.transformOrigin = '50% 100%';
+                panel.style.removeProperty('--ai-layer-tail-right');
+                return;
+            }
+            panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
+            if (!fab) return;
             const fabRect = fab.getBoundingClientRect();
             if (fabRect.width < 2 && fabRect.height < 2) return;
             const gap = AI_LAYER_FAB_GAP;
@@ -2857,6 +2878,7 @@
             const maxPanelCap = isDesktopLayout ? 680 : 560;
             const panelW = Math.min(maxPanelCap, Math.max(280, rawMax));
             panel.style.width = `${panelW}px`;
+            panel.style.maxWidth = '';
             const topBreathing = isDesktopLayout ? 8 : 12;
             const maxByFabTop = Math.max(isDesktopLayout ? 300 : 260, fabRect.top - gap - topBreathing);
             const vhFraction = isDesktopLayout ? 0.9 : 0.82;
