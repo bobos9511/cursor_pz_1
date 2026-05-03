@@ -237,6 +237,7 @@ async function requestAiPreview({
                 replyHtml: formatAiReplyHtml(data.reply),
                 rawReply: String(data.reply || ""),
                 truncated: !!data.truncated,
+                usedRag: !!data.usedRag,
                 errorMessage: "",
                 isTimeout: false,
                 wasDelayed: timeoutNotified,
@@ -279,10 +280,11 @@ async function requestAiPreview({
             errorMessage: `AI 응답 시간이 ${Math.round(resolvedTimeout / 1000)}초를 초과했습니다.`,
             isTimeout: true,
             wasDelayed: true,
+            usedRag: false,
         };
     }
     const reason = humanizeAiClientNetworkError(error && error.message ? error.message : "AI 서버 통신 중 오류");
-    return { ok: false, replyHtml: "", errorMessage: reason, isTimeout: false, wasDelayed: false };
+    return { ok: false, replyHtml: "", errorMessage: reason, isTimeout: false, wasDelayed: false, usedRag: false };
 }
 
 function makeAiPendingHtml() {

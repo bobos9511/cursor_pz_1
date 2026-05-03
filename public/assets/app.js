@@ -885,6 +885,7 @@
         let aiSearchHistory = [];
         let aiSearchInitialized = false;
         let aiSearchIsLoading = false;
+        let aiSearchTypingGeneration = 0;
         let aiSearchPendingContinuation = null;
         let aiChatLayerPrevParent = null;
         let aiChatLayerPrevNextSibling = null;

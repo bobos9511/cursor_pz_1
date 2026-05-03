@@ -266,9 +266,33 @@ function buildAiPrompt(boardType, title, content, continueFrom, aiSettings) {
   const defs = loadPromptDefaults();
   const isChat = boardType === "CHAT";
   const system = resolveEffectiveSystemPrompt(boardType, aiSettings, defs);
+  const chatEnvelopeRules = isChat
+    ? [
+        "",
+        "[출력 규칙 — AI채팅]",
+        "- 답변 텍스트에 '[제목]', '[본문]', '[게시판]', '내부_' 접두가 붙은 줄을 그대로 출력하지 마세요.",
+        "- 첫 줄에만 사용자 질문에 대한 핵심 요약을 **굵게** 한 줄로 쓰고, 빈 줄 다음에 설명 본문을 일반 문단으로 이어 쓰세요.",
+        "- 첫 줄에 쓴 핵심 문구를 본문 첫머리에서 같은 문장으로 반복하지 마세요.",
+      ].join("\n")
+    : "";
 
   if (continueFrom) {
     const meta = isChat ? String(defs.continueMetaChat || "").trim() : String(defs.continueMetaPost || "").trim();
+    if (isChat) {
+      return [
+        system,
+        chatEnvelopeRules,
+        "",
+        meta,
+        "",
+        `내부_게시판_구분(출력금지): ${boardType}`,
+        `내부_참고_제목(출력금지): ${title}`,
+        `사용자_질문_요지: ${content}`,
+        "",
+        "이전에 출력된 답변(이어쓰기):",
+        continueFrom,
+      ].join("\n");
+    }
     return [
       system,
       "",
@@ -280,6 +304,16 @@ function buildAiPrompt(boardType, title, content, continueFrom, aiSettings) {
       "",
       PROMPT_LABELS.priorAnswer,
       continueFrom,
+    ].join("\n");
+  }
+
+  if (isChat) {
+    return [
+      system,
+      chatEnvelopeRules,
+      "",
+      `내부_요청_메타_제목(답변에 출력금지): ${title}`,
+      `사용자_질문: ${content}`,
     ].join("\n");
   }
 

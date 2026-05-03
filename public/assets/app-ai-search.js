@@ -438,7 +438,10 @@ function renderAiSearchMessages() {
         if (needsCheckHints.some((hint) => normalized.includes(hint))) return true;
         return false;
     };
-    const isPreferButtonHiddenMessage = (text, idx) => {
+    const isPreferButtonHiddenMessage = (msg, idx) => {
+        if (msg && msg.usedRag === true) return true;
+        const text = String(msg && msg.text ? msg.text : "");
+        if (text.includes("ai-search-typing-caret")) return true;
         const plain = stripHtmlForRag(String(text || ""));
         const normalized = plain.replace(/\s+/g, " ").trim();
         if (!normalized) return true;
@@ -487,7 +490,7 @@ function renderAiSearchMessages() {
             row.insertAdjacentHTML("beforeend", avatarHtml);
         } else {
             const preferred = !!(msg && msg.preferred);
-            const hidePrefer = isPreferButtonHiddenMessage(text, idx);
+            const hidePrefer = isPreferButtonHiddenMessage(msg, idx);
             const preferBtn = !isLoadingMsg && !hidePrefer
                 ? `<button type="button" class="ai-prefer-btn ${preferred ? "active" : ""}" title="${preferred ? "도움이 됐어요 취소" : "도움이 됐어요"}" onclick="toggleAiSearchPreferred(${idx})"><svg class="icon"><use href="#icon-thumb-up"></use></svg> ${getPreferButtonLabel(preferred)}</button>`
                 : "";
@@ -526,12 +529,96 @@ function getNearestAiSearchQuestion(messageIndex) {
     return "";
 }
 
+function nextAiSearchTypingToken() {
+    aiSearchTypingGeneration += 1;
+    return aiSearchTypingGeneration;
+}
+
+function sleepAiSearchMs(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getAiSearchReplyPlainForTyping(replyHtml) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = String(replyHtml || "");
+    wrap.querySelectorAll("br").forEach((br) => {
+        const nl = document.createTextNode("\n");
+        br.parentNode.replaceChild(nl, br);
+    });
+    return (wrap.textContent || "").replace(/\r\n/g, "\n");
+}
+
+function applyAiSearchAssistantResultToMessage(messageIndex, result) {
+    const msg = aiSearchActive && aiSearchActive.messages[messageIndex];
+    if (!msg || msg.role !== "ai") return;
+    if (result && result.ok) {
+        msg.text = String(result.replyHtml || "");
+        msg.usedRag = !!result.usedRag;
+        if (msg.usedRag) delete msg.preferred;
+    } else {
+        msg.text = `<span style="color:#b91c1c;">오류: ${escapeHtml((result && result.errorMessage) || "AI 요청 실패")}</span>`;
+        msg.usedRag = false;
+        delete msg.preferred;
+    }
+    saveAiSearchActiveState();
+    upsertAiSearchHistoryFromActive();
+    renderAiSearchMessages();
+}
+
+async function animateAiSearchAssistantTyping(messageIndex, result, typingToken) {
+    const msg = aiSearchActive && aiSearchActive.messages[messageIndex];
+    if (!msg || msg.role !== "ai") return;
+    const stale = () => typingToken !== aiSearchTypingGeneration;
+
+    if (!result || !result.ok) {
+        applyAiSearchAssistantResultToMessage(messageIndex, result);
+        return;
+    }
+
+    const finalHtml = String(result.replyHtml || "");
+    const reduceMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const plain = getAiSearchReplyPlainForTyping(finalHtml);
+    if (!plain.length || reduceMotion) {
+        applyAiSearchAssistantResultToMessage(messageIndex, result);
+        return;
+    }
+
+    const maxTicks = 420;
+    const stride = Math.max(1, Math.ceil(plain.length / maxTicks));
+    const delayMs = Math.max(6, Math.min(22, Math.floor(5200 / Math.max(Math.floor(plain.length / stride), 1))));
+
+    for (let end = stride; end <= plain.length; end += stride) {
+        if (stale()) {
+            applyAiSearchAssistantResultToMessage(messageIndex, result);
+            return;
+        }
+        const slice = plain.slice(0, end);
+        msg.text = `${escapeHtml(slice).replace(/\n/g, "<br>")}<span class="ai-search-typing-caret" aria-hidden="true"></span>`;
+        renderAiSearchMessages();
+        if (end < plain.length) await sleepAiSearchMs(delayMs);
+    }
+    if (stale()) {
+        applyAiSearchAssistantResultToMessage(messageIndex, result);
+        return;
+    }
+    msg.text = finalHtml;
+    msg.usedRag = !!result.usedRag;
+    if (msg.usedRag) delete msg.preferred;
+    saveAiSearchActiveState();
+    upsertAiSearchHistoryFromActive();
+    renderAiSearchMessages();
+}
+
 function toggleAiSearchPreferred(messageIndex) {
     if (!aiSearchActive || !Array.isArray(aiSearchActive.messages)) return;
     const idx = Number(messageIndex);
     if (!Number.isFinite(idx) || idx < 0 || idx >= aiSearchActive.messages.length) return;
     const msg = aiSearchActive.messages[idx];
     if (!msg || msg.role !== "ai") return;
+    if (msg.usedRag === true) return;
     if (String(msg.text || "").includes("ai-search-loading")) return;
     if (isAiSearchErrorMessageText(msg.text)) return;
     const plain = stripHtmlForRag(String(msg.text || "")).replace(/\s+/g, " ").trim().toLowerCase();
@@ -744,6 +831,7 @@ function initializeAiSearchView() {
 }
 
 function startNewAiSearchChat() {
+    aiSearchTypingGeneration += 1;
     upsertAiSearchHistoryFromActive();
     aiSearchActive = makeDefaultAiSearchState();
     const inputEl = document.getElementById("aiSearchInput");
@@ -758,6 +846,7 @@ function startNewAiSearchChat() {
 function loadAiSearchConversation(conversationId) {
     const found = aiSearchHistory.find((h) => String(h.id) === String(conversationId));
     if (!found) return;
+    aiSearchTypingGeneration += 1;
     aiSearchActive = {
         id: `chat_${Date.now()}`,
         title: found.title || "불러온 대화",
@@ -835,7 +924,9 @@ async function continueAiSearchAnswer() {
         }
         continuedRaw = mergeAiContinuationSegments(continuedRaw, nextRaw);
         const lastIdx = aiSearchActive.messages.length - 1;
-        aiSearchActive.messages[lastIdx].text = formatAiReplyHtml(continuedRaw);
+        const m = aiSearchActive.messages[lastIdx];
+        m.text = formatAiReplyHtml(continuedRaw);
+        if (result.usedRag) m.usedRag = true;
         saveAiSearchActiveState();
         renderAiSearchMessages();
         needsMore = !!result.truncated;
@@ -891,6 +982,7 @@ async function retryAiSearchQuestion(aiMessageIndex) {
     aiMsg.text =
         '<span class="ai-search-loading">AI 답변 생성 중입니다<span class="ai-search-loading-dots"><i>.</i><i>.</i><i>.</i></span></span>';
     delete aiMsg.preferred;
+    delete aiMsg.usedRag;
     saveAiSearchActiveState();
     renderAiSearchMessages();
 
@@ -906,7 +998,9 @@ async function retryAiSearchQuestion(aiMessageIndex) {
         delayNotified = true;
         showAlert("AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.", "error");
     }, AI_CHAT_REQUEST_TIMEOUT_MS);
+    let typingToken = 0;
     try {
+        typingToken = nextAiSearchTypingToken();
         const result = await requestAiPreview({
             title: `AI Chat: ${q.slice(0, 45)}`,
             content: q,
@@ -914,28 +1008,24 @@ async function retryAiSearchQuestion(aiMessageIndex) {
             timeoutMs: 0,
             abortOnTimeout: false,
         });
-        const replyHtml = result.ok
-            ? result.replyHtml
-            : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || "AI 요청 실패")}</span>`;
         if (idx >= 0 && aiSearchActive.messages[idx] && aiSearchActive.messages[idx].role === "ai") {
-            aiSearchActive.messages[idx].text = replyHtml;
+            await animateAiSearchAssistantTyping(idx, result, typingToken);
         }
-        saveAiSearchActiveState();
-        upsertAiSearchHistoryFromActive();
-        renderAiSearchMessages();
         if (result && result.ok && result.truncated) {
             showAlert("답변이 길어 핵심만 표시했습니다. 질문을 더 구체화하면 빠르게 이어서 받을 수 있습니다.", "success");
         } else if (delayNotified && result && result.ok) {
             showAlert("지연된 AI 응답이 도착했습니다.", "success", { noticeLevel: "important" });
         }
     } catch (error) {
-        const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(error && error.message ? error.message : "AI 요청 실패")}</span>`;
+        const failResult = {
+            ok: false,
+            replyHtml: "",
+            errorMessage: error && error.message ? error.message : "AI 요청 실패",
+            usedRag: false,
+        };
         if (idx >= 0 && aiSearchActive.messages[idx] && aiSearchActive.messages[idx].role === "ai") {
-            aiSearchActive.messages[idx].text = failHtml;
+            await animateAiSearchAssistantTyping(idx, failResult, typingToken);
         }
-        saveAiSearchActiveState();
-        upsertAiSearchHistoryFromActive();
-        renderAiSearchMessages();
     } finally {
         clearTimeout(delayTimer);
         if (sendBtn) {
@@ -976,7 +1066,9 @@ async function submitAiSearchQuestion() {
         delayNotified = true;
         showAlert("AI 응답이 지연되고 있습니다. 응답이 도착하면 자동으로 표시됩니다.", "error");
     }, AI_CHAT_REQUEST_TIMEOUT_MS);
+    let typingToken = 0;
     try {
+        typingToken = nextAiSearchTypingToken();
         const result = await requestAiPreview({
             title: `AI Chat: ${question.slice(0, 45)}`,
             content: question,
@@ -984,26 +1076,40 @@ async function submitAiSearchQuestion() {
             timeoutMs: 0,
             abortOnTimeout: false,
         });
-        const replyHtml = result.ok ? result.replyHtml : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || "AI 요청 실패")}</span>`;
         const lastIdx = aiSearchActive.messages.length - 1;
-        if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") aiSearchActive.messages[lastIdx].text = replyHtml;
-        else aiSearchActive.messages.push({ role: "ai", text: replyHtml, createdAt: nowDateTimeLabel() });
-        saveAiSearchActiveState();
-        upsertAiSearchHistoryFromActive();
-        renderAiSearchMessages();
+        if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") {
+            await animateAiSearchAssistantTyping(lastIdx, result, typingToken);
+        } else {
+            const replyHtml = result.ok
+                ? result.replyHtml
+                : `<span style="color:#b91c1c;">오류: ${escapeHtml(result.errorMessage || "AI 요청 실패")}</span>`;
+            aiSearchActive.messages.push({ role: "ai", text: replyHtml, createdAt: nowDateTimeLabel() });
+            saveAiSearchActiveState();
+            upsertAiSearchHistoryFromActive();
+            renderAiSearchMessages();
+        }
         if (result && result.ok && result.truncated) {
             showAlert("답변이 길어 핵심만 표시했습니다. 질문을 더 구체화하면 빠르게 이어서 받을 수 있습니다.", "success");
         } else if (delayNotified && result && result.ok) {
             showAlert("지연된 AI 응답이 도착했습니다.", "success", { noticeLevel: "important" });
         }
     } catch (error) {
-        const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(error && error.message ? error.message : "AI 요청 실패")}</span>`;
+        const failResult = {
+            ok: false,
+            replyHtml: "",
+            errorMessage: error && error.message ? error.message : "AI 요청 실패",
+            usedRag: false,
+        };
         const lastIdx = aiSearchActive.messages.length - 1;
-        if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") aiSearchActive.messages[lastIdx].text = failHtml;
-        else aiSearchActive.messages.push({ role: "ai", text: failHtml, createdAt: nowDateTimeLabel() });
-        saveAiSearchActiveState();
-        upsertAiSearchHistoryFromActive();
-        renderAiSearchMessages();
+        if (lastIdx >= 0 && aiSearchActive.messages[lastIdx].role === "ai") {
+            await animateAiSearchAssistantTyping(lastIdx, failResult, typingToken);
+        } else {
+            const failHtml = `<span style="color:#b91c1c;">오류: ${escapeHtml(failResult.errorMessage)}</span>`;
+            aiSearchActive.messages.push({ role: "ai", text: failHtml, createdAt: nowDateTimeLabel() });
+            saveAiSearchActiveState();
+            upsertAiSearchHistoryFromActive();
+            renderAiSearchMessages();
+        }
     } finally {
         clearTimeout(delayTimer);
         sendBtn.disabled = false;

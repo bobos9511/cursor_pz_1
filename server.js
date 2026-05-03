@@ -187,6 +187,40 @@ function sanitizeAiReplyText(text) {
   return out.trim();
 }
 
+/** AI채팅: 모델이 프롬프트 라벨([제목] 등)을 베껴 쓰거나 제목을 본문에 중복할 때 정리 */
+function polishChatReplyEcho(rawReply, requestTitle) {
+  let s = stripGeminiEditorialLeakage(String(rawReply || "").replace(/\r/g, "")).trim();
+  if (!s) return s;
+  s = s.replace(/\[제목\]\s*/gi, "");
+  s = s.replace(/\[본문\s*요지\]\s*/gi, "");
+  s = s.replace(/\[본문\]\s*/gi, "\n");
+  s = s.replace(/\[게시판\]\s*[^\n]*\n?/gi, "");
+  s = s
+    .split("\n")
+    .filter((line) => !/^내부_[^\s:：]+.*[:：]\s*/.test(String(line || "").trim()))
+    .join("\n");
+  s = s.replace(/\n{3,}/g, "\n\n").trim();
+  const core = String(requestTitle || "")
+    .replace(/^AI Chat:\s*/i, "")
+    .trim();
+  if (core.length >= 2) {
+    const esc = core.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const reLineDup = new RegExp(`^-\\s*\\*\\*${esc}\\*\\*\\s*(?:\\n+|$)`, "i");
+    s = s.replace(reLineDup, "").trim();
+    const parts = s.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const head = parts[0].replace(/\*\*/g, "").trim();
+      let body = parts.slice(1).join("\n\n").trim();
+      const headCore = head.replace(/^AI Chat:\s*/i, "").trim() || head;
+      if (headCore && body.startsWith(headCore)) {
+        body = body.slice(headCore.length).replace(/^[\s:：.\-·]+/, "").trim();
+        s = `${parts[0]}\n\n${body}`.trim();
+      }
+    }
+  }
+  return s.trim();
+}
+
 function sanitizeChatReplyText(text) {
   let out = stripGeminiEditorialLeakage(String(text || "").replace(/\r/g, "")).trim();
   out = out.replace(/([0-9])\n([0-9])/g, "$1$2");
@@ -649,6 +683,8 @@ async function handleAiChat(req, res) {
   if (!GEMINI_API_KEY) {
     sendJson(res, 200, {
       reply: ko.demoModeReply(boardType, title),
+      truncated: false,
+      usedRag: false,
     });
     return;
   }
@@ -987,6 +1023,8 @@ async function handleAiChat(req, res) {
           reply: ko.quotaDegradedReplyLines().join("\n"),
           degraded: true,
           reason: "quota_exceeded",
+          truncated: false,
+          usedRag: false,
         });
         return;
       }
@@ -1027,6 +1065,8 @@ async function handleAiChat(req, res) {
             reply: ko.quotaDegradedReplyLines().join("\n"),
             degraded: true,
             reason: "quota_exceeded",
+            truncated: false,
+            usedRag: false,
           });
           return;
         }
@@ -1084,9 +1124,10 @@ async function handleAiChat(req, res) {
       reply = merged;
       finishReason = continueFinishReason;
     }
+    const usedRag = !!String(rag || "").trim();
     reply =
       boardType === "CHAT"
-        ? sanitizeChatReplyText(sanitizeAiReplyText(reply))
+        ? sanitizeChatReplyText(sanitizeAiReplyText(polishChatReplyEcho(reply, title)))
         : compressAiReply(sanitizePostReplyText(sanitizeAiReplyText(reply)));
     aiApiLog.final = {
       ok: true,
@@ -1096,7 +1137,7 @@ async function handleAiChat(req, res) {
       continuationCount,
     };
     saveAiApiLog(aiApiLog);
-    sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS" });
+    sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS", usedRag });
   } catch (error) {
     aiApiLog.final = {
       ok: false,
