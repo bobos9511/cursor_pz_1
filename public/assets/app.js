@@ -3933,7 +3933,7 @@
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
                     /* FAB 모바일: 하단 내비(~58px) + FAB(50px) + 간격 */
-                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 58px) + 50px + 12px + env(safe-area-inset-bottom, 0px))';
+                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 58px) + 50px + 12px)';
                     panel.style.right = '14px';
                     panel.style.left = 'auto';
                     panel.style.width = 'calc(100vw - 24px)';
