@@ -902,6 +902,16 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
+        /** 게시물 번호 표시용 칩(목록·상세·검색 등 공통) */
+        function formatPostIdChipHtml(rawId, variant = 'compact') {
+            const n = escapeHtml(String(rawId ?? '-'));
+            const cap = escapeHtml('문의번호');
+            const aria = escapeHtml(`게시물 번호 ${String(rawId ?? '-')}`);
+            if (variant === 'detail') {
+                return `<span class="post-id-chip post-id-chip--detail" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__body"><span class="post-id-chip__cap">${cap}</span><span class="post-id-chip__num">${n}</span></span></span>`;
+            }
+            return `<span class="post-id-chip post-id-chip--compact" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__num">${n}</span></span>`;
+        }
         function normalizeDisplayText(value, fallback = '-') {
             const cleaned = String(value || '')
                 .replace(/�+/g, '')
@@ -3812,7 +3822,7 @@
                     const status = post.aiSolved ? 'AI채택' : (post.status === 'wait' || post.status === 'ing' ? '접수대기' : (post.status === 'moreInfo' ? '추가답변' : '답변완료'));
                     const dateTxt = (post.datetime || '').substring(0, 10);
                     return `<tr onclick="openDetailFromDashCount(${post.id}, '${post.type}')">
-                        <td>${post.id}</td>
+                        <td class="post-id-cell">${formatPostIdChipHtml(post.id)}</td>
                         <td>${boardLabel}</td>
                         <td class="text-left"><span class="truncate">${post.title || '-'}</span></td>
                         <td>${post.writer || '-'}</td>
@@ -3859,7 +3869,7 @@
                     <div class="dash-feed-title truncate">${post.title}</div>
                     <div class="dash-feed-sub">
                         <span class="dash-sub-left">${subLeft}</span>
-                        <span>#${post.id}</span>
+                        ${formatPostIdChipHtml(post.id)}
                     </div>
                 </div>
             `;
@@ -4152,7 +4162,7 @@
                 const knowCatBadge = currentBoardType === 'KNOW'
                     ? `<span class="badge bg-ready badge-domain">${getKnowCategoryLabel(item.knowCategory)}</span>`
                     : '';
-                return `<tr onclick="openDetail(${item.id})"><td>${item.id}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer)}</td><td>${item.datetime}</td></tr>`;
+                return `<tr onclick="openDetail(${item.id})"><td class="post-id-cell">${formatPostIdChipHtml(item.id)}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer)}</td><td>${item.datetime}</td></tr>`;
             }).join('');
             setTimeout(syncBoardLayoutModes, 0);
         }
@@ -4205,7 +4215,8 @@
 
             document.getElementById('dtlBoardTypeLabel').innerText = getBoardDisplayLabel(post);
             document.getElementById('dtlTitle').innerText = post.title;
-            document.getElementById('dtlPostId').innerText = post.id;
+            const dtlPostIdEl = document.getElementById('dtlPostId');
+            if (dtlPostIdEl) dtlPostIdEl.innerHTML = formatPostIdChipHtml(post.id, 'detail');
             document.getElementById('dtlWriter').innerHTML = renderWriterWithAvatar(post.writer, { avatarClassName: 'writer-avatar detail', wrapperClass: 'writer-cell detail' });
             document.getElementById('dtlTime').innerText = post.datetime;
             document.getElementById('dtlIp').innerText = `IP: ${post.ip}`;
@@ -4393,7 +4404,7 @@
                             return `<button type="button" class="dtl-similar-card" onclick="openDetail(${p.id}, '${p.type}')">
                                 <div class="dtl-similar-card-title">${escapeHtml(p.title || '(제목 없음)')}</div>
                                 <div class="dtl-similar-card-snippet">${snippet}</div>
-                                <div class="dtl-similar-card-meta">${escapeHtml(p.writer || '-')} · ${escapeHtml(p.datetime || '-')}</div>
+                                <div class="dtl-similar-card-meta"><span class="dtl-similar-card-meta-id">${formatPostIdChipHtml(p.id)}</span><span class="dtl-similar-card-meta-rest">${escapeHtml(p.writer || '-')} · ${escapeHtml(p.datetime || '-')}</span></div>
                             </button>`;
                         }).join('');
                     }
@@ -5117,7 +5128,7 @@
                     else badge = '<span class="badge bg-done" style="font-size:10px; padding:2px 6px;">답변완료</span>';
                 }
                 return `<li class="integrated-search-result-item" onclick="goFromIntegratedSearch(${p.id}, '${p.type}')">
-                    <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10"><span style="font-weight:bold; color:var(--text-gray); font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:var(--text-light);">${p.datetime.substring(0, 10)}</span></div>
+                    <div class="flex items-center justify-between mb-10"><div class="flex items-center gap-10 flex-wrap">${formatPostIdChipHtml(p.id)}<span style="font-weight:bold; color:var(--text-gray); font-size:12px;">[${getBoardDisplayLabel(p)}]</span>${badge}</div><span style="font-size:12px; color:var(--text-light);">${p.datetime.substring(0, 10)}</span></div>
                     <div style="font-weight:bold; color:#60a5fa; font-size:15px; margin-bottom:5px;">${p.title}</div>
                     <div style="font-size:13px; color:var(--text-gray);" class="truncate">${stripped}</div>
                     <div style="margin-top:6px; font-size:11px; color:var(--text-light);">관련도 점수: ${score}</div>
