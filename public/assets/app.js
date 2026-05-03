@@ -4245,7 +4245,7 @@
 
             if (filtered.length === 0) { 
                 let cols = isIT ? 6 : 5;
-                tbody.innerHTML = `<tr><td colspan="${cols}" style="padding: 30px; color:#999;">데이터가 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr class="board-empty-row"><td colspan="${cols}" class="board-empty-cell"><div class="board-empty-state" role="status"><div class="board-empty-state-icon" aria-hidden="true"><svg class="icon"><use href="#icon-inbox-empty"></use></svg></div><p class="board-empty-state-title">등록된 게시물이 없습니다</p><p class="board-empty-state-hint">검색 조건을 바꾸거나 나중에 다시 확인해 주세요.</p></div></td></tr>`;
                 setTimeout(() => {
                     syncBoardLayoutModes();
                     scheduleAiChatFloatingOverlapLayout();

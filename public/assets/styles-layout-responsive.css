@@ -94,6 +94,7 @@
             .ai-chat-floating-btn .icon {
                 width: 22px;
                 height: 22px;
+                margin: 0 !important;
             }
             .ai-chat-floating-btn::after {
                 display: none;
