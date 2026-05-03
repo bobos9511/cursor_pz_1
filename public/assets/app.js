@@ -2470,8 +2470,8 @@
             if (!mount) return;
             mount.innerHTML = '';
             const fallbackImg =
-                '<img class="login-share-qr-fallback" alt="" width="210" height="210" src="' +
-                'https://api.qrserver.com/v1/create-qr-code/?size=210x210&margin=2&color=0a0a0a&bgcolor=ffffff&ecc=H&data=' +
+                '<img class="login-share-qr-fallback" alt="" width="200" height="200" src="' +
+                'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&color=0a0a0a&bgcolor=ffffff&ecc=H&data=' +
                 encodeURIComponent(url) +
                 '"/>';
             try {
@@ -2481,8 +2481,8 @@
                     (window.QRCodeStyling && window.QRCodeStyling.default);
                 if (typeof QRCodeStyling !== 'function') throw new Error('QRCodeStyling missing');
                 const qr = new QRCodeStyling({
-                    width: 210,
-                    height: 210,
+                    width: 200,
+                    height: 200,
                     type: 'svg',
                     data: url,
                     margin: 3,
