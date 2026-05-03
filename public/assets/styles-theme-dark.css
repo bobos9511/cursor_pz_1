@@ -1818,11 +1818,9 @@
             border-color: #3f5475;
             box-shadow: 0 24px 48px rgba(2, 8, 24, 0.55);
         }
-        @media (max-width: 1024px) {
-            body[data-theme="dark"] .ai-chat-layer-panel::after {
-                border-top-color: #141d30;
-                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
-            }
+        body[data-theme="dark"] .ai-chat-layer-panel--speech::after {
+            border-top-color: #1b263d;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
         }
         body[data-theme="dark"] .ai-chat-layer-host {
             background: transparent;

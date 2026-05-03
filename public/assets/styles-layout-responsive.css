@@ -111,7 +111,7 @@
             .ai-chat-layer-panel.ai-chat-layer-panel--mobile-sheet::after {
                 display: none !important;
             }
-            .ai-chat-layer-panel::after {
+            .ai-chat-layer-panel--speech::after {
                 content: '';
                 position: absolute;
                 right: var(--ai-layer-tail-right, 29px);

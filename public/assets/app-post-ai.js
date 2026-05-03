@@ -238,6 +238,7 @@ async function requestAiPreview({
                 rawReply: String(data.reply || ""),
                 truncated: !!data.truncated,
                 usedRag: !!data.usedRag,
+                apiLogId: data && data.apiLogId ? String(data.apiLogId) : "",
                 errorMessage: "",
                 isTimeout: false,
                 wasDelayed: timeoutNotified,
@@ -281,10 +282,19 @@ async function requestAiPreview({
             isTimeout: true,
             wasDelayed: true,
             usedRag: false,
+            apiLogId: "",
         };
     }
     const reason = humanizeAiClientNetworkError(error && error.message ? error.message : "AI 서버 통신 중 오류");
-    return { ok: false, replyHtml: "", errorMessage: reason, isTimeout: false, wasDelayed: false, usedRag: false };
+    return {
+        ok: false,
+        replyHtml: "",
+        errorMessage: reason,
+        isTimeout: false,
+        wasDelayed: false,
+        usedRag: false,
+        apiLogId: "",
+    };
 }
 
 function makeAiPendingHtml() {
@@ -486,6 +496,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
         ? [`질문 주제 고정 지시: 아래 게시물의 제목/내용 범위를 벗어나지 말고 답변하세요.`, `새로운 주제를 만들거나 일반론으로 벗어나지 마세요.`, "", `[게시판] ${boardType}`, `[제목] ${title}`, `[내용] ${plainContent}`].join("\n")
         : plainContent;
     const MAX_AUTO_CONTINUE_STEPS = 2;
+    let primaryApiLogId = "";
     let result = await requestAiPreview({
         title,
         content: requestContent,
@@ -494,6 +505,7 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
         abortOnTimeout: true,
         transientRetries: 2,
     });
+    if (result && result.ok && result.apiLogId) primaryApiLogId = String(result.apiLogId);
     let mergedRawReply = result && result.ok ? String(result.rawReply || "") : "";
     let continueStep = 0;
     while (allowContinuation && result && result.ok && result.truncated && continueStep < MAX_AUTO_CONTINUE_STEPS) {
@@ -523,6 +535,10 @@ async function queueAsyncAiAnswerForPost(postId, boardType, title, plainContent,
     if (idx < 0) return;
     const post = appData.posts[idx];
     const postRef = formatPostAlertRef(post);
+    if (result && result.ok && primaryApiLogId) {
+        const meta = ensurePostMeta(post);
+        meta.knowSourceApiLogIdForPost = primaryApiLogId;
+    }
 
     if (result.ok) {
         pushAiReplyHistory(post, post.aiContent);

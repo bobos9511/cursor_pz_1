@@ -402,6 +402,18 @@ function isAiSearchErrorMessageText(text) {
     return /^오류\s*:/.test(plain) || plain.includes("AI 분석 실패") || plain.includes("요청 실패");
 }
 
+function patchAiSearchAssistantMessageDom(messageIndex, bodyHtml) {
+    const logEl = document.getElementById("aiSearchLog");
+    if (!logEl) return false;
+    const row = logEl.querySelector(`.ai-search-msg-row.ai[data-msg-idx="${Number(messageIndex)}"]`);
+    if (!row) return false;
+    const body = row.querySelector(".ai-search-msg-body");
+    if (!body) return false;
+    body.innerHTML = bodyHtml;
+    logEl.scrollTop = logEl.scrollHeight;
+    return true;
+}
+
 function renderAiSearchMessages() {
     const logEl = document.getElementById("aiSearchLog");
     if (!logEl) return;
@@ -476,6 +488,7 @@ function renderAiSearchMessages() {
         }
         const row = document.createElement("div");
         row.className = `ai-search-msg-row ${role}`;
+        row.dataset.msgIdx = String(idx);
         row.style.animationDelay = `${Math.min(idx * 42, 260)}ms`;
         const item = document.createElement("div");
         item.className = `ai-search-msg ${role}`;
@@ -554,10 +567,13 @@ function applyAiSearchAssistantResultToMessage(messageIndex, result) {
     if (result && result.ok) {
         msg.text = String(result.replyHtml || "");
         msg.usedRag = !!result.usedRag;
+        if (result.apiLogId) msg.apiLogId = String(result.apiLogId);
+        else delete msg.apiLogId;
         if (msg.usedRag) delete msg.preferred;
     } else {
         msg.text = `<span style="color:#b91c1c;">오류: ${escapeHtml((result && result.errorMessage) || "AI 요청 실패")}</span>`;
         msg.usedRag = false;
+        delete msg.apiLogId;
         delete msg.preferred;
     }
     saveAiSearchActiveState();
@@ -596,8 +612,9 @@ async function animateAiSearchAssistantTyping(messageIndex, result, typingToken)
             return;
         }
         const slice = plain.slice(0, end);
-        msg.text = `${escapeHtml(slice).replace(/\n/g, "<br>")}<span class="ai-search-typing-caret" aria-hidden="true"></span>`;
-        renderAiSearchMessages();
+        const bodyHtml = `${escapeHtml(slice).replace(/\n/g, "<br>")}<span class="ai-search-typing-caret" aria-hidden="true"></span>`;
+        msg.text = bodyHtml;
+        if (!patchAiSearchAssistantMessageDom(messageIndex, bodyHtml)) renderAiSearchMessages();
         if (end < plain.length) await sleepAiSearchMs(delayMs);
     }
     if (stale()) {
@@ -606,6 +623,8 @@ async function animateAiSearchAssistantTyping(messageIndex, result, typingToken)
     }
     msg.text = finalHtml;
     msg.usedRag = !!result.usedRag;
+    if (result.apiLogId) msg.apiLogId = String(result.apiLogId);
+    else delete msg.apiLogId;
     if (msg.usedRag) delete msg.preferred;
     saveAiSearchActiveState();
     upsertAiSearchHistoryFromActive();
@@ -644,7 +663,8 @@ function toggleAiSearchPreferred(messageIndex) {
         sourceType: "CHAT",
         sourceRef,
         boardType: "BIZ",
-        sourceLabel: "AI Chat 도움이 됐어요"
+        sourceLabel: "AI Chat 도움이 됐어요",
+        sourceApiLogId: msg.apiLogId || "",
     });
     if (!created) return;
 }

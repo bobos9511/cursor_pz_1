@@ -710,16 +710,39 @@ function wireAdminAiGenControlsOnce() {
 }
 
 function wireAdminAiSliderLockOnce() {
-    const cb = document.getElementById("adminAiSliderUnlockCheckbox");
     const panel = document.getElementById("admin-settings-panel-ai");
-    if (!cb || !panel) return;
-    if (cb.dataset.knockSliderLockWired === "1") return;
-    cb.dataset.knockSliderLockWired = "1";
-    const sync = () => {
-        panel.classList.toggle("admin-ai--slider-locked", !cb.checked);
+    if (!panel || panel.dataset.knockRangeSliderLockWired === "1") return;
+    panel.dataset.knockRangeSliderLockWired = "1";
+    const syncRow = (cb) => {
+        const row = cb && cb.closest ? cb.closest(".admin-gen-row--slider-guard") : null;
+        if (!row) return;
+        row.classList.toggle("admin-gen-row--slider-locked", !cb.checked);
     };
-    cb.addEventListener("change", sync);
-    sync();
+    panel.querySelectorAll(".admin-ai-range-unlock-cb").forEach((cb) => {
+        syncRow(cb);
+        cb.addEventListener("change", () => syncRow(cb));
+    });
+}
+
+async function openAdminAiApiLogModalByIdFetch(logId) {
+    const id = String(logId || "").trim();
+    if (!id) {
+        showAlert("로그 식별자가 없습니다.", "error");
+        return;
+    }
+    try {
+        const data = await fetchJson("/api/db/ai-api-logs");
+        const logs = Array.isArray(data && data.logs) ? data.logs : [];
+        const log = logs.find((x) => String(x.id) === id);
+        if (!log) {
+            showAlert("해당 API 통신 로그를 찾을 수 없습니다. 보관 기간이 지났거나 삭제되었을 수 있습니다.", "error");
+            return;
+        }
+        openAdminAiApiLogModal(id, log);
+    } catch (e) {
+        console.error(e);
+        showAlert("로그를 불러오지 못했습니다.", "error");
+    }
 }
 
 function wireAdminRuntimeValidationOnce() {
@@ -1743,8 +1766,8 @@ function buildAdminLogInfoRows(log) {
         .join("");
 }
 
-function openAdminAiApiLogModal(logId) {
-    const log = adminAiApiLogs.find((x) => String(x.id) === String(logId));
+function openAdminAiApiLogModal(logId, logEntry = null) {
+    const log = logEntry || adminAiApiLogs.find((x) => String(x.id) === String(logId));
     const body = document.getElementById("adminAiApiLogModalBody");
     const modal = document.getElementById("adminAiApiLogModal");
     const copyBtn = document.getElementById("adminAiApiLogCopyBtn");
@@ -1801,6 +1824,7 @@ window.importAdminRagKeywordBlocklist = importAdminRagKeywordBlocklist;
 window.handleAdminRagKeywordImport = handleAdminRagKeywordImport;
 window.openAdminAiHelpModal = openAdminAiHelpModal;
 window.closeAdminAiHelpModal = closeAdminAiHelpModal;
+window.openAdminAiApiLogModalByIdFetch = openAdminAiApiLogModalByIdFetch;
 window.copyAdminAiApiLogDetail = copyAdminAiApiLogDetail;
 window.changeAdminAiApiLogPageSize = changeAdminAiApiLogPageSize;
 window.goAdminAiApiLogPage = goAdminAiApiLogPage;

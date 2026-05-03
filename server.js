@@ -1026,6 +1026,7 @@ async function handleAiChat(req, res) {
           reason: "quota_exceeded",
           truncated: false,
           usedRag: false,
+          apiLogId: aiApiLog.id,
         });
         return;
       }
@@ -1037,7 +1038,7 @@ async function handleAiChat(req, res) {
         continuationCount: 0,
       };
       saveAiApiLog(aiApiLog);
-      sendJson(res, 502, { error: apiError });
+      sendJson(res, 502, { error: apiError, apiLogId: aiApiLog.id });
       return;
     }
     let { reply, finishReason, blockReason } = extractReplyFromGeminiData(data);
@@ -1068,6 +1069,7 @@ async function handleAiChat(req, res) {
             reason: "quota_exceeded",
             truncated: false,
             usedRag: false,
+            apiLogId: aiApiLog.id,
           });
           return;
         }
@@ -1079,7 +1081,7 @@ async function handleAiChat(req, res) {
           continuationCount: 0,
         };
         saveAiApiLog(aiApiLog);
-        sendJson(res, 502, { error: apiError });
+        sendJson(res, 502, { error: apiError, apiLogId: aiApiLog.id });
         return;
       }
       ({ reply, finishReason, blockReason } = extractReplyFromGeminiData(data));
@@ -1099,7 +1101,7 @@ async function handleAiChat(req, res) {
         continuationCount: 0,
       };
       saveAiApiLog(aiApiLog);
-      sendJson(res, 502, { error: friendly });
+      sendJson(res, 502, { error: friendly, apiLogId: aiApiLog.id });
       return;
     }
 
@@ -1138,7 +1140,12 @@ async function handleAiChat(req, res) {
       continuationCount,
     };
     saveAiApiLog(aiApiLog);
-    sendJson(res, 200, { reply, truncated: finishReason === "MAX_TOKENS", usedRag });
+    sendJson(res, 200, {
+      reply,
+      truncated: finishReason === "MAX_TOKENS",
+      usedRag,
+      apiLogId: aiApiLog.id,
+    });
   } catch (error) {
     aiApiLog.final = {
       ok: false,
@@ -1148,7 +1155,7 @@ async function handleAiChat(req, res) {
       continuationCount: 0,
     };
     saveAiApiLog(aiApiLog);
-    sendJson(res, 500, { error: ko.errors.aiServerError });
+    sendJson(res, 500, { error: ko.errors.aiServerError, apiLogId: aiApiLog.id });
   }
 }
 

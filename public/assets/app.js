@@ -1728,6 +1728,7 @@
             const keywords = extractRagKeywords(cleanQuestion, cleanAnswer);
             const sourceLabel = String(options.sourceLabel || 'AI Chat 도움이 됐어요');
             const content = `<div><b>Q.</b> ${escapeHtml(cleanQuestion)}</div><div style="margin-top:8px;"><b>A.</b><br>${escapeHtml(cleanAnswer).replace(/\n/g, '<br>')}</div>`;
+            const sourceApiLogId = String(options.sourceApiLogId || '').trim();
             const meta = {
                 knowQuestion: cleanQuestion,
                 knowAnswer: cleanAnswer,
@@ -1740,6 +1741,7 @@
                 generatedBy: AI_SYSTEM_USER_NAME,
                 generatedByEmpNo: AI_SYSTEM_USER_EMP_NO
             };
+            if (sourceApiLogId) meta.knowSourceApiLogId = sourceApiLogId;
             appData.posts.unshift({
                 id: nextId,
                 type: 'KNOW',
@@ -6545,6 +6547,13 @@
                     sel.value = normalizeKnowStatus(post.status);
                     document.getElementById('knowErrorMemoInput').value = (post.meta && post.meta.knowErrorMemo) ? post.meta.knowErrorMemo : '';
                     toggleKnowErrorMemo();
+                    const logBtn = document.getElementById('knowSourceApiLogBtn');
+                    if (logBtn) {
+                        const hasLog = !!(post.meta && post.meta.knowSourceApiLogId);
+                        logBtn.classList.toggle('hidden', !hasLog);
+                        if (hasLog) logBtn.dataset.logId = String(post.meta.knowSourceApiLogId);
+                        else delete logBtn.dataset.logId;
+                    }
                 }
             } else if (post.aiSolved || post.status === 'done' || post.status === 'moreInfo') {
                 if(!post.aiSolved && post.answer) {
@@ -6781,6 +6790,19 @@
             else if(val === 'CUST') { input1.disabled = false; input1.placeholder = '고객번호 9자리'; input1.maxLength = 9; input2.classList.add('hidden'); }
             else if(val === 'ACCT') { input1.disabled = false; input1.placeholder = '계좌번호 최대 16자리'; input1.maxLength = 16; input2.classList.add('hidden'); }
             else if(val === 'APPR') { input1.disabled = false; input1.placeholder = '품의번호 9자리'; input1.maxLength = 9; input2.classList.remove('hidden'); input2.classList.add('block'); input2.maxLength = 7; }
+        }
+        function openKnowSourceApiLogFromDetail() {
+            const post = getPostByIdAndType(currentPostId, currentBoardType);
+            const logId = post && post.meta && post.meta.knowSourceApiLogId;
+            if (!logId) {
+                showAlert('연결된 API 통신 로그가 없습니다.', 'error');
+                return;
+            }
+            if (typeof window.openAdminAiApiLogModalByIdFetch === 'function') {
+                void window.openAdminAiApiLogModalByIdFetch(String(logId));
+            } else {
+                showAlert('로그 보기 모듈을 불러올 수 없습니다.', 'error');
+            }
         }
         function toggleKnowErrorMemo() {
             const select = document.getElementById('knowStatusSelect');
@@ -7098,7 +7120,8 @@
                     sourceType: 'POST',
                     sourceRef: String(post.id || ''),
                     boardType: post.type,
-                    sourceLabel: `게시물 AI답변채택 #${post.id || '-'}`
+                    sourceLabel: `게시물 AI답변채택 #${post.id || '-'}`,
+                    sourceApiLogId: (post.meta && post.meta.knowSourceApiLogIdForPost) || ''
                 });
                 saveData();
                 showAlert('AI 답변 채택으로 변경되었습니다.', 'success');
