@@ -2652,7 +2652,7 @@
             height: 100%;
         }
         .ai-chat-layer-host .ai-search-sidebar { display: none; }
-        .ai-chat-layer-host .ai-search-main.panel {
+        .ai-chat-layer-host .ai-search-main {
             margin-bottom: 0;
             height: 100%;
             min-height: 0;

@@ -685,7 +685,7 @@ function closeAiSearchHistoryMobileModal() {
 function setAiSearchStateBadge(isLoading = aiSearchIsLoading) {
     const badgeEl = document.getElementById("aiSearchStateBadge");
     if (!badgeEl) return;
-    badgeEl.className = isLoading ? "badge bg-ai" : "badge bg-ready";
+    badgeEl.className = isLoading ? "badge bg-ai ai-search-badge" : "badge bg-ready ai-search-badge";
     badgeEl.innerText = isLoading ? "답변 생성중" : "대기중";
 }
 
