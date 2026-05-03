@@ -3110,9 +3110,8 @@
             overflow: visible;
             transform-origin: calc(100% - 28px) calc(100% + 14px);
         }
-        .ai-chat-layer-panel--speech {
-            position: relative;
-        }
+        /* --speech는 꼬리(::after)만 담당. position:relative 를 쓰면 absolute 가 덮여
+           패널이 오버레이 좌상단에 붙고 JS(FAB 기준 bottom/right) 배치가 깨집니다. */
         .ai-chat-layer-panel--speech::after {
             content: "";
             position: absolute;
