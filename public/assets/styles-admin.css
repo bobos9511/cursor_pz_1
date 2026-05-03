@@ -1,6 +1,6 @@
         /* 관리자 설정 */
         .admin-settings-page {
-            max-width: 880px;
+            max-width: 1100px;
             margin: 0 auto 32px;
             padding: 0 8px 24px;
             min-width: 0;
@@ -187,6 +187,57 @@
             max-height: 180px;
             overflow-y: auto;
             font-family: ui-monospace, 'Cascadia Code', 'Malgun Gothic', monospace;
+        }
+        /* 기본 프롬프트 참고 + 편집: 넓은 화면 2열, 스크롤은 블록 안에서 */
+        .admin-prompt-editor-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            margin: 4px 0 8px;
+            align-items: stretch;
+        }
+        @media (min-width: 960px) {
+            .admin-prompt-editor-layout {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1.22fr);
+            }
+        }
+        .admin-prompt-editor-col {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .admin-prompt-editor-col--reference .admin-default-block--prompt-ref {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+            min-height: 0;
+        }
+        .admin-prompt-editor-layout .admin-default-pre {
+            flex: 1 1 auto;
+            min-height: 120px;
+            max-height: min(32vh, 240px);
+            overflow-y: auto;
+        }
+        @media (min-width: 960px) {
+            .admin-prompt-editor-layout .admin-default-pre {
+                max-height: min(68vh, 620px);
+            }
+        }
+        .admin-prompt-editor-col--editor {
+            gap: 8px;
+        }
+        .admin-settings-textarea.admin-settings-textarea--prompt {
+            min-height: clamp(200px, 40vh, 380px);
+            max-height: min(68vh, 620px);
+            overflow-y: auto;
+            resize: vertical;
+            tab-size: 4;
+            font-family: ui-monospace, 'Cascadia Code', 'Malgun Gothic', monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            width: 100%;
+            box-sizing: border-box;
         }
         .admin-field-label {
             display: block;

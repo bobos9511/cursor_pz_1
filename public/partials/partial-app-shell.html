@@ -914,12 +914,18 @@
                                     </ul>
                                 </div>
                             </details>
-                            <div class="admin-default-block">
-                                <div class="admin-default-label">기본(Default) 시스템 프롬프트</div>
-                                <pre class="admin-default-pre" id="admin-default-chat"></pre>
+                            <div class="admin-prompt-editor-layout">
+                                <div class="admin-prompt-editor-col admin-prompt-editor-col--reference">
+                                    <div class="admin-default-block admin-default-block--prompt-ref">
+                                        <div class="admin-default-label">기본(Default) 시스템 프롬프트</div>
+                                        <pre class="admin-default-pre" id="admin-default-chat"></pre>
+                                    </div>
+                                </div>
+                                <div class="admin-prompt-editor-col admin-prompt-editor-col--editor">
+                                    <label class="admin-field-label" for="adminAi-chat-prompt">관리자 지정 시스템 프롬프트</label>
+                                    <textarea id="adminAi-chat-prompt" class="input admin-settings-textarea admin-settings-textarea--prompt" rows="14" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                </div>
                             </div>
-                            <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
-                            <textarea id="adminAi-chat-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
                             <div class="admin-gen-grid admin-gen-grid--ai-params">
                                 <div class="admin-ai-param-group">
                                     <div class="admin-gen-row">
@@ -968,12 +974,18 @@
                             </div>
                             <div id="adminAi-post-panels">
                                 <div class="admin-ai-post-panel" data-board="IT">
-                                    <div class="admin-default-block">
-                                        <div class="admin-default-label">기본(Default) — IT</div>
-                                        <pre class="admin-default-pre" id="admin-default-post-IT"></pre>
+                                    <div class="admin-prompt-editor-layout">
+                                        <div class="admin-prompt-editor-col admin-prompt-editor-col--reference">
+                                            <div class="admin-default-block admin-default-block--prompt-ref">
+                                                <div class="admin-default-label">기본(Default) — IT</div>
+                                                <pre class="admin-default-pre" id="admin-default-post-IT"></pre>
+                                            </div>
+                                        </div>
+                                        <div class="admin-prompt-editor-col admin-prompt-editor-col--editor">
+                                            <label class="admin-field-label" for="adminAi-post-IT-prompt">관리자 지정 시스템 프롬프트</label>
+                                            <textarea id="adminAi-post-IT-prompt" class="input admin-settings-textarea admin-settings-textarea--prompt" rows="14" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                        </div>
                                     </div>
-                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
-                                    <textarea id="adminAi-post-IT-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
                                     <div class="admin-gen-grid admin-gen-grid--ai-params">
                                         <div class="admin-ai-param-group">
                                             <div class="admin-gen-row">
@@ -996,12 +1008,18 @@
                                     </div>
                                 </div>
                                 <div class="admin-ai-post-panel hidden" data-board="BIZ">
-                                    <div class="admin-default-block">
-                                        <div class="admin-default-label">기본(Default) — BIZ</div>
-                                        <pre class="admin-default-pre" id="admin-default-post-BIZ"></pre>
+                                    <div class="admin-prompt-editor-layout">
+                                        <div class="admin-prompt-editor-col admin-prompt-editor-col--reference">
+                                            <div class="admin-default-block admin-default-block--prompt-ref">
+                                                <div class="admin-default-label">기본(Default) — BIZ</div>
+                                                <pre class="admin-default-pre" id="admin-default-post-BIZ"></pre>
+                                            </div>
+                                        </div>
+                                        <div class="admin-prompt-editor-col admin-prompt-editor-col--editor">
+                                            <label class="admin-field-label" for="adminAi-post-BIZ-prompt">관리자 지정 시스템 프롬프트</label>
+                                            <textarea id="adminAi-post-BIZ-prompt" class="input admin-settings-textarea admin-settings-textarea--prompt" rows="14" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
+                                        </div>
                                     </div>
-                                    <label class="admin-field-label">관리자 지정 시스템 프롬프트</label>
-                                    <textarea id="adminAi-post-BIZ-prompt" class="input admin-settings-textarea" rows="6" placeholder="비우면 위 기본 문구가 API에 사용됩니다."></textarea>
                                     <div class="admin-gen-grid admin-gen-grid--ai-params">
                                         <div class="admin-ai-param-group">
                                             <div class="admin-gen-row">
