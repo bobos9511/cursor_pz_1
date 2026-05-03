@@ -1321,6 +1321,7 @@ function renderAdminPermissionsPanel() {
         </div>`;
 }
 
+/** 플랫폼 관리자: 대상 일반 계정에 PIN이 있어도 별도 PIN 확인 없이 삭제 가능 */
 function deleteSignupUserFromAdmin(employeeNo) {
     const empNo = String(employeeNo || "");
     const user = signupUsers.find((u) => String(u.employeeNo) === empNo);

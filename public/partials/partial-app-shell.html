@@ -185,6 +185,15 @@
                             </button>
                         </div>
                     </section>
+                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreMbnav">
+                        <h2 id="mobMoreMbnav" class="mobile-nav-more__group-label">하단 바 메뉴</h2>
+                        <p class="mobile-nav-more-mbnav-lead">접근 가능한 메뉴만 선택할 수 있습니다. 저장하면 즉시 하단 바에 반영됩니다.</p>
+                        <div id="mobileNavMoreMbnavSlotEditor" class="settings-mbnav-slot-editor mobile-nav-more-mbnav-editor settings-mbnav-editor-host" aria-label="하단 바 메뉴 구성"></div>
+                        <div class="mobile-nav-more-mbnav-actions">
+                            <button type="button" class="btn btn-outline mobile-nav-more-mbnav-btn" onclick="resetMobileBottomNavSlotOrder()">기본값</button>
+                            <button type="button" class="btn btn-primary mobile-nav-more-mbnav-btn" onclick="saveMbnavFromGlassMenu()">하단 바에 적용</button>
+                        </div>
+                    </section>
                     <section class="mobile-nav-more__section mobile-nav-more__section--foot" aria-labelledby="mobMoreProfile">
                         <h2 id="mobMoreProfile" class="mobile-nav-more__group-label">계정</h2>
                         <div class="mobile-nav-more__list">
@@ -1108,7 +1117,7 @@
                             <div id="settings-panel-mbnav" class="admin-settings-tab-panel hidden">
                                 <div class="panel-header settings-section-heading">모바일 하단 글래스 메뉴</div>
                                 <p class="settings-mbnav-lead">모바일에서 하단 바에 <strong>5칸</strong>이 표시됩니다(오른쪽 <strong>더보기</strong>는 항상 고정). 칸마다 메뉴를 고르고 위·아래로 순서를 바꿀 수 있습니다. AI 채팅은 우측 하단 플로팅 버튼으로만 열립니다.</p>
-                                <div id="settingsMbnavSlotEditor" class="settings-mbnav-slot-editor" aria-label="하단 메뉴 구성"></div>
+                                <div id="settingsMbnavSlotEditor" class="settings-mbnav-slot-editor settings-mbnav-editor-host" aria-label="하단 메뉴 구성"></div>
                                 <div class="settings-mbnav-actions flex gap-10 flex-wrap">
                                     <button type="button" class="btn btn-outline" onclick="resetMobileBottomNavSlotOrder()">기본 구성</button>
                                 </div>
@@ -1134,6 +1143,18 @@
                             </div>
 
                             <div id="settings-panel-account" class="admin-settings-tab-panel hidden">
+                                <div class="settings-account-pin-card panel mb-20">
+                                    <div class="panel-header">계정 PIN</div>
+                                    <div class="p-20">
+                                        <p class="admin-settings-hint" style="margin-top:0;">숫자 6자리. 최초 설정 시 현재 PIN 칸은 비워 두세요.</p>
+                                        <div class="admin-self-pin-grid">
+                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfCurrent">현재 PIN</label><input type="password" id="accountPinSelfCurrent" class="input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="변경 시 입력"></div>
+                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfNew">새 PIN</label><input type="password" id="accountPinSelfNew" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="6자리"></div>
+                                            <div class="admin-self-pin-field"><label class="signup-field-label" for="accountPinSelfNew2">새 PIN 확인</label><input type="password" id="accountPinSelfNew2" class="input" maxlength="6" inputmode="numeric" autocomplete="new-password"></div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" style="margin-top:12px;" onclick="submitAccountSelfPinFromSettings()">PIN 저장</button>
+                                    </div>
+                                </div>
                                 <div class="settings-withdraw-card">
                                     <div class="settings-withdraw-card__accent" aria-hidden="true"></div>
                                     <div class="settings-withdraw-card__inner">

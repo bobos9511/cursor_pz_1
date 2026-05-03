@@ -227,6 +227,9 @@
                 row-gap: 6px;
                 margin-bottom: 2px !important;
             }
+            #view-detail .detail-post-header-row.mb-10 {
+                margin-bottom: 6px !important;
+            }
             #view-detail .detail-post-badges {
                 grid-column: 1;
                 grid-row: 1;
@@ -267,8 +270,8 @@
             }
             #view-detail #dtlTitle.detail-post-title,
             #view-detail .detail-post-title {
-                margin-top: 6px !important;
-                margin-bottom: 2px !important;
+                margin-top: 2px !important;
+                margin-bottom: 0 !important;
                 font-size: 18px !important;
                 line-height: 1.38 !important;
             }
@@ -288,8 +291,8 @@
             #view-detail .post-detail-meta {
                 flex-direction: column;
                 align-items: stretch;
-                row-gap: 8px;
-                margin-top: 0 !important;
+                row-gap: 4px !important;
+                margin-top: 2px !important;
             }
             #view-detail .post-detail-meta-tail {
                 margin-left: 0;

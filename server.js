@@ -47,6 +47,7 @@ function sessionTimingPayload(rec) {
   return { ttlMs: SESSION_TTL_MS, remainingMs, sessionExpiresAtMs };
 }
 const ADMIN_PIN_PEPPER = String(process.env.ADMIN_PIN_PEPPER || "knock-admin-pin-v1");
+const USER_ACCOUNT_PIN_PEPPER = String(process.env.USER_ACCOUNT_PIN_PEPPER || "knock-user-account-pin-v1");
 const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
@@ -1344,12 +1345,24 @@ function hashAdminPin(empKey, pinDigits) {
     .digest("hex");
 }
 
+function hashUserAccountPin(empKey, pinDigits) {
+  const emp = String(empKey || "");
+  const pin = String(pinDigits || "");
+  return crypto
+    .createHash("sha256")
+    .update(`${USER_ACCOUNT_PIN_PEPPER}|${emp}|${pin}`, "utf8")
+    .digest("hex");
+}
+
 function sanitizeSignupUserForClient(u) {
   if (!u || typeof u !== "object") return u;
   const o = { ...u };
   delete o.adminPinHash;
   delete o.adminPinPlain;
+  delete o.accountPinHash;
+  delete o.accountPinPlain;
   o.hasAdminPin = !!(u.adminPinHash && String(u.adminPinHash).length > 0);
+  o.hasAccountPin = !!(u.accountPinHash && String(u.accountPinHash).length > 0);
   return o;
 }
 
@@ -1372,6 +1385,9 @@ function mergeSignupUsersFromPut(incomingList, db) {
     delete cleaned.adminPinPlain;
     delete cleaned.adminPinHash;
     delete cleaned.hasAdminPin;
+    delete cleaned.accountPinPlain;
+    delete cleaned.accountPinHash;
+    delete cleaned.hasAccountPin;
 
     const isAdmin = cleaned.isAdmin === true;
     let pinHash = prev && prev.adminPinHash;
@@ -1388,6 +1404,23 @@ function mergeSignupUsersFromPut(incomingList, db) {
       cleaned.adminPinHash = pinHash;
     } else {
       delete cleaned.adminPinHash;
+    }
+
+    const accountPinPlain =
+      incoming && incoming.accountPinPlain != null && String(incoming.accountPinPlain).trim() !== ""
+        ? String(incoming.accountPinPlain)
+        : "";
+    let accountHash = prev && prev.accountPinHash;
+    if (accountPinPlain !== "") {
+      const accDigits = normalizeAdminPinDigitsServer(accountPinPlain);
+      if (isValidAdminPinFormatServer(accDigits)) {
+        accountHash = hashUserAccountPin(emp, accDigits);
+      }
+    }
+    if (accountHash) {
+      cleaned.accountPinHash = accountHash;
+    } else {
+      delete cleaned.accountPinHash;
     }
     return cleaned;
   });
@@ -2164,6 +2197,66 @@ async function handleDbApi(req, res, url) {
     const db = readDb();
     db.signupUsers = mergeSignupUsersFromPut(body.signupUsers, db);
     writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/api/db/account-pin") {
+    if (!applyRateLimit(req, res)) return true;
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: ko.errors.invalidJsonBody });
+      return true;
+    }
+    const token = extractBearerToken(req);
+    if (!token) {
+      sendJson(res, 401, { error: "세션이 필요합니다.", code: "session_required" });
+      return true;
+    }
+    const db = readDb();
+    const r = resolveSessionToken(db, token);
+    if (r.kind === "expired") {
+      sendJson(res, 401, { error: "세션이 만료되었습니다.", code: "session_expired" });
+      return true;
+    }
+    if (r.kind !== "ok") {
+      sendJson(res, 401, { error: "세션이 유효하지 않습니다.", code: "invalid_session" });
+      return true;
+    }
+    const emp = normalizeAiChatHistoryScope(r.emp);
+    if (!emp || emp === "guest" || emp === "000000") {
+      sendJson(res, 403, { error: "이 계정으로는 PIN을 설정할 수 없습니다." });
+      return true;
+    }
+    const newPin = normalizeAdminPinDigitsServer(body && body.newPin);
+    const currentPin = normalizeAdminPinDigitsServer(body && body.currentPin);
+    if (!isValidAdminPinFormatServer(newPin)) {
+      sendJson(res, 400, { error: "새 PIN은 숫자 6자리만 가능합니다." });
+      return true;
+    }
+    const users = Array.isArray(db.signupUsers) ? [...db.signupUsers] : [];
+    const idx = users.findIndex((u) => normalizeAiChatHistoryScope(u && u.employeeNo) === emp);
+    if (idx < 0) {
+      sendJson(res, 404, { error: "사용자를 찾을 수 없습니다." });
+      return true;
+    }
+    const user = users[idx];
+    if (user && user.withdrawn === true) {
+      sendJson(res, 403, { error: "탈퇴 처리된 계정입니다." });
+      return true;
+    }
+    const prevHash = user && user.accountPinHash;
+    if (prevHash) {
+      if (!isValidAdminPinFormatServer(currentPin) || prevHash !== hashUserAccountPin(emp, currentPin)) {
+        sendJson(res, 401, { error: "현재 PIN이 올바르지 않습니다." });
+        return true;
+      }
+    }
+    users[idx] = { ...user, accountPinHash: hashUserAccountPin(emp, newPin) };
+    db.signupUsers = users;
+    writeDb(db);
+    touchEmployeeSession(db, emp);
     sendJson(res, 200, { ok: true });
     return true;
   }

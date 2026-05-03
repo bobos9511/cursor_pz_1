@@ -115,6 +115,20 @@
                         </div>
                     </div>
                 </section>
+                <section class="signup-modal-section" aria-labelledby="signup-section-pin">
+                    <h4 id="signup-section-pin" class="signup-modal-section-title">계정 PIN <abbr class="signup-req" title="필수">*</abbr></h4>
+                    <div class="signup-modal-grid">
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupAccountPin">PIN (6자리)</label>
+                            <input type="password" id="signupAccountPin" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="숫자 6자리">
+                        </div>
+                        <div class="signup-field">
+                            <label class="signup-field-label" for="signupAccountPinConfirm">PIN 확인</label>
+                            <input type="password" id="signupAccountPinConfirm" class="input signup-field-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="동일하게 입력">
+                        </div>
+                        <p class="signup-modal-hint signup-field-span2" style="margin:0;">최초 등록 시 필수입니다. 숫자 6자리이며, 플랫폼 관리자 PIN과는 별도입니다.</p>
+                    </div>
+                </section>
                 <div class="signup-admin-card signup-admin-grant">
                     <input type="checkbox" id="signupIsAdmin" class="signup-admin-checkbox">
                     <div class="signup-admin-copy">
@@ -131,6 +145,35 @@
                     </div>
                 </footer>
             </form>
+        </div>
+    </div>
+
+    <!-- 로그인 직후: 미등록 계정 PIN 설정 (필수) -->
+    <div id="accountPinSetupModal" class="modal-overlay account-pin-setup-overlay" style="z-index: 200;" aria-modal="true" role="dialog" aria-labelledby="accountPinSetupTitle">
+        <div class="modal-content account-pin-setup-shell" onclick="event.stopPropagation()">
+            <div class="account-pin-setup-hero" aria-hidden="true">
+                <div class="account-pin-setup-hero__glow"></div>
+                <div class="account-pin-setup-hero__icon-wrap">
+                    <svg class="icon account-pin-setup-hero__lock" aria-hidden="true"><use href="#icon-lock"></use></svg>
+                </div>
+                <h3 id="accountPinSetupTitle" class="account-pin-setup-title">계정 PIN 설정</h3>
+                <p class="account-pin-setup-lead">보안을 위해 숫자 6자리 PIN을 등록해 주세요. 이후 환경 설정에서 언제든 변경할 수 있습니다.</p>
+            </div>
+            <div class="account-pin-setup-body">
+                <div id="accountPinSetupCurrentRow" class="signup-field hidden">
+                    <label class="signup-field-label" for="accountPinSetupCurrent">현재 PIN</label>
+                    <input type="password" id="accountPinSetupCurrent" class="input" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                </div>
+                <div class="signup-field">
+                    <label class="signup-field-label" for="accountPinSetupInput">새 PIN (6자리)</label>
+                    <input type="password" id="accountPinSetupInput" class="input account-pin-setup-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="●●●●●●">
+                </div>
+                <div class="signup-field">
+                    <label class="signup-field-label" for="accountPinSetupInput2">PIN 확인</label>
+                    <input type="password" id="accountPinSetupInput2" class="input account-pin-setup-input" maxlength="6" inputmode="numeric" autocomplete="new-password" placeholder="한 번 더 입력">
+                </div>
+                <button type="button" class="btn btn-primary w-full account-pin-setup-submit" onclick="submitAccountPinSetupFromModal()">PIN 저장하고 계속</button>
+            </div>
         </div>
     </div>
 

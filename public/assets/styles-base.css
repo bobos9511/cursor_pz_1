@@ -2815,6 +2815,33 @@
         .mobile-nav-more__section:first-of-type .mobile-nav-more__group-label {
             margin-top: 4px;
         }
+        .mobile-nav-more-mbnav-lead {
+            font-size: 12px;
+            line-height: 1.45;
+            color: #64748b;
+            font-weight: 600;
+            margin: -4px 4px 10px;
+        }
+        .mobile-nav-more-mbnav-editor.settings-mbnav-slot-editor {
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), #fff);
+            margin-bottom: 10px;
+        }
+        .mobile-nav-more-mbnav-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .mobile-nav-more-mbnav-btn {
+            min-height: 40px;
+            padding-left: 14px;
+            padding-right: 14px;
+            font-size: 13px;
+            font-weight: 800;
+        }
         .mobile-nav-more__list {
             display: flex;
             flex-direction: column;
@@ -7724,3 +7751,98 @@
         }
         .footer-copyright--short { display: none; }
         .engraved-logo { font-family: var(--font-sans); font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }
+
+        /* 로그인 후 계정 PIN 필수 모달 */
+        .account-pin-setup-overlay {
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(10px);
+        }
+        .account-pin-setup-shell {
+            max-width: 400px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(191, 219, 254, 0.85);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+            background: #fff;
+        }
+        .account-pin-setup-hero {
+            position: relative;
+            padding: 28px 22px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 42%, #38bdf8 100%);
+            color: #fff;
+        }
+        .account-pin-setup-hero__glow {
+            position: absolute;
+            inset: -40% -20%;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35), transparent 55%);
+            pointer-events: none;
+        }
+        .account-pin-setup-hero__icon-wrap {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        .account-pin-setup-hero__lock {
+            width: 28px;
+            height: 28px;
+            color: #fff;
+        }
+        .account-pin-setup-title {
+            position: relative;
+            margin: 0 0 8px;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+        .account-pin-setup-lead {
+            position: relative;
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            opacity: 0.95;
+            font-weight: 600;
+        }
+        .account-pin-setup-body {
+            padding: 18px 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .account-pin-setup-input {
+            letter-spacing: 0.2em;
+            font-weight: 800;
+            text-align: center;
+            font-size: 17px;
+        }
+        .account-pin-setup-submit {
+            margin-top: 4px;
+            min-height: 46px;
+            font-weight: 900;
+            border-radius: 12px;
+        }
+        body[data-theme="dark"] .account-pin-setup-shell {
+            background: #0f172a;
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+        body[data-theme="dark"] .account-pin-setup-body .signup-field-label {
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .account-pin-setup-body .input {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f8fafc;
+        }

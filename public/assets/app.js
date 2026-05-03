@@ -933,6 +933,23 @@
             return roleMatrix[r] || roleMatrix.branch;
         }
 
+        /** 모바일 하단 바·글래스 메뉴 편집에 쓸 수 있는 슬롯 ID(현재 역할의 게시판 쓰기 권한 기준). */
+        function getMbnavPoolIdsForRole(role) {
+            const entry = getRoleMatrixEntry(role);
+            const write = Array.isArray(entry.write) ? entry.write : [];
+            const pool = ['dashboard'];
+            if (write.includes('IT')) pool.push('list-it');
+            if (write.includes('BIZ')) pool.push('list-biz');
+            if (write.includes('SYS')) pool.push('list-sys');
+            pool.push('integrated-search');
+            pool.push('notifications');
+            return pool;
+        }
+        function getMbnavPoolIdsForCurrentUser() {
+            const role = (currentLoginUser && currentLoginUser.role) || currentRole || 'branch';
+            return getMbnavPoolIdsForRole(role);
+        }
+
         function isKnowLikeBoard(t) {
             const x = String(t || '').toUpperCase();
             return x === 'KNOW' || x === 'RULE';
@@ -1454,6 +1471,11 @@
             }
             delete out.adminPinHash;
             delete out.adminPinPlain;
+            delete out.accountPinHash;
+            delete out.accountPinPlain;
+            if (String(out.employeeNo || '') === AI_SYSTEM_USER_EMP_NO) out.hasAccountPin = true;
+            else if (typeof user.hasAccountPin === 'boolean') out.hasAccountPin = user.hasAccountPin;
+            else out.hasAccountPin = false;
             return out;
         }
 
@@ -1520,6 +1542,7 @@
                 faxNo: '02-0000-0000',
                 mobileNo: '010-0000-0000',
                 isAdmin: true,
+                hasAccountPin: true,
                 createdAt: getCurrentDateTime()
             });
         }
@@ -2596,6 +2619,10 @@
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             });
+            ['signupAccountPin', 'signupAccountPinConfirm'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
             fillSignupTelSelectsOnce();
             applySignupContactFromStored('8-0000', '02-0000-0000', '010-0000-0000');
             populateSignupPositionOptions('3급', '부장');
@@ -2911,6 +2938,26 @@
                 return;
             }
 
+            const needsAccountPin = !prevUser || !prevUser.hasAccountPin;
+            const pinRaw = normalizeAdminPinDigits(String(document.getElementById('signupAccountPin')?.value || ''));
+            const pinRaw2 = normalizeAdminPinDigits(String(document.getElementById('signupAccountPinConfirm')?.value || ''));
+            if (needsAccountPin) {
+                if (!isValidAdminPinFormatClient(pinRaw)) {
+                    showAlert('계정 PIN은 숫자 6자리로 입력해 주세요.', 'error');
+                    return;
+                }
+                if (pinRaw !== pinRaw2) {
+                    showAlert('PIN 확인이 일치하지 않습니다.', 'error');
+                    return;
+                }
+            } else if (pinRaw || pinRaw2) {
+                if (!isValidAdminPinFormatClient(pinRaw) || pinRaw !== pinRaw2) {
+                    showAlert('PIN을 변경하려면 새 PIN 6자리와 확인란을 동일하게 입력해 주세요.', 'error');
+                    return;
+                }
+            }
+            const accountPinPlainToSave = needsAccountPin || pinRaw ? pinRaw : '';
+
             const user = {
                 id: Date.now(),
                 name,
@@ -2925,6 +2972,7 @@
                 mobileNo,
                 createdAt: getCurrentDateTime()
             };
+            if (accountPinPlainToSave) user.accountPinPlain = accountPinPlainToSave;
             if (String(user.employeeNo) === AI_SYSTEM_USER_EMP_NO) {
                 showAlert('직원번호 000000은 AI 시스템 계정으로 예약되어 있습니다.', 'error');
                 return;
@@ -3578,6 +3626,147 @@
             }
         }
 
+        let accountPinSetupModalResolve = null;
+
+        function closeAccountPinSetupModal() {
+            const m = document.getElementById('accountPinSetupModal');
+            if (m) m.classList.remove('active');
+        }
+
+        function finishAccountPinSetupModal(ok) {
+            closeAccountPinSetupModal();
+            const fn = accountPinSetupModalResolve;
+            accountPinSetupModalResolve = null;
+            if (typeof fn === 'function') fn(!!ok);
+        }
+
+        function openAccountPinSetupModalAsync() {
+            return new Promise((resolve) => {
+                accountPinSetupModalResolve = resolve;
+                const m = document.getElementById('accountPinSetupModal');
+                const rowCur = document.getElementById('accountPinSetupCurrentRow');
+                if (rowCur) rowCur.classList.add('hidden');
+                const a = document.getElementById('accountPinSetupInput');
+                const b = document.getElementById('accountPinSetupInput2');
+                const c = document.getElementById('accountPinSetupCurrent');
+                if (a) a.value = '';
+                if (b) b.value = '';
+                if (c) c.value = '';
+                if (m) m.classList.add('active');
+                setTimeout(() => {
+                    if (a) a.focus();
+                }, 60);
+            });
+        }
+
+        async function submitAccountPinSetupFromModal() {
+            const newPin = normalizeAdminPinDigits(String(document.getElementById('accountPinSetupInput')?.value || ''));
+            const newPin2 = normalizeAdminPinDigits(String(document.getElementById('accountPinSetupInput2')?.value || ''));
+            if (!isValidAdminPinFormatClient(newPin)) {
+                showAlert('PIN은 숫자 6자리로 입력해 주세요.', 'error');
+                return;
+            }
+            if (newPin !== newPin2) {
+                showAlert('PIN 확인이 일치하지 않습니다.', 'error');
+                return;
+            }
+            const token = getStoredSessionToken();
+            if (!token) {
+                showAlert('세션이 없습니다. 다시 로그인해 주세요.', 'error');
+                finishAccountPinSetupModal(false);
+                return;
+            }
+            try {
+                const res = await fetch('/api/db/account-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ newPin }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showAlert(String((data && data.error) || 'PIN 저장에 실패했습니다.'), 'error');
+                    return;
+                }
+                finishAccountPinSetupModal(true);
+                showAlert('PIN이 저장되었습니다.', 'success');
+            } catch (e) {
+                console.error(e);
+                showAlert('PIN 저장 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        window.submitAccountPinSetupFromModal = submitAccountPinSetupFromModal;
+
+        async function submitAccountSelfPinFromSettings() {
+            if (!currentLoginUser || isAiSystemUser(currentLoginUser)) return;
+            const cur = normalizeAdminPinDigits(String(document.getElementById('accountPinSelfCurrent')?.value || ''));
+            const n1 = normalizeAdminPinDigits(String(document.getElementById('accountPinSelfNew')?.value || ''));
+            const n2 = normalizeAdminPinDigits(String(document.getElementById('accountPinSelfNew2')?.value || ''));
+            const has = !!currentLoginUser.hasAccountPin;
+            if (!isValidAdminPinFormatClient(n1) || n1 !== n2) {
+                showAlert('새 PIN은 숫자 6자리로, 두 칸을 동일하게 입력해 주세요.', 'error');
+                return;
+            }
+            if (has && !isValidAdminPinFormatClient(cur)) {
+                showAlert('현재 PIN 6자리를 입력해 주세요.', 'error');
+                return;
+            }
+            const token = getStoredSessionToken();
+            if (!token) {
+                showAlert('세션이 없습니다.', 'error');
+                return;
+            }
+            try {
+                const body = { newPin: n1 };
+                if (has) body.currentPin = cur;
+                const res = await fetch('/api/db/account-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    showAlert(String((data && data.error) || 'PIN 저장에 실패했습니다.'), 'error');
+                    return;
+                }
+                await loadSignupUsers();
+                const emp = currentLoginUser && currentLoginUser.employeeNo;
+                currentLoginUser = signupUsers.find((u) => String(u.employeeNo) === String(emp)) || currentLoginUser;
+                showAlert('계정 PIN이 저장되었습니다.', 'success');
+                ['accountPinSelfCurrent', 'accountPinSelfNew', 'accountPinSelfNew2'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+            } catch (e) {
+                console.error(e);
+                showAlert('PIN 저장 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        window.submitAccountSelfPinFromSettings = submitAccountSelfPinFromSettings;
+
+        async function ensureAccountPinSetupAfterSessionForLogin(resolvedEmpNo) {
+            if (!currentLoginUser || isAiSystemUser(currentLoginUser)) return true;
+            if (currentLoginUser.hasAccountPin === true) return true;
+            const ok = await openAccountPinSetupModalAsync();
+            if (!ok) {
+                await notifyTestSessionLogout();
+                setStoredSessionToken('');
+                currentLoginUser = null;
+                showAlert('계정 PIN을 설정해야 로그인을 완료할 수 있습니다.', 'error');
+                return false;
+            }
+            await loadSignupUsers();
+            const want = String(resolvedEmpNo || '').trim();
+            currentLoginUser = signupUsers.find((u) => String(u.employeeNo) === want) || null;
+            if (!currentLoginUser || currentLoginUser.hasAccountPin !== true) {
+                await notifyTestSessionLogout();
+                setStoredSessionToken('');
+                currentLoginUser = null;
+                showAlert('PIN 정보를 확인할 수 없습니다. 다시 시도해 주세요.', 'error');
+                return false;
+            }
+            return true;
+        }
+
         async function doLogin(options = {}) { 
             hideServerErrorPage();
             padEmployeeNo();
@@ -3691,6 +3880,10 @@
                 showAlert('서버로부터 세션을 받지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
                 return;
             }
+
+            const empPadded = normalizeEmployeeNo(empNo, true);
+            const accountPinGateOk = await ensureAccountPinSetupAfterSessionForLogin(empPadded);
+            if (!accountPinGateOk) return;
 
             await markSignupUserLoginState(currentLoginUser.employeeNo, true);
             currentLoginUser = signupUsers.find(u => u.employeeNo === empNo) || currentLoginUser;
@@ -4000,9 +4193,10 @@
         };
         let mbnavCompactResizeBound = false;
 
-        function normalizeMobileBottomNavSlots(raw) {
-            const allowed = new Set(MB_NAV_POOL_IDS);
-            const arr = Array.isArray(raw) ? raw.map((x) => String(x || '').trim()).filter((id) => allowed.has(id)) : [];
+        function normalizeMobileBottomNavSlots(raw, allowedPool) {
+            const pri = Array.isArray(allowedPool) && allowedPool.length ? allowedPool : MB_NAV_POOL_IDS;
+            const allowedSet = new Set(pri);
+            const arr = Array.isArray(raw) ? raw.map((x) => String(x || '').trim()).filter((id) => allowedSet.has(id)) : [];
             const out = [];
             const seen = new Set();
             for (let i = 0; i < arr.length; i += 1) {
@@ -4012,12 +4206,14 @@
                 out.push(id);
                 if (out.length >= MB_NAV_SLOT_COUNT) break;
             }
-            for (let p = 0; p < MB_NAV_POOL_IDS.length && out.length < MB_NAV_SLOT_COUNT; p += 1) {
-                const id = MB_NAV_POOL_IDS[p];
+            for (let p = 0; p < pri.length && out.length < MB_NAV_SLOT_COUNT; p += 1) {
+                const id = pri[p];
                 if (seen.has(id)) continue;
                 seen.add(id);
                 out.push(id);
             }
+            const first = pri[0] || 'dashboard';
+            while (out.length < MB_NAV_SLOT_COUNT) out.push(first);
             return out.slice(0, MB_NAV_SLOT_COUNT);
         }
         function migrateLegacyMobileBottomNavLocalStorage() {
@@ -4037,7 +4233,7 @@
         function tryHydrateMobileBottomNavSlotsFromServer(userSettings) {
             if (!userSettings || typeof userSettings !== 'object') return;
             if (!Object.prototype.hasOwnProperty.call(userSettings, 'mobileBottomNavSlots')) return;
-            const norm = normalizeMobileBottomNavSlots(userSettings.mobileBottomNavSlots);
+            const norm = normalizeMobileBottomNavSlots(userSettings.mobileBottomNavSlots, getMbnavPoolIdsForCurrentUser());
             if (!norm || norm.length !== MB_NAV_SLOT_COUNT) return;
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.mobileBottomNavSlots = norm;
@@ -4045,23 +4241,24 @@
         }
         function getMobileBottomNavSlotOrder() {
             migrateLegacyMobileBottomNavLocalStorage();
+            const allowed = getMbnavPoolIdsForCurrentUser();
             const fromApp =
                 appData && appData.settings && Array.isArray(appData.settings.mobileBottomNavSlots)
-                    ? normalizeMobileBottomNavSlots(appData.settings.mobileBottomNavSlots)
+                    ? normalizeMobileBottomNavSlots(appData.settings.mobileBottomNavSlots, allowed)
                     : null;
             if (fromApp && fromApp.length === MB_NAV_SLOT_COUNT) return fromApp;
             try {
                 const raw = localStorage.getItem(MB_NAV_SLOT_ORDER_KEY);
                 const arr = raw ? JSON.parse(raw) : null;
-                const norm = normalizeMobileBottomNavSlots(arr);
+                const norm = normalizeMobileBottomNavSlots(arr, allowed);
                 if (norm.length === MB_NAV_SLOT_COUNT) return norm;
             } catch (_) {
                 /* noop */
             }
-            return MB_NAV_DEFAULT_BAR_ORDER.slice();
+            return normalizeMobileBottomNavSlots(MB_NAV_DEFAULT_BAR_ORDER.slice(), allowed);
         }
         function saveMobileBottomNavSlotOrder(order) {
-            const norm = normalizeMobileBottomNavSlots(order);
+            const norm = normalizeMobileBottomNavSlots(order, getMbnavPoolIdsForCurrentUser());
             if (norm.length !== MB_NAV_SLOT_COUNT) return;
             try {
                 localStorage.setItem(MB_NAV_SLOT_ORDER_KEY, JSON.stringify(norm));
@@ -4138,57 +4335,85 @@
             const mb = document.getElementById(`mbnav-${key}`);
             if (mb) mb.classList.add('active');
         }
-        function readMbnavOrderFromSettingsEditorDom() {
-            const box = document.getElementById('settingsMbnavSlotEditor');
+        function readMbnavOrderFromSettingsEditorDom(boxOrId) {
+            const box =
+                typeof boxOrId === 'string'
+                    ? document.getElementById(boxOrId || 'settingsMbnavSlotEditor')
+                    : boxOrId || document.getElementById('settingsMbnavSlotEditor');
             if (!box) return null;
             const selects = Array.from(box.querySelectorAll('select[data-mbnav-slot-idx]'));
             if (selects.length !== MB_NAV_SLOT_COUNT) return null;
             selects.sort((a, b) => Number(a.getAttribute('data-mbnav-slot-idx')) - Number(b.getAttribute('data-mbnav-slot-idx')));
             const vals = selects.map((s) => String(s.value || '').trim());
-            const norm = normalizeMobileBottomNavSlots(vals);
+            const norm = normalizeMobileBottomNavSlots(vals, getMbnavPoolIdsForCurrentUser());
             return norm.length === MB_NAV_SLOT_COUNT ? norm : null;
         }
-        function renderSettingsMbnavSlotEditor(presetOrder) {
-            const box = document.getElementById('settingsMbnavSlotEditor');
+        function renderMbnavSlotEditorInto(box, presetOrder, poolIds, host) {
             if (!box) return;
+            const pool = Array.isArray(poolIds) && poolIds.length ? poolIds : getMbnavPoolIdsForCurrentUser();
             const order =
                 Array.isArray(presetOrder) && presetOrder.length === MB_NAV_SLOT_COUNT
-                    ? normalizeMobileBottomNavSlots(presetOrder)
+                    ? normalizeMobileBottomNavSlots(presetOrder, pool)
                     : getMobileBottomNavSlotOrder();
-            const unused = MB_NAV_POOL_IDS.filter((id) => !order.includes(id))[0] || '';
+            const unused = pool.filter((id) => !order.includes(id))[0] || '';
             const unusedLabel = unused ? MB_NAV_SLOT_LABELS[unused] || unused : '';
+            const hostKey = host === 'glass' ? 'glass' : 'settings';
+            const hintGlass =
+                hostKey === 'glass'
+                    ? '변경 후 <strong>하단 바에 적용</strong>을 누르면 즉시 반영되며, 서버에는 환경 설정의 <strong>설정 저장</strong> 시 함께 저장됩니다.'
+                    : '칸을 바꾸면 서로 교체됩니다. <strong>설정 저장</strong>을 눌러 반영하세요.';
             let html = '';
             for (let i = 0; i < MB_NAV_SLOT_COUNT; i += 1) {
                 const cur = order[i];
-                const opts = MB_NAV_POOL_IDS.map(
-                    (id) =>
-                        `<option value="${escapeHtml(id)}"${id === cur ? ' selected' : ''}>${escapeHtml(
-                            MB_NAV_SLOT_LABELS[id] || id,
-                        )}</option>`,
-                ).join('');
+                const opts = pool
+                    .map(
+                        (id) =>
+                            `<option value="${escapeHtml(id)}"${id === cur ? ' selected' : ''}>${escapeHtml(
+                                MB_NAV_SLOT_LABELS[id] || id,
+                            )}</option>`,
+                    )
+                    .join('');
                 html += `<div class="settings-mbnav-slot-row">
                     <span class="settings-mbnav-slot-num" aria-hidden="true">${i + 1}</span>
-                    <select class="input settings-mbnav-slot-select" data-mbnav-slot-idx="${i}" aria-label="하단 바 ${
+                    <select class="input settings-mbnav-slot-select" data-mbnav-slot-idx="${i}" data-mbnav-host="${hostKey}" aria-label="하단 바 ${
                     i + 1
                 }번 칸 메뉴" onchange="onSettingsMbnavSlotSelectChange(this)">${opts}</select>
                     <div class="settings-mbnav-slot-move">
                         <button type="button" class="btn btn-outline settings-mbnav-move-btn" ${
                             i === 0 ? 'disabled' : ''
-                        } onclick="moveSettingsMbnavSlotRow(${i}, -1)">위</button>
+                        } onclick="moveSettingsMbnavSlotRow(${i}, -1, '${hostKey}')">위</button>
                         <button type="button" class="btn btn-outline settings-mbnav-move-btn" ${
                             i === MB_NAV_SLOT_COUNT - 1 ? 'disabled' : ''
-                        } onclick="moveSettingsMbnavSlotRow(${i}, 1)">아래</button>
+                        } onclick="moveSettingsMbnavSlotRow(${i}, 1, '${hostKey}')">아래</button>
                     </div>
                 </div>`;
             }
-            html += `<p class="settings-mbnav-pool-hint">하단 바에 빠진 메뉴는 <strong>${
-                unusedLabel ? escapeHtml(unusedLabel) : '—'
-            }</strong> 입니다. 칸을 바꾸면 서로 교체됩니다. <strong>설정 저장</strong>을 눌러 반영하세요.</p>`;
+            html += `<p class="settings-mbnav-pool-hint">${
+                hostKey === 'glass'
+                    ? `표시·순서는 권한이 있는 메뉴만 선택할 수 있습니다. 하단 바에 빠진 메뉴: <strong>${
+                          unusedLabel ? escapeHtml(unusedLabel) : '—'
+                      }</strong>. ${hintGlass}`
+                    : `하단 바에 빠진 메뉴는 <strong>${
+                          unusedLabel ? escapeHtml(unusedLabel) : '—'
+                      }</strong> 입니다. ${hintGlass}`
+            }</p>`;
             box.innerHTML = html;
         }
+        function renderBothMbnavSlotEditors(presetOrder) {
+            const pool = getMbnavPoolIdsForCurrentUser();
+            const s = document.getElementById('settingsMbnavSlotEditor');
+            const m = document.getElementById('mobileNavMoreMbnavSlotEditor');
+            if (s) renderMbnavSlotEditorInto(s, presetOrder, pool, 'settings');
+            if (m) renderMbnavSlotEditorInto(m, presetOrder, pool, 'glass');
+        }
+        function renderSettingsMbnavSlotEditor(presetOrder) {
+            renderBothMbnavSlotEditors(presetOrder);
+        }
         function onSettingsMbnavSlotSelectChange(sel) {
-            const box = document.getElementById('settingsMbnavSlotEditor');
-            if (!box || !sel) return;
+            if (!sel) return;
+            const hostKey = sel.getAttribute('data-mbnav-host') === 'glass' ? 'glass' : 'settings';
+            const box = document.getElementById(hostKey === 'glass' ? 'mobileNavMoreMbnavSlotEditor' : 'settingsMbnavSlotEditor');
+            if (!box) return;
             const idx = Number(sel.getAttribute('data-mbnav-slot-idx'));
             if (Number.isNaN(idx) || idx < 0 || idx >= MB_NAV_SLOT_COUNT) return;
             const selects = Array.from(box.querySelectorAll('select[data-mbnav-slot-idx]')).sort(
@@ -4199,12 +4424,13 @@
             const dupAt = vals.findIndex((v, i) => i !== idx && v === newVal);
             if (dupAt >= 0) vals[dupAt] = vals[idx];
             vals[idx] = newVal;
-            vals = normalizeMobileBottomNavSlots(vals);
-            renderSettingsMbnavSlotEditor(vals);
+            vals = normalizeMobileBottomNavSlots(vals, getMbnavPoolIdsForCurrentUser());
+            renderBothMbnavSlotEditors(vals);
         }
         window.onSettingsMbnavSlotSelectChange = onSettingsMbnavSlotSelectChange;
-        function moveSettingsMbnavSlotRow(idx, delta) {
-            const box = document.getElementById('settingsMbnavSlotEditor');
+        function moveSettingsMbnavSlotRow(idx, delta, host) {
+            const hostKey = host === 'glass' ? 'glass' : 'settings';
+            const box = document.getElementById(hostKey === 'glass' ? 'mobileNavMoreMbnavSlotEditor' : 'settingsMbnavSlotEditor');
             if (!box) return;
             const j = idx + delta;
             if (j < 0 || j >= MB_NAV_SLOT_COUNT) return;
@@ -4215,23 +4441,40 @@
             const t = vals[idx];
             vals[idx] = vals[j];
             vals[j] = t;
-            const norm = normalizeMobileBottomNavSlots(vals);
-            renderSettingsMbnavSlotEditor(norm);
+            const norm = normalizeMobileBottomNavSlots(vals, getMbnavPoolIdsForCurrentUser());
+            renderBothMbnavSlotEditors(norm);
         }
         window.moveSettingsMbnavSlotRow = moveSettingsMbnavSlotRow;
         function commitMobileBottomNavFromSettingsEditor() {
             const panel = document.getElementById('settings-panel-mbnav');
             if (!panel || panel.classList.contains('hidden')) return;
-            const order = readMbnavOrderFromSettingsEditorDom();
+            const order = readMbnavOrderFromSettingsEditorDom('settingsMbnavSlotEditor');
             if (!order) return;
             saveMobileBottomNavSlotOrder(order);
             applyMobileBottomNavSlotOrder();
             syncMobileIntegratedSearchVisibility();
         }
-        function resetMobileBottomNavSlotOrder() {
-            saveMobileBottomNavSlotOrder(MB_NAV_DEFAULT_BAR_ORDER.slice());
+        function saveMbnavFromGlassMenu() {
+            const order = readMbnavOrderFromSettingsEditorDom('mobileNavMoreMbnavSlotEditor');
+            if (!order) {
+                showAlert('하단 바 구성을 읽을 수 없습니다.', 'error');
+                return;
+            }
+            saveMobileBottomNavSlotOrder(order);
             applyMobileBottomNavSlotOrder();
-            renderSettingsMbnavSlotEditor();
+            syncMobileIntegratedSearchVisibility();
+            renderBothMbnavSlotEditors(order);
+            void saveUserSettingsToServer();
+            showAlert('하단 바 메뉴를 저장했습니다.', 'success', { skipNotificationCenter: true });
+            closeMobileNavMore();
+        }
+        window.saveMbnavFromGlassMenu = saveMbnavFromGlassMenu;
+        function resetMobileBottomNavSlotOrder() {
+            const allowed = getMbnavPoolIdsForCurrentUser();
+            const norm = normalizeMobileBottomNavSlots(MB_NAV_DEFAULT_BAR_ORDER.slice(), allowed);
+            saveMobileBottomNavSlotOrder(norm);
+            applyMobileBottomNavSlotOrder();
+            renderBothMbnavSlotEditors();
             showAlert('기본 구성으로 되돌렸습니다. 화면 상단의 설정 저장을 눌러 서버에 반영하세요.', 'success', {
                 skipNotificationCenter: true,
             });
@@ -4367,6 +4610,10 @@
             }
             mobileNavMoreReturnSnapshot = captureViewSnapshotForMobileNavBack();
             syncMobileNavMoreUserPanel();
+            const mbnavGlass = document.getElementById('mobileNavMoreMbnavSlotEditor');
+            if (mbnavGlass) {
+                renderMbnavSlotEditorInto(mbnavGlass, getMobileBottomNavSlotOrder(), getMbnavPoolIdsForCurrentUser(), 'glass');
+            }
             updateAiChatFloatingButton();
         }
         function toggleMobileNavMore() {
