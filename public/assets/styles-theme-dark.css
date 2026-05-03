@@ -1861,10 +1861,25 @@
         body[data-theme="dark"] .ai-chat-layer-host {
             background: transparent;
         }
-        body[data-theme="dark"] .ai-chat-layer-host .ai-search-main {
-            background: rgba(17, 28, 48, 0.94);
-            border: none;
-            box-shadow: none;
+        /* 플로팅 레이어: 전역 AI 다크 스킨(셸·메인·로그·입력줄)이 패널과 이중 박스로 쌓이지 않도록 */
+        body[data-theme="dark"] .ai-chat-layer-host .ai-search-shell,
+        body[data-theme="dark"] .ai-chat-layer-host .ai-search-main,
+        body[data-theme="dark"] .ai-chat-layer-host .ai-search-main-body {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        body[data-theme="dark"] .ai-chat-layer-host #view-ai-search .ai-search-log {
+            background: transparent !important;
+            border: none !important;
+        }
+        body[data-theme="dark"] .ai-chat-layer-host #view-ai-search .ai-search-input-row {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        body[data-theme="dark"] .ai-chat-layer-host #view-ai-search .ai-search-input-row:focus-within {
+            outline-color: rgba(96, 165, 250, 0.45);
         }
         body[data-theme="dark"] .ai-layer-new-chat-btn {
             color: #bfdbfe;
