@@ -2891,80 +2891,30 @@
         .dash-feed-title { font-weight: bold; color: #0f172a; line-height: 1.45; margin-bottom: 6px; }
         .dash-feed-sub { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #64748b; }
 
-        /* 게시물 번호 칩 (목록·상세·대시보드·검색 공통) */
+        /* 게시물 번호 — 가벼운 태그 (목록·상세·대시보드·검색 공통) */
         .post-id-chip {
             display: inline-flex;
-            align-items: stretch;
+            align-items: center;
             vertical-align: middle;
-            border-radius: 999px;
-            background: linear-gradient(145deg, #f0f9ff 0%, #e8f4fc 55%, #dff2fe 100%);
-            border: 1px solid rgba(0, 91, 172, 0.22);
-            box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.75) inset,
-                0 4px 14px rgba(2, 132, 199, 0.08);
-            overflow: hidden;
+            border-radius: 6px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             flex-shrink: 0;
-        }
-        .post-id-chip__accent {
-            width: 5px;
-            flex-shrink: 0;
-            background: linear-gradient(180deg, #38bdf8, var(--ibk-blue));
-            opacity: 0.95;
-        }
-        .post-id-chip__body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 1px;
-            padding: 5px 12px 5px 10px;
-            line-height: 1.15;
-        }
-        .post-id-chip__cap {
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            color: #64748b;
-            text-transform: uppercase;
         }
         .post-id-chip__num {
-            font-size: 13px;
-            font-weight: 800;
-            color: #0f172a;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 600;
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.02em;
-        }
-        .post-id-chip--compact .post-id-chip__num {
-            padding: 5px 11px 5px 9px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            align-self: center;
-        }
-        .post-id-chip--compact .post-id-chip__accent {
-            width: 4px;
-        }
-        .post-id-chip--detail {
-            align-items: center;
-            border-radius: 7px;
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-        }
-        .post-id-chip--detail .post-id-chip__accent {
-            width: 3px;
-            align-self: stretch;
-            opacity: 1;
-            background: linear-gradient(180deg, #60a5fa, #2563eb);
-            border-radius: 6px 0 0 6px;
+            color: #64748b;
+            line-height: 1.35;
         }
         .post-id-chip--detail .post-id-chip__num {
-            display: flex;
-            align-items: center;
-            padding: 3px 10px 3px 7px;
+            padding: 3px 8px;
             font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            color: #334155;
+            font-weight: 600;
+            color: #475569;
         }
         .dtl-post-ref-wrap {
             margin-bottom: 12px;

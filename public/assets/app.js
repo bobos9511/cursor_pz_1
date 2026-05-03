@@ -1154,10 +1154,8 @@
         function formatPostIdChipHtml(rawId, variant = 'compact') {
             const n = escapeHtml(String(rawId ?? '-'));
             const aria = escapeHtml(`게시물 번호 ${String(rawId ?? '-')}`);
-            if (variant === 'detail') {
-                return `<span class="post-id-chip post-id-chip--detail" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__num">${n}</span></span>`;
-            }
-            return `<span class="post-id-chip post-id-chip--compact" aria-label="${aria}"><span class="post-id-chip__accent" aria-hidden="true"></span><span class="post-id-chip__num">${n}</span></span>`;
+            const detail = variant === 'detail';
+            return `<span class="post-id-chip${detail ? ' post-id-chip--detail' : ''}" aria-label="${aria}"><span class="post-id-chip__num">${n}</span></span>`;
         }
         function normalizeDisplayText(value, fallback = '-') {
             const cleaned = String(value || '')
