@@ -4,6 +4,9 @@
     <div id="loginPage">
         <div class="login-bg"></div>
         <div class="login-box">
+            <button type="button" id="loginThemeFab" class="login-theme-btn" onclick="toggleLoginThemeMode()" aria-label="로그인 테마 전환">
+                <span id="loginThemeFabIcon" aria-hidden="true">☾</span>
+            </button>
             <div class="text-center mb-20">
                 <div class="font-bold login-brand-title">IBK KN<span class="login-brand-point">O</span>CK</div>
                 <p class="login-brand-subtitle">IBK 스마트 업무지식센터</p>
@@ -59,9 +62,6 @@
                 </button>
             </form>
         </div>
-        <button type="button" id="loginThemeFab" class="login-theme-fab" onclick="toggleLoginThemeMode()" aria-label="로그인 테마 전환">
-            <span id="loginThemeFabIcon" aria-hidden="true">☾</span>
-        </button>
     </div>
     <div id="serverErrorPage" class="server-error-page hidden" aria-live="polite">
         <div class="server-error-bg-decor" aria-hidden="true">

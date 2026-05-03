@@ -1296,13 +1296,13 @@
         body[data-theme="dark"] .login-test-access-caption::after {
             background: linear-gradient(110deg, rgba(255,255,255,0) 35%, rgba(147,197,253,0.4) 50%, rgba(255,255,255,0) 65%);
         }
-        body[data-theme="dark"] .login-theme-fab {
+        body[data-theme="dark"] .login-theme-btn {
             color: #dbeafe;
             border-color: #4a5f7f;
             background: linear-gradient(180deg, #1e2d45, #17243a);
-            box-shadow: 0 10px 24px rgba(2, 8, 24, 0.45);
+            box-shadow: 0 8px 20px rgba(2, 8, 24, 0.45);
         }
-        body[data-theme="dark"] .login-theme-fab:hover {
+        body[data-theme="dark"] .login-theme-btn:hover {
             background: linear-gradient(180deg, #263b5d, #1d314e);
         }
         body[data-theme="dark"] .ai-chat-floating-btn {
