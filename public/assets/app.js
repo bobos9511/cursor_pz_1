@@ -4124,7 +4124,9 @@
             const integratedSearchActive = !!(integratedSearchPage && integratedSearchPage.classList.contains('active'));
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open')
                 || document.body.classList.contains('mobile-nav-more-open');
-            btn.classList.toggle('hidden', !appVisible || aiSearchActive || integratedSearchActive || hideByMobileMenu);
+            const dashView = document.getElementById('view-dashboard');
+            const dashEditing = !!(dashView && dashView.classList.contains('dashboard-editing'));
+            btn.classList.toggle('hidden', !appVisible || aiSearchActive || integratedSearchActive || hideByMobileMenu || dashEditing);
             ensureAiChatFloatingOverlapListeners();
             scheduleAiChatFloatingOverlapLayout();
         }
@@ -4614,29 +4616,48 @@
             });
         }
 
-        function toggleDashboardEditMode() {
-            dashboardEditMode = !dashboardEditMode;
-            const view = document.getElementById('view-dashboard');
-            if (view) view.classList.toggle('dashboard-editing', dashboardEditMode);
+        function setDashboardEditChrome() {
             const button = document.getElementById('btnDashboardWidgetEdit');
-            const tiles = document.querySelectorAll('#dashboardWidgetContainer > .dash-tile');
+            const cancelBtn = document.getElementById('btnDashboardWidgetEditCancel');
             const handles = document.querySelectorAll('#dashboardWidgetContainer .drag-handle');
-
+            const tiles = document.querySelectorAll('#dashboardWidgetContainer > .dash-tile');
             handles.forEach((handle) => handle.classList.toggle('hidden', !dashboardEditMode));
             tiles.forEach((tile) => {
                 tile.draggable = false;
                 tile.style.cursor = dashboardEditMode ? 'grab' : 'default';
             });
-
             if (button) button.innerText = dashboardEditMode ? '편집 완료' : '위젯 편집';
+            if (cancelBtn) cancelBtn.classList.toggle('hidden', !dashboardEditMode);
+            updateAiChatFloatingButton();
+        }
+        function cancelDashboardEditMode() {
+            if (!dashboardEditMode) return;
+            dashboardEditMode = false;
+            applyDashboardWidgetOrder();
+            const view = document.getElementById('view-dashboard');
+            if (view) view.classList.remove('dashboard-editing');
+            setDashboardEditChrome();
+        }
+        function toggleDashboardEditMode() {
+            dashboardEditMode = !dashboardEditMode;
+            const view = document.getElementById('view-dashboard');
+            if (view) view.classList.toggle('dashboard-editing', dashboardEditMode);
+            setDashboardEditChrome();
             if (!dashboardEditMode) saveDashboardWidgetOrder();
         }
+        window.cancelDashboardEditMode = cancelDashboardEditMode;
 
         let dashFloatState = null;
         let dashFloatMoveRaf = null;
 
         function moveDashDropPlaceholder(container, placeholder, clientX, clientY) {
             if (!container || !placeholder) return;
+            const exclude = dashFloatState && dashFloatState.tile;
+            const tiles = Array.from(container.querySelectorAll(':scope > .dash-tile')).filter((t) => t !== exclude);
+            if (tiles.length === 0) {
+                container.appendChild(placeholder);
+                return;
+            }
             let overTile = null;
             if (
                 typeof clientX === 'number' &&
@@ -4652,17 +4673,35 @@
                     if (el.closest('.dash-drag-placeholder')) continue;
                     const t = el.closest('.dash-tile');
                     if (!t || t.parentElement !== container) continue;
-                    if (dashFloatState && t === dashFloatState.tile) continue;
+                    if (t === exclude) continue;
                     overTile = t;
                     break;
                 }
+            }
+            if (!overTile) {
+                let best = null;
+                let bestD = Infinity;
+                for (const t of tiles) {
+                    const r = t.getBoundingClientRect();
+                    const cx = Math.min(Math.max(clientX, r.left), r.right);
+                    const cy = Math.min(Math.max(clientY, r.top), r.bottom);
+                    const d = (clientX - cx) ** 2 + (clientY - cy) ** 2;
+                    if (d < bestD) {
+                        bestD = d;
+                        best = t;
+                    }
+                }
+                overTile = best;
             }
             if (!overTile) {
                 container.appendChild(placeholder);
                 return;
             }
             const rect = overTile.getBoundingClientRect();
-            const insertAfter = clientY > rect.top + rect.height / 2;
+            const midY = rect.top + rect.height * 0.52;
+            const midX = rect.left + rect.width * 0.52;
+            const insertAfter =
+                clientY > midY || (clientY >= rect.top && clientY <= rect.bottom && clientX > midX);
             if (insertAfter) container.insertBefore(placeholder, overTile.nextSibling);
             else container.insertBefore(placeholder, overTile);
         }
@@ -5146,6 +5185,7 @@
         }
 
         function openDashCountModal(metricKey) {
+            if (dashboardEditMode) return;
             const config = getDashCountConfig(metricKey);
             if (!config) return;
             dashCountPosts = [...config.posts].sort((a, b) => b.id - a.id);
@@ -5236,15 +5276,15 @@
                 <div class="dash-feed-item" onclick="switchView('list','${post.type}'); openDetail(${post.id}, '${post.type}')">
                     <div class="dash-feed-top">
                         <div class="dash-feed-meta">
-                            <span class="dash-type-chip">${chip}</span>
+                            ${formatPostIdChipHtml(post.id)}
                             ${getPostStatusBadge(post)}
+                            <span class="dash-type-chip">${chip}</span>
                         </div>
                         <span style="font-size:12px; color:#94a3b8;">${shortDate}</span>
                     </div>
                     <div class="dash-feed-title truncate">${post.title}</div>
                     <div class="dash-feed-sub">
                         <span class="dash-sub-left">${subLeft}</span>
-                        ${formatPostIdChipHtml(post.id)}
                     </div>
                 </div>
             `;
@@ -5456,6 +5496,20 @@
         }
         window.closeBoardFilterLayer = closeBoardFilterLayer;
         window.toggleBoardFilterLayer = toggleBoardFilterLayer;
+        function relocateBoardFilterFieldsForToolbar() {
+            const viewList = document.getElementById('view-list');
+            const fields = document.getElementById('boardFilterFields');
+            const filterLayer = document.getElementById('boardFilterLayer');
+            const toolsLayer = document.getElementById('boardToolsLayer');
+            if (!viewList || !fields || !filterLayer || !toolsLayer) return;
+            const useToolsMount =
+                viewList.classList.contains('board-toolbar-mobile') && viewList.classList.contains('board-tools-compact');
+            if (useToolsMount) {
+                if (fields.parentElement !== toolsLayer) toolsLayer.insertBefore(fields, toolsLayer.firstChild);
+            } else if (fields.parentElement !== filterLayer) {
+                filterLayer.appendChild(fields);
+            }
+        }
         function syncBoardToolbarCompactMode() {
             const viewList = document.getElementById('view-list');
             if (!viewList) return;
@@ -5470,22 +5524,25 @@
             const deleteBtn = document.getElementById('btnDeleteSelected');
             if (!toolbar || !rightTools || !moreBtn || !layer) return;
             const compact = window.innerWidth <= 1180;
+            const mobileBar = window.innerWidth <= 1024;
             viewList.classList.toggle('board-tools-compact', compact);
             viewList.classList.toggle('board-tools-know', isKnowLikeBoard(currentBoardType));
             if (!compact) {
                 moreBtn.classList.add('hidden');
                 layer.classList.add('hidden');
+                relocateBoardFilterFieldsForToolbar();
                 return;
             }
             moreBtn.classList.remove('hidden');
             const writeVisible = !!(writeBtn && writeBtn.style.display !== 'none' && !writeBtn.classList.contains('hidden'));
-            if (layerWriteBtn) layerWriteBtn.classList.toggle('hidden', !writeVisible);
+            if (layerWriteBtn) layerWriteBtn.classList.toggle('hidden', !writeVisible || mobileBar);
             if (layerWriteText && writeBtn) layerWriteText.innerText = (document.getElementById('listWriteBtnText') || writeBtn).innerText || '신규 접수';
             const deleteVisible = !!(deleteBtn && !deleteBtn.disabled && !deleteBtn.classList.contains('hidden'));
             if (layerDeleteBtn) {
                 layerDeleteBtn.classList.toggle('hidden', !deleteVisible);
                 layerDeleteBtn.disabled = !deleteVisible;
             }
+            relocateBoardFilterFieldsForToolbar();
         }
         function syncBoardLayoutModes() {
             syncBoardListCardMode();
@@ -6584,7 +6641,7 @@
             const rankSourceNote =
                 Array.isArray(integratedSearchKeywordStatsServer) && integratedSearchKeywordStatsServer.length
                     ? '<div class="integrated-search-insight-note">서버 집계 · 로그인 사용자 검색 기준</div>'
-                    : '<div class="integrated-search-insight-note">이 브라우저 로컬 집계(서버 연결 시 DB 반영)</div>';
+                    : '';
             const rankingHtml = `${rankSourceNote}<div class="integrated-search-insight-title">검색어 순위</div>${
                 top.length
                     ? `<div class="integrated-ranking-board">${top
@@ -6664,6 +6721,15 @@
                 );
             });
         }
+        const INTEGRATED_SEARCH_PLACEHOLDER_HTML =
+            '<div class="integrated-search-start-panel integrated-search-results-placeholder" role="status">' +
+            '<div class="integrated-search-start-icon" aria-hidden="true"><svg class="icon"><use href="#icon-search"></use></svg></div>' +
+            '<p class="integrated-search-start-title">검색어를 입력하세요</p>' +
+            '<p class="integrated-search-start-hint">입력 후 <kbd>Enter</kbd> 또는 키보드의 검색 키로 실행됩니다.</p></div>';
+        const INTEGRATED_SEARCH_NO_RESULTS_HTML =
+            '<div class="integrated-search-start-panel integrated-search-results-placeholder integrated-search-start-panel--compact" role="status">' +
+            '<p class="integrated-search-start-title">결과가 없습니다</p>' +
+            '<p class="integrated-search-start-hint">조건을 바꿔 다시 검색해 보세요.</p></div>';
         function showIntegratedSearchModal() {
             if (window.matchMedia('(max-width: 1024px)').matches) {
                 syncIntegratedSearchPageFromModal();
@@ -6698,13 +6764,13 @@
             if (trigger === 'clear') {
                 integratedSearchRelatedUnlocked = false;
                 renderIntegratedSearchInsights('', [], { showRelatedAfterSearch: false });
-                resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>';
+                resContainer.innerHTML = INTEGRATED_SEARCH_PLACEHOLDER_HTML;
                 return;
             }
             if (!kw) {
                 integratedSearchRelatedUnlocked = false;
                 renderIntegratedSearchInsights(raw, [], { showRelatedAfterSearch: false });
-                resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">검색어를 입력하세요.</div>';
+                resContainer.innerHTML = INTEGRATED_SEARCH_PLACEHOLDER_HTML;
                 return;
             }
             if (trigger !== 'sort') integratedSearchRelatedUnlocked = true;
@@ -6736,7 +6802,10 @@
             renderIntegratedSearchInsights(raw, results.map((x) => x.post), {
                 showRelatedAfterSearch: integratedSearchRelatedUnlocked,
             });
-            if (results.length === 0) { resContainer.innerHTML = '<div class="text-center p-20 integrated-search-empty-hint">결과가 없습니다.</div>'; return; }
+            if (results.length === 0) {
+                resContainer.innerHTML = INTEGRATED_SEARCH_NO_RESULTS_HTML;
+                return;
+            }
 
             resContainer.innerHTML = '<ul class="integrated-search-result-list">' + results.map(({ post: p, score }) => {
                 const stripped = p.content.replace(/<[^>]*>?/gm, ''); 

@@ -11,14 +11,9 @@
                 </form>
                 <button type="button" class="integrated-search-close-btn" onclick="closeIntegratedSearchModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
-            <div class="integrated-search-controls">
-                <div class="integrated-search-chips">
-                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">AI답변</button>
-                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">오류코드</button>
-                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">규정문의</button>
-                </div>
+            <div class="integrated-search-controls integrated-search-controls--modal">
                 <div class="integrated-search-sort-wrap">
-                    <label for="integratedSearchSort" style="font-size:12px; color:#64748b; font-weight:700;">정렬</label>
+                    <label for="integratedSearchSort" class="integrated-search-sort-label">정렬</label>
                     <select id="integratedSearchSort" class="input integrated-search-sort" onchange="performModalSearch('sort')">
                         <option value="latest">최신순</option>
                         <option value="views">조회수순</option>
@@ -31,7 +26,11 @@
                 <div id="integratedRelatedKeywords" class="integrated-search-insight-block"></div>
             </div>
             <div class="modal-body integrated-search-results-body" id="integratedSearchResults">
-                <div class="text-center integrated-search-empty-hint integrated-search-results-placeholder">검색어를 입력하고 Enter를 누르세요.</div>
+                <div class="integrated-search-start-panel integrated-search-results-placeholder" role="status">
+                    <div class="integrated-search-start-icon" aria-hidden="true"><svg class="icon"><use href="#icon-search"></use></svg></div>
+                    <p class="integrated-search-start-title">검색어를 입력하세요</p>
+                    <p class="integrated-search-start-hint">입력 후 <kbd>Enter</kbd> 또는 키보드의 검색 키로 실행됩니다.</p>
+                </div>
             </div>
         </div>
     </div>

@@ -114,6 +114,9 @@
                             <span class="mobile-nav-more__user-chip mobile-nav-more__user-chip--muted" id="mobileNavMoreUserSession">IP —</span>
                         </div>
                     </div>
+                    <button type="button" class="mobile-nav-more__logout-btn" onclick="closeMobileNavMore(); doLogout();" title="로그아웃" aria-label="로그아웃">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-power"></use></svg>
+                    </button>
                 </div>
                 <div class="mobile-nav-more__scroll">
                     <section class="mobile-nav-more__section" aria-labelledby="mobMoreQuick">
@@ -275,9 +278,12 @@
                          [뷰 1] 대시보드
                          ========================================== -->
                     <div id="view-dashboard" class="view-section active">
-                        <div class="flex justify-between items-center mb-20">
+                        <div class="flex justify-between items-center mb-20 gap-10 flex-wrap">
                             <h2 class="page-title" style="margin-bottom: 0;" id="dashTitle">나의 현황판</h2>
-                            <button type="button" id="btnDashboardWidgetEdit" class="btn btn-outline" style="padding: 6px 12px; font-size:13px;" onclick="toggleDashboardEditMode()">위젯 편집</button>
+                            <div class="dashboard-edit-actions flex items-center gap-8">
+                                <button type="button" id="btnDashboardWidgetEditCancel" class="btn btn-outline hidden" style="padding: 6px 12px; font-size:13px;" onclick="cancelDashboardEditMode()">편집 취소</button>
+                                <button type="button" id="btnDashboardWidgetEdit" class="btn btn-outline" style="padding: 6px 12px; font-size:13px;" onclick="toggleDashboardEditMode()">위젯 편집</button>
+                            </div>
                         </div>
                         
                         <div id="dashboardWidgetContainer" class="dash-tile-grid">
@@ -356,11 +362,13 @@
                          [뷰 1.2] 모바일 전용 프로필
                          ========================================== -->
                     <div id="view-mobile-profile" class="view-section mobile-profile-page">
-                        <div class="mobile-profile-toolbar">
-                            <button type="button" class="btn btn-outline mobile-profile-back-btn" onclick="switchView('dashboard')">
-                                <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg> 뒤로
-                            </button>
-                            <h2 class="mobile-profile-toolbar-title">상세 프로필</h2>
+                        <div class="notification-center-toolbar notification-center-toolbar--page mobile-page-toolbar">
+                            <div class="notification-toolbar-left">
+                                <button type="button" class="btn notification-toolbar-back-btn" onclick="switchView('dashboard')" aria-label="뒤로">
+                                    <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+                                </button>
+                            </div>
+                            <h2 class="mobile-page-toolbar-title">상세 프로필</h2>
                         </div>
                         <div class="mobile-profile-shell">
                             <div class="mobile-profile-hero">
@@ -369,7 +377,7 @@
                                     <div class="mobile-profile-photo-wrap">
                                         <div class="mobile-profile-photo" id="mpProfileInitial">홍길</div>
                                         <button type="button" class="mobile-profile-photo-edit" onclick="openProfileImageModal()" title="프로필 사진 변경" aria-label="프로필 사진 변경">
-                                            <svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                                            <svg class="icon mobile-profile-photo-edit-icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
                                         </button>
                                     </div>
                                     <div class="mobile-profile-identity">
@@ -408,11 +416,13 @@
                          [뷰 1.3] 모바일 통합검색 (전체 화면)
                          ========================================== -->
                     <div id="view-integrated-search" class="view-section integrated-search-page-view">
-                        <div class="integrated-search-page-toolbar">
-                            <button type="button" class="btn btn-outline integrated-search-page-back" onclick="switchView('dashboard')">
-                                <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg> 뒤로
-                            </button>
-                            <h2 class="integrated-search-page-heading">통합검색</h2>
+                        <div class="notification-center-toolbar notification-center-toolbar--page mobile-page-toolbar">
+                            <div class="notification-toolbar-left">
+                                <button type="button" class="btn notification-toolbar-back-btn" onclick="switchView('dashboard')" aria-label="뒤로">
+                                    <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+                                </button>
+                            </div>
+                            <h2 class="mobile-page-toolbar-title integrated-search-page-heading">통합검색</h2>
                         </div>
                         <div class="integrated-search-page-card panel mb-0">
                             <div class="integrated-search-head integrated-search-head--page">
@@ -424,12 +434,7 @@
                                     </div>
                                 </form>
                             </div>
-                            <div class="integrated-search-controls">
-                                <div class="integrated-search-chips">
-                                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">AI답변</button>
-                                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">오류코드</button>
-                                    <button type="button" class="btn btn-outline integrated-search-chip" onclick="applyIntegratedRelatedKeyword(this.innerText)">규정문의</button>
-                                </div>
+                            <div class="integrated-search-controls integrated-search-controls--page">
                                 <div class="integrated-search-sort-wrap">
                                     <label for="integratedSearchPageSort" class="integrated-search-sort-label">정렬</label>
                                     <select id="integratedSearchPageSort" class="input integrated-search-sort" onchange="performModalSearch('sort')">
@@ -444,7 +449,11 @@
                                 <div id="integratedSearchPageRelated" class="integrated-search-insight-block"></div>
                             </div>
                             <div class="integrated-search-results-body integrated-search-results-body--page" id="integratedSearchPageResults">
-                                <div class="text-center integrated-search-empty-hint integrated-search-results-placeholder">검색어를 입력하고 Enter를 누르세요.</div>
+                                <div class="integrated-search-start-panel integrated-search-results-placeholder" role="status">
+                                    <div class="integrated-search-start-icon" aria-hidden="true"><svg class="icon"><use href="#icon-search"></use></svg></div>
+                                    <p class="integrated-search-start-title">검색어를 입력하세요</p>
+                                    <p class="integrated-search-start-hint">입력 후 <kbd>Enter</kbd> 또는 키보드의 검색 키로 실행됩니다.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -559,12 +568,14 @@
                                             <svg class="icon"><use href="#icon-filter"></use></svg>
                                         </button>
                                         <div id="boardFilterLayer" class="board-filter-layer board-popover board-popover--filter hidden" onclick="event.stopPropagation();">
-                                            <select id="boardStatusFilter" class="input board-filter-select"></select>
-                                            <select id="boardKnowCategoryFilter" class="input board-filter-select hidden">
-                                                <option value="all">도메인 전체</option>
-                                                <option value="IT">IT 매뉴얼</option>
-                                                <option value="BIZ">업무 매뉴얼</option>
-                                            </select>
+                                            <div id="boardFilterFields" class="board-filter-fields">
+                                                <select id="boardStatusFilter" class="input board-filter-select" onchange="filterBoardList()"></select>
+                                                <select id="boardKnowCategoryFilter" class="input board-filter-select hidden" onchange="filterBoardList()">
+                                                    <option value="all">도메인 전체</option>
+                                                    <option value="IT">IT 매뉴얼</option>
+                                                    <option value="BIZ">업무 매뉴얼</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="board-toolbar-search-slot">
@@ -574,16 +585,13 @@
                                     
                                     <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
                                     
-                                    <button id="listWriteBtn" onclick="switchView('write', currentBoardType)" class="btn btn-outline" style="border-color: var(--ibk-blue); color: var(--ibk-blue);">
-                                        <svg class="icon"><use href="#icon-edit"></use></svg> <span id="listWriteBtnText">신규 접수</span>
+                                    <button id="listWriteBtn" type="button" onclick="switchView('write', currentBoardType)" class="btn btn-outline board-list-write-btn" style="border-color: var(--ibk-blue); color: var(--ibk-blue);" title="게시물 신규 등록" aria-label="게시물 신규 등록">
+                                        <svg class="icon board-list-write-btn-icon" aria-hidden="true"><use href="#icon-edit"></use></svg> <span id="listWriteBtnText">신규 접수</span>
                                     </button>
-                                    <button id="boardToolsMoreBtn" class="btn btn-outline board-tools-more-btn hidden" type="button" onclick="toggleBoardToolsLayer(event)" aria-label="추가 도구">
+                                    <button id="boardToolsMoreBtn" class="btn btn-outline board-tools-more-btn hidden" type="button" onclick="toggleBoardToolsLayer(event)" aria-label="필터 및 도구">
                                         <svg class="icon"><use href="#icon-more-vert"></use></svg><span class="board-tools-more-label">도구</span>
                                     </button>
                                     <div id="boardToolsLayer" class="board-tools-layer board-popover board-popover--tools hidden" onclick="event.stopPropagation();">
-                                        <button type="button" class="btn btn-primary" onclick="closeBoardToolsLayer(); filterBoardList();">
-                                            <svg class="icon"><use href="#icon-search"></use></svg> 조회
-                                        </button>
                                         <button id="boardToolsLayerWriteBtn" type="button" class="btn btn-outline" onclick="closeBoardToolsLayer(); switchView('write', currentBoardType);">
                                             <svg class="icon"><use href="#icon-edit"></use></svg> <span id="boardToolsLayerWriteText">신규 접수</span>
                                         </button>
