@@ -3134,30 +3134,58 @@
         }
         .dash-empty { text-align: center; padding: 24px; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px; background: #fff; }
 
-        /* 목록·차트: 드래그 행은 그리드 밖(flex 열)에 두어 grid-2가 항상 패널 2개만 배치 → 편집/일반 동일 비율 */
-        .dash-widget-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: 0;
-            width: 100%;
-        }
-        .dash-widget-twin-grid {
-            min-width: 0;
-            width: 100%;
-        }
         .dash-widget-drag-label {
             background: #e0f2fe;
             color: var(--ibk-blue);
             border: 1px solid #bfdbfe;
         }
 
-        /* 편집 모드에서도 grid-2와 동일한 2열 유지(이전 1열 강제는 1×2로 보여 혼란 유발). 패널은 셀 안에서만 너비 제한 */
-        .dashboard-editing #widget-lists .panel,
-        .dashboard-editing #widget-charts .panel {
+        /* 대시보드 타일 그리드: 소(span1)=행당 최대 4, 대(span2)=행당 최대 2, 최대(span4)=행당 1(추가 위젯용 클래스 .dash-tile--max) */
+        #dashboardWidgetContainer.dash-tile-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            align-items: stretch;
+            min-width: 0;
+        }
+        .dash-tile {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+        .dash-tile--sm {
+            grid-column: span 1;
+        }
+        .dash-tile--lg {
+            grid-column: span 2;
+        }
+        .dash-tile--max {
+            grid-column: span 4;
+        }
+        .dashboard-editing .dash-tile {
+            outline: 1px dashed #93c5fd;
+            outline-offset: 2px;
+        }
+        .dashboard-editing .dash-tile--lg .panel,
+        .dashboard-editing .dash-tile--max .panel {
             width: 100%;
             max-width: 100%;
             min-width: 0;
+        }
+        @media (max-width: 900px) {
+            #dashboardWidgetContainer.dash-tile-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .dash-tile--sm {
+                grid-column: span 1;
+            }
+            .dash-tile--lg {
+                grid-column: span 2;
+            }
+            .dash-tile--max {
+                grid-column: span 2;
+            }
         }
 
         /* 리치 에디터 및 활성 상태 모션 */

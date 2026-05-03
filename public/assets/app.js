@@ -4029,7 +4029,7 @@
         // --- Dashboard Widgets / Charts ---
         let dashboardEditMode = false;
         let draggedWidget = null;
-        const DASH_WIDGET_ORDER_KEY = 'knockDashboardWidgetOrderV1';
+        const DASH_WIDGET_ORDER_KEY = 'knockDashboardWidgetTileOrderV1';
 
         function getDashboardWidgetOrderKey() {
             return `${DASH_WIDGET_ORDER_KEY}_${currentRole}`;
@@ -4038,8 +4038,9 @@
         function saveDashboardWidgetOrder() {
             const container = document.getElementById('dashboardWidgetContainer');
             if (!container) return;
-            const order = Array.from(container.querySelectorAll('.draggable-widget'))
-                .map(widget => widget.id)
+            const order = Array.from(container.children)
+                .filter((el) => el && el.classList && el.classList.contains('dash-tile'))
+                .map((el) => el.id)
                 .filter(Boolean);
             localStorage.setItem(getDashboardWidgetOrderKey(), JSON.stringify(order));
         }
@@ -4053,9 +4054,9 @@
             try {
                 const order = JSON.parse(stored);
                 if (!Array.isArray(order)) return;
-                order.forEach((widgetId) => {
-                    const widget = document.getElementById(widgetId);
-                    if (widget && widget.parentElement === container) container.appendChild(widget);
+                order.forEach((tileId) => {
+                    const tile = document.getElementById(tileId);
+                    if (tile && tile.parentElement === container) container.appendChild(tile);
                 });
             } catch (e) {
                 // ignore broken localStorage data and keep default order
@@ -4289,15 +4290,13 @@
             const view = document.getElementById('view-dashboard');
             if (view) view.classList.toggle('dashboard-editing', dashboardEditMode);
             const button = document.querySelector('#view-dashboard button.btn.btn-outline');
-            const widgets = document.querySelectorAll('#dashboardWidgetContainer .draggable-widget');
+            const tiles = document.querySelectorAll('#dashboardWidgetContainer > .dash-tile');
             const handles = document.querySelectorAll('#dashboardWidgetContainer .drag-handle');
 
-            handles.forEach(handle => handle.classList.toggle('hidden', !dashboardEditMode));
-            widgets.forEach(widget => {
-                widget.draggable = dashboardEditMode;
-                widget.style.cursor = dashboardEditMode ? 'grab' : 'default';
-                widget.style.outline = dashboardEditMode ? '1px dashed #93c5fd' : 'none';
-                widget.style.outlineOffset = dashboardEditMode ? '2px' : '0';
+            handles.forEach((handle) => handle.classList.toggle('hidden', !dashboardEditMode));
+            tiles.forEach((tile) => {
+                tile.draggable = dashboardEditMode;
+                tile.style.cursor = dashboardEditMode ? 'grab' : 'default';
             });
 
             if (button) button.innerText = dashboardEditMode ? '편집 완료' : '위젯 편집';
@@ -4307,17 +4306,17 @@
 
         document.addEventListener('dragstart', (event) => {
             if (!dashboardEditMode) return;
-            const target = event.target.closest('.draggable-widget');
-            if (!target) return;
+            const container = document.getElementById('dashboardWidgetContainer');
+            const target = event.target.closest('.dash-tile');
+            if (!container || !target || !target.id || target.parentElement !== container) return;
             draggedWidget = target;
             event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', target.id || '');
-            target.style.opacity = '0.5';
+            event.dataTransfer.setData('text/plain', target.id);
+            target.style.opacity = '0.55';
         });
 
-        document.addEventListener('dragend', (event) => {
-            const target = event.target.closest('.draggable-widget');
-            if (target) target.style.opacity = '1';
+        document.addEventListener('dragend', () => {
+            if (draggedWidget) draggedWidget.style.opacity = '1';
             draggedWidget = null;
             if (dashboardEditMode) saveDashboardWidgetOrder();
         });
@@ -4325,13 +4324,14 @@
         document.addEventListener('dragover', (event) => {
             if (!dashboardEditMode) return;
             const container = document.getElementById('dashboardWidgetContainer');
-            const overWidget = event.target.closest('.draggable-widget');
-            if (!container || !draggedWidget || !overWidget || overWidget === draggedWidget) return;
+            if (!container || !draggedWidget || !container.contains(event.target)) return;
             event.preventDefault();
-            const rect = overWidget.getBoundingClientRect();
+            const overTile = event.target.closest('.dash-tile');
+            if (!overTile || overTile === draggedWidget) return;
+            const rect = overTile.getBoundingClientRect();
             const insertAfter = event.clientY > rect.top + rect.height / 2;
-            if (insertAfter) container.insertBefore(draggedWidget, overWidget.nextSibling);
-            else container.insertBefore(draggedWidget, overWidget);
+            if (insertAfter) container.insertBefore(draggedWidget, overTile.nextSibling);
+            else container.insertBefore(draggedWidget, overTile);
         });
 
         function changeRole() {
@@ -4589,9 +4589,9 @@
             const totalPosts = appData.posts.filter(p => p.type !== 'KNOW');
             
             if(isBranchDashboardRole(currentRole)) {
-                document.getElementById('dashDataBranch').classList.remove('hidden');
-                document.getElementById('dashDataHQ').classList.add('hidden');
-                
+                document.querySelectorAll('.dash-tile-stat-branch').forEach((el) => el.classList.remove('hidden'));
+                document.querySelectorAll('.dash-tile-stat-hq').forEach((el) => el.classList.add('hidden'));
+
                 const elWait = document.getElementById('statWait');
                 const elDone = document.getElementById('statDone');
                 const elTotal = document.getElementById('statTotal');
@@ -4605,8 +4605,8 @@
                     elAiRate.innerText = `${myAiRate}%`;
                 }
             } else {
-                document.getElementById('dashDataBranch').classList.add('hidden');
-                document.getElementById('dashDataHQ').classList.remove('hidden');
+                document.querySelectorAll('.dash-tile-stat-branch').forEach((el) => el.classList.add('hidden'));
+                document.querySelectorAll('.dash-tile-stat-hq').forEach((el) => el.classList.remove('hidden'));
                 const hqWait = totalPosts.filter(p => p.status === 'wait' || p.status === 'ing').length;
                 const hqMore = totalPosts.filter(p => p.status === 'moreInfo').length;
                 const today = new Date();

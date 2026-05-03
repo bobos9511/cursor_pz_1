@@ -715,12 +715,14 @@
             background: #1f2f49;
             border-color: #64748b;
         }
-        body[data-theme="dark"] #widget-lists .panel-header {
+        body[data-theme="dark"] #dash-tile-list-q .panel-header,
+        body[data-theme="dark"] #dash-tile-list-a .panel-header {
             background: #152238 !important;
             border-bottom-color: transparent !important;
             color: #dce7f6;
         }
-        body[data-theme="dark"] #widget-lists .flex.shrink-0 {
+        body[data-theme="dark"] #dash-tile-list-q .flex.shrink-0,
+        body[data-theme="dark"] #dash-tile-list-a .flex.shrink-0 {
             background: #13233a;
             border-bottom-color: #3f5475 !important;
         }
