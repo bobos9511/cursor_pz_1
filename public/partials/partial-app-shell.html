@@ -340,14 +340,21 @@
                                 </div>
 
                                 <!-- 우측: 검색 및 신규작성 -->
-                                <div class="flex items-center gap-10 flex-1 justify-end">
-                                    <select id="boardStatusFilter" class="input" style="width: 130px;"></select>
-                                    <select id="boardKnowCategoryFilter" class="input hidden" style="width: 140px;">
-                                        <option value="all">도메인 전체</option>
-                                        <option value="IT">IT 매뉴얼</option>
-                                        <option value="BIZ">업무 매뉴얼</option>
-                                    </select>
-                                    <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input" style="width: 250px;" onkeyup="if(event.key==='Enter') filterBoardList()">
+                                <div class="flex items-center gap-10 flex-1 justify-end board-list-toolbar-right">
+                                    <div class="board-filter-cluster">
+                                        <button type="button" id="boardFilterToggleBtn" class="btn btn-outline board-filter-toggle-btn" aria-expanded="false" aria-controls="boardFilterLayer" aria-label="상태 및 도메인 필터" onclick="toggleBoardFilterLayer(event)">
+                                            <svg class="icon"><use href="#icon-filter"></use></svg>
+                                        </button>
+                                        <div id="boardFilterLayer" class="board-filter-layer hidden" onclick="event.stopPropagation();">
+                                            <select id="boardStatusFilter" class="input board-filter-select"></select>
+                                            <select id="boardKnowCategoryFilter" class="input board-filter-select hidden">
+                                                <option value="all">도메인 전체</option>
+                                                <option value="IT">IT 매뉴얼</option>
+                                                <option value="BIZ">업무 매뉴얼</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <input type="text" id="boardKeywordInput" placeholder="제목, 내용 검색" class="input board-keyword-input" onkeyup="if(event.key==='Enter') filterBoardList()">
                                     <button id="boardSearchBtn" class="btn btn-primary" onclick="filterBoardList()"><svg class="icon"><use href="#icon-search"></use></svg> 조회</button>
                                     
                                     <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>

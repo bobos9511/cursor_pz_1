@@ -280,7 +280,8 @@
         }
 
         @media (max-width: 1560px) {
-            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            /* 좁은 화면·compact는 styles-base의 그리드 유지 */
+            #view-list:not(.board-tools-compact) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
                 display: flex !important;
                 flex-wrap: wrap;
                 justify-content: flex-end !important;
@@ -319,19 +320,25 @@
                 align-items: flex-start !important;
                 gap: 10px !important;
             }
-            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            /* 필터 클러스터·검색 한 줄: 모바일(board-toolbar-mobile)은 styles-base에서 처리 */
+            #view-list:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
                 width: 100%;
                 justify-content: flex-start !important;
                 display: grid;
-                grid-template-columns: minmax(112px, 140px) minmax(120px, 156px) minmax(180px, 1fr) auto auto;
+                grid-template-columns: minmax(0, max-content) minmax(200px, 1fr) auto auto;
                 gap: 8px;
                 align-items: center;
             }
-            #view-list #boardStatusFilter,
-            #view-list #boardKnowCategoryFilter,
-            #view-list #boardKeywordInput {
+            #view-list:not(.board-toolbar-mobile) #boardKeywordInput {
                 width: 100% !important;
-                min-width: 0;
+                min-width: 260px;
+            }
+            #view-list:not(.board-toolbar-mobile) .board-filter-layer {
+                flex-wrap: wrap;
+            }
+            #view-list:not(.board-toolbar-mobile) #boardStatusFilter,
+            #view-list:not(.board-toolbar-mobile) #boardKnowCategoryFilter {
+                min-width: 112px;
             }
             #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="width:1px"] {
                 display: none !important;
@@ -341,30 +348,27 @@
                 justify-self: end;
                 white-space: nowrap;
             }
-            #view-list #boardKeywordInput {
-                min-width: 260px;
-            }
             #view-list #boardSearchBtn {
                 min-width: 96px;
             }
         }
         @media (max-width: 980px) {
-            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            #view-list:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
                 grid-template-columns: 1fr 1fr;
             }
-            #view-list #boardStatusFilter,
-            #view-list #boardKnowCategoryFilter,
-            #view-list #boardKeywordInput,
-            #view-list .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary:not(#boardSearchBtn),
-            #view-list #listWriteBtn {
+            #view-list:not(.board-toolbar-mobile) #boardStatusFilter,
+            #view-list:not(.board-toolbar-mobile) #boardKnowCategoryFilter,
+            #view-list:not(.board-toolbar-mobile) #boardKeywordInput,
+            #view-list:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary:not(#boardSearchBtn),
+            #view-list:not(.board-toolbar-mobile) #listWriteBtn {
                 width: 100% !important;
             }
-            #view-list #boardSearchBtn {
+            #view-list:not(.board-toolbar-mobile) #boardSearchBtn {
                 width: auto !important;
                 min-width: 94px;
                 justify-self: end;
             }
-            #view-list #boardKeywordInput {
+            #view-list:not(.board-toolbar-mobile) #boardKeywordInput {
                 min-width: 220px;
             }
         }

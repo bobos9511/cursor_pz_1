@@ -2998,7 +2998,7 @@
                 updateAiChatFloatingButton();
                 const listViewMobile = document.getElementById('view-list');
                 if (listViewMobile && listViewMobile.classList.contains('active')) {
-                    setTimeout(syncBoardListCardMode, 0);
+                    setTimeout(syncBoardLayoutModes, 0);
                 }
                 return;
             }
@@ -3013,8 +3013,8 @@
             setTimeout(renderCSSCharts, 300);
             const listView = document.getElementById('view-list');
             if (listView && listView.classList.contains('active')) {
-                setTimeout(syncBoardListCardMode, 0);
-                setTimeout(syncBoardListCardMode, 320);
+                setTimeout(syncBoardLayoutModes, 0);
+                setTimeout(syncBoardLayoutModes, 320);
             }
         }
         function updateSidebarToggleButton() {
@@ -3691,6 +3691,8 @@
                     return;
                 }
             }
+            closeBoardToolsLayer();
+            closeBoardFilterLayer();
             if (viewId === 'admin-settings' && !currentUserHasAdminAccess()) {
                 showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;
@@ -3768,7 +3770,7 @@
                 renderDashboardLists();
                 setTimeout(renderCSSCharts, 50); 
             }
-            if (viewId === 'list') setTimeout(syncBoardListCardMode, 0);
+            if (viewId === 'list') setTimeout(syncBoardLayoutModes, 0);
             if (!fromHistory && !skipHistory) {
                 const routeBoardType = viewId === 'list' ? currentBoardType : null;
                 syncHistoryRoute(viewId, routeBoardType, null, false);
@@ -4106,6 +4108,41 @@
             const shouldCard = window.innerWidth <= 1024 || wrap.clientWidth < 800;
             viewList.classList.toggle('list-card-mode', shouldCard);
         }
+        function syncBoardToolbarMobileClass() {
+            const viewList = document.getElementById('view-list');
+            if (!viewList) return;
+            viewList.classList.toggle('board-toolbar-mobile', window.innerWidth <= 1024);
+        }
+        function syncBoardFilterLayerViewport() {
+            const layer = document.getElementById('boardFilterLayer');
+            const btn = document.getElementById('boardFilterToggleBtn');
+            if (!layer || !btn) return;
+            if (window.innerWidth > 1024) {
+                layer.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+            } else {
+                layer.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        }
+        function closeBoardFilterLayer() {
+            if (window.innerWidth > 1024) return;
+            const layer = document.getElementById('boardFilterLayer');
+            const btn = document.getElementById('boardFilterToggleBtn');
+            if (layer) layer.classList.add('hidden');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+        function toggleBoardFilterLayer(event) {
+            if (event) event.stopPropagation();
+            if (window.innerWidth > 1024) return;
+            const layer = document.getElementById('boardFilterLayer');
+            const btn = document.getElementById('boardFilterToggleBtn');
+            if (!layer || !btn) return;
+            layer.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', String(!layer.classList.contains('hidden')));
+        }
+        window.closeBoardFilterLayer = closeBoardFilterLayer;
+        window.toggleBoardFilterLayer = toggleBoardFilterLayer;
         function syncBoardToolbarCompactMode() {
             const viewList = document.getElementById('view-list');
             if (!viewList) return;
@@ -4139,6 +4176,8 @@
         }
         function syncBoardLayoutModes() {
             syncBoardListCardMode();
+            syncBoardToolbarMobileClass();
+            syncBoardFilterLayerViewport();
             syncBoardToolbarCompactMode();
         }
         function closeBoardToolsLayer() {
@@ -5344,6 +5383,7 @@
         document.addEventListener('click', () => {
             closeHeaderActionsLayer();
             closeBoardToolsLayer();
+            closeBoardFilterLayer();
         });
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;

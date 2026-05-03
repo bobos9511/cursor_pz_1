@@ -1990,8 +1990,34 @@
             row-gap: 8px;
             position: relative;
         }
+        .board-filter-cluster {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+        .board-filter-toggle-btn {
+            display: none;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 10px;
+            min-width: 40px;
+        }
+        .board-filter-layer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            position: static;
+            z-index: auto;
+            min-width: 0;
+        }
+        .board-filter-layer .board-filter-select,
         #view-list #boardStatusFilter { flex: 0 1 130px; }
         #view-list #boardKnowCategoryFilter { flex: 0 1 150px; }
+        #view-list .board-keyword-input,
         #view-list #boardKeywordInput {
             flex: 1 1 250px;
             min-width: 170px;
@@ -2044,22 +2070,30 @@
         #view-list.board-tools-compact #adminListTools {
             display: none !important;
         }
-        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+        #view-list.board-tools-compact:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
             display: grid;
-            grid-template-columns: 112px minmax(0, 1fr) auto;
+            grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
             align-items: center;
             gap: 6px !important;
             flex-wrap: nowrap;
             row-gap: 0;
         }
-        #view-list.board-tools-compact.board-tools-know .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
-            grid-template-columns: 112px 122px minmax(0, 1fr) auto;
+        #view-list.board-tools-compact.board-toolbar-mobile .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 6px !important;
+            flex-wrap: nowrap;
+            row-gap: 0;
         }
-        #view-list.board-tools-compact #boardStatusFilter {
+        #view-list.board-tools-compact:not(.board-toolbar-mobile) .board-filter-layer {
+            min-width: 0;
+        }
+        #view-list.board-tools-compact:not(.board-toolbar-mobile) #boardStatusFilter {
             flex: 0 0 auto;
             width: 112px !important;
         }
-        #view-list.board-tools-compact.board-tools-know #boardKnowCategoryFilter {
+        #view-list.board-tools-compact:not(.board-toolbar-mobile).board-tools-know #boardKnowCategoryFilter {
             flex: 0 0 122px;
             width: 122px !important;
         }
@@ -2068,14 +2102,63 @@
             min-width: 0;
             width: auto !important;
         }
-        #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
+        #view-list.board-tools-compact:not(.board-toolbar-mobile) .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary,
         #view-list.board-tools-compact #listWriteBtn,
         #view-list.board-tools-compact .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > div[style*="width:1px"] {
             display: none !important;
         }
+        #view-list.board-tools-compact.board-toolbar-mobile .panel > .flex.items-center.justify-between.p-20 > .flex.items-center.gap-10.flex-1.justify-end > button.btn.btn-primary#boardSearchBtn {
+            display: inline-flex !important;
+        }
         #view-list.board-tools-compact #boardToolsMoreBtn {
             display: inline-flex;
             flex: 0 0 auto;
+        }
+        @media (min-width: 1025px) {
+            #view-list .board-filter-toggle-btn {
+                display: none !important;
+            }
+            #view-list .board-filter-layer.hidden {
+                display: flex !important;
+            }
+        }
+        @media (max-width: 1024px) {
+            #view-list.board-toolbar-mobile .board-filter-toggle-btn {
+                display: inline-flex !important;
+            }
+            #view-list.board-toolbar-mobile .board-filter-cluster {
+                flex: 0 0 auto;
+            }
+            #view-list.board-toolbar-mobile .board-filter-layer {
+                position: absolute;
+                left: 0;
+                top: calc(100% + 6px);
+                z-index: 14;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                min-width: min(280px, calc(100vw - 24px));
+                padding: 10px;
+                border-radius: 12px;
+                border: 1px solid #dbe7f5;
+                background: #fff;
+                box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+            }
+            #view-list.board-toolbar-mobile .board-filter-layer .board-filter-select,
+            #view-list.board-toolbar-mobile .board-filter-layer #boardStatusFilter,
+            #view-list.board-toolbar-mobile .board-filter-layer #boardKnowCategoryFilter {
+                width: 100% !important;
+                max-width: none !important;
+                flex: 1 1 auto !important;
+            }
+            #view-list.board-toolbar-mobile.board-tools-compact #boardKeywordInput {
+                min-width: 0 !important;
+            }
+            #view-list.board-toolbar-mobile.board-tools-compact #boardSearchBtn {
+                min-width: 0 !important;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
         }
         .table { width: 100%; border-collapse: collapse; min-width: 800px; text-align: center; }
         .table th { background: #F1F3F6; border-bottom: 1px solid var(--border-color); padding: 12px; font-weight: bold; color: #333; }
@@ -2118,6 +2201,20 @@
             box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14), 0 3px 8px rgba(15, 23, 42, 0.10);
             margin-bottom: 8px;
             padding: 10px 12px;
+        }
+        @media (max-width: 1024px) {
+            #view-list.list-card-mode .table {
+                border-spacing: 0;
+            }
+            #view-list.list-card-mode .table tbody tr {
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                margin-bottom: 0;
+                padding: 10px 4px;
+                border-bottom: 1px solid var(--border-color);
+            }
         }
         #view-list.list-card-mode .table tbody td {
             display: flex;

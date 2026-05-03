@@ -226,6 +226,14 @@
             border-color: #3a4a63;
             box-shadow: 0 8px 20px rgba(2, 8, 24, 0.35);
         }
+        @media (max-width: 1024px) {
+            body[data-theme="dark"] #view-list.list-card-mode .table tbody tr,
+            body[data-theme="dark"] #view-list .table tbody tr {
+                background: transparent !important;
+                box-shadow: none !important;
+                border-color: #3a4a63;
+            }
+        }
         body[data-theme="dark"] #view-list .table tbody td:last-child,
         body[data-theme="dark"] #view-list.list-card-mode .table tbody td:nth-child(1),
         body[data-theme="dark"] #dashCountModal .table tbody td::before,
@@ -242,6 +250,11 @@
             color: #e6edf8 !important;
         }
         body[data-theme="dark"] .board-tools-layer {
+            background: #152238;
+            border-color: #4a5f7f;
+            box-shadow: 0 14px 30px rgba(2, 8, 24, 0.55);
+        }
+        body[data-theme="dark"] #view-list.board-toolbar-mobile .board-filter-layer {
             background: #152238;
             border-color: #4a5f7f;
             box-shadow: 0 14px 30px rgba(2, 8, 24, 0.55);
