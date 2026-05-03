@@ -657,6 +657,11 @@
             border-bottom-color: transparent;
             color: #dce7f6;
         }
+        body[data-theme="dark"] #view-settings .settings-keyword-item {
+            background: #152238;
+            border-color: #3f5475;
+            color: #dce7f6;
+        }
         body[data-theme="dark"] #view-settings .panel[style*="border-color: #fecaca"] {
             border-color: #7f1d1d !important;
             background: linear-gradient(180deg, #2b1118, #1f0d12) !important;

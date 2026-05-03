@@ -321,6 +321,91 @@
             return normalizeNotifyPolicy(settings.notifyPolicy);
         }
 
+        function readNotifyKeywordArrayFromList(kind) {
+            const listId = kind === 'include' ? 'notifyIncludeKeywordList' : 'notifyExcludeKeywordList';
+            const ul = document.getElementById(listId);
+            if (!ul) return [];
+            const texts = Array.from(ul.querySelectorAll('.settings-keyword-text'))
+                .map((el) => String(el.textContent || '').trim())
+                .filter(Boolean);
+            return normalizeKeywordList(texts.join(','));
+        }
+        function renderNotifyKeywordListsFromPolicy() {
+            const policy = getCurrentNotifyPolicy();
+            fillNotifyKeywordListUl('notifyExcludeKeywordList', policy.excludeKeywords);
+            fillNotifyKeywordListUl('notifyIncludeKeywordList', policy.includeKeywords);
+        }
+        function fillNotifyKeywordListUl(ulId, keywords) {
+            const ul = document.getElementById(ulId);
+            if (!ul) return;
+            const arr = Array.isArray(keywords) ? normalizeKeywordList(keywords.join(',')) : [];
+            ul.innerHTML = arr
+                .map((kw) => {
+                    const safe = escapeHtml(kw);
+                    return `<li class="settings-keyword-item"><span class="settings-keyword-text">${safe}</span><button type="button" class="btn btn-outline settings-keyword-remove" style="font-size:12px;padding:4px 10px;" onclick="removeSettingsNotifyKeyword(this)">삭제</button></li>`;
+                })
+                .join('');
+        }
+        let settingsMainTabsInited = false;
+        function selectSettingsMainTab(tab) {
+            const key = tab === 'display' ? 'display' : tab === 'account' ? 'account' : 'notify';
+            document.querySelectorAll('#settingsMainTabs .admin-main-tab-btn').forEach((b) => {
+                const on = b.getAttribute('data-settings-tab') === key;
+                b.classList.toggle('btn-primary', on);
+                b.classList.toggle('btn-outline', !on);
+            });
+            const pNotify = document.getElementById('settings-panel-notify');
+            const pDisplay = document.getElementById('settings-panel-display');
+            const pAccount = document.getElementById('settings-panel-account');
+            if (pNotify) pNotify.classList.toggle('hidden', key !== 'notify');
+            if (pDisplay) pDisplay.classList.toggle('hidden', key !== 'display');
+            if (pAccount) pAccount.classList.toggle('hidden', key !== 'account');
+        }
+        function initSettingsMainTabsOnce() {
+            if (settingsMainTabsInited) return;
+            settingsMainTabsInited = true;
+            const row = document.getElementById('settingsMainTabs');
+            if (!row) return;
+            row.querySelectorAll('.admin-main-tab-btn').forEach((btn) => {
+                btn.addEventListener('click', () => selectSettingsMainTab(btn.getAttribute('data-settings-tab')));
+            });
+        }
+        function addSettingsNotifyKeyword(kind) {
+            const inputId = kind === 'include' ? 'notifyIncludeKeywordInput' : 'notifyExcludeKeywordInput';
+            const listId = kind === 'include' ? 'notifyIncludeKeywordList' : 'notifyExcludeKeywordList';
+            const input = document.getElementById(inputId);
+            const raw = input && input.value != null ? String(input.value).trim() : '';
+            if (!raw) {
+                showAlert('키워드를 입력해주세요.', 'error');
+                return;
+            }
+            const parsed = normalizeKeywordList(raw);
+            if (!parsed.length) return;
+            const ul = document.getElementById(listId);
+            if (!ul) return;
+            const existing = Array.from(ul.querySelectorAll('.settings-keyword-text')).map((el) =>
+                String(el.textContent || '').trim().toLowerCase(),
+            );
+            let added = 0;
+            for (let i = 0; i < parsed.length; i += 1) {
+                const keyword = parsed[i];
+                if (existing.includes(keyword.toLowerCase())) continue;
+                existing.push(keyword.toLowerCase());
+                const safe = escapeHtml(keyword);
+                const li = document.createElement('li');
+                li.className = 'settings-keyword-item';
+                li.innerHTML = `<span class="settings-keyword-text">${safe}</span><button type="button" class="btn btn-outline settings-keyword-remove" style="font-size:12px;padding:4px 10px;" onclick="removeSettingsNotifyKeyword(this)">삭제</button>`;
+                ul.appendChild(li);
+                added += 1;
+            }
+            input.value = '';
+            if (!added) showAlert('이미 목록에 포함된 키워드입니다.', 'error');
+        }
+        function removeSettingsNotifyKeyword(btn) {
+            const li = btn && btn.closest ? btn.closest('.settings-keyword-item') : null;
+            if (li) li.remove();
+        }
+
         function resolveNoticeLevelLocal(message, type, options = {}) {
             if (options.noticeLevel === 'important' || options.noticeLevel === 'general') return options.noticeLevel;
             const msg = String(message || '');
@@ -862,6 +947,26 @@
             if (!token) return null;
             return signupUsers.find((u) => String(u && u.name || '').trim() === token) || null;
         }
+        function isPostAuthoredBySignupUser(post, user) {
+            if (!post || !user || isAiSystemUser(user)) return false;
+            const writer = String(post.writer || '').trim();
+            if (!writer) return false;
+            const matched = findSignupUserByWriter(writer);
+            if (matched && String(matched.employeeNo) === String(user.employeeNo)) return true;
+            const nm = String(user.name || '').trim();
+            const pos = String(user.position || '').trim();
+            const full = `${nm}${pos ? ` ${pos}` : ''}`.trim();
+            return writer === full || writer === nm || (!!nm && writer.startsWith(`${nm} `));
+        }
+        function shouldDeletePostForWithdrawal(post) {
+            if (!post) return false;
+            if (post.type === 'KNOW') {
+                return normalizeKnowStatus(post.status) === KNOW_STATUS.PENDING;
+            }
+            if (post.aiSolved === true || post.status === 'done') return false;
+            const s = String(post.status || '');
+            return s === 'wait' || s === 'ing' || s === 'moreInfo';
+        }
         function getUserAvatarMarkup(user, nameText, options = {}) {
             const className = String(options.className || 'user-avatar');
             const imageData = normalizeProfileImageData(user && user.profileImage);
@@ -875,6 +980,12 @@
         }
         function renderWriterWithAvatar(writerRaw, options = {}) {
             const writerText = normalizeDisplayText(writerRaw, '-');
+            if (writerText === '탈퇴회원') {
+                const wrapperClass = String(options.wrapperClass || 'writer-cell');
+                const avCls = options.avatarClassName || 'writer-avatar';
+                const neutralAvatar = `<span class="${avCls}" style="background:linear-gradient(135deg,#64748b,#475569);color:#fff;">탈</span>`;
+                return `<span class="${wrapperClass}">${neutralAvatar}<span class="writer-name writer-name--withdrawn">${escapeHtml(writerText)}</span></span>`;
+            }
             const user = findSignupUserByWriter(writerText);
             const avatarMarkup = getUserAvatarMarkup(user, writerText, { className: options.avatarClassName || 'writer-avatar' });
             const wrapperClass = String(options.wrapperClass || 'writer-cell');
@@ -900,6 +1011,13 @@
             else if (user.isAdmin === false) out.isAdmin = false;
             else delete out.isAdmin;
             if (typeof user.hasAdminPin === 'boolean') out.hasAdminPin = user.hasAdminPin;
+            if (user.withdrawn === true) {
+                out.withdrawn = true;
+                out.withdrawnAt = String(user.withdrawnAt || '').trim().slice(0, 64);
+            } else {
+                delete out.withdrawn;
+                delete out.withdrawnAt;
+            }
             delete out.adminPinHash;
             delete out.adminPinPlain;
             return out;
@@ -1585,12 +1703,9 @@
             if (notifyTimeEl) notifyTimeEl.checked = true;
             const notifyTimeStartEl = document.getElementById('setNotifyTimeStart');
             const notifyTimeEndEl = document.getElementById('setNotifyTimeEnd');
-            const notifyExcludeEl = document.getElementById('setNotifyExcludeKeywords');
-            const notifyIncludeEl = document.getElementById('setNotifyIncludeKeywords');
             if (notifyTimeStartEl) notifyTimeStartEl.value = notifyPolicy.customStart;
             if (notifyTimeEndEl) notifyTimeEndEl.value = notifyPolicy.customEnd;
-            if (notifyExcludeEl) notifyExcludeEl.value = notifyPolicy.excludeKeywords.join(', ');
-            if (notifyIncludeEl) notifyIncludeEl.value = notifyPolicy.includeKeywords.join(', ');
+            renderNotifyKeywordListsFromPolicy();
             const initialViewEl = document.querySelector(`input[name="initialView"][value="${getPreferredInitialView()}"]`);
             if (initialViewEl) initialViewEl.checked = true;
             applyThemeMode(appData.settings.themeMode || 'system');
@@ -2172,6 +2287,10 @@
                 showAlert('선택한 회원 정보를 찾을 수 없습니다.', 'error');
                 return;
             }
+            if (user.withdrawn === true) {
+                showAlert('탈퇴 처리된 계정으로는 로그인할 수 없습니다.', 'error');
+                return;
+            }
             currentLoginUser = user;
             const loginEmpNo = document.getElementById('loginEmpNo');
             if (loginEmpNo) loginEmpNo.value = user.employeeNo;
@@ -2507,6 +2626,11 @@
                 showAlert('저장된 회원이 아닙니다. 회원가입 후 이용해주세요.', 'error');
                 return;
             }
+            if (currentLoginUser.withdrawn === true) {
+                showAlert('탈퇴 처리된 계정으로는 로그인할 수 없습니다.', 'error');
+                currentLoginUser = null;
+                return;
+            }
 
             const sessionRestoreLogin = !!options.sessionRestoreLogin;
             const fromMemberListLogin = !!options.fromMemberListLogin;
@@ -2667,8 +2791,6 @@
             const notifyTimeEl = document.querySelector('input[name="notifyTimeMode"]:checked');
             const notifyTimeStartEl = document.getElementById('setNotifyTimeStart');
             const notifyTimeEndEl = document.getElementById('setNotifyTimeEnd');
-            const notifyExcludeEl = document.getElementById('setNotifyExcludeKeywords');
-            const notifyIncludeEl = document.getElementById('setNotifyIncludeKeywords');
             if (!appData.settings || typeof appData.settings !== 'object') appData.settings = {};
             appData.settings.osNotify = !(osNotifyEl && !osNotifyEl.checked);
             appData.settings.themeMode = themeEl ? String(themeEl.value || 'system') : 'system';
@@ -2679,8 +2801,8 @@
                 timeMode: notifyTimeEl ? String(notifyTimeEl.value || 'all') : 'all',
                 customStart: notifyTimeStartEl ? String(notifyTimeStartEl.value || '09:00') : '09:00',
                 customEnd: notifyTimeEndEl ? String(notifyTimeEndEl.value || '18:00') : '18:00',
-                excludeKeywords: normalizeKeywordList(notifyExcludeEl ? notifyExcludeEl.value : ''),
-                includeKeywords: normalizeKeywordList(notifyIncludeEl ? notifyIncludeEl.value : ''),
+                excludeKeywords: readNotifyKeywordArrayFromList('exclude'),
+                includeKeywords: readNotifyKeywordArrayFromList('include'),
             });
             applyThemeMode(appData.settings.themeMode);
             saveUserSettingsToServer();
@@ -2706,6 +2828,79 @@
                     console.error('resetTestDatabase failed:', error);
                     showAlert('서버 DB 초기화에 실패했습니다.', 'error');
                 });
+        }
+        function confirmTestMemberWithdrawal() {
+            showConfirm(
+                '정말 탈퇴 처리하시겠습니까? 미처리·대기 게시물은 삭제되며 복구할 수 없습니다.',
+                () => {
+                    void executeTestMemberWithdrawal();
+                },
+            );
+        }
+        async function executeTestMemberWithdrawal() {
+            const user = currentLoginUser;
+            if (!user || isAiSystemUser(user)) {
+                showAlert('탈퇴할 수 없는 계정입니다.', 'error');
+                return;
+            }
+            if (user.withdrawn === true) {
+                showAlert('이미 탈퇴 처리된 계정입니다.', 'error');
+                return;
+            }
+            try {
+                const emp = String(user.employeeNo || '');
+                const posts = Array.isArray(appData.posts) ? appData.posts : [];
+                const nextPosts = [];
+                for (let i = 0; i < posts.length; i += 1) {
+                    const post = posts[i];
+                    if (!post) continue;
+                    if (!isPostAuthoredBySignupUser(post, user)) {
+                        nextPosts.push(post);
+                        continue;
+                    }
+                    if (shouldDeletePostForWithdrawal(post)) continue;
+                    nextPosts.push(Object.assign({}, post, { writer: '탈퇴회원' }));
+                }
+                appData.posts = nextPosts;
+                normalizeKnowPostStatuses(appData.posts);
+                const idx = signupUsers.findIndex((u) => String(u.employeeNo) === emp);
+                if (idx >= 0) {
+                    signupUsers[idx] = sanitizeSignupUserRecord({
+                        ...signupUsers[idx],
+                        withdrawn: true,
+                        withdrawnAt: new Date().toISOString(),
+                        name: '탈퇴회원',
+                        position: '',
+                        profileImage: '',
+                        deptName: '-',
+                        isOnline: false,
+                    });
+                }
+                await saveSignupUsers({ rethrow: true });
+                const scope = encodeURIComponent(getAppDataUserScope());
+                const payload = {
+                    ...appData,
+                    settings: {
+                        boardHelp:
+                            appData &&
+                            appData.settings &&
+                            appData.settings.boardHelp &&
+                            typeof appData.settings.boardHelp === 'object'
+                                ? appData.settings.boardHelp
+                                : {},
+                    },
+                };
+                await fetchJson(`/api/db/app-data?scope=${scope}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ appData: payload }),
+                });
+                showAlert('탈퇴 처리되었습니다.', 'success');
+                doLogout();
+            } catch (error) {
+                console.error('executeTestMemberWithdrawal failed:', error);
+                showAlert('탈퇴 처리 중 저장에 실패했습니다.', 'error');
+            }
         }
         function toggleHeaderProfileOverlay(event) {
             if (event) event.stopPropagation();
@@ -3473,6 +3668,11 @@
                 const topNavId = `topnav-${viewId}`;
                 if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
                 if (viewId === 'ai-search') initializeAiSearchView();
+                if (viewId === 'settings') {
+                    initSettingsMainTabsOnce();
+                    selectSettingsMainTab('notify');
+                    renderNotifyKeywordListsFromPolicy();
+                }
                 if (viewId === 'admin-settings') {
                     wireAdminAiGenControlsOnce();
                     initAdminAiPostTabsOnce();
@@ -5052,7 +5252,7 @@
             const scopedEmpNo = getCookie(USER_SCOPE_COOKIE);
             if (!scopedEmpNo) return;
             const matched = signupUsers.find(u => String(u.employeeNo) === String(scopedEmpNo));
-            if (!matched || isAiSystemUser(matched)) {
+            if (!matched || isAiSystemUser(matched) || matched.withdrawn === true) {
                 clearCookie(USER_SCOPE_COOKIE);
                 return;
             }

@@ -1077,7 +1077,7 @@ async function restoreAdminAiSettingsVersion(versionNo) {
 function initAdminSettingsMainTabsOnce() {
     if (adminSettingsMainTabsInited) return;
     adminSettingsMainTabsInited = true;
-    document.querySelectorAll(".admin-main-tab-btn").forEach((btn) => {
+    document.querySelectorAll("#adminSettingsMainTabs .admin-main-tab-btn").forEach((btn) => {
         btn.addEventListener("click", () => selectAdminSettingsMainTab(btn.getAttribute("data-admin-tab")));
     });
     const permPanel = document.getElementById("admin-settings-panel-perms");
@@ -1195,8 +1195,9 @@ async function copyAdminAiApiLogDetail(logId) {
 }
 
 function selectAdminSettingsMainTab(tab) {
-    const key = tab === "perms" ? "perms" : tab === "logs" ? "logs" : "ai";
-    document.querySelectorAll(".admin-main-tab-btn").forEach((b) => {
+    const key =
+        tab === "perms" ? "perms" : tab === "logs" ? "logs" : tab === "system" ? "system" : "ai";
+    document.querySelectorAll("#adminSettingsMainTabs .admin-main-tab-btn").forEach((b) => {
         const on = b.getAttribute("data-admin-tab") === key;
         b.classList.toggle("btn-primary", on);
         b.classList.toggle("btn-outline", !on);
@@ -1204,9 +1205,11 @@ function selectAdminSettingsMainTab(tab) {
     const aiPanel = document.getElementById("admin-settings-panel-ai");
     const permPanel = document.getElementById("admin-settings-panel-perms");
     const logsPanel = document.getElementById("admin-settings-panel-logs");
+    const systemPanel = document.getElementById("admin-settings-panel-system");
     if (aiPanel) aiPanel.classList.toggle("hidden", key !== "ai");
     if (permPanel) permPanel.classList.toggle("hidden", key !== "perms");
     if (logsPanel) logsPanel.classList.toggle("hidden", key !== "logs");
+    if (systemPanel) systemPanel.classList.toggle("hidden", key !== "system");
     if (key === "logs") void loadAdminAiApiLogsView();
 }
 
