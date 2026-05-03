@@ -5,6 +5,8 @@
   "description": "Demo helpdesk app with AI proxy and server-side JSON DB",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "setup:githooks": "node scripts/setup-githooks.cjs",
+    "prepare": "node scripts/setup-githooks.cjs"
   }
 }

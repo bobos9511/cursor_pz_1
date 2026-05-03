@@ -1,0 +1,10 @@
+#!/bin/sh
+# main 브랜치에서 커밋 후 origin/main 으로 자동 푸시
+# 일시 중지: SKIP_HOOK_PUSH=1 git commit ...
+if [ -n "$SKIP_HOOK_PUSH" ]; then
+  exit 0
+fi
+branch=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
+[ "$branch" = "main" ] || exit 0
+git push origin main
+exit $?
