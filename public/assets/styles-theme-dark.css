@@ -685,8 +685,14 @@
         body[data-theme="dark"] .post-id-chip__num {
             color: #94a3b8;
         }
+        body[data-theme="dark"] .post-id-chip.post-id-chip--detail {
+            background: transparent;
+            border-color: transparent;
+        }
         body[data-theme="dark"] .post-id-chip--detail .post-id-chip__num {
             color: #cbd5e1;
+            background: #1f2f49;
+            border-color: #64748b;
         }
         body[data-theme="dark"] #widget-lists .panel-header {
             background: #152238 !important;

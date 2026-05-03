@@ -2910,11 +2910,27 @@
             color: #64748b;
             line-height: 1.35;
         }
+        /* 상세 상단: 상태 뱃지와 동일 높이·톤(.bg-ready와 유사) */
+        .post-id-chip.post-id-chip--detail {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
         .post-id-chip--detail .post-id-chip__num {
-            padding: 3px 8px;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 3px;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
             color: #475569;
+            background: #E2E8F0;
+            border: 1px solid #CBD5E1;
+        }
+        .detail-post-badges .dtl-post-ref-wrap {
+            margin-bottom: 0;
         }
         .dtl-post-ref-wrap {
             margin-bottom: 12px;
