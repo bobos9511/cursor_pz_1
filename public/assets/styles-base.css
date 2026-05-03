@@ -3484,8 +3484,9 @@
             align-items: center;
             column-gap: 18px;
             row-gap: 8px;
-            min-width: 0;
-            flex: 1 1 12rem;
+            /* flex-basis에 rem을 쓰면 부모가 column일 때 '최소 높이'로 해석되어 상세 모바일에서 메타가 세로로 과도하게 벌어짐 */
+            flex: 1 1 auto;
+            min-width: min(12rem, 100%);
         }
         .post-detail-meta-item {
             display: inline-flex;

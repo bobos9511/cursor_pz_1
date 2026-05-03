@@ -292,8 +292,9 @@
             #view-detail .post-detail-meta {
                 flex-direction: column;
                 align-items: stretch;
+                justify-content: flex-start;
                 margin-top: 0 !important;
-                gap: 2px !important;
+                gap: 4px !important;
             }
             #view-detail .post-detail-meta-tail {
                 margin-left: 0;
@@ -372,12 +373,15 @@
 
             /* 게시물 상세: 작성자·일시 한 덩어리로 촘촘하게 */
             #view-detail .post-detail-meta-primary {
+                flex: 0 1 auto !important;
                 flex-direction: row;
                 flex-wrap: wrap;
                 align-items: center;
+                justify-content: flex-start;
                 width: 100%;
                 column-gap: 10px;
-                row-gap: 2px;
+                row-gap: 4px;
+                min-height: 0 !important;
             }
             #view-detail .post-detail-meta-primary .post-detail-meta-item {
                 display: flex;
