@@ -3982,4 +3982,5 @@
 
         /* 푸터 스타일 */
         .footer-dark { background: linear-gradient(180deg, #1f2937, #1f252f); color: #94a3b8; padding: 18px 24px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-top: auto; border-top: 1px solid rgba(148,163,184,0.2); }
+        .footer-copyright--short { display: none; }
         .engraved-logo { font-family: var(--font-sans); font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }

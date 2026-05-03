@@ -204,6 +204,12 @@
                 font-weight: 700;
                 margin-bottom: 1px !important;
             }
+            .footer-copyright .footer-copyright--full {
+                display: none;
+            }
+            .footer-copyright .footer-copyright--short {
+                display: inline;
+            }
             .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; gap: 12px; }
             .panel-header { padding: 12px 14px; font-size: 14px; }
             .panel-body { padding: 14px; }
