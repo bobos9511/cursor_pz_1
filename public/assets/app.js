@@ -4906,6 +4906,11 @@
             panel.style.transformOrigin = '';
             panel.style.removeProperty('--ai-layer-tail-right');
         }
+        /**
+         * FAB·레이어 오버레이는 position:fixed 이지만, 조상(#appContainer 등)에 transform 이 있으면
+         * 기준 박스가 뷰포트가 아닙니다. 패널은 오버레이(=동일 fixed 기준) 안에 absolute 이므로
+         * 반드시 오버레이 getBoundingClientRect()와 FAB rect를 같은 좌표계로 맞춥니다.
+         */
         function positionAiChatLayerPanel() {
             const fab = document.getElementById('aiChatFloatingBtn');
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
@@ -4914,8 +4919,10 @@
             const isMobileLayout = knockIsMobileShellActive();
             const isDesktopLayout = !isMobileLayout && window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
             panel.classList.remove('ai-chat-layer-panel--mobile-sheet');
+            const overlayRect = overlay.getBoundingClientRect();
+            const layoutW = Math.max(1, overlayRect.width);
             const vv = window.visualViewport;
-            const viewportHeight = vv && vv.height > 0 ? vv.height : window.innerHeight;
+            const layoutH = Math.max(1, vv && vv.height > 0 ? Math.min(vv.height, overlayRect.height) : overlayRect.height);
             const gap = AI_LAYER_FAB_GAP;
             if (!fab) return;
             if (isMobileLayout) panel.classList.add('ai-chat-layer-panel--mobile-fab-dock');
@@ -4923,13 +4930,16 @@
             const fabRect = fab.getBoundingClientRect();
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
-                    /* FAB 모바일: 하단 내비(~58px) + FAB(50px) + 간격 */
-                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 68px) + 50px + 12px)';
+                    const navH =
+                        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-bottom-nav-h')) ||
+                        68;
+                    const stackBottom = 12 + navH + 50;
+                    panel.style.bottom = `${stackBottom + gap}px`;
                     panel.style.right = '14px';
                     panel.style.left = 'auto';
-                    panel.style.width = 'calc(100vw - 24px)';
-                    panel.style.maxWidth = '560px';
-                    const mh = Math.max(260, Math.floor(viewportHeight * 0.86));
+                    panel.style.width = `${Math.min(560, Math.max(280, layoutW - 24))}px`;
+                    panel.style.maxWidth = '';
+                    const mh = Math.max(260, Math.floor(layoutH * 0.86));
                     panel.style.maxHeight = `${mh}px`;
                     panel.style.height = `${mh}px`;
                     panel.style.setProperty('--ai-layer-tail-right', '25px');
@@ -4937,26 +4947,24 @@
                 }
                 return;
             }
-            const bottomPx = window.innerHeight - fabRect.top + gap;
-            const rightPx = window.innerWidth - fabRect.right;
+            const bottomPx = overlayRect.bottom - fabRect.top + gap;
+            const rightPx = overlayRect.right - fabRect.right;
             panel.style.bottom = `${bottomPx}px`;
             panel.style.right = `${rightPx}px`;
             panel.style.left = 'auto';
             const marginLeft = isDesktopLayout ? 16 : isMobileLayout ? 12 : 10;
-            const rawMax = window.innerWidth - rightPx - marginLeft;
-            const maxPanelCap = isDesktopLayout ? 680 : isMobileLayout ? Math.min(560, window.innerWidth - 20) : 560;
+            const rawMax = layoutW - rightPx - marginLeft;
+            const maxPanelCap = isDesktopLayout ? 680 : isMobileLayout ? Math.min(560, layoutW - 20) : 560;
             const panelW = Math.min(maxPanelCap, Math.max(280, rawMax));
             panel.style.width = `${panelW}px`;
             panel.style.maxWidth = '';
             const topBreathing = isDesktopLayout ? 8 : 12;
-            const spaceAboveFab = fabRect.top - gap - topBreathing;
-            /* 모바일: FAB 위 실제 여유 높이를 넘기면 안 됨. Math.max(200, …)로 최소 높이를 강제하면
-               짧은 뷰포트에서 패널이 FAB 아래로 내려가 잘리거나 아이콘보다 아래에 보임 */
+            const spaceAboveFab = fabRect.top - overlayRect.top - gap - topBreathing;
             const maxByFabTop = isMobileLayout
                 ? Math.max(0, spaceAboveFab)
                 : Math.max(isDesktopLayout ? 300 : 260, spaceAboveFab);
             const vhFraction = isDesktopLayout ? 0.9 : isMobileLayout ? 0.86 : 0.82;
-            const maxByVh = Math.floor(viewportHeight * vhFraction);
+            const maxByVh = Math.floor(layoutH * vhFraction);
             let maxH = Math.min(maxByFabTop, maxByVh);
             if (isMobileLayout && fabRect.height >= 2) {
                 const mbDock = document.getElementById('mobileBottomNav');
@@ -4966,7 +4974,7 @@
                 const fabH = fabRect.height;
                 const dockGap = 12;
                 const reservedFromTop = topBreathing + gap + fabH + dockGap + navH;
-                const stableCap = Math.max(200, Math.floor(viewportHeight - reservedFromTop));
+                const stableCap = Math.max(200, Math.floor(overlayRect.height - reservedFromTop));
                 maxH = Math.min(maxH, stableCap);
             }
             panel.style.maxHeight = `${maxH}px`;
