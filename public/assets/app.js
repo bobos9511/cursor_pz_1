@@ -780,8 +780,8 @@
                 maybeRequestSystemNotificationPermission();
             }
             const systemShown = wantsSystem ? showSystemNotification(message, type, options) : false;
-            // 브라우저에서는 OS 방해금지(DND) 상태 감지가 어려워, 시스템 알림 성공 시에도 토스트를 기본 병행합니다.
-            const keepToastWithSystem = !(options && options.keepToastWithSystem === false);
+            // 브라우저/OS 알림이 실제로 표시되면 인앱 토스트는 생략(중복 방지). 병행이 필요하면 options.keepToastWithSystem === true.
+            const keepToastWithSystem = options && options.keepToastWithSystem === true;
             const skipPageToast = wantsSystem && systemShown && !keepToastWithSystem;
             if (!container || skipPageToast) return;
 
