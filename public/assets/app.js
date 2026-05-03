@@ -29,129 +29,343 @@
             if (!canvas || !canvas.getContext || !serverErrorPageActive) return;
             if (scoreEl) scoreEl.textContent = '0';
             const ctx = canvas.getContext('2d');
-            const W = canvas.width;
-            const H = canvas.height;
-            const groundY = H - 28;
-            const player = { x: 52, y: groundY - 36, w: 32, h: 36, vy: 0 };
+            const LW = 400;
+            const LH = 224;
+            const groundY = LH - 34;
+            const player = { x: 54, y: groundY - 38, w: 34, h: 38, vy: 0 };
             let obstacles = [];
+            let pickups = [];
+            let particles = [];
             let frame = 0;
             let running = true;
             let gameScore = 0;
-            let speed = 5.2;
+            let speed = 5.4;
             let tickSpawn = 0;
+            let pickTick = 0;
             let rafId = 0;
+            let streak = 0;
+            let mult = 1;
+            let shake = 0;
+            let scrollNear = 0;
+            let scrollFar = 0;
+            const ptrOpts = { passive: false };
+
+            function syncCanvasBuffer() {
+                const dpr = Math.min(2.5, typeof window.devicePixelRatio === 'number' ? window.devicePixelRatio : 1);
+                canvas.width = Math.round(LW * dpr);
+                canvas.height = Math.round(LH * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            syncCanvasBuffer();
 
             function spawnObstacle() {
-                const h = 34 + Math.random() * 52;
-                obstacles.push({ x: W + 18, w: 28, h });
+                const tall = Math.random() < 0.58;
+                if (tall) {
+                    const h = 38 + Math.random() * 54;
+                    obstacles.push({ x: LW + 24, w: 26, h, kind: 'tower', glow: 0.35 + Math.random() * 0.35 });
+                } else {
+                    const w = 56 + Math.random() * 44;
+                    const h = 22 + Math.random() * 18;
+                    obstacles.push({ x: LW + 24, w, h, kind: 'shard', glow: 0.25 + Math.random() * 0.45 });
+                }
+            }
+
+            function trySpawnPickup() {
+                if (pickups.length >= 2) return;
+                if (Math.random() > 0.42) return;
+                const size = 11;
+                const minAir = 52;
+                const maxJump = groundY - minAir - size - player.h - 18;
+                const airY = minAir + Math.random() * Math.max(12, maxJump - minAir);
+                pickups.push({
+                    x: LW + 30,
+                    y: airY,
+                    r: size,
+                    pulse: Math.random() * Math.PI * 2,
+                    active: true,
+                });
+            }
+
+            function burstParticles(x, y, n, hue) {
+                for (let i = 0; i < n; i++) {
+                    const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+                    const sp = 1.8 + Math.random() * 3.2;
+                    particles.push({
+                        x,
+                        y,
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp - 1.2,
+                        life: 22 + Math.floor(Math.random() * 10),
+                        hue: hue != null ? hue : 200 + Math.floor(Math.random() * 40),
+                    });
+                }
             }
 
             function jump() {
                 if (!running || !serverErrorPageActive) return;
-                if (player.y + player.h >= groundY - 1) player.vy = -12.8;
+                if (player.y + player.h >= groundY - 0.5) player.vy = -13.2;
             }
 
-            function crash() {
-                gameScore = Math.floor(gameScore * 0.45);
-                obstacles = [];
-                speed = Math.max(4.8, speed - 0.85);
+            function crashAt(cx, cy) {
+                burstParticles(cx, cy, 14, 210);
+                streak = 0;
+                mult = 1;
+                shake = 14;
+                gameScore = Math.floor(gameScore * 0.5);
+                obstacles = obstacles.filter((o) => o.x > player.x + player.w + 40);
+                pickups = pickups.filter((p) => !p.active || p.x > player.x + 80);
+                speed = Math.max(4.9, speed - 0.65);
                 tickSpawn = 0;
             }
 
-            function drawPlayer(px, py) {
-                ctx.fillStyle = '#1d4ed8';
-                ctx.strokeStyle = 'rgba(147,197,253,0.85)';
+            function drawParallax() {
+                scrollFar += speed * 0.18;
+                scrollNear += speed * 0.42;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+                let xf = scrollFar % 120;
+                for (let i = -1; i < 6; i++) {
+                    const bx = i * 120 - xf;
+                    ctx.fillRect(bx, groundY - 62, 72, 62);
+                }
+                ctx.fillStyle = 'rgba(30, 41, 59, 0.88)';
+                let xn = scrollNear % 85;
+                for (let i = -1; i < 9; i++) {
+                    const bx = i * 85 - xn;
+                    const bw = 48 + ((i * 17) % 24);
+                    ctx.fillRect(bx, groundY - 44, bw, 44);
+                }
+            }
+
+            function drawSkyAndFloor(W, gy) {
+                const sky = ctx.createLinearGradient(0, 0, 0, gy);
+                sky.addColorStop(0, '#0a162e');
+                sky.addColorStop(0.45, '#0f2847');
+                sky.addColorStop(1, '#051018');
+                ctx.fillStyle = sky;
+                ctx.fillRect(0, 0, W, gy);
+                const band = ctx.createLinearGradient(0, 12, W, gy * 0.55);
+                band.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                band.addColorStop(0.5, 'rgba(34, 211, 238, 0.07)');
+                band.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                ctx.fillStyle = band;
+                ctx.fillRect(0, 0, W, gy * 0.72);
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                for (let s = 0; s < 48; s++) {
+                    const sx = (s * 97 + frame * 0.22) % W;
+                    const sy = ((s * 53 + s * s) % (gy - 36)) + 6;
+                    const tw = 1 + (s % 2);
+                    ctx.globalAlpha = 0.15 + (s % 5) * 0.04;
+                    ctx.fillRect(sx, sy, tw, tw);
+                }
+                ctx.globalAlpha = 1;
+                drawParallax();
+                const floorGrad = ctx.createLinearGradient(0, gy, 0, LH);
+                floorGrad.addColorStop(0, '#0f172a');
+                floorGrad.addColorStop(1, '#020617');
+                ctx.fillStyle = floorGrad;
+                ctx.fillRect(0, gy, W, LH - gy);
+                const stripeOff = (frame * speed * 0.85) % 40;
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                if (typeof ctx.roundRect === 'function') {
-                    ctx.roundRect(px, py, player.w, player.h, 9);
-                } else {
-                    ctx.rect(px, py, player.w, player.h);
+                for (let x = -stripeOff; x < W + 40; x += 40) {
+                    ctx.moveTo(x, gy + 10);
+                    ctx.lineTo(x + 18, gy + 10);
                 }
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, gy + 0.5);
+                ctx.lineTo(W, gy + 0.5);
+                ctx.stroke();
+            }
+
+            function drawPlayer(px, py) {
+                ctx.shadowColor = 'rgba(56, 189, 248, 0.45)';
+                ctx.shadowBlur = player.vy < -0.5 ? 16 : 10;
+                const body = ctx.createLinearGradient(px, py, px + player.w, py + player.h);
+                body.addColorStop(0, '#38bdf8');
+                body.addColorStop(0.5, '#2563eb');
+                body.addColorStop(1, '#1d4ed8');
+                ctx.fillStyle = body;
+                ctx.strokeStyle = 'rgba(224, 242, 254, 0.95)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                if (typeof ctx.roundRect === 'function') ctx.roundRect(px, py, player.w, player.h, 11);
+                else ctx.rect(px, py, player.w, player.h);
                 ctx.fill();
                 ctx.stroke();
-                ctx.fillStyle = '#e0f2fe';
-                ctx.font = 'bold 13px system-ui,sans-serif';
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                ctx.font = 'bold 14px system-ui,sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('K', px + player.w / 2, py + player.h / 2 + 1);
+                ctx.fillText('K', px + player.w / 2, py + player.h / 2 + 0.5);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+                ctx.beginPath();
+                ctx.ellipse(px + player.w / 2, groundY + 6, player.w * 0.55, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
             }
 
             function loop() {
                 if (!running || !serverErrorPageActive) return;
                 frame++;
-                gameScore += 0.2;
                 const scoreDisp = Math.floor(gameScore);
                 if (scoreEl) scoreEl.textContent = String(scoreDisp);
 
-                speed = Math.min(11.5, 5.1 + Math.min(5, Math.floor(scoreDisp / 280)) * 0.55);
+                const W = LW;
+                const gy = groundY;
+                speed = Math.min(12.2, 5.2 + Math.min(6, Math.floor(scoreDisp / 220)) * 0.62);
 
                 tickSpawn++;
-                const spawnEvery = Math.max(52, 105 - Math.min(48, Math.floor(scoreDisp / 120)));
+                const spawnEvery = Math.max(46, 96 - Math.min(44, Math.floor(scoreDisp / 95)));
                 if (tickSpawn >= spawnEvery) {
                     spawnObstacle();
                     tickSpawn = 0;
                 }
+                pickTick++;
+                if (pickTick >= 55) {
+                    trySpawnPickup();
+                    pickTick = 0;
+                }
 
-                player.vy += 0.74;
+                gameScore += 0.14 * mult;
+
+                player.vy += 0.76;
                 player.y += player.vy;
-                if (player.y + player.h >= groundY) {
-                    player.y = groundY - player.h;
+                if (player.y + player.h >= gy) {
+                    player.y = gy - player.h;
                     player.vy = 0;
                 }
 
-                for (let i = 0; i < obstacles.length; i++) obstacles[i].x -= speed;
-                obstacles = obstacles.filter((o) => o.x + o.w > -30);
-
                 const px = player.x;
                 const py = player.y;
+                for (let i = 0; i < obstacles.length; i++) obstacles[i].x -= speed;
+                for (let i = 0; i < pickups.length; i++) {
+                    const p = pickups[i];
+                    if (!p.active) continue;
+                    p.x -= speed * 0.98;
+                    p.pulse += 0.08;
+                }
+                obstacles = obstacles.filter((o) => o.x + o.w > -40);
+
                 for (let i = 0; i < obstacles.length; i++) {
                     const o = obstacles[i];
-                    const oy = groundY - o.h;
+                    const oy = gy - o.h;
+                    if (!o.passed && o.x + o.w < px - 2) {
+                        o.passed = true;
+                        streak += 1;
+                        if (streak >= 4 && streak % 4 === 0) {
+                            mult = Math.min(4, mult + 0.25);
+                            burstParticles(px + player.w + 6, py + player.h / 2, 8, 45);
+                        }
+                    }
                     if (
-                        px < o.x + o.w - 3 &&
-                        px + player.w > o.x + 3 &&
+                        px < o.x + o.w - 4 &&
+                        px + player.w > o.x + 4 &&
                         py < oy + o.h &&
-                        py + player.h > oy + 4
+                        py + player.h > oy + 3
                     ) {
-                        crash();
+                        crashAt(px + player.w / 2, py + player.h / 2);
                         break;
                     }
                 }
 
-                const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-                sky.addColorStop(0, '#0c1a2e');
-                sky.addColorStop(1, '#020617');
-                ctx.fillStyle = sky;
-                ctx.fillRect(0, 0, W, groundY);
-
-                ctx.fillStyle = 'rgba(148,163,184,0.25)';
-                for (let s = 0; s < 20; s++) {
-                    const sx = (s * 73 + frame * 0.35) % W;
-                    const sy = ((s * 47) % (groundY - 24)) + 8;
-                    ctx.fillRect(sx, sy, 2, 2);
+                for (let i = pickups.length - 1; i >= 0; i--) {
+                    const p = pickups[i];
+                    if (!p.active || p.x + p.r < -10) {
+                        pickups.splice(i, 1);
+                        continue;
+                    }
+                    const cx = p.x;
+                    const cy = p.y;
+                    const pcx = px + player.w / 2;
+                    const pcy = py + player.h / 2;
+                    const dx = pcx - cx;
+                    const dy = pcy - cy;
+                    if (dx * dx + dy * dy < (p.r + player.w * 0.35) * (p.r + player.w * 0.35)) {
+                        p.active = false;
+                        gameScore += 28 * mult;
+                        burstParticles(cx, cy, 10, 52);
+                        pickups.splice(i, 1);
+                    }
                 }
 
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, groundY, W, H - groundY);
-                ctx.strokeStyle = 'rgba(56,189,248,0.4)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(0, groundY + 0.5);
-                ctx.lineTo(W, groundY + 0.5);
-                ctx.stroke();
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.16;
+                    p.life -= 1;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                if (shake > 0) shake -= 1;
+                const sh = shake > 0 ? Math.sin(frame * 1.1) * (shake * 0.35) : 0;
+
+                ctx.save();
+                ctx.translate(sh, 0);
+                drawSkyAndFloor(W, gy);
 
                 for (let i = 0; i < obstacles.length; i++) {
                     const o = obstacles[i];
-                    const oy = groundY - o.h;
-                    const og = ctx.createLinearGradient(o.x, oy, o.x, oy + o.h);
-                    og.addColorStop(0, '#64748b');
-                    og.addColorStop(1, '#1e293b');
-                    ctx.fillStyle = og;
-                    ctx.fillRect(o.x, oy, o.w, o.h);
+                    const oy = gy - o.h;
+                    const g = ctx.createLinearGradient(o.x, oy, o.x + o.w, oy + o.h);
+                    g.addColorStop(0, `rgba(148, 163, 184, ${0.55 + o.glow})`);
+                    g.addColorStop(1, '#1e293b');
+                    ctx.fillStyle = g;
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                    ctx.lineWidth = 1;
+                    if (o.kind === 'shard') {
+                        ctx.beginPath();
+                        ctx.moveTo(o.x, oy + o.h);
+                        ctx.lineTo(o.x + o.w * 0.5, oy + 4);
+                        ctx.lineTo(o.x + o.w, oy + o.h);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillRect(o.x, oy, o.w, o.h);
+                        ctx.strokeRect(o.x + 0.5, oy + 0.5, o.w - 1, o.h - 1);
+                    }
+                }
+
+                for (let i = 0; i < pickups.length; i++) {
+                    const p = pickups[i];
+                    if (!p.active) continue;
+                    const pr = p.r + Math.sin(p.pulse) * 1.2;
+                    const cg = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, pr + 4);
+                    cg.addColorStop(0, 'rgba(253, 224, 71, 0.95)');
+                    cg.addColorStop(0.55, 'rgba(251, 191, 36, 0.55)');
+                    cg.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                    ctx.fillStyle = cg;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, pr + 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fef9c3';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, pr * 0.55, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    ctx.fillStyle = `hsla(${p.hue}, 85%, 62%, ${p.life / 28})`;
+                    ctx.fillRect(p.x, p.y, 3, 3);
                 }
 
                 drawPlayer(px, py);
+
+                ctx.fillStyle = 'rgba(226, 232, 240, 0.88)';
+                ctx.font = '700 11px system-ui,sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillText(`×${mult.toFixed(2)} · 연속 ${streak}`, 10, 9);
+                ctx.textAlign = 'right';
+                ctx.fillText(`속도 ${speed.toFixed(1)}`, W - 10, 9);
+
+                ctx.restore();
 
                 rafId = requestAnimationFrame(loop);
             }
@@ -164,6 +378,8 @@
                 }
             }
             function onPointer(e) {
+                if (e.pointerType === 'touch' && e.cancelable) e.preventDefault();
+                e.stopPropagation();
                 jump();
             }
 
@@ -171,11 +387,11 @@
                 running = false;
                 if (rafId) cancelAnimationFrame(rafId);
                 window.removeEventListener('keydown', onKey, false);
-                canvas.removeEventListener('pointerdown', onPointer);
+                canvas.removeEventListener('pointerdown', onPointer, ptrOpts);
             };
 
             window.addEventListener('keydown', onKey, false);
-            canvas.addEventListener('pointerdown', onPointer);
+            canvas.addEventListener('pointerdown', onPointer, ptrOpts);
             rafId = requestAnimationFrame(loop);
         }
 
