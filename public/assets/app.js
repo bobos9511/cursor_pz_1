@@ -1983,6 +1983,7 @@
             applyThemeMode(appData.settings.themeMode || 'system');
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
+            bindDashboardWidgetPointerReorder();
             initSidebarNavTooltips();
             bindSidebarHoverTooltipEvents();
             applySidebarTooltipState();
@@ -3806,6 +3807,53 @@
             updateAiChatFloatingButton();
         }
 
+        function syncMobileNavMoreUserPanel() {
+            const nameEl = document.getElementById('mobileNavMoreUserName');
+            const deptEl = document.getElementById('mobileNavMoreUserDept');
+            if (!nameEl || !deptEl) return;
+            const activeUser = currentLoginUser || getRoleMatrixEntry(currentRole);
+            const roleNameRaw = getRoleMatrixEntry(currentRole).name || '';
+            const roleNameParts = roleNameRaw.split(' ');
+            const defaultNameOnly = roleNameParts[0] || roleNameRaw;
+            const defaultPosition = roleNameParts.slice(1).join(' ') || '';
+            const activeName = currentLoginUser
+                ? normalizeDisplayText(activeUser.name || defaultNameOnly, defaultNameOnly || '사용자')
+                : normalizeDisplayText(defaultNameOnly, '사용자');
+            const activePosition = currentLoginUser
+                ? normalizeDisplayText(activeUser.position || '', '')
+                : normalizeDisplayText(defaultPosition, '');
+            const activeDept = normalizeDisplayText(activeUser.deptName || activeUser.dept || getRoleMatrixEntry(currentRole).dept || '-', '-');
+            const userDisplay = `${activeName}${activePosition ? ` ${activePosition}` : ''}`;
+            const deptDisplay = `${activeDept}(${normalizeDisplayText(activeUser.deptCode || '-', '-')})`;
+            const empNo = normalizeDisplayText(activeUser.employeeNo || '-', '-');
+            nameEl.innerText = userDisplay;
+            deptEl.innerText = `${deptDisplay} · 사번 ${empNo}`;
+            const chipEl = document.getElementById('mobileNavMoreUserChip');
+            const sessionEl = document.getElementById('mobileNavMoreUserSession');
+            const headerRole = document.getElementById('mobileNavMoreHeaderRole');
+            const orgLabel = getOrgLabelForRole(currentRole);
+            const rName = currentUserHasAdminAccess() ? `${orgLabel} · 관리` : orgLabel;
+            if (chipEl) chipEl.innerText = rName;
+            if (headerRole) headerRole.innerText = rName;
+            if (sessionEl) sessionEl.innerText = `IP ${currentSessionIp || '—'}`;
+            const avatar = document.getElementById('mobileNavMoreUserAvatar');
+            if (avatar) {
+                const imageData = normalizeProfileImageData(activeUser.profileImage);
+                if (imageData) {
+                    avatar.style.background = '';
+                    avatar.style.color = '';
+                    avatar.innerHTML = `<img src="${imageData}" alt="">`;
+                } else {
+                    const initial = escapeHtml(getUserInitial(activeName));
+                    const seed = String(activeUser.employeeNo || activeName || 'mnav');
+                    const preset = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seed)];
+                    avatar.innerHTML = initial;
+                    avatar.style.background = preset.gradient;
+                    avatar.style.color = preset.color;
+                }
+            }
+        }
+
         function toggleMobileNavMore() {
             const el = document.getElementById('mobileNavMore');
             if (!el) return;
@@ -3814,6 +3862,7 @@
             document.body.classList.toggle('mobile-nav-more-open', isOpen);
             const btn = document.getElementById('mbnav-more');
             if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen) syncMobileNavMoreUserPanel();
             updateAiChatFloatingButton();
         }
 
@@ -4429,14 +4478,98 @@
             const handles = document.querySelectorAll('#dashboardWidgetContainer .drag-handle');
 
             handles.forEach((handle) => handle.classList.toggle('hidden', !dashboardEditMode));
+            const touchCoarse = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
             tiles.forEach((tile) => {
-                tile.draggable = dashboardEditMode;
+                tile.draggable = !!(dashboardEditMode && !touchCoarse);
                 tile.style.cursor = dashboardEditMode ? 'grab' : 'default';
             });
 
             if (button) button.innerText = dashboardEditMode ? '편집 완료' : '위젯 편집';
             if (!dashboardEditMode) saveDashboardWidgetOrder();
-            showAlert(dashboardEditMode ? '위젯 편집 모드가 활성화되었습니다.' : '위젯 편집 모드가 종료되었습니다.', 'success');
+            showAlert(dashboardEditMode ? '위젯 편집 모드가 활성화되었습니다.' : '위젯 편집 모드가 종료되었습니다.', 'success', {
+                skipNotificationCenter: true,
+            });
+        }
+
+        function reorderDashboardTileInContainer(container, dragged, clientY, clientX) {
+            if (!container || !dragged) return;
+            const cr = container.getBoundingClientRect();
+            const probeX = typeof clientX === 'number' && Number.isFinite(clientX)
+                ? Math.min(Math.max(clientX, cr.left + 8), cr.right - 8)
+                : cr.left + cr.width / 2;
+            const probeEl = document.elementFromPoint(probeX, clientY);
+            const overTile = probeEl && probeEl.closest && probeEl.closest('.dash-tile');
+            if (!overTile || overTile === dragged || overTile.parentElement !== container) return;
+            const rect = overTile.getBoundingClientRect();
+            const insertAfter = clientY > rect.top + rect.height / 2;
+            if (insertAfter) container.insertBefore(dragged, overTile.nextSibling);
+            else container.insertBefore(dragged, overTile);
+        }
+
+        let dashPointerState = null;
+        let dashPointerMoveRaf = null;
+        function bindDashboardWidgetPointerReorder() {
+            const container = document.getElementById('dashboardWidgetContainer');
+            if (!container || container.dataset.pointerReorderBound === '1') return;
+            container.dataset.pointerReorderBound = '1';
+
+            function endDashPointerDrag(e) {
+                if (!dashPointerState || e.pointerId !== dashPointerState.pointerId) return;
+                const { tile, pointerId } = dashPointerState;
+                dashPointerState = null;
+                if (dashPointerMoveRaf) {
+                    cancelAnimationFrame(dashPointerMoveRaf);
+                    dashPointerMoveRaf = null;
+                }
+                tile.classList.remove('dash-tile--dragging');
+                try {
+                    container.releasePointerCapture(pointerId);
+                } catch (_) {}
+                if (dashboardEditMode) saveDashboardWidgetOrder();
+            }
+
+            container.addEventListener(
+                'pointerdown',
+                (e) => {
+                    if (!dashboardEditMode || !e.isPrimary) return;
+                    const touchLike = e.pointerType === 'touch' || e.pointerType === 'pen';
+                    if (!touchLike || !window.matchMedia('(max-width: 1024px)').matches) return;
+                    const tile = e.target.closest('.dash-tile');
+                    if (!tile || tile.parentElement !== container) return;
+                    const handle = e.target.closest('.drag-handle');
+                    if (!handle || !tile.contains(handle)) return;
+                    e.preventDefault();
+                    dashPointerState = { pointerId: e.pointerId, tile };
+                    tile.classList.add('dash-tile--dragging');
+                    try {
+                        container.setPointerCapture(e.pointerId);
+                    } catch (_) {}
+                },
+                true
+            );
+
+            container.addEventListener('pointermove', (e) => {
+                if (!dashPointerState || e.pointerId !== dashPointerState.pointerId) return;
+                e.preventDefault();
+                if (dashPointerMoveRaf) return;
+                dashPointerMoveRaf = requestAnimationFrame(() => {
+                    dashPointerMoveRaf = null;
+                    if (!dashPointerState) return;
+                    reorderDashboardTileInContainer(container, dashPointerState.tile, e.clientY, e.clientX);
+                });
+            });
+
+            container.addEventListener('pointerup', endDashPointerDrag);
+            container.addEventListener('pointercancel', endDashPointerDrag);
+
+            container.addEventListener('dragover', (e) => {
+                if (!dashboardEditMode) return;
+                if (!container.contains(e.target)) return;
+                e.preventDefault();
+                try {
+                    e.dataTransfer.dropEffect = 'move';
+                } catch (_) {}
+            });
         }
 
         document.addEventListener('dragstart', (event) => {
@@ -4447,11 +4580,11 @@
             draggedWidget = target;
             event.dataTransfer.effectAllowed = 'move';
             event.dataTransfer.setData('text/plain', target.id);
-            target.style.opacity = '0.55';
+            target.classList.add('dash-tile--dragging');
         });
 
         document.addEventListener('dragend', () => {
-            if (draggedWidget) draggedWidget.style.opacity = '1';
+            if (draggedWidget) draggedWidget.classList.remove('dash-tile--dragging');
             draggedWidget = null;
             if (dashboardEditMode) saveDashboardWidgetOrder();
         });
@@ -4461,12 +4594,7 @@
             const container = document.getElementById('dashboardWidgetContainer');
             if (!container || !draggedWidget || !container.contains(event.target)) return;
             event.preventDefault();
-            const overTile = event.target.closest('.dash-tile');
-            if (!overTile || overTile === draggedWidget) return;
-            const rect = overTile.getBoundingClientRect();
-            const insertAfter = event.clientY > rect.top + rect.height / 2;
-            if (insertAfter) container.insertBefore(draggedWidget, overTile.nextSibling);
-            else container.insertBefore(draggedWidget, overTile);
+            reorderDashboardTileInContainer(container, draggedWidget, event.clientY, event.clientX);
         });
 
         function changeRole() {
@@ -4544,16 +4672,18 @@
             document.querySelectorAll('.platform-admin-only').forEach(el => {
                 if (currentUserHasAdminAccess()) {
                     el.classList.remove('hidden');
-                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile')) {
+                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile') || el.classList.contains('mobile-nav-more__row')) {
                         el.classList.add('flex');
                     }
                 } else {
                     el.classList.add('hidden');
-                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile')) {
+                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile') || el.classList.contains('mobile-nav-more__row')) {
                         el.classList.remove('flex');
                     }
                 }
             });
+
+            syncMobileNavMoreUserPanel();
 
             if (isBranchDashboardRole(currentRole) && currentBoardType === 'KNOW') {
                 switchView('dashboard');

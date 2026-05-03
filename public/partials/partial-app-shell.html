@@ -99,25 +99,102 @@
         </nav>
         <div id="mobileNavMore" class="mobile-nav-more collapsed" aria-hidden="true">
             <div class="mobile-nav-more__backdrop" onclick="closeMobileNavMore()"></div>
-            <div id="mobileNavMorePanel" class="mobile-nav-more__sheet" role="dialog" aria-modal="true" aria-label="추가 메뉴" onclick="event.stopPropagation()">
-                <div class="mobile-nav-more__grab" aria-hidden="true"></div>
-                <div class="mobile-nav-more__head">
-                    <div class="mobile-nav-more__title">더보기</div>
-                    <button type="button" class="mobile-nav-more__close" onclick="closeMobileNavMore()" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-                </div>
-                <div class="mobile-nav-more__quick">
-                    <button type="button" class="mobile-nav-more__chip" onclick="closeMobileNavMore(); showIntegratedSearchModal();">통합검색</button>
-                    <button type="button" class="mobile-nav-more__chip" onclick="closeMobileNavMore(); openNotificationCenter();">알림</button>
-                    <button type="button" class="mobile-nav-more__chip" onclick="closeMobileNavMore(); toggleHeaderProfileOverlay(event);">프로필</button>
-                </div>
-                <section class="mobile-nav-more__section" aria-labelledby="mobMoreKnow">
-                    <h2 id="mobMoreKnow" class="mobile-nav-more__group-label">지식·관리</h2>
-                    <div class="mobile-nav-more__grid">
-                        <button type="button" class="mobile-nav-more__tile hq-it-only hidden" onclick="closeMobileNavMore(); switchView('list', 'KNOW');"><span class="mobile-nav-more__tile-icon"><svg class="icon"><use href="#icon-history"></use></svg></span><span>AI 지식</span></button>
-                        <button type="button" class="mobile-nav-more__tile platform-admin-only hidden" onclick="closeMobileNavMore(); switchView('admin-settings');"><span class="mobile-nav-more__tile-icon"><svg class="icon"><use href="#icon-admin-settings"></use></svg></span><span>관리자</span></button>
-                        <button type="button" class="mobile-nav-more__tile" onclick="closeMobileNavMore(); switchView('settings');"><span class="mobile-nav-more__tile-icon"><svg class="icon"><use href="#icon-cog"></use></svg></span><span>설정</span></button>
+            <div id="mobileNavMorePanel" class="mobile-nav-more__sheet mobile-nav-more__sheet--fullscreen" role="dialog" aria-modal="true" aria-label="전체 메뉴" onclick="event.stopPropagation()">
+                <header class="mobile-nav-more__app-head" aria-label="앱 헤더">
+                    <div class="mobile-nav-more__app-head-brand">
+                        <span class="mobile-nav-more__app-logo">IBK KN<span class="logo-point">O</span>CK</span>
+                        <span class="mobile-nav-more__app-role" id="mobileNavMoreHeaderRole">영업점</span>
                     </div>
-                </section>
+                    <button type="button" class="mobile-nav-more__close mobile-nav-more__close--head" onclick="closeMobileNavMore()" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </header>
+                <div class="mobile-nav-more__user-card" id="mobileNavMoreUserCard">
+                    <div class="mobile-nav-more__user-avatar" id="mobileNavMoreUserAvatar" aria-hidden="true">홍</div>
+                    <div class="mobile-nav-more__user-meta">
+                        <div class="mobile-nav-more__user-name" id="mobileNavMoreUserName">홍길동 대리</div>
+                        <div class="mobile-nav-more__user-dept" id="mobileNavMoreUserDept">영업부(-) · 000000</div>
+                        <div class="mobile-nav-more__user-tags">
+                            <span class="mobile-nav-more__user-chip" id="mobileNavMoreUserChip">영업점</span>
+                            <span class="mobile-nav-more__user-chip mobile-nav-more__user-chip--muted" id="mobileNavMoreUserSession">IP —</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mobile-nav-more__scroll">
+                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreQuick">
+                        <h2 id="mobMoreQuick" class="mobile-nav-more__group-label">빠른 실행</h2>
+                        <div class="mobile-nav-more__list">
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); showIntegratedSearchModal();">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--search"><svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">통합검색</span><span class="mobile-nav-more__row-desc">게시판·지식 통합 검색</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); openNotificationCenter();">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--bell"><svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">알림센터</span><span class="mobile-nav-more__row-desc">읽지 않은 알림 확인</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                        </div>
+                    </section>
+                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreWork">
+                        <h2 id="mobMoreWork" class="mobile-nav-more__group-label">업무 메뉴</h2>
+                        <div class="mobile-nav-more__list">
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('dashboard');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--home"><svg class="icon" aria-hidden="true"><use href="#icon-home"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">대시보드</span><span class="mobile-nav-more__row-desc">현황·통계·위젯</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); openAiChatLayerFromFloating();">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--ai"><svg class="icon" aria-hidden="true"><use href="#icon-magic"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">AI Chat</span><span class="mobile-nav-more__row-desc">규정·업무 질의</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'IT');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--it"><svg class="icon" aria-hidden="true"><use href="#icon-info"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">IT/오류 문의</span><span class="mobile-nav-more__row-desc">시스템·장애 접수</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'BIZ');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--biz"><svg class="icon" aria-hidden="true"><use href="#icon-book"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">규정·상품 문의</span><span class="mobile-nav-more__row-desc">업무 규정·상품 질문</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('list', 'SYS');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--sys"><svg class="icon" aria-hidden="true"><use href="#icon-lightbulb"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">KNOCK 개선 제안</span><span class="mobile-nav-more__row-desc">서비스 개선 아이디어</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                        </div>
+                    </section>
+                    <section class="mobile-nav-more__section" aria-labelledby="mobMoreAdmin">
+                        <h2 id="mobMoreAdmin" class="mobile-nav-more__group-label">지식·관리</h2>
+                        <div class="mobile-nav-more__list">
+                            <button type="button" class="mobile-nav-more__row hq-it-only hidden" onclick="closeMobileNavMore(); switchView('list', 'KNOW');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--know"><svg class="icon" aria-hidden="true"><use href="#icon-history"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">AI 지식 베이스</span><span class="mobile-nav-more__row-desc">RAG 학습·승인 관리</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row platform-admin-only hidden" onclick="closeMobileNavMore(); switchView('admin-settings');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--admin"><svg class="icon" aria-hidden="true"><use href="#icon-admin-settings"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">관리자 설정</span><span class="mobile-nav-more__row-desc">플랫폼·AI 설정</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); switchView('settings');">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--settings"><svg class="icon" aria-hidden="true"><use href="#icon-cog"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">환경 설정</span><span class="mobile-nav-more__row-desc">알림·테마·계정</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                        </div>
+                    </section>
+                    <section class="mobile-nav-more__section mobile-nav-more__section--foot" aria-labelledby="mobMoreProfile">
+                        <h2 id="mobMoreProfile" class="mobile-nav-more__group-label">계정</h2>
+                        <div class="mobile-nav-more__list">
+                            <button type="button" class="mobile-nav-more__row" onclick="closeMobileNavMore(); toggleHeaderProfileOverlay(event);">
+                                <span class="mobile-nav-more__row-icon mobile-nav-more__row-icon--user"><svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg></span>
+                                <span class="mobile-nav-more__row-text"><span class="mobile-nav-more__row-title">상세 프로필</span><span class="mobile-nav-more__row-desc">연락처·세션·로그아웃</span></span>
+                                <span class="mobile-nav-more__row-chevron" aria-hidden="true"><svg class="icon"><use href="#icon-chevron-down"></use></svg></span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
         <button id="aiChatFloatingBtn" class="ai-chat-floating-btn hidden" type="button" onclick="openAiChatLayerFromFloating()" title="AI Chat 열기" aria-label="AI에게 물어보기" data-tooltip="AI에게 물어보기">
@@ -125,11 +202,6 @@
         </button>
         <div id="aiChatLayerOverlay" class="ai-chat-layer-overlay hidden" onclick="closeAiChatLayer(event)">
             <div class="ai-chat-layer-panel" onclick="event.stopPropagation()">
-                <div class="ai-chat-layer-toolbar" role="toolbar" aria-label="AI Chat 보조 도구">
-                    <button type="button" id="aiChatLayerHistoryBtn" class="ai-chat-layer-tool-btn" onclick="event.stopPropagation(); openAiSearchHistoryMobileModal();" title="지난 대화" aria-label="지난 대화">
-                        <svg class="icon" aria-hidden="true"><use href="#icon-history"></use></svg>
-                    </button>
-                </div>
                 <div id="aiChatLayerHost" class="ai-chat-layer-host"></div>
             </div>
         </div>
@@ -327,6 +399,9 @@
                                         <div class="ai-search-input-footer">
                                             <div class="ai-search-input-help ai-search-input-help-desktop"><b>Enter</b> 전송 / <b>Shift+Enter</b> 줄바꿈</div>
                                             <div class="ai-search-input-actions">
+                                                <button type="button" id="aiChatLayerHistoryBtn" class="btn btn-outline ai-chat-layer-only-btn ai-layer-history-icon-btn" onclick="openAiSearchHistoryMobileModal()" title="지난 대화" aria-label="지난 대화">
+                                                    <svg class="icon" aria-hidden="true"><use href="#icon-history"></use></svg>
+                                                </button>
                                                 <button id="aiLayerNewChatBtn" class="btn btn-outline ai-layer-new-chat-btn" type="button" onclick="startNewAiSearchChat()">
                                                     <svg class="icon"><use href="#icon-edit"></use></svg> 새 대화
                                                 </button>

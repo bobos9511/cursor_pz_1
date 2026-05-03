@@ -1585,12 +1585,6 @@
             .btn { padding: 8px 10px; font-size: 12px; min-height: 40px; line-height: 1.25; box-sizing: border-box; }
             .input { padding: 9px 10px; font-size: 13px; }
         }
-        @media (max-width: 380px) {
-            .mobile-nav-more__grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
