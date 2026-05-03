@@ -3145,11 +3145,7 @@
             border: 1px solid #bfdbfe;
         }
 
-        /* 위젯 편집 모드에서는 레이아웃을 단순화(드래그 안정화) */
-        .dashboard-editing #widget-lists,
-        .dashboard-editing #widget-charts {
-            grid-template-columns: 1fr !important;
-        }
+        /* 편집 모드에서도 grid-2와 동일한 2열 유지(이전 1열 강제는 1×2로 보여 혼란 유발). 패널은 셀 안에서만 너비 제한 */
         .dashboard-editing #widget-lists .panel,
         .dashboard-editing #widget-charts .panel {
             width: 100%;
