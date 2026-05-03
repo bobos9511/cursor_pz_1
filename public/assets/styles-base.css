@@ -3167,10 +3167,28 @@
         .notification-center-modal {
             max-width: 760px;
             width: min(94vw, 760px);
+            max-height: min(92vh, 900px);
             border-radius: 18px;
             border: 1px solid #dbe7f5;
             box-shadow: 0 22px 50px rgba(15, 23, 42, 0.35);
             background: linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .notification-center-modal > .modal-header,
+        .notification-center-modal > .notification-center-toolbar,
+        .notification-center-modal > .modal-footer {
+            flex-shrink: 0;
+        }
+        .notification-center-modal > .modal-body.notification-center-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: none !important;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 16px;
         }
         .notification-center-head { background: linear-gradient(130deg, #0f3f74 0%, #0b6ab3 55%, #0284c7 100%); }
         .notification-center-toolbar {
@@ -3195,7 +3213,7 @@
         }
         .notification-toolbar-right { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
         .notification-view-tabs { display: inline-flex; gap: 8px; }
-        .notification-center-body { background: transparent; max-height: 62vh; }
+        .notification-center-body { background: transparent; }
         .noti-section { margin-bottom: 22px; }
         .noti-section:last-child { margin-bottom: 0; }
         /* 섹션 헤더 + 목록을 하나의 카드로 묶음 */
@@ -3470,10 +3488,14 @@
             border-left: 2px solid #c7d2fe;
         }
         .noti-stack.expanded .noti-stack-body {
-            max-height: 1600px;
+            max-height: min(58vh, 520px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
             opacity: 1;
             transform: translateY(0);
-            padding-bottom: 4px;
+            padding-bottom: 10px;
+            scrollbar-gutter: stable;
         }
         .noti-stack.expanded .noti-stack-head {
             border-color: #a5b4fc;

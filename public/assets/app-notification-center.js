@@ -321,14 +321,37 @@ function resolvePageContextFromMessage(message, fallback) {
     return fallback;
 }
 
+/** 세션·접속 등 동일 출처 모아보기용 클러스터 키 (저장된 pageKey보다 메시지 휴리스틱 우선) */
+function resolveNotificationClusterKey(it) {
+    const pk = String((it && it.pageKey) || "").toLowerCase();
+    if (pk === "page:session") return { pageKey: "page:session", pageLabel: "세션" };
+    const msg = String((it && it.message) || "");
+    if (
+        /세션/.test(msg) ||
+        /자동\s*로그아웃|로그아웃까지/.test(msg) ||
+        /다른\s*브라우저|기기에서\s*이미\s*접속|접속\s*전환/.test(msg) ||
+        /서버로부터\s*세션/.test(msg)
+    ) {
+        return { pageKey: "page:session", pageLabel: "세션" };
+    }
+    return {
+        pageKey: String((it && it.pageKey) || "page:unknown"),
+        pageLabel: String((it && it.pageLabel) || "기타"),
+    };
+}
+
 function clusterNotificationItems(list) {
     const order = [];
     const byKey = new Map();
     list.forEach((it) => {
-        const key = String(it.pageKey || "page:unknown");
+        const meta = resolveNotificationClusterKey(it);
+        const key = meta.pageKey;
         if (!byKey.has(key)) {
-            byKey.set(key, { key, pageLabel: String(it.pageLabel || "기타"), items: [] });
+            byKey.set(key, { key, pageLabel: meta.pageLabel, items: [] });
             order.push(key);
+        } else if (meta.pageLabel && meta.pageLabel !== "기타") {
+            const bucket = byKey.get(key);
+            if (!bucket.pageLabel || bucket.pageLabel === "기타") bucket.pageLabel = meta.pageLabel;
         }
         byKey.get(key).items.push(it);
     });
@@ -344,6 +367,7 @@ function formatNotificationGroupTitle(label) {
 function resolveNotificationSourceLabel(it) {
     const pageLabel = String((it && it.pageLabel) || "").trim();
     const pageKey = String((it && it.pageKey) || "").toLowerCase();
+    if (pageKey === "page:session" || pageLabel.includes("세션")) return "세션";
     if (pageLabel.includes("AI Chat") || pageLabel.includes("AI채팅") || pageKey.includes("ai-search")) return "AI채팅";
     if (pageLabel.includes("AI 지식") || pageKey.includes("know")) return "AI지식베이스";
     if (pageLabel.includes("대시보드") || pageKey.includes("dashboard")) return "대시보드";
@@ -648,13 +672,18 @@ window.recordNotificationEntry = function recordNotificationEntry(message, type 
     const id = `noti_${Date.now()}_${notificationCenterState.seq++}`;
     const fallbackPage = getCurrentPageContextFallback();
     const resolvedPage = resolvePageContextFromMessage(message, fallbackPage);
-    const pageKey = String(options.pageKey || resolvedPage.pageKey || fallbackPage.pageKey || "page:unknown");
-    const pageLabel = String(options.pageLabel || resolvedPage.pageLabel || fallbackPage.pageLabel || "기타");
+    let pageKey = String(options.pageKey || resolvedPage.pageKey || fallbackPage.pageKey || "page:unknown");
+    let pageLabel = String(options.pageLabel || resolvedPage.pageLabel || fallbackPage.pageLabel || "기타");
+    const ck = resolveNotificationClusterKey({ message, pageKey, pageLabel });
+    pageKey = ck.pageKey;
+    pageLabel = ck.pageLabel;
+    const topic =
+        pageKey === "page:session" ? "세션" : resolveNotificationTopic(message);
     const item = {
         id,
         message: String(message || ""),
         type: String(type || "success"),
-        topic: resolveNotificationTopic(message),
+        topic,
         level: resolveNoticeLevel(message, type, options),
         at: now.getTime(),
         atLabel: fmtDateTime(now),
