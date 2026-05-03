@@ -3510,12 +3510,12 @@
             const preferredInitialView = getPreferredInitialView();
             if (preferredInitialView === 'dashboard') {
                 switchView('dashboard');
-                setTimeout(updateHeaderActionOverflow, 0);
+                scheduleHeaderActionOverflow();
                 setupHistoryNavigation();
                 syncHistoryRoute('dashboard', null, null, true);
             } else {
                 goToAiSearchPage();
-                setTimeout(updateHeaderActionOverflow, 0);
+                scheduleHeaderActionOverflow();
                 setupHistoryNavigation();
                 syncHistoryRoute('ai-search', null, null, true);
             }
@@ -3704,10 +3704,25 @@
             if (!layer) return;
             layer.classList.toggle('active');
         }
+        function scheduleHeaderActionOverflow() {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateHeaderActionOverflow();
+                    try {
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(() => updateHeaderActionOverflow());
+                        }
+                    } catch (_) {
+                        /* noop */
+                    }
+                });
+            });
+        }
         function updateHeaderActionOverflow() {
             const right = document.querySelector('.header-right');
             const moreBtn = document.getElementById('headerActionsMoreBtn');
             if (!right || !moreBtn) return;
+            if (right.clientWidth < 48) return;
             closeHeaderActionsLayer();
             const targets = Array.from(right.querySelectorAll('[data-overflow-target="true"]'));
             targets.forEach((el) => el.classList.remove('hidden'));
@@ -4399,14 +4414,20 @@
                 }
             });
 
-            if (isBranchDashboardRole(currentRole) && currentBoardType === 'KNOW') { switchView('dashboard'); return; }
+            if (isBranchDashboardRole(currentRole) && currentBoardType === 'KNOW') {
+                switchView('dashboard');
+                scheduleHeaderActionOverflow();
+                return;
+            }
             const preferred = resolveInitialViewForRole();
             if (preferred) {
                 initialRouteApplied = true;
                 switchView(preferred.viewId, preferred.boardType);
+                scheduleHeaderActionOverflow();
                 return;
             }
             switchView(getPreferredInitialView());
+            scheduleHeaderActionOverflow();
         }
 
         function updatePermissionsUI() {

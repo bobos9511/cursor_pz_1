@@ -997,8 +997,9 @@
             text-align: center;
             white-space: nowrap;
         }
-        /* 해상도 변경 시 UI 전환을 부드럽게 */
-        .header, .header-right, .header-search-wrap, .header-search-shell,
+        /* 해상도 변경 시 UI 전환을 부드럽게
+           (헤더·검색·우측 액션 줄은 제외: transition:all 이 플렉스 너비까지 보간되어
+           새로고침 직후 역할 칩/문구 갱신 시 통합검색만 먼저 보이는 것처럼 느껴짐) */
         .header-action-btn, .header-profile-btn, .header-search-mobile-btn,
         .sidebar, .top-nav-mobile, .main-area-wrapper, .main-area,
         .panel, .panel-header, .panel-body, .grid-2, .grid-3, .grid-4,
@@ -1009,7 +1010,6 @@
             transition: all 0.26s cubic-bezier(.2,.8,.2,1);
         }
         @media (prefers-reduced-motion: reduce) {
-            .header, .header-right, .header-search-wrap, .header-search-shell,
             .header-action-btn, .header-profile-btn, .header-search-mobile-btn,
             .sidebar, .top-nav-mobile, .main-area-wrapper, .main-area,
             .panel, .panel-header, .panel-body, .grid-2, .grid-3, .grid-4,
