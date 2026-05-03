@@ -2891,8 +2891,12 @@
             panel.style.width = `${panelW}px`;
             panel.style.maxWidth = '';
             const topBreathing = isDesktopLayout ? 8 : 12;
-            const minMain = isDesktopLayout ? 300 : isMobileLayout ? 200 : 260;
-            const maxByFabTop = Math.max(minMain, fabRect.top - gap - topBreathing);
+            const spaceAboveFab = fabRect.top - gap - topBreathing;
+            /* 모바일: FAB 위 실제 여유 높이를 넘기면 안 됨. Math.max(200, …)로 최소 높이를 강제하면
+               짧은 뷰포트에서 패널이 FAB 아래로 내려가 잘리거나 아이콘보다 아래에 보임 */
+            const maxByFabTop = isMobileLayout
+                ? Math.max(0, spaceAboveFab)
+                : Math.max(isDesktopLayout ? 300 : 260, spaceAboveFab);
             const vhFraction = isDesktopLayout ? 0.9 : isMobileLayout ? 0.86 : 0.82;
             const maxByVh = Math.floor(viewportHeight * vhFraction);
             panel.style.maxHeight = `${Math.min(maxByFabTop, maxByVh)}px`;
