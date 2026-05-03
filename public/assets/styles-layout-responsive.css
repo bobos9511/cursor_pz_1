@@ -84,10 +84,10 @@
                 width: 22px;
                 height: 22px;
             }
-            /* Footer(~72px) + 페이지네이션 한 줄(~56px) 위로 올려 하단 버튼과 겹침 방지 */
+            /* 모바일 슬림 푸터 블록(~48px) 바로 위 10px 간격 + 홈 인디케이터 영역 */
             .ai-chat-floating-btn {
                 right: 14px;
-                bottom: calc(176px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(10px + 48px + env(safe-area-inset-bottom, 0px));
                 width: 50px;
                 height: 50px;
             }

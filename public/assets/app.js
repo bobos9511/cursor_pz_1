@@ -3063,7 +3063,8 @@
             const fabRect = fab.getBoundingClientRect();
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
-                    panel.style.bottom = 'calc(176px + 56px + 12px + env(safe-area-inset-bottom, 0px))';
+                    /* FAB 모바일 위치(styles-layout-responsive)와 동일: 푸터 위 10px + 슬림 푸터(~48px) + FAB(50px) + gap */
+                    panel.style.bottom = 'calc(10px + 48px + 50px + 12px + env(safe-area-inset-bottom, 0px))';
                     panel.style.right = '14px';
                     panel.style.left = 'auto';
                     panel.style.width = 'calc(100vw - 24px)';
