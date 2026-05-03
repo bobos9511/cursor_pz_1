@@ -1972,6 +1972,7 @@
             bindSidebarHoverTooltipEvents();
             applySidebarTooltipState();
             updateSidebarToggleButton();
+            initMainHeaderScrollState();
             setupEditorPasteAsPlainText();
             initializeAiSearchView();
             
@@ -3760,19 +3761,43 @@
         function cancelVein() { document.getElementById('veinModal').classList.remove('active'); document.querySelector('input[value="pwd"]').checked = true; changeAuthType('pwd'); }
 
         // --- 뷰 제어 ---
+        let mainHeaderScrollBound = false;
+        function initMainHeaderScrollState() {
+            if (mainHeaderScrollBound) return;
+            const header = document.getElementById('appHeader');
+            const main = document.getElementById('mainScrollArea');
+            if (!header || !main) return;
+            mainHeaderScrollBound = true;
+            const onScroll = () => {
+                header.classList.toggle('header--scrolled', main.scrollTop > 8);
+            };
+            onScroll();
+            main.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onScroll);
+        }
+
+        function closeMobileNavMore() {
+            const el = document.getElementById('mobileNavMore');
+            if (el) el.classList.add('collapsed');
+            document.body.classList.remove('mobile-nav-more-open');
+            const btn = document.getElementById('mbnav-more');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            updateAiChatFloatingButton();
+        }
+
+        function toggleMobileNavMore() {
+            const el = document.getElementById('mobileNavMore');
+            if (!el) return;
+            el.classList.toggle('collapsed');
+            const isOpen = !el.classList.contains('collapsed');
+            document.body.classList.toggle('mobile-nav-more-open', isOpen);
+            const btn = document.getElementById('mbnav-more');
+            if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            updateAiChatFloatingButton();
+        }
+
         function toggleSidebarPC() {
             if (window.matchMedia('(max-width: 1024px)').matches) {
-                const topNav = document.getElementById('topNavMobile');
-                if (topNav) {
-                    topNav.classList.toggle('collapsed');
-                    document.body.classList.toggle('mobile-menu-open', !topNav.classList.contains('collapsed'));
-                }
-                updateSidebarToggleButton();
-                updateAiChatFloatingButton();
-                const listViewMobile = document.getElementById('view-list');
-                if (listViewMobile && listViewMobile.classList.contains('active')) {
-                    setTimeout(syncBoardLayoutModes, 0);
-                }
                 return;
             }
             const sidebar = document.getElementById('sidebar');
@@ -3794,14 +3819,7 @@
             const btn = document.getElementById('sidebarToggleBtn');
             const iconUse = document.querySelector('#sidebarToggleIcon use');
             if (!btn || !iconUse) return;
-            const isMobile = window.matchMedia('(max-width: 1024px)').matches;
-            if (isMobile) {
-                const topNav = document.getElementById('topNavMobile');
-                const collapsed = !!topNav && topNav.classList.contains('collapsed');
-                iconUse.setAttribute('href', collapsed ? '#icon-bars' : '#icon-close');
-                btn.setAttribute('title', collapsed ? '전체 메뉴 열기' : '전체 메뉴 닫기');
-                return;
-            }
+            if (window.matchMedia('(max-width: 1024px)').matches) return;
             const sidebar = document.getElementById('sidebar');
             if (!sidebar) return;
             const collapsed = sidebar.classList.contains('collapsed');
@@ -3850,6 +3868,8 @@
             document.querySelectorAll('footer.footer-dark, .footer-dark').forEach((el) => {
                 if (candidates.indexOf(el) < 0) candidates.push(el);
             });
+            const mbDock = document.getElementById('mobileBottomNav');
+            if (mbDock) candidates.push(mbDock);
             let extra = 0;
             for (let i = 0; i < candidates.length; i += 1) {
                 const el = candidates[i];
@@ -3878,7 +3898,8 @@
             const aiView = document.getElementById('view-ai-search');
             const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
             const aiSearchActive = !!aiView && aiView.classList.contains('active');
-            const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
+            const hideByMobileMenu = document.body.classList.contains('mobile-menu-open')
+                || document.body.classList.contains('mobile-nav-more-open');
             btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
             ensureAiChatFloatingOverlapListeners();
             scheduleAiChatFloatingOverlapLayout();
@@ -3911,8 +3932,8 @@
             const fabRect = fab.getBoundingClientRect();
             if (fabRect.width < 2 && fabRect.height < 2) {
                 if (isMobileLayout) {
-                    /* FAB 모바일 위치(styles-layout-responsive)와 동일: 푸터 위 10px + 슬림 푸터(~48px) + FAB(50px) + gap */
-                    panel.style.bottom = 'calc(10px + 48px + 50px + 12px + env(safe-area-inset-bottom, 0px))';
+                    /* FAB 모바일: 하단 내비(~58px) + FAB(50px) + 간격 */
+                    panel.style.bottom = 'calc(10px + var(--mobile-bottom-nav-h, 58px) + 50px + 12px + env(safe-area-inset-bottom, 0px))';
                     panel.style.right = '14px';
                     panel.style.left = 'auto';
                     panel.style.width = 'calc(100vw - 24px)';
@@ -4468,10 +4489,14 @@
             document.querySelectorAll('.platform-admin-only').forEach(el => {
                 if (currentUserHasAdminAccess()) {
                     el.classList.remove('hidden');
-                    if (el.classList.contains('top-nav-item')) el.classList.add('flex');
+                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile')) {
+                        el.classList.add('flex');
+                    }
                 } else {
                     el.classList.add('hidden');
-                    if (el.classList.contains('top-nav-item')) el.classList.remove('flex');
+                    if (el.classList.contains('top-nav-item') || el.classList.contains('mobile-nav-more__tile')) {
+                        el.classList.remove('flex');
+                    }
                 }
             });
 
@@ -4520,12 +4545,7 @@
             const skipHistory = !!options.skipHistory;
             const isMobile = window.matchMedia('(max-width: 1024px)').matches;
             if (isMobile) {
-                const topNav = document.getElementById('topNavMobile');
-                if (topNav && !topNav.classList.contains('collapsed')) {
-                    topNav.classList.add('collapsed');
-                    document.body.classList.remove('mobile-menu-open');
-                    updateSidebarToggleButton();
-                }
+                closeMobileNavMore();
             } else {
                 const sidebar = document.getElementById('sidebar');
                 if (sidebar && !sidebar.classList.contains('collapsed')) {
@@ -4554,7 +4574,8 @@
             }
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.top-nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.hdr-nav-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mbnav-item').forEach(el => el.classList.remove('active'));
 
             if (viewId === 'list') {
                 if(boardType) currentBoardType = boardType;
@@ -4562,8 +4583,11 @@
                 document.getElementById('view-list').classList.add('active');
                 const navId = `nav-list-${currentBoardType.toLowerCase()}`;
                 if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
-                const topNavId = `topnav-list-${currentBoardType.toLowerCase()}`;
-                if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
+                const suf = currentBoardType.toLowerCase();
+                const hdrList = document.getElementById(`hdr-nav-list-${suf}`);
+                if (hdrList) hdrList.classList.add('active');
+                const mbList = document.getElementById(`mbnav-list-${suf}`);
+                if (mbList) mbList.classList.add('active');
                 
                 const knowRagBadge = currentBoardType === 'KNOW'
                     ? '<span class="board-rag-badge">RAG 학습</span>'
@@ -4598,8 +4622,10 @@
                 if(target) target.classList.add('active');
                 const navId = `nav-${viewId}`;
                 if(document.getElementById(navId)) document.getElementById(navId).classList.add('active');
-                const topNavId = `topnav-${viewId}`;
-                if(document.getElementById(topNavId)) document.getElementById(topNavId).classList.add('active');
+                const hdrNav = document.getElementById(`hdr-nav-${viewId}`);
+                if (hdrNav) hdrNav.classList.add('active');
+                const mbNav = document.getElementById(`mbnav-${viewId}`);
+                if (mbNav) mbNav.classList.add('active');
                 if (viewId === 'ai-search') initializeAiSearchView();
                 if (viewId === 'settings') {
                     initSettingsMainTabsOnce();
@@ -6231,8 +6257,9 @@
             updateHeaderActionOverflow();
             if (!window.matchMedia('(max-width: 1024px)').matches) {
                 document.body.classList.remove('mobile-menu-open');
-                const topNav = document.getElementById('topNavMobile');
-                if (topNav) topNav.classList.add('collapsed');
+                document.body.classList.remove('mobile-nav-more-open');
+                const more = document.getElementById('mobileNavMore');
+                if (more) more.classList.add('collapsed');
                 updateSidebarToggleButton();
             }
             updateAiChatFloatingButton();

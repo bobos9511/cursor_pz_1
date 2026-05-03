@@ -337,7 +337,7 @@ function getCurrentPageContextFallback() {
     if (viewId === "list") {
         const board = typeof currentBoardType !== "undefined" ? String(currentBoardType || "") : "";
         const navText =
-            (document.getElementById(`nav-list-${board.toLowerCase()}`) || document.getElementById(`topnav-list-${board.toLowerCase()}`))
+            (document.getElementById(`nav-list-${board.toLowerCase()}`) || document.getElementById(`mbnav-list-${board.toLowerCase()}`))
                 ?.innerText || "";
         const pageLabel = navText.trim() || `게시판 ${board || ""}`.trim();
         return { pageKey: `page:list:${board || "all"}`.toLowerCase(), pageLabel };
