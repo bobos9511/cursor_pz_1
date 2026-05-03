@@ -16,6 +16,9 @@ const NOTIFICATION_CENTER_STORAGE_KEY = "knock-notification-center-v1";
 const NOTIFICATION_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 let notificationSyncTimer = null;
 let notificationServerLoaded = false;
+/** 모바일 알림 전체화면 진입 직전 화면 복귀용 { viewId, boardType?, postId? } */
+let notificationCenterReturnRoute = null;
+let notificationCenterResizeTimer = null;
 
 function pruneNotificationRetention(items, now = Date.now()) {
     const minAt = now - NOTIFICATION_RETENTION_MS;
@@ -685,11 +688,76 @@ function resetNotificationFilters() {
     syncNotificationFilterModalButtons();
 }
 
+function captureNotificationCenterReturnRoute() {
+    notificationCenterReturnRoute = null;
+    try {
+        const active = document.querySelector(".view-section.active");
+        if (!active || active.id === "view-notifications") return;
+        if (active.id === "view-detail") {
+            const postId = typeof currentPostId !== "undefined" ? currentPostId : null;
+            const boardType = typeof currentBoardType !== "undefined" ? currentBoardType : null;
+            if (postId != null) {
+                notificationCenterReturnRoute = { viewId: "detail", boardType, postId };
+            }
+            return;
+        }
+        if (active.id === "view-list") {
+            const boardType = typeof currentBoardType !== "undefined" ? currentBoardType : null;
+            notificationCenterReturnRoute = { viewId: "list", boardType };
+            return;
+        }
+        const m = /^view-(.+)$/.exec(active.id || "");
+        if (m && m[1]) notificationCenterReturnRoute = { viewId: m[1], boardType: null };
+    } catch (_) {
+        notificationCenterReturnRoute = null;
+    }
+}
+
+function restoreNotificationCenterReturnRoute() {
+    const route = notificationCenterReturnRoute;
+    notificationCenterReturnRoute = null;
+    if (route && route.viewId === "detail" && route.postId != null && typeof openDetail === "function") {
+        openDetail(route.postId, route.boardType || undefined, { skipHistory: true });
+        return true;
+    }
+    if (route && route.viewId && typeof switchView === "function") {
+        switchView(route.viewId, route.boardType || null, { skipHistory: true });
+        return true;
+    }
+    return false;
+}
+
+function migrateNotificationPageToDesktopModal() {
+    const page = document.getElementById("view-notifications");
+    if (!page || !page.classList.contains("active")) return;
+    const modal = document.getElementById("notificationCenterModal");
+    const restored = restoreNotificationCenterReturnRoute();
+    if (!restored && typeof switchView === "function") {
+        switchView(typeof getPreferredInitialView === "function" ? getPreferredInitialView() : "dashboard", null, {
+            skipHistory: true,
+        });
+    }
+    if (modal) modal.classList.add("active");
+    renderNotificationCenterBody();
+    updateNotificationBadge();
+    updateNotificationFilterButton();
+}
+
+function onWindowResizeNotificationCenterLayout() {
+    if (typeof window.matchMedia !== "function") return;
+    clearTimeout(notificationCenterResizeTimer);
+    notificationCenterResizeTimer = setTimeout(() => {
+        if (!window.matchMedia("(min-width: 1025px)").matches) return;
+        migrateNotificationPageToDesktopModal();
+    }, 100);
+}
+
 function openNotificationCenter() {
     const isMobile = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 1024px)").matches;
     const modal = document.getElementById("notificationCenterModal");
     if (isMobile) {
         if (modal) modal.classList.remove("active");
+        captureNotificationCenterReturnRoute();
         if (typeof switchView === "function") {
             switchView("notifications");
         }
@@ -715,9 +783,10 @@ function closeNotificationCenter() {
     recalcNotificationUnreadCount();
     const page = document.getElementById("view-notifications");
     if (page && page.classList.contains("active")) {
-        const next = typeof getPreferredInitialView === "function" ? getPreferredInitialView() : "dashboard";
-        if (typeof switchView === "function") {
-            switchView(next, null, {});
+        const restored = restoreNotificationCenterReturnRoute();
+        if (!restored && typeof switchView === "function") {
+            const next = typeof getPreferredInitialView === "function" ? getPreferredInitialView() : "dashboard";
+            switchView(next, null, { skipHistory: true });
         }
     }
     updateNotificationBadge();
@@ -797,3 +866,5 @@ document.addEventListener("keydown", (e) => {
         closeNotificationCenter();
     }
 });
+
+window.addEventListener("resize", onWindowResizeNotificationCenterLayout);

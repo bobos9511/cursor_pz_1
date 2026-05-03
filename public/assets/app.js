@@ -3786,12 +3786,28 @@
             const main = document.getElementById('mainScrollArea');
             if (!header || !main) return;
             mainHeaderScrollBound = true;
-            const onScroll = () => {
-                header.classList.toggle('header--scrolled', main.scrollTop > 8);
+            let lastScrolled = null;
+            let rafScheduled = false;
+            const apply = () => {
+                rafScheduled = false;
+                const scrolled = main.scrollTop > 8;
+                if (lastScrolled === scrolled) return;
+                lastScrolled = scrolled;
+                header.classList.toggle('header--scrolled', scrolled);
             };
-            onScroll();
+            const onScroll = () => {
+                if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(apply);
+                }
+            };
+            const onResize = () => {
+                lastScrolled = null;
+                onScroll();
+            };
+            apply();
             main.addEventListener('scroll', onScroll, { passive: true });
-            window.addEventListener('resize', onScroll);
+            window.addEventListener('resize', onResize);
         }
 
         function closeMobileNavMore() {

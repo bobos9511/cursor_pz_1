@@ -974,17 +974,23 @@
                 background:
                     linear-gradient(
                         168deg,
-                        rgba(255, 255, 255, 0.52) 0%,
-                        rgba(241, 248, 255, 0.58) 32%,
-                        rgba(248, 250, 252, 0.54) 58%,
-                        rgba(228, 237, 252, 0.62) 100%
+                        rgba(255, 255, 255, 0.58) 0%,
+                        rgba(241, 248, 255, 0.64) 32%,
+                        rgba(248, 250, 252, 0.6) 58%,
+                        rgba(228, 237, 252, 0.68) 100%
                     ),
                     radial-gradient(ellipse 90% 52% at 82% 8%, rgba(186, 230, 253, 0.42), transparent 60%),
                     radial-gradient(ellipse 72% 48% at 10% 92%, rgba(219, 234, 254, 0.38), transparent 58%);
                 border-left-color: rgba(255, 255, 255, 0.38);
                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
+                /* PC 스크롤: backdrop-filter는 본문 스크롤마다 비싼 합성 비용 → 그라데이션만 사용 */
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            .header.header--redesign.header--scrolled {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(255, 255, 255, 0.94) !important;
             }
             .header.header--redesign {
                 min-height: 72px;

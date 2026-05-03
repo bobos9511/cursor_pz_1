@@ -24,9 +24,22 @@
                 box-shadow: none;
             }
             body[data-theme="dark"] #appContainer .main-area-wrapper {
-                background: rgba(13, 21, 36, 0.52);
-                backdrop-filter: blur(14px);
-                -webkit-backdrop-filter: blur(14px);
+                background:
+                    linear-gradient(
+                        168deg,
+                        rgba(22, 34, 52, 0.82) 0%,
+                        rgba(16, 26, 42, 0.88) 45%,
+                        rgba(12, 20, 34, 0.92) 100%
+                    ),
+                    radial-gradient(ellipse 88% 50% at 78% 6%, rgba(56, 189, 248, 0.12), transparent 58%),
+                    radial-gradient(ellipse 70% 48% at 12% 94%, rgba(59, 130, 246, 0.1), transparent 56%);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            body[data-theme="dark"] .header.header--redesign.header--scrolled {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: linear-gradient(180deg, rgba(22, 32, 48, 0.97), rgba(15, 23, 42, 0.96)) !important;
             }
         }
         body[data-theme="dark"] .main-area { background: #0d1526; }
