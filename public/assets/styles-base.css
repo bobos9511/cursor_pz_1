@@ -2,6 +2,7 @@
            1. RESET & BASE
            ========================================== */
         :root {
+            --app-vh: 100vh;
             --font-sans: "Noto Sans KR", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
             --ibk-blue: #004B9B;
             --ibk-light: #00A4E3;
@@ -15,6 +16,11 @@
             --warning: #F59E0B;
             --sidebar-bg: #212529;
             --footer-bg: #1A1F27;
+        }
+        @supports (height: 100dvh) {
+            :root {
+                --app-vh: 100dvh;
+            }
         }
         html[data-theme="dark"],
         body[data-theme="dark"] {
@@ -35,7 +41,7 @@
         }
         html, body {
             width: 100%;
-            height: 100vh;
+            height: var(--app-vh);
             overflow: hidden;
             font-family: var(--font-sans);
             background-color: var(--bg-color);
@@ -166,7 +172,7 @@
            3. LAYOUT & COMPONENTS
            ========================================== */
         /* 로그인 페이지 */
-        #loginPage { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; background: radial-gradient(circle at 15% 10%, #e0ecff 0%, #f3f7fc 45%, #edf2f7 100%); position: relative; z-index: 100; overflow: hidden; animation: pageLoadIn 0.45s ease both; }
+        #loginPage { display: flex; flex-direction: column; align-items: center; justify-content: center; height: var(--app-vh); width: 100%; background: radial-gradient(circle at 15% 10%, #e0ecff 0%, #f3f7fc 45%, #edf2f7 100%); position: relative; z-index: 100; overflow: hidden; animation: pageLoadIn 0.45s ease both; }
         #loginPage::before { content: ''; position: absolute; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(0,164,227,0.22) 0%, rgba(0,164,227,0) 70%); top: -180px; right: -140px; z-index: 0; }
         #loginPage::after { content: ''; position: absolute; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(circle, rgba(0,75,155,0.18) 0%, rgba(0,75,155,0) 68%); bottom: -180px; left: -120px; z-index: 0; }
         .login-bg { position: absolute; top: 0; left: 0; width: 100%; height: 52vh; background: linear-gradient(140deg, #003f85 0%, #005bac 50%, #00a4e3 100%); z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 84%, 0 100%); }
@@ -264,7 +270,7 @@
         .server-error-page {
             --se-accent: #38bdf8;
             --se-accent2: #818cf8;
-            min-height: 100vh;
+            min-height: var(--app-vh);
             width: 100%;
             display: flex;
             align-items: center;
@@ -527,7 +533,7 @@
         }
 
         /* 메인 레이아웃 */
-        #appContainer { display: none; flex-direction: column; height: 100vh; width: 100%; }
+        #appContainer { display: none; flex-direction: column; height: var(--app-vh); width: 100%; max-height: var(--app-vh); min-height: 0; }
         #appContainer.page-intro { animation: pageLoadIn 0.35s ease both; }
         @keyframes pageLoadIn {
             from { opacity: 0; transform: translateY(8px); }
@@ -1302,7 +1308,7 @@
             white-space: nowrap;
         }
 
-        .body-wrapper { display: flex; flex: 1; overflow: hidden; background-color: var(--sidebar-bg); }
+        .body-wrapper { display: flex; flex: 1; min-height: 0; overflow: hidden; background-color: var(--sidebar-bg); }
         .top-nav-mobile { display: none; }
         .top-nav-mobile-panel {
             width: 100%;
@@ -1749,8 +1755,8 @@
         .logout-btn { color: #cbd5e1; border: 1px solid rgba(148,163,184,0.45); border-radius: 8px; padding: 3px 8px; transition: all 0.2s; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; }
         .logout-btn:hover { color: #fff; border-color: #60a5fa; background: rgba(59,130,246,0.2); }
 
-        .main-area-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); border-top-left-radius: 12px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
-        .main-area { flex: 1; overflow-y: auto; padding: 30px; position: relative; display: flex; flex-direction: column;}
+        .main-area-wrapper { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); border-top-left-radius: 12px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
+        .main-area { flex: 1; min-height: 0; overflow-y: auto; padding: 30px; position: relative; display: flex; flex-direction: column;}
         
         .view-section { display: none; flex-direction: column; width: 100%; max-width: 1400px; margin: 0 auto; animation: fadeIn 0.2s ease-out; flex: 1; }
         .view-section.active { display: flex; }
@@ -3975,5 +3981,5 @@
         @keyframes fadeOutToast { to { opacity: 0; transform: translateX(20px); } }
 
         /* 푸터 스타일 */
-        .footer-dark { background: linear-gradient(180deg, #1f2937, #1f252f); color: #94a3b8; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-top: auto; border-top: 1px solid rgba(148,163,184,0.2); }
+        .footer-dark { background: linear-gradient(180deg, #1f2937, #1f252f); color: #94a3b8; padding: 18px 24px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-top: auto; border-top: 1px solid rgba(148,163,184,0.2); }
         .engraved-logo { font-family: var(--font-sans); font-weight: 900; font-size: 22px; letter-spacing: -0.5px; color: #7c8da3; text-shadow: 0 1px 0 rgba(15,23,42,0.35); }
