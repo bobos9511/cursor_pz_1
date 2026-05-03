@@ -204,34 +204,38 @@
                             </div>
 
                             <!-- 리스트 위젯 -->
-                            <div class="draggable-widget grid-2" draggable="false" id="widget-lists">
+                            <div class="draggable-widget dash-widget-stack" draggable="false" id="widget-lists">
                                 <div class="flex justify-between items-center mb-2 drag-handle dash-widget-drag-row hidden"><span class="badge dash-widget-drag-label">목록 영역 이동</span></div>
-                                <div class="panel flex-col mb-0" style="height: 350px;">
-                                    <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-blue); margin-right:8px;">●</span> 나의 질의 내역</div></div>
-                                    <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
-                                        <div class="dash-tab active" onclick="changeDashTab('q', 'wait', this)">접수/처리중</div><div class="dash-tab" onclick="changeDashTab('q', 'done', this)">조치/AI완료</div>
+                                <div class="grid-2 mb-0 dash-widget-twin-grid">
+                                    <div class="panel flex-col mb-0" style="height: 350px;">
+                                        <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-blue); margin-right:8px;">●</span> 나의 질의 내역</div></div>
+                                        <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
+                                            <div class="dash-tab active" onclick="changeDashTab('q', 'wait', this)">접수/처리중</div><div class="dash-tab" onclick="changeDashTab('q', 'done', this)">조치/AI완료</div>
+                                        </div>
+                                        <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyQuestions"></div>
                                     </div>
-                                    <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyQuestions"></div>
-                                </div>
-                                <div class="panel flex-col mb-0" style="height: 350px;">
-                                    <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-light); margin-right:8px;">●</span> <span id="dashSecondaryTitle">나의 조치 할 일 (담당자용)</span></div></div>
-                                    <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
-                                        <div class="dash-tab active" id="dashATabWait" onclick="changeDashTab('a', 'wait', this)">미결/진행중</div><div class="dash-tab" id="dashATabDone" onclick="changeDashTab('a', 'done', this)">조치완료</div>
+                                    <div class="panel flex-col mb-0" style="height: 350px;">
+                                        <div class="panel-header" style="background: #fff; border-bottom: 0; padding-bottom: 0;"><div class="flex items-center"><span style="color:var(--ibk-light); margin-right:8px;">●</span> <span id="dashSecondaryTitle">나의 조치 할 일 (담당자용)</span></div></div>
+                                        <div class="flex shrink-0" style="border-bottom: 1px solid var(--border-color); padding: 10px 20px 0;">
+                                            <div class="dash-tab active" id="dashATabWait" onclick="changeDashTab('a', 'wait', this)">미결/진행중</div><div class="dash-tab" id="dashATabDone" onclick="changeDashTab('a', 'done', this)">조치완료</div>
+                                        </div>
+                                        <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyAnswers"></div>
                                     </div>
-                                    <div class="flex-1" style="overflow-y: auto; padding: 10px; background: #fafafa;" id="dashMyAnswers"></div>
                                 </div>
                             </div>
 
                             <!-- 차트 위젯 -->
-                            <div class="draggable-widget grid-2" draggable="false" id="widget-charts">
+                            <div class="draggable-widget dash-widget-stack" draggable="false" id="widget-charts">
                                 <div class="flex justify-between items-center mb-2 drag-handle dash-widget-drag-row hidden"><span class="badge dash-widget-drag-label">차트 영역 이동</span></div>
-                                <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
-                                    <div class="panel-header"><div>주간 문의 통계</div></div>
-                                    <div class="p-20 flex-1 relative w-full h-full"><div id="mainTrendChart"></div></div>
-                                </div>
-                                <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
-                                    <div class="panel-header"><div>시스템 점유 비중</div></div>
-                                    <div class="p-20 flex-1 relative w-full h-full"><div id="mainPieChart"></div></div>
+                                <div class="grid-2 mb-0 dash-widget-twin-grid">
+                                    <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
+                                        <div class="panel-header"><div>주간 문의 통계</div></div>
+                                        <div class="p-20 flex-1 relative w-full h-full"><div id="mainTrendChart"></div></div>
+                                    </div>
+                                    <div class="panel flex-col mb-0" style="height: 350px; width: 100%;">
+                                        <div class="panel-header"><div>시스템 점유 비중</div></div>
+                                        <div class="p-20 flex-1 relative w-full h-full"><div id="mainPieChart"></div></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
