@@ -431,6 +431,19 @@
             color: #93c5fd;
             border-color: #3b6cb5;
         }
+        body[data-theme="dark"] button.noti-section-head.noti-section-toggle:focus-visible {
+            outline-color: #60a5fa;
+        }
+        body[data-theme="dark"] .noti-section-chevron {
+            background: rgba(15, 23, 42, 0.65);
+            border-color: #4a5f7f;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .noti-section-unread .noti-section-chevron {
+            border-color: #3b6cb5;
+            color: #93c5fd;
+            background: rgba(15, 23, 42, 0.85);
+        }
         body[data-theme="dark"] .noti-item,
         body[data-theme="dark"] .notification-filter-group {
             background: linear-gradient(180deg, #152238 0%, #111c30 100%);

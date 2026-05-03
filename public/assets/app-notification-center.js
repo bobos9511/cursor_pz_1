@@ -8,6 +8,8 @@ const notificationCenterState = {
     filterDraftViewMode: "time",
     filterDraftLevelMode: "all",
     stackOpen: {},
+    /** 미확인(unread) · 확인(read) 알림 구역 펼침 상태 */
+    sectionExpanded: { unread: true, read: true },
     seq: 1,
 };
 const NOTIFICATION_CENTER_STORAGE_KEY = "knock-notification-center-v1";
@@ -107,6 +109,7 @@ function persistNotificationCenterState() {
         notificationCenterState.items = sanitizeNotificationItemsForTransport(notificationCenterState.items)
             .map((it) => ({ ...it, hasAction: false, onClick: null }));
         const safeItems = notificationCenterState.items.slice(0, 300);
+        const se = notificationCenterState.sectionExpanded || { unread: true, read: true };
         localStorage.setItem(
             NOTIFICATION_CENTER_STORAGE_KEY,
             JSON.stringify({
@@ -119,6 +122,10 @@ function persistNotificationCenterState() {
                         : notificationCenterState.levelMode === "general"
                           ? "general"
                           : "all",
+                sectionExpanded: {
+                    unread: se.unread !== false,
+                    read: se.read !== false,
+                },
             })
         );
     } catch (_) {}
@@ -158,6 +165,15 @@ function restoreNotificationCenterState() {
             parsed.levelMode === "important" ? "important" : parsed.levelMode === "general" ? "general" : "all";
         notificationCenterState.filterDraftViewMode = notificationCenterState.viewMode;
         notificationCenterState.filterDraftLevelMode = notificationCenterState.levelMode;
+        const se = parsed.sectionExpanded;
+        if (se && typeof se === "object") {
+            notificationCenterState.sectionExpanded = {
+                unread: se.unread !== false,
+                read: se.read !== false,
+            };
+        } else {
+            notificationCenterState.sectionExpanded = { unread: true, read: true };
+        }
         recalcNotificationUnreadCount();
     } catch (_) {}
 }
@@ -402,6 +418,19 @@ function toggleNotificationStack(stackId) {
     renderNotificationCenterBody();
 }
 
+function toggleNotificationSection(sectionKey) {
+    const k = String(sectionKey || "");
+    if (k !== "unread" && k !== "read") return;
+    if (!notificationCenterState.sectionExpanded || typeof notificationCenterState.sectionExpanded !== "object") {
+        notificationCenterState.sectionExpanded = { unread: true, read: true };
+    }
+    notificationCenterState.sectionExpanded[k] = !notificationCenterState.sectionExpanded[k];
+    renderNotificationCenterBody();
+    persistNotificationCenterState();
+}
+
+window.toggleNotificationSection = toggleNotificationSection;
+
 function sortNotificationsByTimeDesc(arr) {
     return [...arr].sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
 }
@@ -444,16 +473,25 @@ function renderNotificationCenterBody() {
     const unreadList = sortNotificationsByTimeDesc(items.filter((it) => !it.isRead));
     const readList = sortNotificationsByTimeDesc(items.filter((it) => it.isRead));
 
+    const exp = notificationCenterState.sectionExpanded || { unread: true, read: true };
+    const unreadOpen = exp.unread !== false;
+    const readOpen = exp.read !== false;
+
     const sections = [];
     if (unreadList.length) {
         sections.push(
-            `<div class="noti-section noti-section-unread" role="region" aria-label="미확인 알림">
+            `<div class="noti-section noti-section-unread${unreadOpen ? "" : " noti-section-collapsed"}" role="region" aria-label="미확인 알림">
                 <div class="noti-section-bundled">
-                    <div class="noti-section-head">
-                        <span class="noti-section-label">미확인 알림</span>
-                        <span class="noti-section-count">${unreadList.length}</span>
-                    </div>
-                    <div class="noti-section-content">
+                    <button type="button" class="noti-section-head noti-section-toggle" onclick="toggleNotificationSection('unread')" aria-expanded="${unreadOpen}" aria-controls="notiSectionUnreadBody">
+                        <span class="noti-section-head-main">
+                            <span class="noti-section-label">미확인 알림</span>
+                            <span class="noti-section-count">${unreadList.length}</span>
+                        </span>
+                        <span class="noti-section-chevron" aria-hidden="true">
+                            <svg class="icon"><use href="#icon-chevron-down"></use></svg>
+                        </span>
+                    </button>
+                    <div id="notiSectionUnreadBody" class="noti-section-content">
                         ${buildNotificationGroupedRows(unreadList)}
                     </div>
                 </div>
@@ -462,13 +500,18 @@ function renderNotificationCenterBody() {
     }
     if (readList.length) {
         sections.push(
-            `<div class="noti-section noti-section-read" role="region" aria-label="확인한 알림">
+            `<div class="noti-section noti-section-read${readOpen ? "" : " noti-section-collapsed"}" role="region" aria-label="확인한 알림">
                 <div class="noti-section-bundled">
-                    <div class="noti-section-head">
-                        <span class="noti-section-label">확인한 알림</span>
-                        <span class="noti-section-count">${readList.length}</span>
-                    </div>
-                    <div class="noti-section-content">
+                    <button type="button" class="noti-section-head noti-section-toggle" onclick="toggleNotificationSection('read')" aria-expanded="${readOpen}" aria-controls="notiSectionReadBody">
+                        <span class="noti-section-head-main">
+                            <span class="noti-section-label">확인한 알림</span>
+                            <span class="noti-section-count">${readList.length}</span>
+                        </span>
+                        <span class="noti-section-chevron" aria-hidden="true">
+                            <svg class="icon"><use href="#icon-chevron-down"></use></svg>
+                        </span>
+                    </button>
+                    <div id="notiSectionReadBody" class="noti-section-content">
                         ${buildNotificationGroupedRows(readList)}
                     </div>
                 </div>
