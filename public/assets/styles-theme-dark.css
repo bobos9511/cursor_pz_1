@@ -516,7 +516,7 @@
         body[data-theme="dark"] .ai-search-error-retry {
             border-top-color: rgba(148, 163, 184, 0.28);
         }
-        body[data-theme="dark"] .ai-search-msg-prefer-outside .ai-prefer-btn {
+        body[data-theme="dark"] .ai-search-msg-footer-prefer .ai-prefer-btn {
             box-shadow: 0 2px 8px rgba(2, 8, 24, 0.4);
         }
         body[data-theme="dark"] .ai-search-input-help,

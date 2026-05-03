@@ -976,6 +976,10 @@
                     if (state.postId != null) openDetail(Number(state.postId), targetBoardType, { fromHistory: true, skipHistory: true });
                     return true;
                 }
+                if (state.viewId === 'ai-search') {
+                    openAiChatLayerFromFloating();
+                    return true;
+                }
                 switchView(state.viewId, state.boardType || null, { fromHistory: true, skipHistory: true });
                 return true;
             } finally {
@@ -1583,9 +1587,7 @@
         }
         function getDummyIp() { return '10.124.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255); }
         function goToAiSearchPage() {
-            const aiView = document.getElementById('view-ai-search');
-            if (aiView) switchView('ai-search');
-            else window.location.href = '/ai-search.html';
+            openAiChatLayerFromFloating();
         }
         function setCookie(name, value, days = 365) {
             const d = new Date();
@@ -4091,6 +4093,7 @@
                     } else {
                         aiChatLayerPrevParent.appendChild(aiView);
                     }
+                    aiView.classList.remove('active');
                 }
                 aiChatLayerCloseTimer = null;
                 updateAiChatFloatingButton();
@@ -4620,6 +4623,10 @@
             }
             closeBoardToolsLayer();
             closeBoardFilterLayer();
+            if (viewId === 'ai-search') {
+                openAiChatLayerFromFloating();
+                return;
+            }
             if (viewId === 'admin-settings' && !currentUserHasAdminAccess()) {
                 showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;

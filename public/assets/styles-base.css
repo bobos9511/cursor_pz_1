@@ -2650,7 +2650,7 @@
             height: 22px;
         }
         body.ai-chat-layer-open .ai-chat-floating-btn {
-            z-index: 1250;
+            z-index: 1260;
         }
         .ai-chat-floating-btn {
             position: fixed;
@@ -2821,6 +2821,51 @@
             overflow: hidden;
             transform-origin: calc(100% - 28px) calc(100% + 14px);
         }
+        .ai-chat-layer-toolbar {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px 4px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+        }
+        .ai-chat-layer-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: rgba(255, 255, 255, 0.75);
+            color: #334155;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .ai-chat-layer-tool-btn:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+        .ai-chat-layer-tool-btn .icon {
+            width: 20px;
+            height: 20px;
+        }
+        body[data-theme="dark"] .ai-chat-layer-tool-btn {
+            border-color: rgba(100, 136, 184, 0.45);
+            background: rgba(21, 36, 59, 0.85);
+            color: #dce7f6;
+        }
+        body[data-theme="dark"] .ai-chat-layer-tool-btn:hover {
+            border-color: #60a5fa;
+            background: rgba(30, 58, 138, 0.55);
+            color: #f8fafc;
+        }
+        body.ai-chat-layer-open #aiSearchHistoryMobileModal.modal-overlay.active {
+            z-index: 1280 !important;
+        }
         .ai-chat-layer-host {
             flex: 1;
             min-height: 0;
@@ -2945,6 +2990,38 @@
         }
         .ai-chat-layer-host #aiSearchSendBtn {
             align-self: auto;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-input-actions {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+            flex-wrap: nowrap;
+            justify-content: stretch;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-input-actions .btn {
+            flex: 1 1 0;
+            min-height: 42px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-send-btn .icon {
+            width: 18px;
+            height: 18px;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-layer-new-chat-btn .icon {
+            width: 18px;
+            height: 18px;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-search-send-btn {
+            min-width: 0 !important;
+        }
+        .ai-chat-layer-host #view-ai-search .ai-layer-new-chat-btn {
+            min-width: 0 !important;
         }
         @keyframes aiChatLayerBackdropIn {
             from { opacity: 0; }

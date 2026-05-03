@@ -506,11 +506,11 @@ function renderAiSearchMessages() {
                     </div>`;
                 item.classList.add("ai-search-msg-has-retry");
             }
-            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${retryHtml}`;
+            const preferWrap = preferBtn ? `<div class="ai-search-msg-footer-prefer">${preferBtn}</div>` : "";
+            item.innerHTML = `<div class="ai-search-msg-body">${text}</div>${retryHtml}${preferWrap}`;
             row.insertAdjacentHTML("beforeend", avatarHtml);
             row.appendChild(item);
             row.insertAdjacentHTML("beforeend", timeHtml);
-            if (preferBtn) row.insertAdjacentHTML("beforeend", `<span class="ai-search-msg-prefer-outside">${preferBtn}</span>`);
         }
         logEl.appendChild(row);
     });
@@ -534,6 +534,7 @@ function toggleAiSearchPreferred(messageIndex) {
     if (!msg || msg.role !== "ai") return;
     if (String(msg.text || "").includes("ai-search-loading")) return;
     if (isAiSearchErrorMessageText(msg.text)) return;
+    const plain = stripHtmlForRag(String(msg.text || "")).replace(/\s+/g, " ").trim().toLowerCase();
     if (
         plain.includes("답변할 수 없습니다") ||
         plain.includes("도와드릴 수 없습니다") ||
