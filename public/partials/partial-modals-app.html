@@ -160,12 +160,12 @@
         </div>
     </div>
     <div id="profileImageModal" class="modal-overlay" style="z-index: 1019;">
-        <div class="modal-content" style="max-width: 420px; width:min(92vw,420px);">
-            <div class="modal-header">
-                <h3 style="font-size:16px;">프로필 사진 등록</h3>
-                <button class="btn-icon" onclick="closeProfileImageModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 420px; width:min(92vw,420px);">
             <div class="modal-body flex-col gap-10">
+                <div class="modal-flat-head">
+                    <h3 class="modal-inline-title" style="font-size:16px;">프로필 사진 등록</h3>
+                    <button type="button" class="btn-icon" onclick="closeProfileImageModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <div id="profileImagePreview" class="profile-image-preview"></div>
                 <div class="profile-image-help">이미지를 등록하지 않으면 이름 첫 글자 아바타가 표시됩니다.</div>
                 <input id="profileImageInput" type="file" class="input" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleProfileImageFileChange(event)">
@@ -180,12 +180,12 @@
         </div>
     </div>
     <div id="adminAiSettingsHistoryModal" class="modal-overlay" style="z-index: 1017;">
-        <div class="modal-content" style="max-width: 960px; width:min(96vw,960px);">
-            <div class="modal-header">
-                <h3 style="font-size:16px;">AI 설정 변경 이력</h3>
-                <button class="btn-icon" onclick="closeAdminAiSettingsHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 960px; width:min(96vw,960px);">
             <div class="modal-body">
+                <div class="modal-flat-head">
+                    <h3 class="modal-inline-title" style="font-size:16px;">AI 설정 변경 이력</h3>
+                    <button type="button" class="btn-icon" onclick="closeAdminAiSettingsHistoryModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <div id="adminAiSettingsHistorySummary" class="admin-settings-hint" style="margin-bottom:10px;">기록: 0건</div>
                 <div id="adminAiSettingsHistoryList" class="admin-ai-settings-history-wrap"></div>
             </div>
@@ -196,12 +196,14 @@
     </div>
 
     <div id="editHistoryModal" class="modal-overlay" style="z-index: 1016;">
-        <div class="modal-content" style="max-width: 640px; width:min(94vw,640px);">
-            <div class="modal-header">
-                <h3 style="font-size:16px;">수정 이력</h3>
-                <button class="btn-icon" onclick="closeEditHistoryModal()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 640px; width:min(94vw,640px);">
+            <div class="modal-body">
+                <div class="modal-flat-head">
+                    <h3 class="modal-inline-title" style="font-size:16px;">수정 이력</h3>
+                    <button type="button" class="btn-icon" onclick="closeEditHistoryModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
+                <div id="editHistoryModalBody"></div>
             </div>
-            <div id="editHistoryModalBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeEditHistoryModal()">닫기</button>
             </div>

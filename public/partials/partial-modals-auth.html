@@ -1,11 +1,8 @@
     <!-- 지정맥 모달 -->
     <div id="veinModal" class="modal-overlay" style="z-index: 110;">
-        <div class="modal-content" style="max-width: 350px; text-align: center;">
-            <div class="modal-header">
-                <h3 style="font-size:17px;">안내</h3>
-                <button class="btn-icon" onclick="cancelVein()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
-            <div class="modal-body" style="padding: 30px;">
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 350px; text-align: center;">
+            <div class="modal-body vein-modal-body" style="padding: 30px;">
+                <button type="button" class="btn-icon vein-modal-dismiss" onclick="cancelVein()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 <h3 class="vein-title" style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">지정맥 인증</h3>
                 <p class="vein-guide-text" style="margin-bottom: 25px;">단말기에 손가락을 올려주세요.</p>
                 <div class="vein-fingerprint-btn" onclick="openLoginTestToolsModal()" title="테스트 메뉴 열기" style="padding: 30px; border-radius: 50%; width: 120px; height: 120px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
@@ -139,12 +136,12 @@
 
     <!-- 테스트용 회원목록 관리 모달 -->
     <div id="memberListModal" class="modal-overlay member-list-modal-overlay" style="z-index: 121;">
-        <div class="modal-content member-list-modal-shell">
-            <div class="modal-header member-list-modal-header">
-                <h3 class="member-list-modal-title">저장된 회원 · 테스트</h3>
-                <button type="button" class="btn-icon" onclick="closeMemberListModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content member-list-modal-shell modal-content--no-header-bar">
             <div class="modal-body member-list-modal-body">
+                <div class="modal-flat-head">
+                    <h3 class="member-list-modal-title">저장된 회원 · 테스트</h3>
+                    <button type="button" class="btn-icon" onclick="closeMemberListModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <div class="member-list-toolbar">
                     <div id="memberListSummary" class="member-list-summary">저장된 회원: 0명</div>
                 </div>
@@ -162,14 +159,53 @@
 
     <!-- 로그인 테스트 도구 모달 -->
     <div id="loginTestToolsModal" class="modal-overlay" style="z-index: 122;">
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-header">
-                <h3 class="login-test-tools-modal-title" style="font-size:18px;">테스트 도구</h3>
-                <button class="btn-icon" onclick="closeLoginTestToolsModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 360px;">
             <div class="modal-body flex-col gap-10">
+                <div class="modal-flat-head">
+                    <h3 class="login-test-tools-modal-title modal-inline-title" style="font-size:18px;">테스트 도구</h3>
+                    <button type="button" class="btn-icon" onclick="closeLoginTestToolsModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <button type="button" onclick="openMemberListFromTestTools()" class="btn w-full" style="border: 1px solid #93c5fd; color: #1e40af; background: #eff6ff;">테스트 회원 목록</button>
                 <button type="button" onclick="openSignupFromTestTools()" class="btn w-full" style="border: 1px solid #cbd5e1; color: #334155; background: #f8fafc;">테스트용 회원가입</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인 화면: 홈 링크 공유 -->
+    <div id="loginShareModal" class="modal-overlay" style="z-index: 123;">
+        <div class="modal-content login-share-modal-shell modal-content--no-header-bar" style="max-width: 380px;">
+            <div class="modal-body login-share-modal-body flex-col">
+                <div class="modal-flat-head">
+                    <h3 class="login-share-modal-title modal-inline-title" style="font-size:18px;">페이지 공유</h3>
+                    <button type="button" class="btn-icon" onclick="closeLoginShareModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
+                <p class="login-share-modal-lead">아래 QR 코드는 현재 홈페이지 주소로 연결됩니다.</p>
+                <div class="login-share-qr-wrap">
+                    <img id="loginShareQrImg" class="login-share-qr-img" width="220" height="220" alt="" decoding="async">
+                </div>
+                <div id="loginShareUrlText" class="login-share-url-text"></div>
+                <p class="login-share-actions-label">다른 앱으로 공유</p>
+                <div class="login-share-actions" role="group" aria-label="외부 앱 공유">
+                    <button type="button" id="loginShareQuickBtn" class="login-share-pill login-share-pill--quick" onclick="shareKnockSiteViaQuickShare()" title="퀵 쉐어" aria-label="퀵 쉐어(시스템 공유)">
+                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-ios-share"></use></svg>
+                    </button>
+                    <button type="button" class="login-share-pill login-share-pill--kakao" onclick="shareKnockSiteToKakaoTalk()" title="카카오톡" aria-label="카카오톡으로 공유">
+                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#191919" d="M12 3C6.48 3 2 6.48 2 10.5c0 2.55 1.68 4.8 4.2 6.05l-.9 3.3c-.12.45.3.85.74.74l4.15-1.1c.58.1 1.18.16 1.81.16 5.52 0 10-3.48 10-7.5S17.52 3 12 3z"/></svg>
+                    </button>
+                    <button type="button" class="login-share-pill login-share-pill--line" onclick="shareKnockSiteToLine()" title="LINE" aria-label="LINE으로 공유">
+                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629v-4.77c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.77zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.739C24 14.22 18.615 17 12 17c-.582 0-1.155-.025-1.715-.074L6.07 18.73c-.18.048-.37-.03-.44-.205-.05-.12-.02-.255.08-.345l2.1-2.4C3.75 14.659 0 12.98 0 10.739 0 7.26 5.385 4.48 12 4.48S24 7.26 24 10.739"/></svg>
+                    </button>
+                    <button type="button" class="login-share-pill login-share-pill--naver" onclick="shareKnockSiteToNaver()" title="네이버" aria-label="네이버로 공유">
+                        <svg class="login-share-pill__brand" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M16.273 12.868 9.376 3H3v18h6.727V11.132L16.624 21H21V3h-4.727v9.868z"/></svg>
+                    </button>
+                    <button type="button" class="login-share-pill login-share-pill--mail" onclick="shareKnockSiteByEmail()" title="메일" aria-label="메일로 공유">
+                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-mail"></use></svg>
+                    </button>
+                    <button type="button" class="login-share-pill login-share-pill--copy" onclick="copyKnockSiteUrlToClipboard()" title="링크 복사" aria-label="클립보드에 링크 복사">
+                        <svg class="icon login-share-pill__icon" aria-hidden="true"><use href="#icon-content-copy"></use></svg>
+                    </button>
+                </div>
+                <p class="login-share-modal-hint">모바일에서 카카오톡은 앱으로 열리며, PC에서는 카카오스토리 공유로 연결될 수 있습니다.</p>
             </div>
         </div>
     </div>
@@ -209,12 +245,12 @@
 
     <!-- 공통 알림/확인 모달 -->
     <div id="appDialogModal" class="modal-overlay" style="z-index: 12050;">
-        <div class="modal-content" style="max-width: 380px;">
-            <div class="modal-header">
-                <h3 id="appDialogTitle" style="font-size:17px; color: var(--ibk-blue);">알림</h3>
-                <button class="btn-icon" onclick="onAppDialogCancel()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 380px;">
             <div class="modal-body" style="padding-top: 20px; padding-bottom: 20px;">
+                <div class="modal-flat-head">
+                    <h3 id="appDialogTitle" class="modal-inline-title" style="font-size:17px; color: var(--ibk-blue);">알림</h3>
+                    <button type="button" class="btn-icon" onclick="onAppDialogCancel()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <p id="appDialogMessage" style="white-space: pre-line; color: #334155; line-height: 1.5;"></p>
             </div>
             <div class="modal-footer">
@@ -226,12 +262,12 @@
 
     <!-- 대시보드 카운팅 목록 모달 -->
     <div id="dashCountModal" class="modal-overlay" style="z-index: 125;">
-        <div class="modal-content" style="max-width: 980px; width: min(94vw, 980px); max-height: 82vh;">
-            <div class="modal-header">
-                <h3 id="dashCountModalTitle" style="font-size:18px; color: var(--ibk-blue);">게시물 목록</h3>
-                <button class="btn-icon" onclick="closeDashCountModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content modal-content--no-header-bar" style="max-width: 980px; width: min(94vw, 980px); max-height: 82vh;">
             <div class="modal-body" style="padding-top: 10px;">
+                <div class="modal-flat-head dash-count-modal-flat-head">
+                    <h3 id="dashCountModalTitle" class="modal-inline-title" style="font-size:18px; color: var(--ibk-blue);">게시물 목록</h3>
+                    <button type="button" class="btn-icon" onclick="closeDashCountModal()" title="닫기" aria-label="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                </div>
                 <div class="table-wrap" style="border:1px solid #e5e7eb; border-radius:8px; max-height: 470px;">
                     <table class="table" style="min-width: 860px;">
                         <thead>

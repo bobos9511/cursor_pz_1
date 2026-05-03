@@ -1317,6 +1317,15 @@
         body[data-theme="dark"] .login-theme-btn:hover {
             background: linear-gradient(180deg, #263b5d, #1d314e);
         }
+        body[data-theme="dark"] .login-share-btn {
+            color: #dbeafe;
+            border-color: #4a5f7f;
+            background: linear-gradient(180deg, #1e2d45, #17243a);
+            box-shadow: 0 8px 20px rgba(2, 8, 24, 0.45);
+        }
+        body[data-theme="dark"] .login-share-btn:hover {
+            background: linear-gradient(180deg, #263b5d, #1d314e);
+        }
         body[data-theme="dark"] .ai-chat-floating-btn {
             border-color: rgba(56, 189, 248, 0.38);
             background: linear-gradient(135deg, rgba(7, 89, 133, 0.28), rgba(2, 132, 199, 0.32));
@@ -1370,6 +1379,7 @@
         body[data-theme="dark"] #signupModal .modal-content,
         body[data-theme="dark"] #memberListModal .modal-content,
         body[data-theme="dark"] #loginTestToolsModal .modal-content,
+        body[data-theme="dark"] #loginShareModal .modal-content,
         body[data-theme="dark"] #veinModal .modal-content {
             background: #121b2d;
             border-color: #3f5475;
@@ -1545,6 +1555,27 @@
         body[data-theme="dark"] .member-list-modal-title,
         body[data-theme="dark"] .login-test-tools-modal-title {
             color: #e6edf8 !important;
+        }
+        body[data-theme="dark"] .login-share-modal-title {
+            color: #e6edf8 !important;
+        }
+        body[data-theme="dark"] .login-share-modal-lead {
+            color: #9fb0c8;
+        }
+        body[data-theme="dark"] .login-share-qr-wrap {
+            background: #0f172a;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .login-share-url-text {
+            background: #17243a;
+            border-color: #3f5475;
+            color: #dbeafe;
+        }
+        body[data-theme="dark"] .login-share-actions-label {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .login-share-modal-hint {
+            color: #7892b0;
         }
         body[data-theme="dark"] #loginTestToolsModal .btn[style*="background: #eff6ff"],
         body[data-theme="dark"] #loginTestToolsModal .btn[style*="background:#eff6ff"] {

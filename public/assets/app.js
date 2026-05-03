@@ -2437,6 +2437,129 @@
             document.getElementById('loginTestToolsModal').classList.remove('active');
         }
 
+        function getKnockPublicSiteUrl() {
+            try {
+                const u = new URL(window.location.href);
+                u.hash = '';
+                u.search = '';
+                return u.toString();
+            } catch (_) {
+                return window.location.origin + '/';
+            }
+        }
+
+        function openLoginShareModal() {
+            const modal = document.getElementById('loginShareModal');
+            if (!modal) return;
+            const url = getKnockPublicSiteUrl();
+            const textEl = document.getElementById('loginShareUrlText');
+            const qr = document.getElementById('loginShareQrImg');
+            if (textEl) textEl.textContent = url;
+            if (qr) {
+                qr.alt = '홈페이지 링크 QR 코드';
+                qr.src =
+                    'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' +
+                    encodeURIComponent(url);
+            }
+            const quickBtn = document.getElementById('loginShareQuickBtn');
+            if (quickBtn) {
+                if (typeof navigator.share === 'function') quickBtn.removeAttribute('hidden');
+                else quickBtn.setAttribute('hidden', '');
+            }
+            modal.classList.add('active');
+        }
+
+        function closeLoginShareModal() {
+            const modal = document.getElementById('loginShareModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        async function shareKnockSiteViaQuickShare() {
+            const url = getKnockPublicSiteUrl();
+            if (typeof navigator.share !== 'function') {
+                showAlert('이 기기에서는 퀵 쉐어를 사용할 수 없습니다.', 'error');
+                return;
+            }
+            try {
+                await navigator.share({
+                    title: 'IBK 스마트 업무지식센터 (KNOCK)',
+                    text: 'IBK KNOCK',
+                    url,
+                });
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                showAlert('공유를 완료하지 못했습니다.', 'error');
+            }
+        }
+
+        function shareKnockSiteToKakaoTalk() {
+            const url = getKnockPublicSiteUrl();
+            const text = 'IBK 스마트 업무지식센터 (KNOCK)\n' + url;
+            const ua = navigator.userAgent || '';
+            if (/Android|iPhone|iPad|iPod/i.test(ua)) {
+                window.location.href = 'kakaotalk://send?text=' + encodeURIComponent(text);
+            } else {
+                window.open(
+                    'https://story.kakao.com/share?url=' + encodeURIComponent(url),
+                    '_blank',
+                    'noopener,noreferrer',
+                );
+            }
+        }
+
+        function shareKnockSiteToLine() {
+            const url = encodeURIComponent(getKnockPublicSiteUrl());
+            window.open('https://social-plugins.line.me/lineit/share?url=' + url, '_blank', 'noopener,noreferrer');
+        }
+
+        function shareKnockSiteToNaver() {
+            const url = getKnockPublicSiteUrl();
+            window.open(
+                'https://share.naver.com/web/shareView?url=' +
+                    encodeURIComponent(url) +
+                    '&title=' +
+                    encodeURIComponent('IBK 스마트 업무지식센터 (KNOCK)'),
+                '_blank',
+                'noopener,noreferrer',
+            );
+        }
+
+        function shareKnockSiteByEmail() {
+            const url = getKnockPublicSiteUrl();
+            window.location.href =
+                'mailto:?subject=' +
+                encodeURIComponent('IBK 스마트 업무지식센터 (KNOCK)') +
+                '&body=' +
+                encodeURIComponent(url);
+        }
+
+        async function copyKnockSiteUrlToClipboard() {
+            const url = getKnockPublicSiteUrl();
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(url);
+                    showAlert('링크가 클립보드에 복사되었습니다.', 'success');
+                    return;
+                }
+            } catch (_) {
+                /* fall through */
+            }
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = url;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showAlert('링크가 클립보드에 복사되었습니다.', 'success');
+            } catch (_) {
+                showAlert('복사에 실패했습니다. 주소를 직접 선택해 복사해 주세요.', 'error');
+            }
+        }
+
         function openMemberListFromTestTools() {
             closeLoginTestToolsModal();
             openMemberListModal();
