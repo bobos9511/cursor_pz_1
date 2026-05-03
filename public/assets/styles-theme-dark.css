@@ -1204,6 +1204,9 @@
         body[data-theme="dark"] #view-detail .post-detail-meta {
             color: var(--text-gray);
         }
+        body[data-theme="dark"] #view-detail .detail-post-title {
+            color: #f1f5f9;
+        }
         body[data-theme="dark"] #view-detail .post-detail-meta-ip .text-gray-400 {
             color: #94a3b8;
         }
