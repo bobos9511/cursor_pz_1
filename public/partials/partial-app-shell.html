@@ -18,13 +18,13 @@
                     <button type="button" class="hdr-nav-link hq-it-only hidden" id="hdr-nav-list-know" onclick="switchView('list', 'KNOW')">AI 지식</button>
                     <button type="button" class="hdr-nav-link platform-admin-only hidden" id="hdr-nav-admin-settings" onclick="switchView('admin-settings')">관리자</button>
                 </nav>
-                <div class="header-search-wrap">
-                    <div class="header-search-shell header-search-shell--glass">
-                        <svg class="icon header-search-icon" aria-hidden="true" style="margin-right: 10px;"><use href="#icon-search"></use></svg>
-                        <input type="text" id="headerSearchInput" class="header-search-input" placeholder="전체 게시판 통합 검색" onkeyup="if(event.key === 'Enter') executeIntegratedSearch()">
-                    </div>
-                </div>
                 <div class="header-right">
+                    <div class="header-search-wrap header-search-wrap--in-actions">
+                        <div class="header-search-shell header-search-shell--glass">
+                            <svg class="icon header-search-icon" aria-hidden="true" style="margin-right: 10px;"><use href="#icon-search"></use></svg>
+                            <input type="text" id="headerSearchInput" class="header-search-input" placeholder="전체 게시판 통합 검색" onkeyup="if(event.key === 'Enter') executeIntegratedSearch()">
+                        </div>
+                    </div>
                     <button class="header-action-btn header-search-mobile-btn" data-overflow-target="true" data-overflow-priority="40" onclick="showIntegratedSearchModal()" title="통합검색">
                         <svg class="icon" style="font-size: 18px;"><use href="#icon-search"></use></svg>
                     </button>

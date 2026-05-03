@@ -1004,6 +1004,19 @@
             .header--redesign .header-search-mobile-btn .icon {
                 font-size: 20px !important;
             }
+            .header--redesign .header-brand {
+                margin-right: 22px;
+            }
+            .header--redesign .hdr-nav-link {
+                font-size: 14px;
+                padding: 8px 13px;
+            }
+            .header--redesign .header-right > .header-search-wrap--in-actions {
+                flex: 1 1 240px;
+                min-width: 0;
+                max-width: 400px;
+                margin: 0;
+            }
         }
         .header__inner {
             display: flex;
@@ -1133,7 +1146,15 @@
             transform: scale(0.82) rotate(-18deg);
             opacity: 0.45;
         }
-        .header-search-wrap { flex:1; max-width: 500px; margin: 0 20px; display: flex; align-items: center; min-width: 0; position: relative; }
+        .header-search-wrap {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            position: relative;
+        }
         .header-search-shell {
             display: flex;
             align-items: center;
