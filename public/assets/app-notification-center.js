@@ -425,10 +425,26 @@ function renderNotificationItemCard(it, options = {}) {
     const sourceChip = `<span class="noti-topic-chip noti-source-chip">${escapeHtml(sourceLabel)}</span>`;
     const levelTopicChip = `<span class="noti-topic-chip ${it.level === "important" ? "important" : ""}">${it.level === "important" ? "중요" : "일반"} · ${escapeHtml(it.topic)}</span>`;
     const actionBtn = it.hasAction
-        ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
+        ? `<button type="button" class="btn btn-outline noti-item-cta" onclick="runNotificationAction('${it.id}')">${escapeHtml(it.actionText || "바로가기")}</button>`
         : "";
+    if (compact) {
+        const kickerParts = [sourceLabel, it.topic];
+        if (it.level === "important") kickerParts.push("중요");
+        if (!it.isRead) kickerParts.push("미확인");
+        const kicker = kickerParts.map((p) => escapeHtml(String(p))).join(" · ");
+        return `
+        <div class="noti-item ${readClass} noti-item-compact">
+            <div class="noti-item-compact-head">
+                <span class="noti-item-meta">${escapeHtml(it.atLabel)}</span>
+                <button type="button" class="noti-item-del" onclick="deleteNotificationItem('${it.id}')">삭제</button>
+            </div>
+            <div class="noti-item-kicker">${kicker}</div>
+            <div class="noti-item-msg">${escapeHtml(it.message).replace(/\n/g, "<br>")}</div>
+            ${it.hasAction ? `<div class="noti-item-actions noti-item-actions--compact">${actionBtn}</div>` : ""}
+        </div>`;
+    }
     return `
-        <div class="noti-item ${readClass}${compact ? " noti-item-compact" : ""}">
+        <div class="noti-item ${readClass}">
             <div class="noti-item-top">
                 <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
                 <div class="noti-item-source-row">
@@ -440,7 +456,7 @@ function renderNotificationItemCard(it, options = {}) {
             <div class="noti-item-msg">${escapeHtml(it.message).replace(/\n/g, "<br>")}</div>
             <div class="noti-item-actions">
                 ${actionBtn}
-                <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="deleteNotificationItem('${it.id}')">삭제</button>
+                <button type="button" class="btn btn-outline noti-item-cta" onclick="deleteNotificationItem('${it.id}')">삭제</button>
             </div>
         </div>
     `;
@@ -450,19 +466,15 @@ function renderNotificationStack(cluster) {
     const stackId = String(cluster.items[0] && cluster.items[0].id ? cluster.items[0].id : cluster.key);
     const expanded = !!notificationCenterState.stackOpen[stackId];
     const latest = cluster.items[0];
+    const n = cluster.items.length;
     return `
         <div class="noti-stack ${expanded ? "expanded" : ""}">
-            <button type="button" class="noti-stack-head" onclick="toggleNotificationStack('${stackId}')">
-                <div class="noti-stack-head-left">
-                    <span class="noti-stack-icon-wrap" aria-hidden="true">
-                        <svg class="icon"><use href="#icon-list"></use></svg>
-                    </span>
-                    <div class="noti-stack-head-text">
-                        <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
-                        <span class="noti-stack-count">${cluster.items.length}건 모아보기</span>
-                    </div>
+            <button type="button" class="noti-stack-head" onclick="toggleNotificationStack('${stackId}')" aria-expanded="${expanded}" title="${expanded ? "접기" : "펼치기"}">
+                <div class="noti-stack-head-main">
+                    <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
+                    <span class="noti-stack-sub">${n}건</span>
                 </div>
-                <span class="noti-stack-toggle" title="${expanded ? "접기" : "펼치기"}">
+                <span class="noti-stack-toggle" aria-hidden="true">
                     <svg class="icon"><use href="#icon-chevron-down"></use></svg>
                 </span>
             </button>
