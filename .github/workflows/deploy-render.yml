@@ -1,15 +1,21 @@
-# Render 자동 배포 (main 푸시·수동 실행)
+# Render 배포 — main 푸시(또는 수동) 시 실행
 #
-# 방법 A — GitHub Actions만으로 확실히 트리거하려면:
-#   Render 대시보드 → 해당 Web Service → Settings → Deploy Hook → URL 생성
-#   GitHub 저장소 → Settings → Secrets and variables → Actions
-#   → New repository secret: 이름 RENDER_DEPLOY_HOOK_URL, 값에 Hook URL 붙여넣기
-#   이후 main에 푸시할 때마다 이 워크플로가 Hook POST로 배포를 시작합니다.
+# 아래 중 하나만 설정해도 됩니다. (둘 다 있으면 Deploy Hook이 우선입니다.)
 #
-# 방법 B — Render만 사용:
-#   Render 서비스에서 GitHub 저장소·main 브랜치 연결 후 Auto-Deploy 활성화.
-#   이 경우 Hook 시크릿 없어도 Render가 커밋을 받아 배포합니다.
-#   (A와 B를 동시에 쓰면 같은 커밋에 배포가 두 번 돌 수 있으니 보통 한 가지만 씁니다.)
+# ① Deploy Hook (가장 단순)
+#    Render → Web Service → Settings → Deploy Hook → URL 복사
+#    GitHub → repo → Settings → Secrets and variables → Actions
+#    → New secret: RENDER_DEPLOY_HOOK_URL = (붙여넣기)
+#
+# ② Render API (Hook 없이 REST로 트리거)
+#    Render → Account Settings → API Keys → 생성
+#    GitHub Secrets:
+#      RENDER_API_KEY      = rnd_... (또는 해당 키)
+#      RENDER_SERVICE_ID   = srv-... (서비스 대시보드 URL 또는 개요에 표시)
+#
+# ③ Git만 연결한 경우 (Secret 없음)
+#    Render에서 이 저장소·main 브랜치를 연결하고 Auto-Deploy를 켜면
+#    푸시만으로도 Render가 알아서 빌드합니다. 이 워크플로는 스킵됩니다.
 #
 name: Deploy to Render
 
@@ -29,16 +35,36 @@ jobs:
   trigger-deploy-hook:
     runs-on: ubuntu-latest
     steps:
-      - name: POST Render deploy hook
+      - name: Trigger Render deploy
         env:
           HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [ -z "${HOOK:-}" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL 미설정 — Render Git Auto-Deploy만 쓰는 경우 정상입니다."
-            echo "Actions에서 배포까지 확실히 연결하려면 저장소 Secret에 Deploy Hook URL을 추가하세요."
+          if [ -n "${HOOK:-}" ]; then
+            echo "Using RENDER_DEPLOY_HOOK_URL (commit ${COMMIT})"
+            if [[ "$HOOK" == *\?* ]]; then
+              URL="${HOOK}&ref=${COMMIT}"
+            else
+              URL="${HOOK}?ref=${COMMIT}"
+            fi
+            curl -fsS -X POST "$URL" -w "\nHTTP %{http_code}\n"
+            echo "Deploy hook 요청 완료."
             exit 0
           fi
-          echo "Deploy hook 호출 중..."
-          curl -fsS -X POST "$HOOK" -w "\nHTTP %{http_code}\n"
-          echo "Deploy hook 요청 완료."
+          if [ -n "${API_KEY:-}" ] && [ -n "${SERVICE_ID:-}" ]; then
+            echo "Using Render API (service ${SERVICE_ID}, commit ${COMMIT})"
+            curl -fsS -X POST "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+              -H "Authorization: Bearer ${API_KEY}" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d "{\"commitId\":\"${COMMIT}\",\"clearCache\":\"do_not_clear\"}" \
+              -w "\nHTTP %{http_code}\n"
+            echo "API deploy 요청 완료."
+            exit 0
+          fi
+          echo "::notice::Secret 미설정 — Render 대시보드에서 GitHub 저장소·main 연결 후 Auto-Deploy를 켜면 푸시만으로 배포됩니다."
+          echo "GitHub에서 배포를 확실히 트리거하려면 RENDER_DEPLOY_HOOK_URL 또는 (RENDER_API_KEY + RENDER_SERVICE_ID)를 추가하세요."
+          exit 0

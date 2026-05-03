@@ -2448,22 +2448,95 @@
             }
         }
 
+        function loadLoginShareQrStylingLib() {
+            const ready =
+                typeof window.QRCodeStyling === 'function' ||
+                (window.QRCodeStyling && typeof window.QRCodeStyling.default === 'function');
+            if (ready) return Promise.resolve();
+            if (window.__knockLoginShareQrLib) return window.__knockLoginShareQrLib;
+            window.__knockLoginShareQrLib = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://unpkg.com/qr-code-styling@1.9.1/lib/qr-code-styling.js';
+                s.onload = () => resolve();
+                s.onerror = () => reject(new Error('qr-code-styling load failed'));
+                document.head.appendChild(s);
+            });
+            return window.__knockLoginShareQrLib;
+        }
+
+        async function renderLoginShareStyledQr(url) {
+            const mount = document.getElementById('loginShareQrMount');
+            if (!mount) return;
+            mount.innerHTML = '';
+            const fallbackImg =
+                '<img class="login-share-qr-fallback" alt="" width="118" height="118" src="' +
+                'https://api.qrserver.com/v1/create-qr-code/?size=118x118&margin=1&color=005bac&bgcolor=ffffff&ecc=H&data=' +
+                encodeURIComponent(url) +
+                '"/>';
+            try {
+                await loadLoginShareQrStylingLib();
+                const QRCodeStyling =
+                    (typeof window.QRCodeStyling === 'function' && window.QRCodeStyling) ||
+                    (window.QRCodeStyling && window.QRCodeStyling.default);
+                if (typeof QRCodeStyling !== 'function') throw new Error('QRCodeStyling missing');
+                const logoSvg =
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+                    '<rect width="64" height="64" rx="14" fill="#ffffff"/>' +
+                    '<path fill="#005bac" d="M18 46V18h12l8 14V18h8v28H34l-8-14v14z"/>' +
+                    '</svg>';
+                const image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(logoSvg);
+                const qr = new QRCodeStyling({
+                    width: 118,
+                    height: 118,
+                    type: 'svg',
+                    data: url,
+                    margin: 0,
+                    qrOptions: { errorCorrectionLevel: 'H' },
+                    image,
+                    imageOptions: { hideBackgroundDots: true, imageSize: 0.3, margin: 3 },
+                    dotsOptions: {
+                        type: 'rounded',
+                        gradient: {
+                            type: 'linear',
+                            rotation: 0.55,
+                            colorStops: [
+                                { offset: 0, color: '#003f85' },
+                                { offset: 0.55, color: '#005bac' },
+                                { offset: 1, color: '#00a4e3' },
+                            ],
+                        },
+                    },
+                    cornersSquareOptions: {
+                        type: 'extra-rounded',
+                        gradient: {
+                            type: 'linear',
+                            rotation: 0,
+                            colorStops: [
+                                { offset: 0, color: '#00264d' },
+                                { offset: 1, color: '#005bac' },
+                            ],
+                        },
+                    },
+                    cornersDotOptions: { type: 'dot', color: '#00a4e3' },
+                    backgroundOptions: { color: '#ffffff' },
+                });
+                qr.append(mount);
+            } catch (_) {
+                mount.innerHTML = fallbackImg;
+            }
+        }
+
         function openLoginShareModal() {
             const modal = document.getElementById('loginShareModal');
             if (!modal) return;
             const url = getKnockPublicSiteUrl();
             const textEl = document.getElementById('loginShareUrlText');
-            const qr = document.getElementById('loginShareQrImg');
             if (textEl) {
                 textEl.textContent = url;
                 textEl.title = url;
             }
-            if (qr) {
-                qr.alt = '홈페이지 링크 QR 코드';
-                qr.src =
-                    'https://api.qrserver.com/v1/create-qr-code/?size=168x168&margin=2&color=003f85&bgcolor=ffffff&ecc=M&data=' +
-                    encodeURIComponent(url);
-            }
+            void renderLoginShareStyledQr(url);
             const quickBtn = document.getElementById('loginShareQuickBtn');
             if (quickBtn) {
                 if (typeof navigator.share === 'function') quickBtn.removeAttribute('hidden');

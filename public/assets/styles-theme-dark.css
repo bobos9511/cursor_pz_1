@@ -1571,11 +1571,12 @@
             background: linear-gradient(165deg, #152238 0%, #121b2d 55%, #0f172a 100%);
             border-color: rgba(96, 165, 250, 0.35);
         }
-        body[data-theme="dark"] .login-share-qr-ribbon__t {
-            color: #94a3b8;
-        }
-        body[data-theme="dark"] .login-share-qr-img {
+        body[data-theme="dark"] .login-share-qr-mount {
             box-shadow: 0 2px 12px rgba(2, 8, 24, 0.45);
+            background: #0f172a;
+        }
+        body[data-theme="dark"] .login-share-qr-fallback {
+            box-shadow: none;
         }
         body[data-theme="dark"] .login-share-url-text {
             background: #17243a;
