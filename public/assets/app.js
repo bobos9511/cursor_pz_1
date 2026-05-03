@@ -3035,6 +3035,69 @@
             iconUse.setAttribute('href', collapsed ? '#icon-bars' : '#icon-chevron-left');
             btn.setAttribute('title', collapsed ? '메뉴 펼치기' : '메뉴 접기');
         }
+        const AI_FAB_OVERLAP_MARGIN = 10;
+        const AI_FAB_MAX_EXTRA_BOTTOM_PX = 300;
+        let aiFabOverlapScrollBound = false;
+        let aiFabOverlapRaf = 0;
+        function ensureAiChatFloatingOverlapListeners() {
+            if (aiFabOverlapScrollBound) return;
+            aiFabOverlapScrollBound = true;
+            const onScrollOrResize = () => {
+                if (aiFabOverlapRaf) return;
+                aiFabOverlapRaf = requestAnimationFrame(() => {
+                    aiFabOverlapRaf = 0;
+                    layoutAiChatFloatingAvoidOverlap();
+                });
+            };
+            const main = document.getElementById('mainScrollArea');
+            if (main) main.addEventListener('scroll', onScrollOrResize, { passive: true });
+            window.addEventListener('resize', onScrollOrResize);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', onScrollOrResize);
+                window.visualViewport.addEventListener('scroll', onScrollOrResize);
+            }
+        }
+        function layoutAiChatFloatingAvoidOverlap() {
+            const btn = document.getElementById('aiChatFloatingBtn');
+            if (!btn) return;
+            if (btn.classList.contains('hidden')) {
+                btn.style.removeProperty('--ai-fab-extra-bottom');
+                btn.style.removeProperty('--ai-fab-extra-right');
+                return;
+            }
+            btn.style.setProperty('--ai-fab-extra-bottom', '0px');
+            btn.style.setProperty('--ai-fab-extra-right', '0px');
+            void btn.offsetHeight;
+            const fab = btn.getBoundingClientRect();
+            if (fab.width < 2 || fab.height < 2) return;
+            const horizOverlap = (a, b) => !(a.right <= b.left + 0.5 || a.left >= b.right - 0.5);
+            const candidates = [];
+            const pg = document.getElementById('boardPagination');
+            if (pg) candidates.push(pg);
+            document.querySelectorAll('footer.footer-dark, .footer-dark').forEach((el) => {
+                if (candidates.indexOf(el) < 0) candidates.push(el);
+            });
+            let extra = 0;
+            for (let i = 0; i < candidates.length; i += 1) {
+                const el = candidates[i];
+                const st = window.getComputedStyle(el);
+                if (st.display === 'none' || st.visibility === 'hidden') continue;
+                const r = el.getBoundingClientRect();
+                if (r.width < 2 || r.height < 2) continue;
+                if (!horizOverlap(fab, r)) continue;
+                if (fab.bottom <= r.top - AI_FAB_OVERLAP_MARGIN) continue;
+                const lift = fab.bottom - (r.top - AI_FAB_OVERLAP_MARGIN);
+                if (lift > extra) extra = lift;
+            }
+            extra = Math.min(extra, AI_FAB_MAX_EXTRA_BOTTOM_PX);
+            btn.style.removeProperty('--ai-fab-extra-right');
+            if (extra <= 0.5) btn.style.removeProperty('--ai-fab-extra-bottom');
+            else btn.style.setProperty('--ai-fab-extra-bottom', `${Math.ceil(extra)}px`);
+            if (document.body.classList.contains('ai-chat-layer-open')) positionAiChatLayerPanel();
+        }
+        function scheduleAiChatFloatingOverlapLayout() {
+            requestAnimationFrame(() => layoutAiChatFloatingAvoidOverlap());
+        }
         function updateAiChatFloatingButton() {
             const btn = document.getElementById('aiChatFloatingBtn');
             if (!btn) return;
@@ -3044,6 +3107,8 @@
             const aiSearchActive = !!aiView && aiView.classList.contains('active');
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open');
             btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
+            ensureAiChatFloatingOverlapListeners();
+            scheduleAiChatFloatingOverlapLayout();
         }
         function clearAiChatLayerPanelGeometry() {
             const panel = document.querySelector('#aiChatLayerOverlay .ai-chat-layer-panel');
@@ -4142,7 +4207,10 @@
             if (filtered.length === 0) { 
                 let cols = isIT ? 6 : 5;
                 tbody.innerHTML = `<tr><td colspan="${cols}" style="padding: 30px; color:#999;">데이터가 없습니다.</td></tr>`;
-                setTimeout(syncBoardLayoutModes, 0);
+                setTimeout(() => {
+                    syncBoardLayoutModes();
+                    scheduleAiChatFloatingOverlapLayout();
+                }, 0);
                 return; 
             }
 
@@ -4165,6 +4233,7 @@
                 return `<tr onclick="openDetail(${item.id})"><td class="post-id-cell">${formatPostIdChipHtml(item.id)}</td>${chkTd}<td>${badge}</td><td class="text-left font-bold">${knowCatBadge}${item.title}</td><td>${renderWriterWithAvatar(item.writer)}</td><td>${item.datetime}</td></tr>`;
             }).join('');
             setTimeout(syncBoardLayoutModes, 0);
+            setTimeout(scheduleAiChatFloatingOverlapLayout, 0);
         }
 
         function toggleAllChecks() {
