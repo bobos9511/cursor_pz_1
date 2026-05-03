@@ -5074,13 +5074,46 @@
                     : '<span style="color:var(--text-light);">연관 키워드 없음</span>'
             }`;
         }
+        let integratedSearchEnterWired = false;
+        function ensureIntegratedSearchEnterHandlers() {
+            if (integratedSearchEnterWired) return;
+            const input = document.getElementById('modalSearchInput');
+            const form = document.getElementById('integratedSearchForm');
+            if (!input) return;
+            integratedSearchEnterWired = true;
+            const runSearch = (e) => {
+                if (e) e.preventDefault();
+                performModalSearch('enter');
+            };
+            if (form) {
+                form.addEventListener('submit', runSearch);
+            }
+            input.addEventListener(
+                'keydown',
+                (e) => {
+                    if (e.key !== 'Enter' && e.keyCode !== 13) return;
+                    e.preventDefault();
+                    performModalSearch('enter');
+                },
+                true,
+            );
+        }
         function showIntegratedSearchModal() {
+            ensureIntegratedSearchEnterHandlers();
             document.getElementById('integratedSearchModal').classList.add('active');
             renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', []);
             setTimeout(() => document.getElementById('modalSearchInput').focus(), 100);
         }
         function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
+        let integratedSearchEnterDedupe = false;
         function performModalSearch(trigger = 'manual') {
+            if (trigger === 'enter') {
+                if (integratedSearchEnterDedupe) return;
+                integratedSearchEnterDedupe = true;
+                queueMicrotask(() => {
+                    integratedSearchEnterDedupe = false;
+                });
+            }
             const raw = document.getElementById('modalSearchInput').value || '';
             const kw = raw.toLowerCase().trim();
             const resContainer = document.getElementById('integratedSearchResults');

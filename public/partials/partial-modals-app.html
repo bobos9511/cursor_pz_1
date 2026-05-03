@@ -6,11 +6,13 @@
                 <button class="btn-icon" onclick="closeIntegratedSearchModal()" title="닫기"><svg class="icon"><use href="#icon-close"></use></svg></button>
             </div>
             <div class="integrated-search-head">
+                <form id="integratedSearchForm" class="integrated-search-form" action="#" method="get" autocomplete="off" novalidate>
                 <div class="integrated-search-input-wrap">
                     <svg class="icon icon-lg integrated-search-icon"><use href="#icon-search"></use></svg>
-                    <input type="text" id="modalSearchInput" class="integrated-search-input" placeholder="제목/본문/작성자 검색" onkeyup="if(event.key === 'Enter') performModalSearch('enter')">
-                    <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()"><svg class="icon"><use href="#icon-close"></use></svg></button>
+                    <input type="text" id="modalSearchInput" name="q" class="integrated-search-input" placeholder="제목/본문/작성자 검색" enterkeyhint="search" inputmode="search" autocomplete="off" autocorrect="off" spellcheck="false">
+                    <button type="button" class="integrated-search-clear-btn" onclick="clearIntegratedSearchInput()" title="검색어 지우기" aria-label="검색어 지우기"><svg class="icon"><use href="#icon-close"></use></svg></button>
                 </div>
+                </form>
             </div>
             <div class="integrated-search-controls">
                 <div class="integrated-search-chips">
