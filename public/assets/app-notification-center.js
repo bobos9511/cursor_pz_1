@@ -417,6 +417,7 @@ function resolveNotificationSourceLabel(it) {
 
 function renderNotificationItemCard(it, options = {}) {
     const compact = !!options.compact;
+    const singleClass = !compact && options.single ? " noti-item--single" : "";
     const readClass = it.isRead ? "noti-item-read" : "noti-item-unread";
     const sourceLabel = resolveNotificationSourceLabel(it);
     const readChip = it.isRead
@@ -444,9 +445,12 @@ function renderNotificationItemCard(it, options = {}) {
         </div>`;
     }
     return `
-        <div class="noti-item ${readClass}">
+        <div class="noti-item ${readClass}${singleClass}">
             <div class="noti-item-top">
-                <div class="noti-item-meta">${escapeHtml(it.atLabel)}</div>
+                <div class="noti-item-meta">
+                    <span class="noti-item-kind noti-item-kind--single">개별 알림</span>
+                    <span class="noti-item-meta-time">${escapeHtml(it.atLabel)}</span>
+                </div>
                 <div class="noti-item-source-row">
                     ${sourceChip}
                     ${readChip}
@@ -471,6 +475,7 @@ function renderNotificationStack(cluster) {
         <div class="noti-stack ${expanded ? "expanded" : ""}">
             <button type="button" class="noti-stack-head" onclick="toggleNotificationStack('${stackId}')" aria-expanded="${expanded}" title="${expanded ? "접기" : "펼치기"}">
                 <div class="noti-stack-head-main">
+                    <span class="noti-stack-kind-badge">동일 출처 묶음</span>
                     <span class="noti-stack-title">${escapeHtml(formatNotificationGroupTitle(cluster.pageLabel || latest.pageLabel || latest.topic || "알림"))}</span>
                     <span class="noti-stack-sub">${n}건</span>
                 </div>
@@ -522,7 +527,7 @@ function buildNotificationGroupedRows(list) {
             const rows = clusterNotificationItems(grouped)
                 .map((cluster) => {
                     if (!cluster || !Array.isArray(cluster.items) || cluster.items.length === 0) return "";
-                    if (cluster.items.length === 1) return renderNotificationItemCard(cluster.items[0]);
+                    if (cluster.items.length === 1) return renderNotificationItemCard(cluster.items[0], { single: true });
                     return renderNotificationStack(cluster);
                 })
                 .join("");

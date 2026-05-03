@@ -767,16 +767,39 @@
         body[data-theme="dark"] button.noti-stack-head:focus-visible {
             outline-color: #60a5fa;
         }
-        body[data-theme="dark"] .noti-stack-head {
+        body[data-theme="dark"] .noti-stack {
+            border-color: #5b21b6;
+            background: linear-gradient(145deg, #1e1635 0%, #152238 45%, #101b2d 100%);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+        }
+        body[data-theme="dark"] .noti-stack-kind-badge {
+            color: #ede9fe;
+            background: linear-gradient(135deg, #4c1d95, #5b21b6);
+            border-color: #7c3aed;
+        }
+        body[data-theme="dark"] .noti-item.noti-item--single {
+            background: linear-gradient(180deg, #172536 0%, #141c2c 55%);
             border-color: #3f5475;
-            background: rgba(15, 23, 42, 0.55);
+        }
+        body[data-theme="dark"] .noti-item-kind--single {
+            color: #cbd5e1;
+            background: #1e293b;
+            border-color: #475569;
+        }
+        body[data-theme="dark"] .noti-item-meta-time {
+            color: #94a3b8;
+        }
+        body[data-theme="dark"] .noti-stack-head {
+            border: none;
+            border-bottom: 1px solid rgba(91, 33, 182, 0.45);
+            background: rgba(15, 23, 42, 0.45);
         }
         body[data-theme="dark"] .noti-stack-head:hover {
-            border-color: #4b6282;
+            border-bottom-color: rgba(129, 140, 248, 0.55);
             background: rgba(19, 28, 44, 0.75);
         }
         body[data-theme="dark"] .noti-stack.expanded .noti-stack-head {
-            border-color: #4b6282;
+            border-bottom-color: rgba(129, 140, 248, 0.75);
             background: rgba(21, 31, 48, 0.88);
         }
         body[data-theme="dark"] .noti-stack-title {
@@ -959,6 +982,57 @@
             border-bottom-color: transparent;
             color: #dce7f6;
         }
+        body[data-theme="dark"] #view-settings .settings-section-heading.panel-header {
+            color: #e2e8f0;
+        }
+        body[data-theme="dark"] .settings-withdraw-card {
+            border-color: #7f1d1d;
+            background: linear-gradient(135deg, #2b1118 0%, #1a1520 50%, #291f0d 100%);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        }
+        body[data-theme="dark"] .settings-withdraw-card__title {
+            color: #fecdd3;
+        }
+        body[data-theme="dark"] .settings-withdraw-card__desc {
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .settings-withdraw-card__icon {
+            background: rgba(248, 113, 113, 0.15);
+            color: #fda4af;
+        }
+        body[data-theme="dark"] .mobile-profile-toolbar-title,
+        body[data-theme="dark"] .mobile-profile-name,
+        body[data-theme="dark"] .mobile-profile-card-value {
+            color: #f1f5f9;
+        }
+        body[data-theme="dark"] .mobile-profile-hero,
+        body[data-theme="dark"] .mobile-profile-card {
+            background: #101b2d;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .mobile-profile-cover {
+            background: linear-gradient(90deg, #132341, #1a1630);
+            color: #94a3b8;
+            border-bottom-color: #3f5475;
+        }
+        body[data-theme="dark"] .integrated-search-page-heading {
+            color: #f1f5f9;
+        }
+        body[data-theme="dark"] .integrated-search-page-card.panel {
+            background: #101b2d;
+            border-color: #3f5475;
+        }
+        body[data-theme="dark"] .ai-reply-history-corner-close {
+            background: #13233a;
+            border-color: #4a5f7f;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] #view-list.board-toolbar-mobile .board-filter-layer.board-popover:not(.hidden)::before,
+        body[data-theme="dark"] #view-list.board-tools-compact .board-tools-layer.board-popover:not(.hidden)::before {
+            background: #152238;
+            border-left-color: #3f5475;
+            border-top-color: #3f5475;
+        }
         body[data-theme="dark"] #view-settings .settings-keyword-item {
             background: #152238;
             border-color: #3f5475;
@@ -1072,24 +1146,6 @@
         }
         body[data-theme="dark"] #view-detail #answerFormBox .answer-form-panel-header {
             color: #93c5fd !important;
-        }
-        body[data-theme="dark"] #view-detail #answerFormBox .answer-form-template-strip {
-            background: #3a2a14 !important;
-            border-bottom: 1px solid #a16207 !important;
-            color: #fde68a !important;
-        }
-        body[data-theme="dark"] #view-detail .answer-template-chip {
-            background: #1e2a3d !important;
-            border: 1px solid #4a5f7f !important;
-            color: #e2e8f0 !important;
-        }
-        body[data-theme="dark"] #view-detail .answer-template-chip:hover {
-            background: #24344e !important;
-            border-color: #5d79a1 !important;
-            color: #f8fafc !important;
-        }
-        body[data-theme="dark"] #view-detail .answer-template-chip:focus-visible {
-            outline-color: #93c5fd;
         }
         /* 게시물 상세: AI 어시스턴트 레포트 카드 — 다크 보라 계열 */
         body[data-theme="dark"] #view-detail #dtlAiWrap {
@@ -2357,7 +2413,10 @@
             border-bottom-color: rgba(63, 84, 117, 0.75);
         }
         body[data-theme="dark"] .mobile-nav-more__app-logo {
-            color: #f1f5f9;
+            color: #e0f2fe;
+        }
+        body[data-theme="dark"] .mobile-nav-more__app-logo .logo-point {
+            color: #38bdf8;
         }
         body[data-theme="dark"] .mobile-nav-more__app-role {
             color: #bfdbfe;

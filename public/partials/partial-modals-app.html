@@ -75,11 +75,10 @@
 
     <!-- AI 답변 이력 모달 -->
     <div id="aiReplyHistoryModal" class="modal-overlay" style="z-index: 1011;">
-        <div class="modal-content" style="max-width: 760px; width: min(92vw, 760px);">
-            <div class="modal-header" style="background: linear-gradient(to right, var(--ibk-blue), var(--ibk-light));">
-                <span><svg class="icon"><use href="#icon-history"></use></svg> AI 답변 이력</span>
-                <button onclick="closeAiReplyHistoryModal()" style="color:#fff;"><svg class="icon"><use href="#icon-close"></use></svg></button>
-            </div>
+        <div class="modal-content ai-reply-history-modal-content" style="max-width: 760px; width: min(92vw, 760px); position: relative;">
+            <button type="button" class="ai-reply-history-corner-close" onclick="closeAiReplyHistoryModal()" title="닫기" aria-label="닫기">
+                <svg class="icon"><use href="#icon-close"></use></svg>
+            </button>
             <div class="modal-body ai-reply-history-body" id="aiReplyHistoryBody">
                 <div class="text-center" style="color:#64748b; padding: 40px;">이력이 없습니다.</div>
             </div>

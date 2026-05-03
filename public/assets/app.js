@@ -767,9 +767,12 @@
 
         function showAlert(message, type = 'success', options = {}) {
             const container = document.getElementById('toastContainer');
+            const settingsView = document.getElementById('view-settings');
+            const settingsActive = !!(settingsView && settingsView.classList.contains('active'));
             const persistNc =
                 typeof window.recordNotificationEntry === 'function'
                 && !(options && options.skipNotificationCenter === true)
+                && !settingsActive
                 && shouldPersistNotificationCenterEntry();
             if (persistNc) {
                 window.recordNotificationEntry(message, type, options);
@@ -2113,6 +2116,7 @@
             bindSystemThemeListenerOnce();
             applyDashboardWidgetOrder();
             bindDashboardWidgetPointerReorder();
+            bindBoardToolbarOutsideCloseOnce();
             initSidebarNavTooltips();
             bindSidebarHoverTooltipEvents();
             applySidebarTooltipState();
@@ -3319,9 +3323,28 @@
         }
 
         function updateOverlaySessionRemaining() {
+            const text = `자동 로그아웃까지: ${formatSessionRemainingText()}`;
             const el = document.getElementById('overlaySessionRemaining');
-            if (!el) return;
-            el.textContent = `자동 로그아웃까지: ${formatSessionRemainingText()}`;
+            if (el) el.textContent = text;
+            const mp = document.getElementById('mpSessionRemaining');
+            if (mp) mp.textContent = text;
+        }
+
+        function markProfileSessionUiNeeded() {
+            updateOverlaySessionRemaining();
+            if (profileOverlaySessionTimer) return;
+            profileOverlaySessionTimer = setInterval(updateOverlaySessionRemaining, 1000);
+        }
+
+        function markProfileSessionUiDismissed() {
+            const overlay = document.getElementById('headerProfileOverlay');
+            const mpView = document.getElementById('view-mobile-profile');
+            const overlayOn = overlay && overlay.classList.contains('active');
+            const mpOn = mpView && mpView.classList.contains('active');
+            if (!overlayOn && !mpOn && profileOverlaySessionTimer) {
+                clearInterval(profileOverlaySessionTimer);
+                profileOverlaySessionTimer = null;
+            }
         }
 
         async function extendSessionFromOverlay() {
@@ -3813,22 +3836,13 @@
             const overlay = document.getElementById('headerProfileOverlay');
             if (!overlay) return;
             overlay.classList.toggle('active');
-            if (overlay.classList.contains('active')) {
-                updateOverlaySessionRemaining();
-                if (profileOverlaySessionTimer) clearInterval(profileOverlaySessionTimer);
-                profileOverlaySessionTimer = setInterval(updateOverlaySessionRemaining, 1000);
-            } else if (profileOverlaySessionTimer) {
-                clearInterval(profileOverlaySessionTimer);
-                profileOverlaySessionTimer = null;
-            }
+            if (overlay.classList.contains('active')) markProfileSessionUiNeeded();
+            else markProfileSessionUiDismissed();
         }
         function closeHeaderProfileOverlay() {
             const overlay = document.getElementById('headerProfileOverlay');
             if (overlay) overlay.classList.remove('active');
-            if (profileOverlaySessionTimer) {
-                clearInterval(profileOverlaySessionTimer);
-                profileOverlaySessionTimer = null;
-            }
+            markProfileSessionUiDismissed();
         }
         function closeHeaderActionsLayer() {
             const layer = document.getElementById('headerActionsLayer');
@@ -4106,9 +4120,11 @@
             const appVisible = !!currentLoginUser && !!appContainer && appContainer.style.display !== 'none';
             const aiInLayerHost = !!(aiView && aiHost && aiView.parentElement === aiHost);
             const aiSearchActive = !!(aiView && aiView.classList.contains('active') && !aiInLayerHost);
+            const integratedSearchPage = document.getElementById('view-integrated-search');
+            const integratedSearchActive = !!(integratedSearchPage && integratedSearchPage.classList.contains('active'));
             const hideByMobileMenu = document.body.classList.contains('mobile-menu-open')
                 || document.body.classList.contains('mobile-nav-more-open');
-            btn.classList.toggle('hidden', !appVisible || aiSearchActive || hideByMobileMenu);
+            btn.classList.toggle('hidden', !appVisible || aiSearchActive || integratedSearchActive || hideByMobileMenu);
             ensureAiChatFloatingOverlapListeners();
             scheduleAiChatFloatingOverlapLayout();
         }
@@ -4281,7 +4297,6 @@
 
         // --- Dashboard Widgets / Charts ---
         let dashboardEditMode = false;
-        let draggedWidget = null;
         const DASH_WIDGET_ORDER_KEY = 'knockDashboardWidgetTileOrderV1';
 
         function getDashboardWidgetOrderKey() {
@@ -4603,129 +4618,154 @@
             dashboardEditMode = !dashboardEditMode;
             const view = document.getElementById('view-dashboard');
             if (view) view.classList.toggle('dashboard-editing', dashboardEditMode);
-            const button = document.querySelector('#view-dashboard button.btn.btn-outline');
+            const button = document.getElementById('btnDashboardWidgetEdit');
             const tiles = document.querySelectorAll('#dashboardWidgetContainer > .dash-tile');
             const handles = document.querySelectorAll('#dashboardWidgetContainer .drag-handle');
 
             handles.forEach((handle) => handle.classList.toggle('hidden', !dashboardEditMode));
-            const touchCoarse = window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
             tiles.forEach((tile) => {
-                tile.draggable = !!(dashboardEditMode && !touchCoarse);
+                tile.draggable = false;
                 tile.style.cursor = dashboardEditMode ? 'grab' : 'default';
             });
 
             if (button) button.innerText = dashboardEditMode ? '편집 완료' : '위젯 편집';
             if (!dashboardEditMode) saveDashboardWidgetOrder();
-            showAlert(dashboardEditMode ? '위젯 편집 모드가 활성화되었습니다.' : '위젯 편집 모드가 종료되었습니다.', 'success', {
-                skipNotificationCenter: true,
-            });
         }
 
-        function reorderDashboardTileInContainer(container, dragged, clientY, clientX) {
-            if (!container || !dragged) return;
-            const cr = container.getBoundingClientRect();
-            const probeX = typeof clientX === 'number' && Number.isFinite(clientX)
-                ? Math.min(Math.max(clientX, cr.left + 8), cr.right - 8)
-                : cr.left + cr.width / 2;
-            const probeEl = document.elementFromPoint(probeX, clientY);
-            const overTile = probeEl && probeEl.closest && probeEl.closest('.dash-tile');
-            if (!overTile || overTile === dragged || overTile.parentElement !== container) return;
+        let dashFloatState = null;
+        let dashFloatMoveRaf = null;
+
+        function moveDashDropPlaceholder(container, placeholder, clientX, clientY) {
+            if (!container || !placeholder) return;
+            let overTile = null;
+            if (
+                typeof clientX === 'number' &&
+                typeof clientY === 'number' &&
+                Number.isFinite(clientX) &&
+                Number.isFinite(clientY) &&
+                typeof document.elementsFromPoint === 'function'
+            ) {
+                const stack = document.elementsFromPoint(clientX, clientY) || [];
+                for (let i = 0; i < stack.length; i += 1) {
+                    const el = stack[i];
+                    if (!el || !el.closest) continue;
+                    if (el.closest('.dash-drag-placeholder')) continue;
+                    const t = el.closest('.dash-tile');
+                    if (!t || t.parentElement !== container) continue;
+                    if (dashFloatState && t === dashFloatState.tile) continue;
+                    overTile = t;
+                    break;
+                }
+            }
+            if (!overTile) {
+                container.appendChild(placeholder);
+                return;
+            }
             const rect = overTile.getBoundingClientRect();
             const insertAfter = clientY > rect.top + rect.height / 2;
-            if (insertAfter) container.insertBefore(dragged, overTile.nextSibling);
-            else container.insertBefore(dragged, overTile);
+            if (insertAfter) container.insertBefore(placeholder, overTile.nextSibling);
+            else container.insertBefore(placeholder, overTile);
         }
 
-        let dashPointerState = null;
-        let dashPointerMoveRaf = null;
+        function endDashFloatDrag(e) {
+            if (!dashFloatState || e.pointerId !== dashFloatState.pointerId) return;
+            const { tile, placeholder, container, pointerId } = dashFloatState;
+            dashFloatState = null;
+            if (dashFloatMoveRaf) {
+                cancelAnimationFrame(dashFloatMoveRaf);
+                dashFloatMoveRaf = null;
+            }
+            tile.classList.remove('dash-tile--dragging');
+            ['position', 'left', 'top', 'width', 'zIndex', 'margin', 'boxShadow', 'transform', 'boxSizing'].forEach((prop) => {
+                tile.style[prop] = '';
+            });
+            try {
+                container.releasePointerCapture(pointerId);
+            } catch (_) {}
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(tile, placeholder);
+                placeholder.remove();
+            }
+            if (dashboardEditMode) saveDashboardWidgetOrder();
+        }
+
         function bindDashboardWidgetPointerReorder() {
             const container = document.getElementById('dashboardWidgetContainer');
             if (!container || container.dataset.pointerReorderBound === '1') return;
             container.dataset.pointerReorderBound = '1';
 
-            function endDashPointerDrag(e) {
-                if (!dashPointerState || e.pointerId !== dashPointerState.pointerId) return;
-                const { tile, pointerId } = dashPointerState;
-                dashPointerState = null;
-                if (dashPointerMoveRaf) {
-                    cancelAnimationFrame(dashPointerMoveRaf);
-                    dashPointerMoveRaf = null;
-                }
-                tile.classList.remove('dash-tile--dragging');
-                try {
-                    container.releasePointerCapture(pointerId);
-                } catch (_) {}
-                if (dashboardEditMode) saveDashboardWidgetOrder();
-            }
-
             container.addEventListener(
                 'pointerdown',
                 (e) => {
                     if (!dashboardEditMode || !e.isPrimary) return;
-                    const touchLike = e.pointerType === 'touch' || e.pointerType === 'pen';
-                    if (!touchLike || !window.matchMedia('(max-width: 1024px)').matches) return;
                     const tile = e.target.closest('.dash-tile');
                     if (!tile || tile.parentElement !== container) return;
                     const handle = e.target.closest('.drag-handle');
                     if (!handle || !tile.contains(handle)) return;
                     e.preventDefault();
-                    dashPointerState = { pointerId: e.pointerId, tile };
+                    const rect = tile.getBoundingClientRect();
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'dash-drag-placeholder';
+                    const cs = window.getComputedStyle(tile);
+                    placeholder.style.gridColumn = cs.gridColumn;
+                    placeholder.style.gridRow = cs.gridRow;
+                    placeholder.style.minHeight = `${rect.height}px`;
+                    placeholder.style.boxSizing = 'border-box';
+                    tile.parentNode.insertBefore(placeholder, tile);
+                    Object.assign(tile.style, {
+                        position: 'fixed',
+                        left: `${rect.left}px`,
+                        top: `${rect.top}px`,
+                        width: `${rect.width}px`,
+                        zIndex: '10000',
+                        margin: '0',
+                        boxSizing: 'border-box',
+                    });
+                    document.body.appendChild(tile);
                     tile.classList.add('dash-tile--dragging');
+                    dashFloatState = {
+                        pointerId: e.pointerId,
+                        tile,
+                        placeholder,
+                        container,
+                        offsetX: e.clientX - rect.left,
+                        offsetY: e.clientY - rect.top,
+                    };
                     try {
                         container.setPointerCapture(e.pointerId);
                     } catch (_) {}
                 },
-                true
+                true,
             );
 
             container.addEventListener('pointermove', (e) => {
-                if (!dashPointerState || e.pointerId !== dashPointerState.pointerId) return;
+                if (!dashFloatState || e.pointerId !== dashFloatState.pointerId) return;
                 e.preventDefault();
-                if (dashPointerMoveRaf) return;
-                dashPointerMoveRaf = requestAnimationFrame(() => {
-                    dashPointerMoveRaf = null;
-                    if (!dashPointerState) return;
-                    reorderDashboardTileInContainer(container, dashPointerState.tile, e.clientY, e.clientX);
+                if (dashFloatMoveRaf) return;
+                dashFloatMoveRaf = requestAnimationFrame(() => {
+                    dashFloatMoveRaf = null;
+                    if (!dashFloatState) return;
+                    const { tile, placeholder, container, offsetX, offsetY } = dashFloatState;
+                    tile.style.left = `${e.clientX - offsetX}px`;
+                    tile.style.top = `${e.clientY - offsetY}px`;
+                    moveDashDropPlaceholder(container, placeholder, e.clientX, e.clientY);
                 });
             });
 
-            container.addEventListener('pointerup', endDashPointerDrag);
-            container.addEventListener('pointercancel', endDashPointerDrag);
-
-            container.addEventListener('dragover', (e) => {
-                if (!dashboardEditMode) return;
-                if (!container.contains(e.target)) return;
-                e.preventDefault();
-                try {
-                    e.dataTransfer.dropEffect = 'move';
-                } catch (_) {}
-            });
+            container.addEventListener('pointerup', endDashFloatDrag);
+            container.addEventListener('pointercancel', endDashFloatDrag);
         }
 
-        document.addEventListener('dragstart', (event) => {
-            if (!dashboardEditMode) return;
-            const container = document.getElementById('dashboardWidgetContainer');
-            const target = event.target.closest('.dash-tile');
-            if (!container || !target || !target.id || target.parentElement !== container) return;
-            draggedWidget = target;
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', target.id);
-            target.classList.add('dash-tile--dragging');
-        });
-
-        document.addEventListener('dragend', () => {
-            if (draggedWidget) draggedWidget.classList.remove('dash-tile--dragging');
-            draggedWidget = null;
-            if (dashboardEditMode) saveDashboardWidgetOrder();
-        });
-
-        document.addEventListener('dragover', (event) => {
-            if (!dashboardEditMode) return;
-            const container = document.getElementById('dashboardWidgetContainer');
-            if (!container || !draggedWidget || !container.contains(event.target)) return;
-            event.preventDefault();
-            reorderDashboardTileInContainer(container, draggedWidget, event.clientY, event.clientX);
-        });
+        function bindBoardToolbarOutsideCloseOnce() {
+            if (document.documentElement.dataset.boardToolbarOutsideClose === '1') return;
+            document.documentElement.dataset.boardToolbarOutsideClose = '1';
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.board-filter-cluster')) closeBoardFilterLayer();
+                if (!e.target.closest('#boardToolsMoreBtn') && !e.target.closest('#boardToolsLayer')) {
+                    closeBoardToolsLayer();
+                }
+            });
+        }
 
         function changeRole() {
             const activeUser = currentLoginUser || getRoleMatrixEntry(currentRole);
@@ -4791,6 +4831,40 @@
                 const greet = '안녕하세요. IBK KNOCK입니다.';
                 overlayGreetingText.innerText = greet;
             }
+            const mpGreet = document.getElementById('mpGreetingText');
+            if (mpGreet) mpGreet.innerText = '안녕하세요. IBK KNOCK입니다.';
+            const mpUserDisplay = document.getElementById('mpUserDisplay');
+            if (mpUserDisplay) mpUserDisplay.innerText = userDisplay;
+            const mpAdminBadge = document.getElementById('mpAdminBadge');
+            if (mpAdminBadge) mpAdminBadge.classList.toggle('hidden', !resolveUserIsAdmin(activeUser));
+            const mpUserDept = document.getElementById('mpUserDept');
+            if (mpUserDept) mpUserDept.innerText = deptDisplay;
+            const mpProfileInitial = document.getElementById('mpProfileInitial');
+            if (mpProfileInitial) {
+                const imageDataMp = normalizeProfileImageData(activeUser.profileImage);
+                if (imageDataMp) {
+                    mpProfileInitial.style.background = '';
+                    mpProfileInitial.style.color = '';
+                    mpProfileInitial.innerHTML = `<img src="${imageDataMp}" alt="프로필">`;
+                } else {
+                    const initialMp = escapeHtml(getUserInitial(activeName));
+                    const seedMp = String(activeUser.employeeNo || activeName || 'mp');
+                    const presetMp = AVATAR_GRADIENT_PRESETS[getAvatarPresetIndex(seedMp)];
+                    mpProfileInitial.innerHTML = initialMp;
+                    mpProfileInitial.style.background = presetMp.gradient;
+                    mpProfileInitial.style.color = presetMp.color;
+                }
+            }
+            const mpEmployeeNo = document.getElementById('mpEmployeeNo');
+            if (mpEmployeeNo) mpEmployeeNo.innerText = activeUser.employeeNo || '-';
+            const mpExtNo = document.getElementById('mpExtNo');
+            if (mpExtNo) mpExtNo.innerText = normalizeDisplayText(activeUser.extNo, '8-0000');
+            const mpFaxNo = document.getElementById('mpFaxNo');
+            if (mpFaxNo) mpFaxNo.innerText = normalizeDisplayText(activeUser.faxNo, '02-0000-0000');
+            const mpMobileNo = document.getElementById('mpMobileNo');
+            if (mpMobileNo) mpMobileNo.innerText = normalizeDisplayText(activeUser.mobileNo, '010-0000-0000');
+            const mpSessionInfo = document.getElementById('mpSessionInfo');
+            if (mpSessionInfo) mpSessionInfo.innerText = `IP ${currentSessionIp || '-'}`;
 
             applyDashboardWidgetOrder();
 
@@ -4893,6 +4967,14 @@
                 showAlert('플랫폼 관리자 권한이 필요합니다.', 'error');
                 return;
             }
+            if (viewId === 'mobile-profile' && !window.matchMedia('(max-width: 1024px)').matches) {
+                toggleHeaderProfileOverlay();
+                return;
+            }
+            if (viewId === 'integrated-search' && !window.matchMedia('(max-width: 1024px)').matches) {
+                showIntegratedSearchModal();
+                return;
+            }
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.hdr-nav-link').forEach(el => el.classList.remove('active'));
@@ -4950,6 +5032,10 @@
                 if (hdrNav) hdrNav.classList.add('active');
                 const mbNav = document.getElementById(`mbnav-${viewId}`);
                 if (mbNav) mbNav.classList.add('active');
+                if (viewId === 'integrated-search') {
+                    syncIntegratedSearchPageFromModal();
+                    runIntegratedSearchUiBootstrap();
+                }
                 if (viewId === 'ai-search') initializeAiSearchView();
                 if (viewId === 'settings') {
                     initSettingsMainTabsOnce();
@@ -4995,6 +5081,8 @@
                 const routeBoardType = viewId === 'list' ? currentBoardType : null;
                 syncHistoryRoute(viewId, routeBoardType, null, false);
             }
+            if (viewId === 'mobile-profile') markProfileSessionUiNeeded();
+            markProfileSessionUiDismissed();
             updateAiChatFloatingButton();
         }
 
@@ -5359,6 +5447,7 @@
         function toggleBoardFilterLayer(event) {
             if (event) event.stopPropagation();
             if (window.innerWidth > 1024) return;
+            closeBoardToolsLayer();
             const layer = document.getElementById('boardFilterLayer');
             const btn = document.getElementById('boardFilterToggleBtn');
             if (!layer || !btn) return;
@@ -5410,6 +5499,7 @@
         }
         function toggleBoardToolsLayer(event) {
             if (event) event.stopPropagation();
+            closeBoardFilterLayer();
             const layer = document.getElementById('boardToolsLayer');
             if (!layer) return;
             syncBoardToolbarCompactMode();
@@ -5727,14 +5817,8 @@
             } else {
                 // 답변 권한이 있으면 (관리자)
                 if (getRoleMatrixEntry(currentRole).answer.includes(post.type)) {
-                    formBox.classList.remove('hidden'); document.getElementById('answerInput').innerHTML = '<p><br></p>';
-                    const replies = post.type === 'IT' ? ['KCB망 점검 중입니다.', '재기동 조치 완료.'] : ['추가 증빙 서류를 첨부해 주세요.', '해당 건은 처리가 불가합니다.'];
-                    document.getElementById("quickReplyChips").innerHTML = replies
-                        .map(
-                            (r) =>
-                                `<button type="button" class="answer-template-chip" onclick="insertTemplate(${JSON.stringify(r)})">${escapeHtml(r)}</button>`
-                        )
-                        .join("");
+                    formBox.classList.remove('hidden');
+                    document.getElementById('answerInput').innerHTML = '<p><br></p>';
                 }
             }
 
@@ -6188,7 +6272,6 @@
             saveData(); switchView('list', currentBoardType);
         }
 
-        function insertTemplate(text) { const editor = document.getElementById('answerInput'); editor.innerHTML += (editor.innerHTML === '' || editor.innerHTML === '<p><br></p>') ? text : '<br>' + text; }
         
         function submitAnswer() {
             const editor = document.getElementById('answerInput');
@@ -6270,29 +6353,82 @@
         }
 
         // --- Integrated Search & Similar Modals ---
-        function executeIntegratedSearch() { 
+        function getIntegratedSearchDom() {
+            const pageView = document.getElementById('view-integrated-search');
+            const onPage = !!(pageView && pageView.classList.contains('active'));
+            if (onPage) {
+                return {
+                    input: document.getElementById('integratedSearchPageInput'),
+                    form: document.getElementById('integratedSearchPageForm'),
+                    results: document.getElementById('integratedSearchPageResults'),
+                    ranking: document.getElementById('integratedSearchPageRanking'),
+                    related: document.getElementById('integratedSearchPageRelated'),
+                    sort: document.getElementById('integratedSearchPageSort'),
+                };
+            }
+            return {
+                input: document.getElementById('modalSearchInput'),
+                form: document.getElementById('integratedSearchForm'),
+                results: document.getElementById('integratedSearchResults'),
+                ranking: document.getElementById('integratedKeywordRanking'),
+                related: document.getElementById('integratedRelatedKeywords'),
+                sort: document.getElementById('integratedSearchSort'),
+            };
+        }
+        function syncIntegratedSearchPageFromModal() {
+            const modalInp = document.getElementById('modalSearchInput');
+            const pageInp = document.getElementById('integratedSearchPageInput');
+            const modalSort = document.getElementById('integratedSearchSort');
+            const pageSort = document.getElementById('integratedSearchPageSort');
+            if (pageInp && modalInp && !String(pageInp.value || '').trim() && String(modalInp.value || '').trim()) {
+                pageInp.value = modalInp.value;
+            }
+            if (pageSort && modalSort) pageSort.value = modalSort.value;
+        }
+        function runIntegratedSearchUiBootstrap() {
+            ensureIntegratedSearchEnterHandlers();
+            integratedSearchRelatedUnlocked = false;
+            void refreshIntegratedSearchStatsFromServer().finally(() => {
+                const dom = getIntegratedSearchDom();
+                const raw = dom.input ? String(dom.input.value || '') : '';
+                renderIntegratedSearchInsights(raw, [], { showRelatedAfterSearch: false });
+                setTimeout(() => {
+                    if (dom.input) dom.input.focus();
+                }, 80);
+            });
+        }
+        function executeIntegratedSearch() {
             const kw = document.getElementById('headerSearchInput').value;
-            document.getElementById('modalSearchInput').value = kw;
+            const modalInp = document.getElementById('modalSearchInput');
+            const pageInp = document.getElementById('integratedSearchPageInput');
+            if (modalInp) modalInp.value = kw;
+            if (pageInp) pageInp.value = kw;
             document.getElementById('headerSearchInput').value = '';
-            showIntegratedSearchModal(); 
-            performModalSearch('header'); 
+            showIntegratedSearchModal();
+            performModalSearch('header');
         }
         function getIntegratedSearchSortValue() {
-            const sortEl = document.getElementById('integratedSearchSort');
-            return sortEl ? String(sortEl.value || 'latest') : 'latest';
+            const { sort } = getIntegratedSearchDom();
+            return sort ? String(sort.value || 'latest') : 'latest';
         }
         function clearIntegratedSearchInput() {
-            const input = document.getElementById('modalSearchInput');
-            if (input) input.value = '';
+            const modalInp = document.getElementById('modalSearchInput');
+            const pageInp = document.getElementById('integratedSearchPageInput');
+            if (modalInp) modalInp.value = '';
+            if (pageInp) pageInp.value = '';
             performModalSearch('clear');
+            const { input } = getIntegratedSearchDom();
             if (input) input.focus();
         }
         function applyIntegratedRelatedKeyword(keyword) {
-            const input = document.getElementById('modalSearchInput');
-            if (!input) return;
-            input.value = String(keyword || '').trim();
+            const v = String(keyword || '').trim();
+            const modalInp = document.getElementById('modalSearchInput');
+            const pageInp = document.getElementById('integratedSearchPageInput');
+            if (modalInp) modalInp.value = v;
+            if (pageInp) pageInp.value = v;
             performModalSearch('related');
-            input.focus();
+            const { input } = getIntegratedSearchDom();
+            if (input) input.focus();
         }
         const INTEGRATED_SEARCH_STATS_KEY = 'knock-integrated-search-stats-v1';
         let integratedSearchKeywordStats = null;
@@ -6440,101 +6576,110 @@
             return counts;
         }
         function renderIntegratedSearchInsights(keyword, matchedPosts = [], options = {}) {
-            const rankingEl = document.getElementById('integratedKeywordRanking');
-            const relatedEl = document.getElementById('integratedRelatedKeywords');
-            if (!rankingEl || !relatedEl) return;
+            const pairs = [
+                ['integratedKeywordRanking', 'integratedRelatedKeywords'],
+                ['integratedSearchPageRanking', 'integratedSearchPageRelated'],
+            ];
             const top = getIntegratedSearchKeywordRanking(5);
             const rankSourceNote =
                 Array.isArray(integratedSearchKeywordStatsServer) && integratedSearchKeywordStatsServer.length
                     ? '<div class="integrated-search-insight-note">서버 집계 · 로그인 사용자 검색 기준</div>'
                     : '<div class="integrated-search-insight-note">이 브라우저 로컬 집계(서버 연결 시 DB 반영)</div>';
-            rankingEl.innerHTML = `${rankSourceNote}<div class="integrated-search-insight-title">검색어 순위</div>${
+            const rankingHtml = `${rankSourceNote}<div class="integrated-search-insight-title">검색어 순위</div>${
                 top.length
-                    ? `<div class="integrated-ranking-board">${
-                          top
-                              .map(
-                                  ([k, c], i) => `
+                    ? `<div class="integrated-ranking-board">${top
+                          .map(
+                              ([k, c], i) => `
                             <div class="integrated-ranking-row" style="animation-delay:${i * 90}ms;">
                                 <span class="integrated-ranking-rank">${i + 1}</span>
                                 <span class="integrated-ranking-keyword">${escapeHtml(k)}</span>
                                 <span class="integrated-ranking-count">${c}</span>
                             </div>`,
-                              )
-                              .join('')
-                      }</div>`
+                          )
+                          .join('')}</div>`
                     : '<span class="integrated-search-insight-muted">데이터 없음</span>'
             }`;
             const showRelated = !!options.showRelatedAfterSearch;
+            let relatedHtml = '';
             if (!showRelated) {
-                relatedEl.innerHTML = `<div class="integrated-search-insight-title">연관검색어</div><span class="integrated-search-insight-muted">검색 실행 후, 검색 결과 게시물을 기준으로 연관어가 표시됩니다.</span>`;
-                return;
+                relatedHtml = `<div class="integrated-search-insight-title">연관검색어</div><span class="integrated-search-insight-muted">검색 실행 후, 검색 결과 게시물을 기준으로 연관어가 표시됩니다.</span>`;
+            } else {
+                const queryTokens = extractIntegratedTokensFromText(String(keyword || ''));
+                const querySet = new Set(queryTokens);
+                const relatedCounts = buildIntegratedKeywordCounts(matchedPosts || []);
+                let rel = [];
+                if (queryTokens.length) {
+                    rel = Array.from(relatedCounts.entries())
+                        .filter(([k]) => !querySet.has(k))
+                        .filter(([k]) =>
+                            queryTokens.some((t) => {
+                                if (t.length < 2) return false;
+                                return k.includes(t) || t.includes(k);
+                            }),
+                        )
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 8);
+                }
+                relatedHtml = `<div class="integrated-search-insight-title">연관검색어</div>${
+                    rel.length
+                        ? rel
+                              .map(([k, c]) => {
+                                  const safeJs = String(k).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                                  return `<button type="button" class="btn btn-outline integrated-search-chip integrated-search-chip--related" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span class="integrated-search-chip-count">(${c})</span></button>`;
+                              })
+                              .join('')
+                        : '<span class="integrated-search-insight-muted">연관 키워드 없음</span>'
+                }`;
             }
-            const queryTokens = extractIntegratedTokensFromText(String(keyword || ''));
-            const querySet = new Set(queryTokens);
-            const relatedCounts = buildIntegratedKeywordCounts(matchedPosts || []);
-            let rel = [];
-            if (queryTokens.length) {
-                rel = Array.from(relatedCounts.entries())
-                    .filter(([k]) => !querySet.has(k))
-                    .filter(([k]) =>
-                        queryTokens.some((t) => {
-                            if (t.length < 2) return false;
-                            return k.includes(t) || t.includes(k);
-                        }),
-                    )
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 8);
-            }
-            relatedEl.innerHTML = `<div class="integrated-search-insight-title">연관검색어</div>${
-                rel.length
-                    ? rel
-                          .map(([k, c]) => {
-                              const safeJs = String(k).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-                              return `<button type="button" class="btn btn-outline integrated-search-chip integrated-search-chip--related" onclick="applyIntegratedRelatedKeyword('${safeJs}')">${escapeHtml(k)} <span class="integrated-search-chip-count">(${c})</span></button>`;
-                          })
-                          .join('')
-                    : '<span class="integrated-search-insight-muted">연관 키워드 없음</span>'
-            }`;
-        }
-        let integratedSearchEnterWired = false;
-        function ensureIntegratedSearchEnterHandlers() {
-            if (integratedSearchEnterWired) return;
-            const input = document.getElementById('modalSearchInput');
-            const form = document.getElementById('integratedSearchForm');
-            if (!input) return;
-            integratedSearchEnterWired = true;
-            const runSearch = (e) => {
-                if (e) e.preventDefault();
-                performModalSearch('enter');
-            };
-            if (form) {
-                form.addEventListener('submit', runSearch);
-            }
-            input.addEventListener(
-                'keydown',
-                (e) => {
-                    if (e.key !== 'Enter' && e.keyCode !== 13) return;
-                    e.preventDefault();
-                    performModalSearch('enter');
-                },
-                true,
-            );
-        }
-        function showIntegratedSearchModal() {
-            ensureIntegratedSearchEnterHandlers();
-            integratedSearchRelatedUnlocked = false;
-            document.getElementById('integratedSearchModal').classList.add('active');
-            void refreshIntegratedSearchStatsFromServer().finally(() => {
-                renderIntegratedSearchInsights(document.getElementById('modalSearchInput').value || '', [], {
-                    showRelatedAfterSearch: false,
-                });
-                setTimeout(() => {
-                    const inp = document.getElementById('modalSearchInput');
-                    if (inp) inp.focus();
-                }, 80);
+            pairs.forEach(([rid, eid]) => {
+                const rankingEl = document.getElementById(rid);
+                const relatedEl = document.getElementById(eid);
+                if (!rankingEl || !relatedEl) return;
+                rankingEl.innerHTML = rankingHtml;
+                relatedEl.innerHTML = relatedHtml;
             });
         }
-        function closeIntegratedSearchModal() { document.getElementById('integratedSearchModal').classList.remove('active'); }
+        function ensureIntegratedSearchEnterHandlers() {
+            [
+                ['modalSearchInput', 'integratedSearchForm'],
+                ['integratedSearchPageInput', 'integratedSearchPageForm'],
+            ].forEach(([inpId, formId]) => {
+                const input = document.getElementById(inpId);
+                const form = document.getElementById(formId);
+                if (!input || input.dataset.integratedEnterBound === '1') return;
+                input.dataset.integratedEnterBound = '1';
+                const runSearch = (e) => {
+                    if (e) e.preventDefault();
+                    performModalSearch('enter');
+                };
+                if (form) form.addEventListener('submit', runSearch);
+                input.addEventListener(
+                    'keydown',
+                    (e) => {
+                        if (e.key !== 'Enter' && e.keyCode !== 13) return;
+                        e.preventDefault();
+                        performModalSearch('enter');
+                    },
+                    true,
+                );
+            });
+        }
+        function showIntegratedSearchModal() {
+            if (window.matchMedia('(max-width: 1024px)').matches) {
+                syncIntegratedSearchPageFromModal();
+                switchView('integrated-search');
+                return;
+            }
+            ensureIntegratedSearchEnterHandlers();
+            integratedSearchRelatedUnlocked = false;
+            const modal = document.getElementById('integratedSearchModal');
+            if (modal) modal.classList.add('active');
+            runIntegratedSearchUiBootstrap();
+        }
+        function closeIntegratedSearchModal() {
+            const modal = document.getElementById('integratedSearchModal');
+            if (modal) modal.classList.remove('active');
+        }
         let integratedSearchEnterDedupe = false;
         async function performModalSearch(trigger = 'manual') {
             if (trigger === 'enter') {
@@ -6544,9 +6689,11 @@
                     integratedSearchEnterDedupe = false;
                 });
             }
-            const raw = document.getElementById('modalSearchInput').value || '';
+            const dom = getIntegratedSearchDom();
+            if (!dom.input || !dom.results) return;
+            const raw = dom.input.value || '';
             const kw = raw.toLowerCase().trim();
-            const resContainer = document.getElementById('integratedSearchResults');
+            const resContainer = dom.results;
             const sort = getIntegratedSearchSortValue();
             if (trigger === 'clear') {
                 integratedSearchRelatedUnlocked = false;
@@ -6612,7 +6759,8 @@
             }).join('') + '</ul>';
         }
         function goFromIntegratedSearch(id, postType) {
-            closeIntegratedSearchModal(); document.getElementById('headerSearchInput').value = '';
+            closeIntegratedSearchModal();
+            document.getElementById('headerSearchInput').value = '';
             const post = getPostByIdAndType(id, postType || currentBoardType);
             if (!post) return;
             if(post) currentBoardType = post.type;
