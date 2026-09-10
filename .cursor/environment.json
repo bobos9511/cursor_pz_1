@@ -1,0 +1,17 @@
+{
+  "name": "knock-helpdesk-demo",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "server",
+      "command": "node server.js",
+      "description": "Helpdesk demo server on http://localhost:5500 — serves the static UI (login/board/dashboard/AI search) and the JSON DB + AI proxy API. Set GEMINI_API_KEY to enable the Gemini-backed AI features; the app runs without it (AI endpoints return a graceful error)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 5500
+    }
+  ]
+}
